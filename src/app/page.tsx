@@ -403,15 +403,15 @@ export default function PdfEditorHomepage() {
 
         if (watermarkText.trim() !== '') {
             const textWidth = helveticaFont.widthOfTextAtSize(watermarkText, 50);
-            const textHeight = helveticaFont.heightAtSize(50); // Approx
+            const textHeight = helveticaFont.heightAtSize(50); 
             const { width: pageWidth, height: pageHeight } = page.getSize();
             
             page.drawText(watermarkText, {
                 x: pageWidth / 2 - textWidth / 2,
-                y: pageHeight / 2 - textHeight / 4, // Adjusted for better centering
+                y: pageHeight / 2 - textHeight / 4, 
                 font: helveticaFont,
                 size: 50,
-                color: rgb(0.75, 0.75, 0.75), // Lighter grey
+                color: rgb(0.75, 0.75, 0.75), 
                 opacity: 0.3,
                 rotate: degrees(45),
             });
@@ -590,11 +590,15 @@ export default function PdfEditorHomepage() {
                         </Button>
                     </div>
                 ) : (
-                    <Link href="/login" passHref>
-                        <Button variant="ghost" size="sm">
-                            <LogIn className="mr-2 h-4 w-4"/> {texts.login}
-                        </Button>
-                    </Link>
+                   <div className="flex items-center gap-2">
+                        <UserCircle className="h-5 w-5 text-muted-foreground" />
+                         <span className="text-sm text-muted-foreground">{texts.guest}</span>
+                        <Link href="/login" passHref>
+                            <Button variant="ghost" size="sm">
+                                <LogIn className="mr-2 h-4 w-4"/> {texts.login}
+                            </Button>
+                        </Link>
+                    </div>
                 )}
             </div>
         </div>
@@ -744,4 +748,3 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
-

@@ -5,6 +5,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import * as pdfjsLib from 'pdfjs-dist';
+import type { PDFDocumentProxy as PDFDocumentProxyType } from 'pdfjs-dist'; // Import type
 import { PDFDocument as PDFLibDocument, StandardFonts, rgb, degrees } from 'pdf-lib';
 import Sortable from 'sortablejs';
 
@@ -16,7 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter } from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle } from 'lucide-react';
+import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText } from 'lucide-react';
 
 if (typeof window !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
@@ -24,10 +25,11 @@ if (typeof window !== 'undefined') {
 
 const translations = {
     en: {
-        pageTitle: 'PDF Page Editor',
+        pageTitle: 'DocuPilot',
         uploadLabel: 'Select PDF file to edit:',
         deletePages: 'Delete Selected',
-        downloadPdf: 'Download Edited',
+        downloadPdf: 'Download Edited PDF',
+        downloadTxt: 'Download as TXT',
         insertAreaTitle: 'Insert PDF',
         insertOptionsTitle: 'Insertion Options',
         insertBeforeLabel: 'Insert before selected page',
@@ -41,8 +43,10 @@ const translations = {
         rotateRight: 'Rotate Right 90°',
         resetRotation: 'Reset Rotation',
         generatingFile: 'Generating file, please wait…',
+        extractingText: 'Extracting text, please wait...',
         loadError: 'Failed to load PDF',
         downloadError: 'Failed to download PDF',
+        txtDownloadError: 'Failed to download TXT',
         insertError: 'Failed to insert PDF',
         insertConfirmTitle: 'Confirm Insert Position',
         insertConfirmDescription: 'No page is selected. The new PDF will be inserted at the end of the current document. Continue?',
@@ -57,6 +61,7 @@ const translations = {
         page: 'Page',
         uploadPdfFirst: 'Please upload a PDF first to enable this feature.',
         noPagesToDownload: 'No pages to download.',
+        noPdfToExtractText: 'No PDF loaded to extract text from.',
         noPageSelected: 'No page selected.',
         loadingPdf: 'Loading PDF...',
         insertingPdf: 'Inserting PDF...',
@@ -71,10 +76,11 @@ const translations = {
         guest: 'Guest',
     },
     zh: {
-        pageTitle: 'PDF 頁面編輯工具',
+        pageTitle: 'DocuPilot 文件助手',
         uploadLabel: '選擇要編輯的 PDF 檔案：',
         deletePages: '刪除選取',
-        downloadPdf: '下載編輯後檔案',
+        downloadPdf: '下載編輯後 PDF',
+        downloadTxt: '下載為 TXT 檔案',
         insertAreaTitle: '插入 PDF',
         insertOptionsTitle: '插入選項',
         insertBeforeLabel: '插入此頁之前',
@@ -88,8 +94,10 @@ const translations = {
         rotateRight: '向右旋轉90°',
         resetRotation: '重置旋轉',
         generatingFile: '正在產生檔案，請稍候…',
+        extractingText: '正在提取文字，請稍候...',
         loadError: '載入 PDF 失敗',
         downloadError: '下載 PDF 失敗',
+        txtDownloadError: '下載 TXT 失敗',
         insertError: '插入 PDF 失敗',
         insertConfirmTitle: '確認插入位置',
         insertConfirmDescription: '尚未選取頁面。新 PDF 將插入到文件的末尾。是否繼續？',
@@ -104,6 +112,7 @@ const translations = {
         page: '頁',
         uploadPdfFirst: '請先上傳 PDF 檔案以使用此功能。',
         noPagesToDownload: '沒有可下載的頁面。',
+        noPdfToExtractText: '未載入 PDF 以提取文字。',
         noPageSelected: '未選取任何頁面。',
         loadingPdf: '正在載入 PDF...',
         insertingPdf: '正在插入 PDF...',
@@ -121,7 +130,7 @@ const translations = {
 
 const DAILY_DOWNLOAD_LIMIT = 3;
 
-export default function PdfEditorHomepage() {
+export default function DocuPilotHomepage() {
   const router = useRouter();
   const { toast } = useToast();
 
@@ -134,25 +143,27 @@ export default function PdfEditorHomepage() {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isExtractingText, setIsExtractingText] = useState(false);
   const [insertPosition, setInsertPosition] = useState<'before' | 'after'>('before');
   const [isInsertConfirmOpen, setIsInsertConfirmOpen] = useState(false);
   const [pendingInsertFile, setPendingInsertFile] = useState<File | null>(null);
   const [watermarkText, setWatermarkText] = useState('');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Initialize to false
+  const [isLoggedIn, setIsLoggedIn] = useState(false); 
+  const [pdfDocumentProxy, setPdfDocumentProxy] = useState<PDFDocumentProxyType | null>(null);
+
 
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const zoomCanvasRef = useRef<HTMLCanvasElement>(null);
   const pdfUploadRef = useRef<HTMLInputElement>(null);
   const insertPdfRef = useRef<HTMLInputElement>(null);
   const sortableInstanceRef = useRef<Sortable | null>(null);
-
+  
   useEffect(() => {
-    // Check login status from localStorage after component mounts
     if (typeof window !== 'undefined') {
       setIsLoggedIn(localStorage.getItem('isLoggedIn') === 'true');
     }
-  }, []); // Empty dependency array ensures this runs once on mount
+  }, []); 
   
   useEffect(() => {
     setTexts(translations[currentLanguage]);
@@ -263,8 +274,8 @@ export default function PdfEditorHomepage() {
       const baseWidth = sourceCanvas.width;
       const baseHeight = sourceCanvas.height;
       
-      const modalContentElement = canvas.parentElement?.parentElement; // DialogContent
-      const modalContentWidth = modalContentElement?.clientWidth ? modalContentElement.clientWidth - 64 : 800 - 64; // Subtract padding
+      const modalContentElement = canvas.parentElement?.parentElement; 
+      const modalContentWidth = modalContentElement?.clientWidth ? modalContentElement.clientWidth - 64 : 800 - 64; 
       const modalContentHeight = window.innerHeight * 0.7;
 
 
@@ -299,7 +310,7 @@ export default function PdfEditorHomepage() {
     }
   }, [zoomedPageData, currentRotation]);
 
-  const processPdfFile = async (file: File): Promise<HTMLCanvasElement[]> => {
+  const processPdfFile = async (file: File): Promise<{ canvases: HTMLCanvasElement[], docProxy: PDFDocumentProxyType }> => {
     const arrayBuffer = await file.arrayBuffer();
     const pdfDocProxy = await pdfjsLib.getDocument({
       data: arrayBuffer,
@@ -320,7 +331,7 @@ export default function PdfEditorHomepage() {
       await page.render({ canvasContext: ctx, viewport }).promise;
       loadedCanvases.push(canvas);
     }
-    return loadedCanvases;
+    return { canvases: loadedCanvases, docProxy: pdfDocProxy };
   };
 
   const handlePdfUpload = async (event: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLDivElement>) => {
@@ -344,11 +355,13 @@ export default function PdfEditorHomepage() {
     setIsLoading(true);
     setLoadingMessage(texts.loadingPdf);
     try {
-      const loadedCanvases = await processPdfFile(file);
-      setPages(loadedCanvases);
+      const { canvases, docProxy } = await processPdfFile(file);
+      setPages(canvases);
+      setPdfDocumentProxy(docProxy);
       setSelectedPages(new Set());
     } catch (err: any) {
       toast({ title: texts.loadError, description: err.message, variant: "destructive" });
+      setPdfDocumentProxy(null);
     } finally {
       setIsLoading(false);
       setLoadingMessage('');
@@ -375,7 +388,7 @@ export default function PdfEditorHomepage() {
 
     if (!isLoggedIn && typeof window !== 'undefined') {
       const today = new Date().toISOString().split('T')[0];
-      let downloadInfoString = localStorage.getItem('pdfEditorDownloadInfo');
+      let downloadInfoString = localStorage.getItem('DocuPilotDownloadInfo');
       let downloadInfo = downloadInfoString ? JSON.parse(downloadInfoString) : { count: 0, date: today };
 
       if (downloadInfo.date !== today) {
@@ -387,7 +400,7 @@ export default function PdfEditorHomepage() {
         return;
       }
       downloadInfo.count++;
-      localStorage.setItem('pdfEditorDownloadInfo', JSON.stringify(downloadInfo));
+      localStorage.setItem('DocuPilotDownloadInfo', JSON.stringify(downloadInfo));
     }
 
     setIsDownloading(true);
@@ -423,7 +436,7 @@ export default function PdfEditorHomepage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'edited_document.pdf';
+      a.download = 'DocuPilot_edited.pdf';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -435,6 +448,60 @@ export default function PdfEditorHomepage() {
       setIsDownloading(false);
     }
   };
+
+  const handleDownloadTxt = async () => {
+    if (!pdfDocumentProxy) {
+      toast({ title: texts.txtDownloadError, description: texts.noPdfToExtractText, variant: "destructive" });
+      return;
+    }
+
+     if (!isLoggedIn && typeof window !== 'undefined') {
+      const today = new Date().toISOString().split('T')[0];
+      let downloadInfoString = localStorage.getItem('DocuPilotDownloadInfo');
+      let downloadInfo = downloadInfoString ? JSON.parse(downloadInfoString) : { count: 0, date: today };
+
+      if (downloadInfo.date !== today) {
+        downloadInfo = { count: 0, date: today };
+      }
+
+      if (downloadInfo.count >= DAILY_DOWNLOAD_LIMIT) {
+        setShowPaymentModal(true);
+        return;
+      }
+      downloadInfo.count++;
+      localStorage.setItem('DocuPilotDownloadInfo', JSON.stringify(downloadInfo));
+    }
+
+    setIsExtractingText(true);
+    setLoadingMessage(texts.extractingText)
+    try {
+      let fullText = '';
+      for (let i = 1; i <= pdfDocumentProxy.numPages; i++) {
+        const page = await pdfDocumentProxy.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map((item: any) => item.str).join(' ');
+        fullText += pageText + '\n\n'; // Add double newline between pages
+      }
+
+      const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'DocuPilot_extracted_text.txt';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({ title: texts.downloadTxt, description: "Text extracted and downloaded successfully!" });
+
+    } catch (err: any) {
+      toast({ title: texts.txtDownloadError, description: err.message, variant: "destructive" });
+    } finally {
+      setIsExtractingText(false);
+      setLoadingMessage('');
+    }
+  };
+
 
   const handleInsertPdfFileSelected = (event: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLDivElement>) => {
     let file: File | null = null;
@@ -469,7 +536,7 @@ export default function PdfEditorHomepage() {
     setIsLoading(true);
     setLoadingMessage(texts.insertingPdf);
     try {
-      const insertCanvases = await processPdfFile(file);
+      const { canvases: insertCanvases } = await processPdfFile(file); // Don't need docProxy for insert
       let insertIdx = pages.length; 
       if (selectedPages.size > 0) {
         const firstSelected = Math.min(...Array.from(selectedPages));
@@ -519,11 +586,11 @@ export default function PdfEditorHomepage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {(isLoading || isDownloading) && (
+      {(isLoading || isDownloading || isExtractingText) && (
         <div className="fixed inset-0 bg-black/50 z-50 flex flex-col items-center justify-center">
           <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
           <p className="text-white text-lg">
-            {isLoading ? loadingMessage : texts.generatingFile}
+            {isLoading ? loadingMessage : (isDownloading ? texts.generatingFile : texts.extractingText)}
           </p>
         </div>
       )}
@@ -646,6 +713,10 @@ export default function PdfEditorHomepage() {
                   {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                   {texts.downloadPdf}
                 </Button>
+                 <Button onClick={handleDownloadTxt} disabled={!pdfDocumentProxy || isExtractingText} className="w-full">
+                  {isExtractingText ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+                  {texts.downloadTxt}
+                </Button>
               </CardContent>
             </Card>
 
@@ -759,5 +830,3 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
-
-    

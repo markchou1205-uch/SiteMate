@@ -180,7 +180,6 @@ export default function PdfEditorHomepage() {
     }
     setIsLoggedIn(false);
     toast({ title: texts.logout, description: "You have been logged out." });
-    // No need to router.refresh() here, state update will re-render.
   };
 
   const renderPagePreviews = useCallback(() => {
@@ -537,7 +536,7 @@ export default function PdfEditorHomepage() {
     setIsLoading(true);
     setLoadingMessage(texts.insertingPdf);
     try {
-      const { canvases: insertCanvases } = await processPdfFile(file); // Don't need docProxy for insert
+      const { canvases: insertCanvases } = await processPdfFile(file); 
       let insertIdx = pages.length; 
       if (selectedPages.size > 0) {
         const firstSelected = Math.min(...Array.from(selectedPages));
@@ -683,62 +682,8 @@ export default function PdfEditorHomepage() {
       
       <div className="container mx-auto p-4 md:p-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Left Column */}
           <div className="md:col-span-1 space-y-6">
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center text-xl"><Upload className="mr-2 h-5 w-5 text-primary" /> {texts.fileOperations}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="pdfUploadInput" className="mb-2 block cursor-pointer text-sm font-medium">{texts.uploadLabel}</Label>
-                  <div 
-                    className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer"
-                    onClick={() => pdfUploadRef.current?.click()}
-                    onDragOver={commonDragEvents.onDragOver}
-                    onDragLeave={commonDragEvents.onDragLeave}
-                    onDrop={(e) => commonDragEvents.onDrop(e, handlePdfUpload)}
-                  >
-                    <Upload className="h-10 w-10 text-muted-foreground mb-2" />
-                    <p className="text-sm text-muted-foreground text-center">{texts.dropFileHere}</p>
-                  </div>
-                  <Input 
-                    type="file" 
-                    id="pdfUploadInput" 
-                    accept="application/pdf" 
-                    onChange={handlePdfUpload} 
-                    ref={pdfUploadRef} 
-                    className="hidden"
-                  />
-                </div>
-                <Button onClick={handleDownloadPdf} disabled={pages.length === 0 || isDownloading} className="w-full">
-                  {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                  {texts.downloadPdf}
-                </Button>
-                 <Button onClick={handleDownloadTxt} disabled={!pdfDocumentProxy || isExtractingText} className="w-full">
-                  {isExtractingText ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
-                  {texts.downloadTxt}
-                </Button>
-              </CardContent>
-            </Card>
-
-            {pages.length > 0 && (
-              <Card className="shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-xl"><Droplet className="mr-2 h-5 w-5 text-primary" /> {texts.watermarkSectionTitle}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Label htmlFor="watermarkInput" className="mb-2 block text-sm font-medium">{texts.watermarkInputPlaceholder}</Label>
-                  <Input
-                    id="watermarkInput"
-                    type="text"
-                    placeholder={texts.watermarkInputPlaceholder}
-                    value={watermarkText}
-                    onChange={(e) => setWatermarkText(e.target.value)}
-                  />
-                </CardContent>
-              </Card>
-            )}
-            
             {pages.length > 0 && (
               <Card className="shadow-lg">
                 <CardHeader>
@@ -782,6 +727,24 @@ export default function PdfEditorHomepage() {
               </Card>
             )}
 
+            {pages.length > 0 && (
+              <Card className="shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-xl"><Droplet className="mr-2 h-5 w-5 text-primary" /> {texts.watermarkSectionTitle}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Label htmlFor="watermarkInput" className="mb-2 block text-sm font-medium">{texts.watermarkInputPlaceholder}</Label>
+                  <Input
+                    id="watermarkInput"
+                    type="text"
+                    placeholder={texts.watermarkInputPlaceholder}
+                    value={watermarkText}
+                    onChange={(e) => setWatermarkText(e.target.value)}
+                  />
+                </CardContent>
+              </Card>
+            )}
+            
             <Card className="shadow-lg">
                 <CardHeader>
                     <CardTitle className="flex items-center text-xl"><Info className="mr-2 h-5 w-5 text-primary" /> {texts.tools}</CardTitle>
@@ -797,9 +760,47 @@ export default function PdfEditorHomepage() {
             </Card>
           </div>
 
-          <div className="md:col-span-2">
+          {/* Right Column */}
+          <div className="md:col-span-2 space-y-6">
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center text-xl"><Upload className="mr-2 h-5 w-5 text-primary" /> {texts.fileOperations}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="pdfUploadInput" className="mb-2 block cursor-pointer text-sm font-medium">{texts.uploadLabel}</Label>
+                  <div 
+                    className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer"
+                    onClick={() => pdfUploadRef.current?.click()}
+                    onDragOver={commonDragEvents.onDragOver}
+                    onDragLeave={commonDragEvents.onDragLeave}
+                    onDrop={(e) => commonDragEvents.onDrop(e, handlePdfUpload)}
+                  >
+                    <Upload className="h-10 w-10 text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground text-center">{texts.dropFileHere}</p>
+                  </div>
+                  <Input 
+                    type="file" 
+                    id="pdfUploadInput" 
+                    accept="application/pdf" 
+                    onChange={handlePdfUpload} 
+                    ref={pdfUploadRef} 
+                    className="hidden"
+                  />
+                </div>
+                <Button onClick={handleDownloadPdf} disabled={pages.length === 0 || isDownloading} className="w-full">
+                  {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                  {texts.downloadPdf}
+                </Button>
+                 <Button onClick={handleDownloadTxt} disabled={!pdfDocumentProxy || isExtractingText} className="w-full">
+                  {isExtractingText ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+                  {texts.downloadTxt}
+                </Button>
+              </CardContent>
+            </Card>
+            
             {pages.length > 0 ? (
-              <Card className="shadow-lg min-h-[calc(100vh-12rem)] md:min-h-[calc(100vh-10rem)]">
+              <Card className="shadow-lg min-h-[calc(100vh-20rem)] md:min-h-[calc(100vh-18rem)]"> {/* Adjusted min-height */}
                 <CardHeader>
                   <CardTitle className="flex items-center text-xl"><Shuffle className="mr-2 h-5 w-5 text-primary" /> {texts.pageManagement}</CardTitle>
                   <CardDescription> {pages.length} {pages.length === 1 ? texts.page.toLowerCase() : (currentLanguage === 'zh' ? texts.page.toLowerCase() : texts.page.toLowerCase() + 's')} loaded. {selectedPages.size > 0 ? `${texts.page} ${Array.from(selectedPages)[0]+1} selected.` : ''} </CardDescription>
@@ -814,7 +815,7 @@ export default function PdfEditorHomepage() {
                 </CardContent>
               </Card>
             ) : (
-              <Card className="shadow-lg min-h-[calc(100vh-12rem)] md:min-h-[calc(100vh-10rem)] flex flex-col items-center justify-center bg-muted/30">
+              <Card className="shadow-lg min-h-[calc(100vh-20rem)] md:min-h-[calc(100vh-18rem)] flex flex-col items-center justify-center bg-muted/30"> {/* Adjusted min-height */}
                 <CardContent className="text-center">
                   <Search className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                   <p className="text-xl font-semibold text-muted-foreground">{texts.pageTitle}</p>
@@ -831,3 +832,4 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
+ 

@@ -139,7 +139,7 @@ export default function PdfEditorHomepage() {
   const [pendingInsertFile, setPendingInsertFile] = useState<File | null>(null);
   const [watermarkText, setWatermarkText] = useState('');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // Initialize to false
 
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const zoomCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -148,10 +148,11 @@ export default function PdfEditorHomepage() {
   const sortableInstanceRef = useRef<Sortable | null>(null);
 
   useEffect(() => {
+    // Check login status from localStorage after component mounts
     if (typeof window !== 'undefined') {
       setIsLoggedIn(localStorage.getItem('isLoggedIn') === 'true');
     }
-  }, []);
+  }, []); // Empty dependency array ensures this runs once on mount
   
   useEffect(() => {
     setTexts(translations[currentLanguage]);
@@ -758,3 +759,5 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
+
+    

@@ -1,10 +1,11 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
   title: 'DocuPilot',
-  description: 'AI-powered website builder',
+  description: 'AI 助力的文件編輯與轉換工具',
 };
 
 export default function RootLayout({

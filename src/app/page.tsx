@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import * as pdfjsLib from 'pdfjs-dist';
-import type { PDFDocumentProxy as PDFDocumentProxyType } from 'pdfjs-dist'; // Import type
+import type { PDFDocumentProxy as PDFDocumentProxyType } from 'pdfjs-dist';
 import { PDFDocument as PDFLibDocument, StandardFonts, rgb, degrees } from 'pdf-lib';
 import Sortable from 'sortablejs';
 
@@ -17,7 +17,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter } from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText } from 'lucide-react';
+import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, FileType } from 'lucide-react';
+
+import { storage, functions as firebaseFunctions } from '@/lib/firebase'; // Firebase SDK
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { httpsCallable } from 'firebase/functions';
+
 
 if (typeof window !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
@@ -30,6 +35,8 @@ const translations = {
         deletePages: 'Delete Selected',
         downloadPdf: 'Download Edited PDF',
         downloadTxt: 'Download as TXT',
+        convertToWord: 'Convert to Word',
+        convertingToWord: 'Converting to Word...',
         insertAreaTitle: 'Insert PDF',
         insertOptionsTitle: 'Insertion Options',
         insertBeforeLabel: 'Insert before selected page',
@@ -47,6 +54,11 @@ const translations = {
         loadError: 'Failed to load PDF',
         downloadError: 'Failed to download PDF',
         txtDownloadError: 'Failed to download TXT',
+        wordConvertError: 'Failed to convert to Word',
+        wordConvertLimitTitle: 'Conversion Limit Reached',
+        wordConvertLimitDescription: 'Guests can convert one PDF to Word per day. Please log in for unlimited conversions.',
+        wordConvertSuccess: 'Conversion successful!',
+        downloadWordFile: 'Click here to download Word file',
         insertError: 'Failed to insert PDF',
         insertConfirmTitle: 'Confirm Insert Position',
         insertConfirmDescription: 'No page is selected. The new PDF will be inserted at the end of the current document. Continue?',
@@ -62,6 +74,7 @@ const translations = {
         uploadPdfFirst: 'Please upload a PDF first to enable this feature.',
         noPagesToDownload: 'No pages to download.',
         noPdfToExtractText: 'No PDF loaded to extract text from.',
+        noPdfToConvert: 'No PDF loaded to convert.',
         noPageSelected: 'No page selected.',
         loadingPdf: 'Loading PDF...',
         insertingPdf: 'Inserting PDF...',
@@ -74,6 +87,7 @@ const translations = {
         login: 'Login',
         logout: 'Logout',
         guest: 'Guest',
+        firebaseNotConfigured: 'Firebase is not configured. Conversion to Word is disabled. Please check your .env file.'
     },
     zh: {
         pageTitle: 'DocuPilot 文件助手',
@@ -81,6 +95,8 @@ const translations = {
         deletePages: '刪除選取',
         downloadPdf: '下載編輯後 PDF',
         downloadTxt: '下載為 TXT 檔案',
+        convertToWord: '轉換為 Word',
+        convertingToWord: '正在轉換為 Word...',
         insertAreaTitle: '插入 PDF',
         insertOptionsTitle: '插入選項',
         insertBeforeLabel: '插入此頁之前',
@@ -98,6 +114,11 @@ const translations = {
         loadError: '載入 PDF 失敗',
         downloadError: '下載 PDF 失敗',
         txtDownloadError: '下載 TXT 失敗',
+        wordConvertError: '轉換 Word 失敗',
+        wordConvertLimitTitle: '已達轉換上限',
+        wordConvertLimitDescription: '訪客每日僅可轉換一份 PDF 至 Word。請登入以享受無限轉換次數。',
+        wordConvertSuccess: '轉換成功！',
+        downloadWordFile: '點此下載 Word 檔案',
         insertError: '插入 PDF 失敗',
         insertConfirmTitle: '確認插入位置',
         insertConfirmDescription: '尚未選取頁面。新 PDF 將插入到文件的末尾。是否繼續？',
@@ -113,6 +134,7 @@ const translations = {
         uploadPdfFirst: '請先上傳 PDF 檔案以使用此功能。',
         noPagesToDownload: '沒有可下載的頁面。',
         noPdfToExtractText: '未載入 PDF 以提取文字。',
+        noPdfToConvert: '未載入 PDF 以進行轉換。',
         noPageSelected: '未選取任何頁面。',
         loadingPdf: '正在載入 PDF...',
         insertingPdf: '正在插入 PDF...',
@@ -125,10 +147,18 @@ const translations = {
         login: '登入',
         logout: '登出',
         guest: '訪客',
+        firebaseNotConfigured: 'Firebase 尚未設定。無法使用轉換 Word 功能。請檢查您的 .env 檔案。'
     }
 };
 
 const DAILY_DOWNLOAD_LIMIT = 3;
+const DAILY_WORD_CONVERSION_LIMIT = 1;
+
+// Check if Firebase is configured
+const isFirebaseConfigured =
+  process.env.NEXT_PUBLIC_FIREBASE_API_KEY &&
+  process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+
 
 export default function PdfEditorHomepage() {
   const router = useRouter();
@@ -138,8 +168,8 @@ export default function PdfEditorHomepage() {
   const [selectedPages, setSelectedPages] = useState<Set<number>>(new Set());
   const [zoomedPageData, setZoomedPageData] = useState<{ canvas: HTMLCanvasElement, index: number } | null>(null);
   const [currentRotation, setCurrentRotation] = useState(0);
-  const [currentLanguage, setCurrentLanguage] = useState<'en' | 'zh'>('en');
-  const [texts, setTexts] = useState(translations.en);
+  const [currentLanguage, setCurrentLanguage] = useState<'en' | 'zh'>('zh'); // Default to Chinese
+  const [texts, setTexts] = useState(translations.zh);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
@@ -149,8 +179,14 @@ export default function PdfEditorHomepage() {
   const [pendingInsertFile, setPendingInsertFile] = useState<File | null>(null);
   const [watermarkText, setWatermarkText] = useState('');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false); 
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [pdfDocumentProxy, setPdfDocumentProxy] = useState<PDFDocumentProxyType | null>(null);
+  const [uploadedPdfFile, setUploadedPdfFile] = useState<File | null>(null); // Store original PDF file
+
+  const [isConvertingToWord, setIsConvertingToWord] = useState(false);
+  const [wordFileUrl, setWordFileUrl] = useState<string | null>(null);
+  const [wordConversionError, setWordConversionError] = useState<string | null>(null);
+  const [showWordLimitModal, setShowWordLimitModal] = useState(false);
 
 
   const previewContainerRef = useRef<HTMLDivElement>(null);
@@ -158,14 +194,32 @@ export default function PdfEditorHomepage() {
   const pdfUploadRef = useRef<HTMLInputElement>(null);
   const insertPdfRef = useRef<HTMLInputElement>(null);
   const sortableInstanceRef = useRef<Sortable | null>(null);
-  
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const loggedInStatus = localStorage.getItem('isLoggedIn') === 'true';
       setIsLoggedIn(loggedInStatus);
+
+      // Load download limit info
+      const today = new Date().toISOString().split('T')[0];
+      let downloadInfoString = localStorage.getItem('DocuPilotDownloadInfo');
+      if (downloadInfoString) {
+        let downloadInfo = JSON.parse(downloadInfoString);
+        if (downloadInfo.date !== today) {
+          localStorage.removeItem('DocuPilotDownloadInfo');
+        }
+      }
+       // Load word conversion limit info
+      let wordConversionInfoString = localStorage.getItem('DocuPilotWordConversionInfo');
+      if (wordConversionInfoString) {
+        let wordInfo = JSON.parse(wordConversionInfoString);
+        if (wordInfo.date !== today) {
+            localStorage.removeItem('DocuPilotWordConversionInfo');
+        }
+      }
     }
-  }, []); 
-  
+  }, []);
+
   useEffect(() => {
     setTexts(translations[currentLanguage]);
   }, [currentLanguage]);
@@ -179,7 +233,7 @@ export default function PdfEditorHomepage() {
       localStorage.removeItem('isLoggedIn');
     }
     setIsLoggedIn(false);
-    toast({ title: texts.logout, description: "You have been logged out." });
+    toast({ title: texts.logout, description: "您已成功登出。" });
   };
 
   const renderPagePreviews = useCallback(() => {
@@ -189,8 +243,8 @@ export default function PdfEditorHomepage() {
       sortableInstanceRef.current.destroy();
       sortableInstanceRef.current = null;
     }
-    
-    previewContainerRef.current.innerHTML = ''; 
+
+    previewContainerRef.current.innerHTML = '';
 
     pages.forEach((pageCanvas, index) => {
       const wrapper = document.createElement('div');
@@ -202,17 +256,17 @@ export default function PdfEditorHomepage() {
       if (!previewCtx) return;
 
       const aspectRatio = pageCanvas.width / pageCanvas.height;
-      const displayWidth = 120; 
+      const displayWidth = 120;
       const displayHeight = displayWidth / aspectRatio;
 
-      previewDisplayCanvas.width = pageCanvas.width; 
+      previewDisplayCanvas.width = pageCanvas.width;
       previewDisplayCanvas.height = pageCanvas.height;
       previewCtx.drawImage(pageCanvas, 0, 0);
-      
+
       previewDisplayCanvas.style.width = `${displayWidth}px`;
       previewDisplayCanvas.style.height = `${displayHeight}px`;
       previewDisplayCanvas.className = "rounded-md shadow-md";
-      
+
       const pageNumberDiv = document.createElement('div');
       pageNumberDiv.className = "text-xs text-muted-foreground mt-1 text-center";
       pageNumberDiv.textContent = `${texts.page} ${index + 1}`;
@@ -221,7 +275,7 @@ export default function PdfEditorHomepage() {
       wrapper.appendChild(pageNumberDiv);
 
       wrapper.addEventListener('click', () => {
-        const newSelectedPages = new Set<number>(); 
+        const newSelectedPages = new Set<number>();
         if (!selectedPages.has(index)) {
             newSelectedPages.add(index);
         }
@@ -239,7 +293,7 @@ export default function PdfEditorHomepage() {
       sortableInstanceRef.current = Sortable.create(previewContainerRef.current, {
         animation: 150,
         ghostClass: 'opacity-50',
-        chosenClass: 'shadow-2xl', 
+        chosenClass: 'shadow-2xl',
         dragClass: 'opacity-75',
         onEnd: (evt) => {
           if (evt.oldIndex === undefined || evt.newIndex === undefined) return;
@@ -247,7 +301,7 @@ export default function PdfEditorHomepage() {
           const [movedItem] = reorderedPages.splice(evt.oldIndex, 1);
           reorderedPages.splice(evt.newIndex, 0, movedItem);
           setPages(reorderedPages);
-          
+
           const newSelected = new Set<number>();
           if (selectedPages.has(evt.oldIndex)) {
             newSelected.add(evt.newIndex);
@@ -273,28 +327,28 @@ export default function PdfEditorHomepage() {
       const sourceCanvas = zoomedPageData.canvas;
       const baseWidth = sourceCanvas.width;
       const baseHeight = sourceCanvas.height;
-      
-      const modalContentElement = canvas.parentElement?.parentElement; 
-      const modalContentWidth = modalContentElement?.clientWidth ? modalContentElement.clientWidth - 64 : 800 - 64; 
+
+      const modalContentElement = canvas.parentElement?.parentElement;
+      const modalContentWidth = modalContentElement?.clientWidth ? modalContentElement.clientWidth - 64 : 800 - 64;
       const modalContentHeight = window.innerHeight * 0.7;
 
 
       let scaleX = modalContentWidth / baseWidth;
       let scaleY = modalContentHeight / baseHeight;
-      
-      if (currentRotation % 180 !== 0) { 
+
+      if (currentRotation % 180 !== 0) {
         scaleX = modalContentWidth / baseHeight;
         scaleY = modalContentHeight / baseWidth;
       }
-      
-      const currentScale = Math.min(scaleX, scaleY, 2); 
+
+      const currentScale = Math.min(scaleX, scaleY, 2);
 
       let displayWidth = baseWidth * currentScale;
       let displayHeight = baseHeight * currentScale;
 
       canvas.width = currentRotation % 180 === 0 ? displayWidth : displayHeight;
       canvas.height = currentRotation % 180 === 0 ? displayHeight : displayWidth;
-      
+
       ctx.save();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.translate(canvas.width / 2, canvas.height / 2);
@@ -317,12 +371,12 @@ export default function PdfEditorHomepage() {
       cMapUrl: `//cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
       cMapPacked: true,
     }).promise;
-    
+
     const numPages = pdfDocProxy.numPages;
     const loadedCanvases: HTMLCanvasElement[] = [];
     for (let i = 1; i <= numPages; i++) {
       const page = await pdfDocProxy.getPage(i);
-      const viewport = page.getViewport({ scale: 1.5 }); 
+      const viewport = page.getViewport({ scale: 1.5 });
       const canvas = document.createElement('canvas');
       canvas.width = viewport.width;
       canvas.height = viewport.height;
@@ -336,21 +390,24 @@ export default function PdfEditorHomepage() {
 
   const handlePdfUpload = async (event: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLDivElement>) => {
     let file: File | null = null;
-    if ('dataTransfer' in event) { 
+    if ('dataTransfer' in event) {
         event.preventDefault();
         event.stopPropagation();
         if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
             file = event.dataTransfer.files[0];
             event.dataTransfer.clearData();
         }
-    } else { 
+    } else {
         file = event.target.files?.[0] || null;
     }
 
     if (!file || !file.type.includes('pdf')) {
-        if (file) toast({ title: texts.loadError, description: "Invalid file type. Please upload a PDF.", variant: "destructive" });
+        if (file) toast({ title: texts.loadError, description: "無效的檔案類型。請上傳 PDF。", variant: "destructive" });
         return;
     }
+    setUploadedPdfFile(file); // Store the original file
+    setWordFileUrl(null); // Reset word download link
+    setWordConversionError(null); // Reset word conversion error
 
     setIsLoading(true);
     setLoadingMessage(texts.loadingPdf);
@@ -362,6 +419,7 @@ export default function PdfEditorHomepage() {
     } catch (err: any) {
       toast({ title: texts.loadError, description: err.message, variant: "destructive" });
       setPdfDocumentProxy(null);
+      setUploadedPdfFile(null);
     } finally {
       setIsLoading(false);
       setLoadingMessage('');
@@ -377,7 +435,12 @@ export default function PdfEditorHomepage() {
     const newPages = pages.filter((_, idx) => !selectedPages.has(idx));
     setPages(newPages);
     setSelectedPages(new Set());
-    toast({ title: texts.pageManagement, description: "Selected page(s) deleted." });
+    // If all pages are deleted, reset pdfDocumentProxy and uploadedPdfFile
+    if (newPages.length === 0) {
+        setPdfDocumentProxy(null);
+        setUploadedPdfFile(null);
+    }
+    toast({ title: texts.pageManagement, description: "選取的頁面已刪除。" });
   };
 
   const handleDownloadPdf = async () => {
@@ -392,7 +455,7 @@ export default function PdfEditorHomepage() {
       let downloadInfo = downloadInfoString ? JSON.parse(downloadInfoString) : { count: 0, date: today };
 
       if (downloadInfo.date !== today) {
-        downloadInfo = { count: 0, date: today };
+        downloadInfo = { count: 0, date: today }; // Reset for new day
       }
 
       if (downloadInfo.count >= DAILY_DOWNLOAD_LIMIT) {
@@ -404,28 +467,29 @@ export default function PdfEditorHomepage() {
     }
 
     setIsDownloading(true);
+    setLoadingMessage(texts.generatingFile);
     try {
-      await new Promise(resolve => setTimeout(resolve, 100)); 
+      await new Promise(resolve => setTimeout(resolve, 100));
       const pdfDocOut = await PDFLibDocument.create();
       const helveticaFont = await pdfDocOut.embedFont(StandardFonts.Helvetica);
-      
+
       for (let canvas of pages) {
-        const imgDataUrl = canvas.toDataURL('image/png'); 
+        const imgDataUrl = canvas.toDataURL('image/png');
         const pngImage = await pdfDocOut.embedPng(imgDataUrl);
         const page = pdfDocOut.addPage([canvas.width, canvas.height]);
         page.drawImage(pngImage, { x: 0, y: 0, width: canvas.width, height: canvas.height });
 
         if (watermarkText.trim() !== '') {
             const textWidth = helveticaFont.widthOfTextAtSize(watermarkText, 50);
-            const textHeight = helveticaFont.heightAtSize(50); 
+            const textHeight = helveticaFont.heightAtSize(50);
             const { width: pageWidth, height: pageHeight } = page.getSize();
-            
+
             page.drawText(watermarkText, {
                 x: pageWidth / 2 - textWidth / 2,
-                y: pageHeight / 2 - textHeight / 4, 
+                y: pageHeight / 2 - textHeight / 4,
                 font: helveticaFont,
                 size: 50,
-                color: rgb(0.75, 0.75, 0.75), 
+                color: rgb(0.75, 0.75, 0.75),
                 opacity: 0.3,
                 rotate: degrees(45),
             });
@@ -441,11 +505,12 @@ export default function PdfEditorHomepage() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      toast({ title: texts.downloadPdf, description: "PDF downloaded successfully!" });
+      toast({ title: texts.downloadPdf, description: "PDF 下載成功！" });
     } catch (err: any) {
       toast({ title: texts.downloadError, description: err.message, variant: "destructive" });
     } finally {
       setIsDownloading(false);
+      setLoadingMessage('');
     }
   };
 
@@ -480,7 +545,7 @@ export default function PdfEditorHomepage() {
         const page = await pdfDocumentProxy.getPage(i);
         const textContent = await page.getTextContent();
         const pageText = textContent.items.map((item: any) => item.str).join(' ');
-        fullText += pageText + '\n\n'; // Add double newline between pages
+        fullText += pageText + '\n\n';
       }
 
       const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
@@ -492,7 +557,7 @@ export default function PdfEditorHomepage() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      toast({ title: texts.downloadTxt, description: "Text extracted and downloaded successfully!" });
+      toast({ title: texts.downloadTxt, description: "文字提取並下載成功！" });
 
     } catch (err: any) {
       toast({ title: texts.txtDownloadError, description: err.message, variant: "destructive" });
@@ -505,19 +570,19 @@ export default function PdfEditorHomepage() {
 
   const handleInsertPdfFileSelected = (event: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLDivElement>) => {
     let file: File | null = null;
-    if ('dataTransfer' in event) { 
+    if ('dataTransfer' in event) {
         event.preventDefault();
         event.stopPropagation();
         if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
             file = event.dataTransfer.files[0];
             event.dataTransfer.clearData();
         }
-    } else { 
+    } else {
         file = event.target.files?.[0] || null;
     }
-    
+
     if (!file || !file.type.includes('pdf')) {
-        if(file) toast({ title: texts.insertError, description: "Invalid file type. Please upload a PDF.", variant: "destructive" });
+        if(file) toast({ title: texts.insertError, description: "無效的檔案類型。請上傳 PDF。", variant: "destructive" });
         return;
     }
 
@@ -536,24 +601,24 @@ export default function PdfEditorHomepage() {
     setIsLoading(true);
     setLoadingMessage(texts.insertingPdf);
     try {
-      const { canvases: insertCanvases } = await processPdfFile(file); 
-      let insertIdx = pages.length; 
+      const { canvases: insertCanvases } = await processPdfFile(file);
+      let insertIdx = pages.length;
       if (selectedPages.size > 0) {
         const firstSelected = Math.min(...Array.from(selectedPages));
         insertIdx = insertPosition === 'before' ? firstSelected : firstSelected + 1;
       }
-      
+
       const newPages = [...pages];
       newPages.splice(insertIdx, 0, ...insertCanvases);
       setPages(newPages);
-      
+
       const newSelected = new Set<number>();
       if (insertCanvases.length > 0) {
         newSelected.add(insertIdx);
       }
       setSelectedPages(newSelected);
 
-      toast({ title: texts.insertAreaTitle, description: "PDF inserted successfully." });
+      toast({ title: texts.insertAreaTitle, description: "PDF 插入成功。" });
 
     } catch (err: any) {
       toast({ title: texts.insertError, description: err.message, variant: "destructive" });
@@ -564,7 +629,82 @@ export default function PdfEditorHomepage() {
       if (insertPdfRef.current) insertPdfRef.current.value = '';
     }
   };
-  
+
+  const handleConvertToWord = async () => {
+    if (!uploadedPdfFile) {
+      toast({ title: texts.wordConvertError, description: texts.noPdfToConvert, variant: "destructive" });
+      return;
+    }
+    if (!isFirebaseConfigured) {
+        toast({ title: texts.wordConvertError, description: texts.firebaseNotConfigured, variant: "destructive" });
+        return;
+    }
+
+
+    setWordFileUrl(null);
+    setWordConversionError(null);
+
+    if (!isLoggedIn && typeof window !== 'undefined') {
+      const today = new Date().toISOString().split('T')[0];
+      let wordConversionInfoString = localStorage.getItem('DocuPilotWordConversionInfo');
+      let wordConversionInfo = wordConversionInfoString ? JSON.parse(wordConversionInfoString) : { count: 0, date: today };
+
+      if (wordConversionInfo.date !== today) {
+        wordConversionInfo = { count: 0, date: today }; // Reset for new day
+      }
+
+      if (wordConversionInfo.count >= DAILY_WORD_CONVERSION_LIMIT) {
+        setShowWordLimitModal(true);
+        return;
+      }
+      // Increment count after successful conversion attempt
+    }
+
+    setIsConvertingToWord(true);
+    setLoadingMessage(texts.convertingToWord);
+
+    try {
+      // 1. Upload PDF to Firebase Storage
+      const fileName = `uploads/${new Date().getTime()}_${uploadedPdfFile.name}`;
+      const fileRef = storageRef(storage, fileName);
+      await uploadBytes(fileRef, uploadedPdfFile);
+      const pdfStorageUrl = await getDownloadURL(fileRef);
+
+      // 2. Call Firebase Function (Simulated)
+      // In a real app, you would call your actual Firebase Function here:
+      // const convertPdfToWordFunction = httpsCallable(firebaseFunctions, 'yourFunctionName');
+      // const response = await convertPdfToWordFunction({ pdfUrl: pdfStorageUrl, apiKey: process.env.NEXT_PUBLIC_PDF_CO_API_KEY });
+      // const wordDownloadLink = (response.data as any).wordUrl;
+
+      // Simulation:
+      await new Promise(resolve => setTimeout(resolve, 3000)); // Simulate network delay
+      const simulatedWordDownloadLink = `https://placehold.co/mock-document.docx`; // Replace with actual link from function
+
+      setWordFileUrl(simulatedWordDownloadLink);
+      toast({ title: texts.wordConvertSuccess, description: texts.downloadWordFile });
+
+      // Update guest conversion count
+      if (!isLoggedIn && typeof window !== 'undefined') {
+        const today = new Date().toISOString().split('T')[0];
+        let wordConversionInfoString = localStorage.getItem('DocuPilotWordConversionInfo');
+        let wordConversionInfo = wordConversionInfoString ? JSON.parse(wordConversionInfoString) : { count: 0, date: today };
+        if (wordConversionInfo.date !== today) { wordConversionInfo = { count: 0, date: today };}
+        wordConversionInfo.count++;
+        localStorage.setItem('DocuPilotWordConversionInfo', JSON.stringify(wordConversionInfo));
+      }
+
+    } catch (error: any) {
+      console.error("Word conversion error:", error);
+      const errMsg = error.message || "未知錯誤";
+      setWordConversionError(`${texts.wordConvertError}: ${errMsg}`);
+      toast({ title: texts.wordConvertError, description: errMsg, variant: "destructive" });
+    } finally {
+      setIsConvertingToWord(false);
+      setLoadingMessage('');
+    }
+  };
+
+
   const commonDragEvents = {
     onDragOver: (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
@@ -586,11 +726,13 @@ export default function PdfEditorHomepage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {(isLoading || isDownloading || isExtractingText) && (
+      {(isLoading || isDownloading || isExtractingText || isConvertingToWord) && (
         <div className="fixed inset-0 bg-black/50 z-50 flex flex-col items-center justify-center">
           <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
           <p className="text-white text-lg">
-            {isLoading ? loadingMessage : (isDownloading ? texts.generatingFile : texts.extractingText)}
+            {isLoading ? loadingMessage :
+             isConvertingToWord ? texts.convertingToWord :
+             isDownloading ? texts.generatingFile : texts.extractingText}
           </p>
         </div>
       )}
@@ -646,7 +788,22 @@ export default function PdfEditorHomepage() {
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      
+
+      <AlertDialog open={showWordLimitModal} onOpenChange={setShowWordLimitModal}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>{texts.wordConvertLimitTitle}</AlertDialogTitle>
+            <AlertDialogDescription>
+                {texts.wordConvertLimitDescription}
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel>{texts.cancel}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => router.push('/login')}>{texts.login}</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <header className="p-4 border-b bg-card sticky top-0 z-40">
         <div className="container mx-auto flex justify-between items-center">
             <h1 className="text-xl font-bold text-primary flex items-center">
@@ -679,7 +836,7 @@ export default function PdfEditorHomepage() {
             </div>
         </div>
       </header>
-      
+
       <div className="container mx-auto p-4 md:p-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Left Column */}
@@ -692,22 +849,21 @@ export default function PdfEditorHomepage() {
                 <CardContent className="space-y-4">
                   <div>
                     <Label htmlFor="insertPdfInput" className="mb-2 block cursor-pointer text-sm font-medium">{texts.selectFileToInsert}</Label>
-                     <div 
+                     <div
                         className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer"
                         onClick={() => insertPdfRef.current?.click()}
-                        onDragOver={commonDragEvents.onDragOver}
-                        onDragLeave={commonDragEvents.onDragLeave}
-                        onDrop={(e) => commonDragEvents.onDrop(e, handleInsertPdfFileSelected)}
+                        {...commonDragEvents}
+                        onDrop={(e) => commonDragEvents.onDrop(e, (ev) => handleInsertPdfFileSelected(ev as any))}
                       >
                         <Upload className="h-10 w-10 text-muted-foreground mb-2" />
                         <p className="text-sm text-muted-foreground text-center">{texts.dropInsertFileHere}</p>
                       </div>
-                    <Input 
-                        type="file" 
-                        id="insertPdfInput" 
-                        accept="application/pdf" 
-                        onChange={handleInsertPdfFileSelected} 
-                        ref={insertPdfRef} 
+                    <Input
+                        type="file"
+                        id="insertPdfInput"
+                        accept="application/pdf"
+                        onChange={handleInsertPdfFileSelected}
+                        ref={insertPdfRef}
                         className="hidden"
                     />
                   </div>
@@ -744,7 +900,7 @@ export default function PdfEditorHomepage() {
                 </CardContent>
               </Card>
             )}
-            
+
             <Card className="shadow-lg">
                 <CardHeader>
                     <CardTitle className="flex items-center text-xl"><Info className="mr-2 h-5 w-5 text-primary" /> {texts.tools}</CardTitle>
@@ -769,59 +925,87 @@ export default function PdfEditorHomepage() {
               <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="pdfUploadInput" className="mb-2 block cursor-pointer text-sm font-medium">{texts.uploadLabel}</Label>
-                  <div 
+                  <div
                     className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer"
                     onClick={() => pdfUploadRef.current?.click()}
-                    onDragOver={commonDragEvents.onDragOver}
-                    onDragLeave={commonDragEvents.onDragLeave}
-                    onDrop={(e) => commonDragEvents.onDrop(e, handlePdfUpload)}
+                    {...commonDragEvents}
+                    onDrop={(e) => commonDragEvents.onDrop(e, (ev) => handlePdfUpload(ev as any))}
                   >
                     <Upload className="h-10 w-10 text-muted-foreground mb-2" />
                     <p className="text-sm text-muted-foreground text-center">{texts.dropFileHere}</p>
                   </div>
-                  <Input 
-                    type="file" 
-                    id="pdfUploadInput" 
-                    accept="application/pdf" 
-                    onChange={handlePdfUpload} 
-                    ref={pdfUploadRef} 
+                  <Input
+                    type="file"
+                    id="pdfUploadInput"
+                    accept="application/pdf"
+                    onChange={handlePdfUpload}
+                    ref={pdfUploadRef}
                     className="hidden"
                   />
                 </div>
-                <Button onClick={handleDownloadPdf} disabled={pages.length === 0 || isDownloading} className="w-full">
-                  {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                  {texts.downloadPdf}
-                </Button>
-                 <Button onClick={handleDownloadTxt} disabled={!pdfDocumentProxy || isExtractingText} className="w-full">
-                  {isExtractingText ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
-                  {texts.downloadTxt}
-                </Button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <Button onClick={handleDownloadPdf} disabled={pages.length === 0 || isDownloading} className="w-full">
+                      {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                      {texts.downloadPdf}
+                    </Button>
+                     <Button onClick={handleDownloadTxt} disabled={!pdfDocumentProxy || isExtractingText} className="w-full">
+                      {isExtractingText ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+                      {texts.downloadTxt}
+                    </Button>
+                    <Button 
+                        onClick={handleConvertToWord} 
+                        disabled={!uploadedPdfFile || isConvertingToWord || !isFirebaseConfigured} 
+                        className="w-full"
+                        title={!isFirebaseConfigured ? texts.firebaseNotConfigured : ""}
+                    >
+                        {isConvertingToWord ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileType className="mr-2 h-4 w-4" />}
+                        {texts.convertToWord}
+                    </Button>
+                </div>
+                 {wordFileUrl && (
+                    <div className="mt-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded text-sm">
+                        <p>
+                        {texts.wordConvertSuccess}{' '}
+                        <a href={wordFileUrl} download target="_blank" rel="noopener noreferrer" className="font-semibold underline hover:text-green-800">
+                            {texts.downloadWordFile}
+                        </a>
+                        </p>
+                    </div>
+                )}
+                {wordConversionError && (
+                    <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+                        <p>{wordConversionError}</p>
+                    </div>
+                )}
+                 {!isFirebaseConfigured && (
+                    <p className="text-xs text-amber-600 mt-2">{texts.firebaseNotConfigured}</p>
+                )}
               </CardContent>
             </Card>
-            
+
             {pages.length > 0 ? (
-              <Card className="shadow-lg min-h-[calc(100vh-20rem)] md:min-h-[calc(100vh-18rem)]"> {/* Adjusted min-height */}
+              <Card className="shadow-lg min-h-[calc(100vh-26rem)] md:min-h-[calc(100vh-24rem)]">
                 <CardHeader>
                   <CardTitle className="flex items-center text-xl"><Shuffle className="mr-2 h-5 w-5 text-primary" /> {texts.pageManagement}</CardTitle>
-                  <CardDescription> {pages.length} {pages.length === 1 ? texts.page.toLowerCase() : (currentLanguage === 'zh' ? texts.page.toLowerCase() : texts.page.toLowerCase() + 's')} loaded. {selectedPages.size > 0 ? `${texts.page} ${Array.from(selectedPages)[0]+1} selected.` : ''} </CardDescription>
+                  <CardDescription> {pages.length} {pages.length === 1 ? texts.page.toLowerCase() : (currentLanguage === 'zh' ? texts.page.toLowerCase() : texts.page.toLowerCase() + 's')} 加載完成。 {selectedPages.size > 0 ? `${texts.page} ${Array.from(selectedPages)[0]+1} 已選取。` : ''} </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div 
-                    id="previewContainer" 
-                    ref={previewContainerRef} 
+                  <div
+                    id="previewContainer"
+                    ref={previewContainerRef}
                     className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-1 bg-muted/20 rounded-md min-h-[200px]"
                   >
                   </div>
                 </CardContent>
               </Card>
             ) : (
-              <Card className="shadow-lg min-h-[calc(100vh-20rem)] md:min-h-[calc(100vh-18rem)] flex flex-col items-center justify-center bg-muted/30"> {/* Adjusted min-height */}
+              <Card className="shadow-lg min-h-[calc(100vh-26rem)] md:min-h-[calc(100vh-24rem)] flex flex-col items-center justify-center bg-muted/30">
                 <CardContent className="text-center">
                   <Search className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                   <p className="text-xl font-semibold text-muted-foreground">{texts.pageTitle}</p>
-                  <p className="text-muted-foreground">{texts.uploadPdfFirst.replace('this feature', 'editing')}</p>
+                  <p className="text-muted-foreground">{texts.uploadPdfFirst.replace('此功能', '編輯')}</p>
                   <Button onClick={() => pdfUploadRef.current?.click()} className="mt-4">
-                    <Upload className="mr-2 h-4 w-4"/> {texts.uploadLabel.split(':')[0]}
+                    <Upload className="mr-2 h-4 w-4"/> {texts.uploadLabel.split('：')[0]}
                   </Button>
                 </CardContent>
               </Card>
@@ -832,4 +1016,3 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
- 

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Sparkles, LogInIcon, Loader2 } from 'lucide-react'; // Added Loader2
+import { Sparkles, LogInIcon, Loader2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 
 export default function LoginPage() {
@@ -18,6 +18,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    // If user is already logged in, redirect them to the homepage
     if (typeof window !== 'undefined' && localStorage.getItem('isLoggedIn') === 'true') {
       router.replace('/'); 
     }
@@ -26,8 +27,10 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000)); 
     
+    // In a real app, you'd verify credentials here
     if (typeof window !== 'undefined') {
       localStorage.setItem('isLoggedIn', 'true');
     }
@@ -36,7 +39,7 @@ export default function LoginPage() {
       title: "Login Successful",
       description: "Welcome back!",
     });
-    router.replace('/'); 
+    router.replace('/'); // Redirect to homepage after login
   };
 
   return (
@@ -92,3 +95,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    

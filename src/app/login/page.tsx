@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, Sparkles, LogInIcon } from 'lucide-react'; // Changed Eye to LogInIcon for context
+import { Sparkles, LogInIcon, Loader2 } from 'lucide-react'; // Added Loader2
 import { useToast } from "@/hooks/use-toast";
 
 export default function LoginPage() {
@@ -19,14 +19,14 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (typeof window !== 'undefined' && localStorage.getItem('isLoggedIn') === 'true') {
-      router.replace('/'); // Redirect to homepage if already logged in
+      router.replace('/'); 
     }
   }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000)); 
     
     if (typeof window !== 'undefined') {
       localStorage.setItem('isLoggedIn', 'true');
@@ -36,7 +36,7 @@ export default function LoginPage() {
       title: "Login Successful",
       description: "Welcome back!",
     });
-    router.replace('/'); // Redirect to homepage (PDF editor)
+    router.replace('/'); 
   };
 
   return (

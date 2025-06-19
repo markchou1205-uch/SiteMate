@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogFooter } from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, RotateCcw, RotateCw, X, Languages, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle } from 'lucide-react';
+import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle } from 'lucide-react';
 
 if (typeof window !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
@@ -236,13 +236,11 @@ export default function PdfEditorHomepage() {
           reorderedPages.splice(evt.newIndex, 0, movedItem);
           setPages(reorderedPages);
           
+          const newSelected = new Set<number>();
           if (selectedPages.has(evt.oldIndex)) {
-            const newSelected = new Set<number>();
             newSelected.add(evt.newIndex);
-            setSelectedPages(newSelected);
-          } else {
-            setSelectedPages(new Set()); 
           }
+          setSelectedPages(newSelected);
         }
       });
     }
@@ -264,8 +262,10 @@ export default function PdfEditorHomepage() {
       const baseWidth = sourceCanvas.width;
       const baseHeight = sourceCanvas.height;
       
-      const modalContentWidth = canvas.parentElement?.clientWidth || 800;
-      const modalContentHeight = window.innerHeight * 0.7; 
+      const modalContentElement = canvas.parentElement?.parentElement; // DialogContent
+      const modalContentWidth = modalContentElement?.clientWidth ? modalContentElement.clientWidth - 64 : 800 - 64; // Subtract padding
+      const modalContentHeight = window.innerHeight * 0.7;
+
 
       let scaleX = modalContentWidth / baseWidth;
       let scaleY = modalContentHeight / baseHeight;
@@ -480,7 +480,9 @@ export default function PdfEditorHomepage() {
       setPages(newPages);
       
       const newSelected = new Set<number>();
-      newSelected.add(insertIdx);
+      if (insertCanvases.length > 0) {
+        newSelected.add(insertIdx);
+      }
       setSelectedPages(newSelected);
 
       toast({ title: texts.insertAreaTitle, description: "PDF inserted successfully." });
@@ -506,6 +508,12 @@ export default function PdfEditorHomepage() {
         e.stopPropagation();
         e.currentTarget.classList.remove('border-primary', 'bg-primary/10');
     },
+    onDrop: (e: React.DragEvent<HTMLDivElement>, handler: (event: React.DragEvent<HTMLDivElement>) => void) => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.currentTarget.classList.remove('border-primary', 'bg-primary/10');
+        handler(e);
+    }
   };
 
   return (
@@ -527,17 +535,17 @@ export default function PdfEditorHomepage() {
           <div className="flex-grow overflow-auto flex items-center justify-center p-4 bg-muted/40">
             <canvas ref={zoomCanvasRef} style={{ willReadFrequently: true } as any} className="max-w-full max-h-full object-contain shadow-lg"></canvas>
           </div>
-          <div className="p-4 border-t">
-            <Input type="text" placeholder={texts.noteInputPlaceholder} className="mb-4" />
-            <div className="flex flex-wrap gap-2 justify-center mb-4">
+          <DialogFooter className="p-4 border-t flex-col sm:flex-col md:flex-row gap-2">
+            <Input type="text" placeholder={texts.noteInputPlaceholder} className="mb-2 md:mb-0 md:mr-2 flex-grow" />
+            <div className="flex flex-wrap gap-2 justify-center sm:justify-end">
                 <Button variant="outline" onClick={() => setCurrentRotation((r) => (r - 90 + 360) % 360)}><RotateCcw className="mr-2 h-4 w-4" /> {texts.rotateLeft}</Button>
                 <Button variant="outline" onClick={() => setCurrentRotation((r) => (r + 90) % 360)}><RotateCw className="mr-2 h-4 w-4" /> {texts.rotateRight}</Button>
                 <Button variant="outline" onClick={() => setCurrentRotation(0)}><X className="mr-2 h-4 w-4" /> {texts.resetRotation}</Button>
             </div>
             <DialogClose asChild>
-                <Button variant="outline" className="w-full">{texts.modalCloseButton}</Button>
+                <Button variant="outline" className="w-full md:w-auto mt-2 md:mt-0">{texts.modalCloseButton}</Button>
             </DialogClose>
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -571,7 +579,7 @@ export default function PdfEditorHomepage() {
         </AlertDialogContent>
       </AlertDialog>
       
-      <header className="p-4 border-b bg-card">
+      <header className="p-4 border-b bg-card sticky top-0 z-40">
         <div className="container mx-auto flex justify-between items-center">
             <h1 className="text-xl font-bold text-primary flex items-center">
               <Edit3 className="mr-2 h-6 w-6"/> {texts.pageTitle}
@@ -615,10 +623,11 @@ export default function PdfEditorHomepage() {
                 <div>
                   <Label htmlFor="pdfUploadInput" className="mb-2 block cursor-pointer text-sm font-medium">{texts.uploadLabel}</Label>
                   <div 
-                    className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors"
+                    className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer"
                     onClick={() => pdfUploadRef.current?.click()}
-                    onDrop={handlePdfUpload}
-                    {...commonDragEvents}
+                    onDragOver={commonDragEvents.onDragOver}
+                    onDragLeave={commonDragEvents.onDragLeave}
+                    onDrop={(e) => commonDragEvents.onDrop(e, handlePdfUpload)}
                   >
                     <Upload className="h-10 w-10 text-muted-foreground mb-2" />
                     <p className="text-sm text-muted-foreground text-center">{texts.dropFileHere}</p>
@@ -666,10 +675,11 @@ export default function PdfEditorHomepage() {
                   <div>
                     <Label htmlFor="insertPdfInput" className="mb-2 block cursor-pointer text-sm font-medium">{texts.selectFileToInsert}</Label>
                      <div 
-                        className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors"
+                        className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer"
                         onClick={() => insertPdfRef.current?.click()}
-                        onDrop={handleInsertPdfFileSelected}
-                        {...commonDragEvents}
+                        onDragOver={commonDragEvents.onDragOver}
+                        onDragLeave={commonDragEvents.onDragLeave}
+                        onDrop={(e) => commonDragEvents.onDrop(e, handleInsertPdfFileSelected)}
                       >
                         <Upload className="h-10 w-10 text-muted-foreground mb-2" />
                         <p className="text-sm text-muted-foreground text-center">{texts.dropInsertFileHere}</p>
@@ -716,7 +726,7 @@ export default function PdfEditorHomepage() {
 
           <div className="md:col-span-2">
             {pages.length > 0 ? (
-              <Card className="shadow-lg min-h-[calc(100vh-10rem)]">
+              <Card className="shadow-lg min-h-[calc(100vh-12rem)] md:min-h-[calc(100vh-10rem)]">
                 <CardHeader>
                   <CardTitle className="flex items-center text-xl"><Shuffle className="mr-2 h-5 w-5 text-primary" /> {texts.pageManagement}</CardTitle>
                   <CardDescription> {pages.length} {pages.length === 1 ? texts.page.toLowerCase() : (currentLanguage === 'zh' ? texts.page.toLowerCase() : texts.page.toLowerCase() + 's')} loaded. {selectedPages.size > 0 ? `${texts.page} ${Array.from(selectedPages)[0]+1} selected.` : ''} </CardDescription>
@@ -731,7 +741,7 @@ export default function PdfEditorHomepage() {
                 </CardContent>
               </Card>
             ) : (
-              <Card className="shadow-lg min-h-[calc(100vh-10rem)] flex flex-col items-center justify-center bg-muted/30">
+              <Card className="shadow-lg min-h-[calc(100vh-12rem)] md:min-h-[calc(100vh-10rem)] flex flex-col items-center justify-center bg-muted/30">
                 <CardContent className="text-center">
                   <Search className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                   <p className="text-xl font-semibold text-muted-foreground">{texts.pageTitle}</p>
@@ -748,5 +758,3 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
-
-    

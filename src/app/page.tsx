@@ -130,7 +130,7 @@ const translations = {
 
 const DAILY_DOWNLOAD_LIMIT = 3;
 
-export default function DocuPilotHomepage() {
+export default function PdfEditorHomepage() {
   const router = useRouter();
   const { toast } = useToast();
 
@@ -161,7 +161,8 @@ export default function DocuPilotHomepage() {
   
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setIsLoggedIn(localStorage.getItem('isLoggedIn') === 'true');
+      const loggedInStatus = localStorage.getItem('isLoggedIn') === 'true';
+      setIsLoggedIn(loggedInStatus);
     }
   }, []); 
   
@@ -179,7 +180,7 @@ export default function DocuPilotHomepage() {
     }
     setIsLoggedIn(false);
     toast({ title: texts.logout, description: "You have been logged out." });
-    router.refresh(); 
+    // No need to router.refresh() here, state update will re-render.
   };
 
   const renderPagePreviews = useCallback(() => {
@@ -239,7 +240,7 @@ export default function DocuPilotHomepage() {
       sortableInstanceRef.current = Sortable.create(previewContainerRef.current, {
         animation: 150,
         ghostClass: 'opacity-50',
-        chosenClass: 'ring-2 ring-offset-2 ring-primary',
+        chosenClass: 'shadow-2xl', 
         dragClass: 'opacity-75',
         onEnd: (evt) => {
           if (evt.oldIndex === undefined || evt.newIndex === undefined) return;

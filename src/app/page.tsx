@@ -95,7 +95,8 @@ const translations = {
         login: 'Login',
         logout: 'Logout',
         guest: 'Guest',
-        firebaseNotConfigured: `Firebase Frontend SDK is not fully configured. Please ensure all Firebase environment variables (NEXT_PUBLIC_FIREBASE_API_KEY, etc.) are set. Missing: `
+        firebaseNotConfigured: `Firebase Frontend SDK is not fully configured. Please ensure all Firebase environment variables (e.g., NEXT_PUBLIC_FIREBASE_API_KEY) are set in your .env file and the application is rebuilt/restarted. Missing: `,
+        firebaseConfiguredButWarn: "Firebase configuration seems complete, but 'Convert to Word' might be disabled if there's an issue detected by the component."
     },
     zh: {
         pageTitle: 'DocuPilot 文件助手',
@@ -155,7 +156,8 @@ const translations = {
         login: '登入',
         logout: '登出',
         guest: '訪客',
-        firebaseNotConfigured: `Firebase 前端 SDK 設定不完整。請確保所有 Firebase 環境變數 (NEXT_PUBLIC_FIREBASE_API_KEY 等) 都已在您的 .env 檔案中設定。缺少：`
+        firebaseNotConfigured: `Firebase 前端 SDK 設定不完整。請確保所有 Firebase 環境變數 (例如 NEXT_PUBLIC_FIREBASE_API_KEY) 都已在您的 .env 檔案中設定，且應用程式已重新建置/啟動。缺少：`,
+        firebaseConfiguredButWarn: "Firebase 設定看起來完整，但如果組件偵測到問題，'轉換為 Word' 功能可能仍被禁用。"
     }
 };
 
@@ -191,49 +193,42 @@ export default function PdfEditorHomepage() {
   const [wordConversionError, setWordConversionError] = useState<string | null>(null);
   const [showWordLimitModal, setShowWordLimitModal] = useState(false);
   
-  const [isFirebaseConfigured, setIsFirebaseConfigured] = useState(false); // Default to false
-  const [firebaseMissingKeysMessage, setFirebaseMissingKeysMessage] = useState('');
+  const [isFirebaseFullyConfigured, setIsFirebaseFullyConfigured] = useState(true);
+  const [firebaseConfigWarning, setFirebaseConfigWarning] = useState('');
 
 
   useEffect(() => {
-    // Firebase configuration check, runs only on client-side after mount
-    let missingKeysFound: string[] = [];
-    if (typeof window !== 'undefined') { // Ensures client-side
-        missingKeysFound = firebaseConfigKeys.filter(key => {
-            const envVar = process.env[key];
-            return !envVar || envVar.trim() === '';
-        });
+    let missingKeys: string[] = [];
+    if (typeof window !== 'undefined') { // Ensure client-side
+      missingKeys = firebaseConfigKeys.filter(key => {
+        const value = process.env[key];
+        return !value || value.trim() === '';
+      });
     }
     
-    const configured = missingKeysFound.length === 0;
-    setIsFirebaseConfigured(configured);
+    const configured = missingKeys.length === 0;
+    setIsFirebaseFullyConfigured(configured);
 
     if (!configured) {
-        setFirebaseMissingKeysMessage(missingKeysFound.join(', '));
+      const missingKeysString = missingKeys.join(', ');
+      setFirebaseConfigWarning(
+        currentLanguage === 'zh' 
+        ? translations.zh.firebaseNotConfigured + missingKeysString
+        : translations.en.firebaseNotConfigured + missingKeysString
+      );
     } else {
-        setFirebaseMissingKeysMessage('');
+      setFirebaseConfigWarning('');
     }
-  }, []);
+  }, [currentLanguage]); // Rerun on language change to update message
 
 
   useEffect(() => {
     const newTexts = { ...translations[currentLanguage] };
-    if (!isFirebaseConfigured && firebaseMissingKeysMessage) {
-        if (currentLanguage === 'zh') {
-            newTexts.firebaseNotConfigured = `Firebase 前端 SDK 設定不完整。請確保所有 Firebase 環境變數 (NEXT_PUBLIC_FIREBASE_API_KEY 等) 都已在您的 .env 檔案中設定。缺少：${firebaseMissingKeysMessage}`;
-        } else {
-            newTexts.firebaseNotConfigured = `Firebase Frontend SDK is not fully configured. Please ensure all Firebase environment variables (NEXT_PUBLIC_FIREBASE_API_KEY, etc.) are set. Missing: ${firebaseMissingKeysMessage}`;
-        }
-    } else if (!isFirebaseConfigured) {
-        // Generic message if specific keys aren't identified yet or check hasn't run
-        if (currentLanguage === 'zh') {
-            newTexts.firebaseNotConfigured = `Firebase 前端 SDK 設定不完整。請檢查設定。`;
-        } else {
-            newTexts.firebaseNotConfigured = `Firebase Frontend SDK is not fully configured. Please check configuration.`;
-        }
+    if (firebaseConfigWarning) { // If there's a warning, use it
+        newTexts.firebaseNotConfigured = firebaseConfigWarning;
     }
     setTexts(newTexts);
-  }, [currentLanguage, isFirebaseConfigured, firebaseMissingKeysMessage]);
+  }, [currentLanguage, firebaseConfigWarning]);
 
 
   const previewContainerRef = useRef<HTMLDivElement>(null);
@@ -676,8 +671,8 @@ export default function PdfEditorHomepage() {
       toast({ title: texts.wordConvertError, description: texts.noPdfToConvert, variant: "destructive" });
       return;
     }
-    if (!isFirebaseConfigured) {
-        toast({ title: texts.wordConvertError, description: texts.firebaseNotConfigured + (firebaseMissingKeysMessage || 'Please check configuration.'), variant: "destructive" });
+    if (!isFirebaseFullyConfigured) { // Check our state variable
+        toast({ title: texts.wordConvertError, description: firebaseConfigWarning || (currentLanguage === 'zh' ? translations.zh.firebaseConfiguredButWarn : translations.en.firebaseConfiguredButWarn), variant: "destructive" });
         return;
     }
 
@@ -715,7 +710,7 @@ export default function PdfEditorHomepage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ fileUrl: pdfStorageUrl }), // Firebase Function expects 'fileUrl'
+        body: JSON.stringify({ fileUrl: pdfStorageUrl }),
       });
 
       if (!response.ok) {
@@ -1011,9 +1006,9 @@ export default function PdfEditorHomepage() {
                     </Button>
                     <Button 
                         onClick={handleConvertToWord} 
-                        disabled={!uploadedPdfFile || isConvertingToWord || !isFirebaseConfigured} 
+                        disabled={!uploadedPdfFile || isConvertingToWord || !isFirebaseFullyConfigured} 
                         className="w-full"
-                        title={!isFirebaseConfigured ? (texts.firebaseNotConfigured + (firebaseMissingKeysMessage || 'Please check configuration.')) : ""}
+                        title={!isFirebaseFullyConfigured ? firebaseConfigWarning : ""}
                     >
                         {isConvertingToWord ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileType className="mr-2 h-4 w-4" />}
                         {texts.convertToWord}
@@ -1034,9 +1029,9 @@ export default function PdfEditorHomepage() {
                         <p>{wordConversionError}</p>
                     </div>
                 )}
-                 {!isFirebaseConfigured && (
+                 {!isFirebaseFullyConfigured && firebaseConfigWarning && (
                     <p className="text-xs text-amber-600 mt-2">
-                      {texts.firebaseNotConfigured}
+                      {firebaseConfigWarning}
                     </p>
                  )}
               </CardContent>
@@ -1080,3 +1075,4 @@ export default function PdfEditorHomepage() {
     
 
     
+

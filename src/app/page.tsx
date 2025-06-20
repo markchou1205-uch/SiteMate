@@ -854,7 +854,7 @@ export default function PdfEditorHomepage() {
 
         const detailMessage = errorData?.detail || errorData?.error || `HTTP error! status: ${response.status}`;
         let toastDescription = detailMessage;
-        if (typeof detailMessage === 'string' && (detailMessage.toLowerCase().includes("method not found") || detailMessage.toLowerCase().includes("api key not configured")) ) {
+        if (typeof detailMessage === 'string' && (detailMessage.toLowerCase().includes("method not found") || detailMessage.toLowerCase().includes("api key not configured") || detailMessage.toLowerCase().includes("please provide your api key")) ) { // Added check for "please provide your api key"
              toastDescription = texts.pdfCoMethodNotFoundError;
         }
         throw new Error(detailMessage);
@@ -883,7 +883,7 @@ export default function PdfEditorHomepage() {
       console.error("Word conversion error in frontend:", error);
       let errMsg = error.message || (currentLanguage === 'zh' ? "未知錯誤" : "Unknown error");
       
-      if (typeof errMsg === 'string' && (errMsg.toLowerCase().includes("method not found") || errMsg.toLowerCase().includes("api key"))) {
+      if (typeof errMsg === 'string' && (errMsg.toLowerCase().includes("method not found") || errMsg.toLowerCase().includes("api key") || errMsg.toLowerCase().includes("please provide your api key") )) {
         errMsg = texts.pdfCoMethodNotFoundError;
       } else if (errMsg.toLowerCase().includes("pdf.co api key is not correctly hardcoded")) {
         errMsg = (currentLanguage === 'zh' ? "後端 API 金鑰設定錯誤，請聯絡管理員。" : "Backend API Key configuration error. Please contact administrator.");
@@ -1093,216 +1093,225 @@ export default function PdfEditorHomepage() {
               </Card>
             </div>
           ) : (
-            // View after PDF is uploaded
-            <div className="space-y-6">
-                <div className="flex justify-end">
-                    <Button variant="outline" onClick={() => pdfUploadRef.current?.click()}>
-                        <FilePlus className="mr-2 h-4 w-4" /> {texts.uploadNewPdf}
-                    </Button>
+             // View after PDF is uploaded: Two-column layout
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                {/* Left Column: Page Previews */}
+                <div className="md:col-span-7 lg:col-span-8">
+                    <Card className="shadow-lg min-h-[calc(100vh-20rem)] md:min-h-[calc(100vh-18rem)]">
+                      <CardHeader>
+                        <CardTitle className="flex items-center text-xl"><Shuffle className="mr-2 h-5 w-5 text-primary" /> {texts.pageManagement}</CardTitle>
+                        <CardDescription> {pages.length} {pages.length === 1 ? texts.page.toLowerCase() : (currentLanguage === 'zh' ? texts.pagesLoaded : texts.pagesLoaded.replace('pages', 'page'))} {selectedPages.size > 0 ? `${texts.page} ${Array.from(selectedPages)[0]+1} ${currentLanguage === 'zh' ? texts.pageSelected : texts.pageSelected.replace('page', '')}` : ''} </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div
+                          id="previewContainer"
+                          ref={previewContainerRef}
+                          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-1 bg-muted/20 rounded-md min-h-[200px]"
+                        >
+                        </div>
+                      </CardContent>
+                    </Card>
                 </div>
 
-                <Card className="shadow-lg">
-                  <CardHeader>
-                    <CardTitle className="flex items-center text-xl"><Download className="mr-2 h-5 w-5 text-primary" /> {texts.downloadAndConvertTitle}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        <Button onClick={handleDownloadPdf} disabled={pages.length === 0 || isDownloading} className="w-full">
-                          {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                          {texts.downloadPdf}
+                {/* Right Column: Tools/Operations */}
+                <div className="md:col-span-5 lg:col-span-4 space-y-6">
+                    <div className="flex justify-end">
+                        <Button variant="outline" onClick={() => pdfUploadRef.current?.click()}>
+                            <FilePlus className="mr-2 h-4 w-4" /> {texts.uploadNewPdf}
                         </Button>
-                        <Button onClick={handleDownloadTxt} disabled={!pdfDocumentProxy || isExtractingText} className="w-full">
-                          {isExtractingText ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
-                          {texts.downloadTxt}
-                        </Button>
-                        <Button
-                            onClick={handleConvertToWord}
-                            disabled={!uploadedPdfFile || isConvertingToWord || !isFirebaseSystemReady}
-                            className="w-full"
-                            title={!isFirebaseSystemReady ? firebaseConfigWarning : ""}
-                        >
-                            {isConvertingToWord ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileType className="mr-2 h-4 w-4" />}
-                            {texts.convertToWord}
-                        </Button>
+                         <Input
+                            type="file"
+                            id="pdfUploadInputHidden" 
+                            accept="application/pdf"
+                            onChange={handlePdfUpload}
+                            ref={pdfUploadRef}
+                            className="hidden"
+                          />
                     </div>
 
-                    {wordFileUrl && (
-                        <div className="mt-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded text-sm">
-                            <p>
-                            {texts.wordConvertSuccess}{' '}
-                            <a href={wordFileUrl} download target="_blank" rel="noopener noreferrer" className="font-semibold underline hover:text-green-800">
-                                {texts.downloadWordFile}
-                            </a>
+                    <Card className="shadow-lg">
+                      <CardHeader>
+                        <CardTitle className="flex items-center text-xl"><Download className="mr-2 h-5 w-5 text-primary" /> {texts.downloadAndConvertTitle}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2 gap-3">
+                            <Button onClick={handleDownloadPdf} disabled={pages.length === 0 || isDownloading} className="w-full">
+                              {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                              {texts.downloadPdf}
+                            </Button>
+                            <Button onClick={handleDownloadTxt} disabled={!pdfDocumentProxy || isExtractingText} className="w-full">
+                              {isExtractingText ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+                              {texts.downloadTxt}
+                            </Button>
+                            <Button
+                                onClick={handleConvertToWord}
+                                disabled={!uploadedPdfFile || isConvertingToWord || !isFirebaseSystemReady}
+                                className="w-full sm:col-span-2 md:col-span-1 lg:col-span-2"
+                                title={!isFirebaseSystemReady ? firebaseConfigWarning : ""}
+                            >
+                                {isConvertingToWord ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileType className="mr-2 h-4 w-4" />}
+                                {texts.convertToWord}
+                            </Button>
+                        </div>
+
+                        {wordFileUrl && (
+                            <div className="mt-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded text-sm">
+                                <p>
+                                {texts.wordConvertSuccess}{' '}
+                                <a href={wordFileUrl} download target="_blank" rel="noopener noreferrer" className="font-semibold underline hover:text-green-800">
+                                    {texts.downloadWordFile}
+                                </a>
+                                </p>
+                            </div>
+                        )}
+                        {wordConversionError && (
+                            <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+                                <p>{wordConversionError}</p>
+                            </div>
+                        )}
+                        {!isFirebaseSystemReady && firebaseConfigWarning && (
+                            <p className="text-xs text-amber-600 mt-2">
+                              {firebaseConfigWarning}
                             </p>
-                        </div>
-                    )}
-                    {wordConversionError && (
-                        <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
-                            <p>{wordConversionError}</p>
-                        </div>
-                    )}
-                    {!isFirebaseSystemReady && firebaseConfigWarning && (
-                        <p className="text-xs text-amber-600 mt-2">
-                          {firebaseConfigWarning}
-                        </p>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Accordion type="multiple" defaultValue={['page-org']} className="w-full space-y-4">
-                    <Card className="shadow-lg">
-                        <AccordionItem value="page-org" className="border-b-0">
-                            <AccordionTrigger className="p-6 hover:no-underline">
-                                <CardTitle className="flex items-center text-xl"><Columns className="mr-2 h-5 w-5 text-primary" /> {texts.accordionPageOrg}</CardTitle>
-                            </AccordionTrigger>
-                            <AccordionContent className="px-6 pb-6 space-y-6">
-                                {/* Insert PDF Section */}
-                                <Card>
-                                  <CardHeader>
-                                    <CardTitle className="flex items-center text-lg"><FilePlus className="mr-2 h-5 w-5 text-primary" /> {texts.insertAreaTitle}</CardTitle>
-                                  </CardHeader>
-                                  <CardContent className="space-y-4">
-                                    <div>
-                                      <Label htmlFor="insertPdfInput" className="mb-2 block cursor-pointer text-sm font-medium">{texts.selectFileToInsert}</Label>
-                                      <div
-                                          className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer"
-                                          onClick={() => insertPdfRef.current?.click()}
-                                          onDragOver={commonDragEvents.onDragOver}
-                                          onDragLeave={commonDragEvents.onDragLeave}
-                                          onDrop={(e) => commonDragEvents.onDrop(e, (ev) => handleInsertPdfFileSelected(ev as any))}
-                                        >
-                                          <Upload className="h-10 w-10 text-muted-foreground mb-2" />
-                                          <p className="text-sm text-muted-foreground text-center">{texts.dropInsertFileHere}</p>
-                                        </div>
-                                      <Input
-                                          type="file"
-                                          id="insertPdfInput"
-                                          accept="application/pdf"
-                                          onChange={handleInsertPdfFileSelected}
-                                          ref={insertPdfRef}
-                                          className="hidden"
-                                      />
-                                    </div>
-                                    <RadioGroup value={insertPosition} onValueChange={(value: 'before' | 'after') => setInsertPosition(value)} disabled={selectedPages.size === 0}>
-                                      <Label className="font-medium mb-1 block">{texts.insertOptionsTitle}</Label>
-                                      <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="before" id="r-before" />
-                                        <Label htmlFor="r-before" className="font-normal">{texts.insertBeforeLabel}</Label>
-                                      </div>
-                                      <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="after" id="r-after" />
-                                        <Label htmlFor="r-after" className="font-normal">{texts.insertAfterLabel}</Label>
-                                      </div>
-                                    </RadioGroup>
-                                    <p className="text-xs text-muted-foreground">{selectedPages.size === 0 && pages.length > 0 ? texts.insertConfirmDescription.split('.')[0] + '.' : ''}</p>
-                                  </CardContent>
-                                </Card>
-                                {/* Page Actions Section */}
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="flex items-center text-lg"><Edit3 className="mr-2 h-5 w-5 text-primary" /> {texts.pageActions}</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="space-y-2">
-                                        <p className="text-sm text-muted-foreground">{texts.instSelect}</p>
-                                        <p className="text-sm text-muted-foreground">{texts.instDrag}</p>
-                                        <p className="text-sm text-muted-foreground">{texts.instZoom}</p>
-                                        <Button onClick={handleDeletePages} variant="destructive" disabled={selectedPages.size === 0 || pages.length === 0} className="w-full mt-2">
-                                            <Trash2 className="mr-2 h-4 w-4" /> {texts.deletePages}
-                                        </Button>
-                                    </CardContent>
-                                </Card>
-                            </AccordionContent>
-                        </AccordionItem>
+                        )}
+                      </CardContent>
                     </Card>
 
-                    <Card className="shadow-lg">
-                        <AccordionItem value="doc-enhance" className="border-b-0">
-                            <AccordionTrigger className="p-6 hover:no-underline">
-                                <CardTitle className="flex items-center text-xl"><ListOrdered className="mr-2 h-5 w-5 text-primary" /> {texts.accordionDocEnhanceProtect}</CardTitle>
-                            </AccordionTrigger>
-                            <AccordionContent className="px-6 pb-6 space-y-6">
-                                {/* Page Numbering Section */}
-                                <Card>
-                                  <CardHeader>
-                                    <CardTitle className="flex items-center text-lg"><FileDigit className="mr-2 h-5 w-5 text-primary" /> {texts.pageNumberingSectionTitle}</CardTitle>
-                                  </CardHeader>
-                                  <CardContent className="space-y-4">
-                                    <div className="flex items-center space-x-2">
-                                      <Switch id="enablePageNumbering" checked={pageNumberingConfig.enabled} onCheckedChange={(checked) => setPageNumberingConfig(prev => ({...prev, enabled: checked}))} />
-                                      <Label htmlFor="enablePageNumbering">{texts.enablePageNumbering}</Label>
-                                    </div>
-                                    {pageNumberingConfig.enabled && (
-                                      <>
+                    <Accordion type="multiple" defaultValue={['page-org']} className="w-full space-y-4">
+                        <Card className="shadow-lg">
+                            <AccordionItem value="page-org" className="border-b-0">
+                                <AccordionTrigger className="p-6 hover:no-underline">
+                                    <CardTitle className="flex items-center text-xl"><Columns className="mr-2 h-5 w-5 text-primary" /> {texts.accordionPageOrg}</CardTitle>
+                                </AccordionTrigger>
+                                <AccordionContent className="px-6 pb-6 space-y-6">
+                                    <Card>
+                                      <CardHeader>
+                                        <CardTitle className="flex items-center text-lg"><FilePlus className="mr-2 h-5 w-5 text-primary" /> {texts.insertAreaTitle}</CardTitle>
+                                      </CardHeader>
+                                      <CardContent className="space-y-4">
                                         <div>
-                                          <Label htmlFor="pn-position">{texts.pageNumberPosition}</Label>
-                                          <Select value={pageNumberingConfig.position} onValueChange={(value: PageNumberPosition) => setPageNumberingConfig(prev => ({...prev, position: value}))}>
-                                            <SelectTrigger id="pn-position"><SelectValue placeholder={texts.pageNumberPosition} /></SelectTrigger>
-                                            <SelectContent>
-                                              {pageNumberPositions.map(pos => <SelectItem key={pos.value} value={pos.value}>{texts[pos.labelKey]}</SelectItem>)}
-                                            </SelectContent>
-                                          </Select>
+                                          <Label htmlFor="insertPdfInput" className="mb-2 block cursor-pointer text-sm font-medium">{texts.selectFileToInsert}</Label>
+                                          <div
+                                              className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer"
+                                              onClick={() => insertPdfRef.current?.click()}
+                                              onDragOver={commonDragEvents.onDragOver}
+                                              onDragLeave={commonDragEvents.onDragLeave}
+                                              onDrop={(e) => commonDragEvents.onDrop(e, (ev) => handleInsertPdfFileSelected(ev as any))}
+                                            >
+                                              <Upload className="h-10 w-10 text-muted-foreground mb-2" />
+                                              <p className="text-sm text-muted-foreground text-center">{texts.dropInsertFileHere}</p>
+                                            </div>
+                                          <Input
+                                              type="file"
+                                              id="insertPdfInput"
+                                              accept="application/pdf"
+                                              onChange={handleInsertPdfFileSelected}
+                                              ref={insertPdfRef}
+                                              className="hidden"
+                                          />
                                         </div>
-                                        <div><Label htmlFor="pn-start">{texts.pageNumberStart}</Label><Input id="pn-start" type="number" value={pageNumberingConfig.start} onChange={(e) => setPageNumberingConfig(prev => ({...prev, start: parseInt(e.target.value,10) || 1}))} min="1" /></div>
-                                        <div><Label htmlFor="pn-fontSize">{texts.pageNumberFontSize}</Label><Input id="pn-fontSize" type="number" value={pageNumberingConfig.fontSize} onChange={(e) => setPageNumberingConfig(prev => ({...prev, fontSize: parseInt(e.target.value,10) || 12}))} min="6" /></div>
-                                        <div><Label htmlFor="pn-margin">{texts.pageNumberMargin}</Label><Input id="pn-margin" type="number" value={pageNumberingConfig.margin} onChange={(e) => setPageNumberingConfig(prev => ({...prev, margin: parseInt(e.target.value,10) || 20}))} min="0" /></div>
-                                        <div><Label htmlFor="pn-format">{texts.pageNumberFormat}</Label><Input id="pn-format" type="text" value={pageNumberingConfig.format} placeholder={texts.pageNumberFormatPlaceholder} onChange={(e) => setPageNumberingConfig(prev => ({...prev, format: e.target.value}))} /></div>
-                                      </>
-                                    )}
-                                  </CardContent>
-                                </Card>
-                                {/* Watermark Section */}
-                                <Card>
-                                  <CardHeader>
-                                    <CardTitle className="flex items-center text-lg"><Droplet className="mr-2 h-5 w-5 text-primary" /> {texts.watermarkSectionTitle}</CardTitle>
-                                  </CardHeader>
-                                  <CardContent>
-                                    <Label htmlFor="watermarkInput" className="mb-2 block text-sm font-medium">{texts.watermarkInputPlaceholder}</Label>
-                                    <Input
-                                      id="watermarkInput"
-                                      type="text"
-                                      placeholder={texts.watermarkInputPlaceholder}
-                                      value={watermarkText}
-                                      onChange={(e) => setWatermarkText(e.target.value)}
-                                    />
-                                  </CardContent>
-                                </Card>
-                                 {/* Protect PDF Section */}
-                                <Card>
-                                  <CardHeader>
-                                    <CardTitle className="flex items-center text-lg"><Lock className="mr-2 h-5 w-5 text-primary" /> {texts.protectPdfSectionTitle}</CardTitle>
-                                  </CardHeader>
-                                  <CardContent className="space-y-4">
-                                    <div className="flex items-center space-x-2">
-                                      <Switch id="enablePdfProtection" checked={pdfProtectionConfig.enabled} onCheckedChange={(checked) => setPdfProtectionConfig(prev => ({...prev, enabled: checked}))} />
-                                      <Label htmlFor="enablePdfProtection">{texts.enablePdfProtection}</Label>
-                                    </div>
-                                    {pdfProtectionConfig.enabled && (
-                                      <div>
-                                        <Label htmlFor="pdf-password">{texts.pdfPassword}</Label>
-                                        <Input id="pdf-password" type="password" placeholder={texts.pdfPasswordPlaceholder} value={pdfProtectionConfig.password} onChange={(e) => setPdfProtectionConfig(prev => ({...prev, password: e.target.value}))} />
-                                      </div>
-                                    )}
-                                  </CardContent>
-                                </Card>
-                            </AccordionContent>
-                        </AccordionItem>
-                    </Card>
-                </Accordion>
+                                        <RadioGroup value={insertPosition} onValueChange={(value: 'before' | 'after') => setInsertPosition(value)} disabled={selectedPages.size === 0}>
+                                          <Label className="font-medium mb-1 block">{texts.insertOptionsTitle}</Label>
+                                          <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="before" id="r-before" />
+                                            <Label htmlFor="r-before" className="font-normal">{texts.insertBeforeLabel}</Label>
+                                          </div>
+                                          <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="after" id="r-after" />
+                                            <Label htmlFor="r-after" className="font-normal">{texts.insertAfterLabel}</Label>
+                                          </div>
+                                        </RadioGroup>
+                                        <p className="text-xs text-muted-foreground">{selectedPages.size === 0 && pages.length > 0 ? texts.insertConfirmDescription.split('.')[0] + '.' : ''}</p>
+                                      </CardContent>
+                                    </Card>
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle className="flex items-center text-lg"><Edit3 className="mr-2 h-5 w-5 text-primary" /> {texts.pageActions}</CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="space-y-2">
+                                            <p className="text-sm text-muted-foreground">{texts.instSelect}</p>
+                                            <p className="text-sm text-muted-foreground">{texts.instDrag}</p>
+                                            <p className="text-sm text-muted-foreground">{texts.instZoom}</p>
+                                            <Button onClick={handleDeletePages} variant="destructive" disabled={selectedPages.size === 0 || pages.length === 0} className="w-full mt-2">
+                                                <Trash2 className="mr-2 h-4 w-4" /> {texts.deletePages}
+                                            </Button>
+                                        </CardContent>
+                                    </Card>
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Card>
 
-                <Card className="shadow-lg min-h-[calc(100vh-20rem)] md:min-h-[calc(100vh-18rem)]">
-                  <CardHeader>
-                    <CardTitle className="flex items-center text-xl"><Shuffle className="mr-2 h-5 w-5 text-primary" /> {texts.pageManagement}</CardTitle>
-                    <CardDescription> {pages.length} {pages.length === 1 ? texts.page.toLowerCase() : (currentLanguage === 'zh' ? texts.pagesLoaded : texts.pagesLoaded.replace('pages', 'page'))} {selectedPages.size > 0 ? `${texts.page} ${Array.from(selectedPages)[0]+1} ${currentLanguage === 'zh' ? texts.pageSelected : texts.pageSelected.replace('page', '')}` : ''} </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div
-                      id="previewContainer"
-                      ref={previewContainerRef}
-                      className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-1 bg-muted/20 rounded-md min-h-[200px]"
-                    >
-                    </div>
-                  </CardContent>
-                </Card>
+                        <Card className="shadow-lg">
+                            <AccordionItem value="doc-enhance" className="border-b-0">
+                                <AccordionTrigger className="p-6 hover:no-underline">
+                                    <CardTitle className="flex items-center text-xl"><ListOrdered className="mr-2 h-5 w-5 text-primary" /> {texts.accordionDocEnhanceProtect}</CardTitle>
+                                </AccordionTrigger>
+                                <AccordionContent className="px-6 pb-6 space-y-6">
+                                    <Card>
+                                      <CardHeader>
+                                        <CardTitle className="flex items-center text-lg"><FileDigit className="mr-2 h-5 w-5 text-primary" /> {texts.pageNumberingSectionTitle}</CardTitle>
+                                      </CardHeader>
+                                      <CardContent className="space-y-4">
+                                        <div className="flex items-center space-x-2">
+                                          <Switch id="enablePageNumbering" checked={pageNumberingConfig.enabled} onCheckedChange={(checked) => setPageNumberingConfig(prev => ({...prev, enabled: checked}))} />
+                                          <Label htmlFor="enablePageNumbering">{texts.enablePageNumbering}</Label>
+                                        </div>
+                                        {pageNumberingConfig.enabled && (
+                                          <>
+                                            <div>
+                                              <Label htmlFor="pn-position">{texts.pageNumberPosition}</Label>
+                                              <Select value={pageNumberingConfig.position} onValueChange={(value: PageNumberPosition) => setPageNumberingConfig(prev => ({...prev, position: value}))}>
+                                                <SelectTrigger id="pn-position"><SelectValue placeholder={texts.pageNumberPosition} /></SelectTrigger>
+                                                <SelectContent>
+                                                  {pageNumberPositions.map(pos => <SelectItem key={pos.value} value={pos.value}>{texts[pos.labelKey]}</SelectItem>)}
+                                                </SelectContent>
+                                              </Select>
+                                            </div>
+                                            <div><Label htmlFor="pn-start">{texts.pageNumberStart}</Label><Input id="pn-start" type="number" value={pageNumberingConfig.start} onChange={(e) => setPageNumberingConfig(prev => ({...prev, start: parseInt(e.target.value,10) || 1}))} min="1" /></div>
+                                            <div><Label htmlFor="pn-fontSize">{texts.pageNumberFontSize}</Label><Input id="pn-fontSize" type="number" value={pageNumberingConfig.fontSize} onChange={(e) => setPageNumberingConfig(prev => ({...prev, fontSize: parseInt(e.target.value,10) || 12}))} min="6" /></div>
+                                            <div><Label htmlFor="pn-margin">{texts.pageNumberMargin}</Label><Input id="pn-margin" type="number" value={pageNumberingConfig.margin} onChange={(e) => setPageNumberingConfig(prev => ({...prev, margin: parseInt(e.target.value,10) || 20}))} min="0" /></div>
+                                            <div><Label htmlFor="pn-format">{texts.pageNumberFormat}</Label><Input id="pn-format" type="text" value={pageNumberingConfig.format} placeholder={texts.pageNumberFormatPlaceholder} onChange={(e) => setPageNumberingConfig(prev => ({...prev, format: e.target.value}))} /></div>
+                                          </>
+                                        )}
+                                      </CardContent>
+                                    </Card>
+                                    <Card>
+                                      <CardHeader>
+                                        <CardTitle className="flex items-center text-lg"><Droplet className="mr-2 h-5 w-5 text-primary" /> {texts.watermarkSectionTitle}</CardTitle>
+                                      </CardHeader>
+                                      <CardContent>
+                                        <Label htmlFor="watermarkInput" className="mb-2 block text-sm font-medium">{texts.watermarkInputPlaceholder}</Label>
+                                        <Input
+                                          id="watermarkInput"
+                                          type="text"
+                                          placeholder={texts.watermarkInputPlaceholder}
+                                          value={watermarkText}
+                                          onChange={(e) => setWatermarkText(e.target.value)}
+                                        />
+                                      </CardContent>
+                                    </Card>
+                                    <Card>
+                                      <CardHeader>
+                                        <CardTitle className="flex items-center text-lg"><Lock className="mr-2 h-5 w-5 text-primary" /> {texts.protectPdfSectionTitle}</CardTitle>
+                                      </CardHeader>
+                                      <CardContent className="space-y-4">
+                                        <div className="flex items-center space-x-2">
+                                          <Switch id="enablePdfProtection" checked={pdfProtectionConfig.enabled} onCheckedChange={(checked) => setPdfProtectionConfig(prev => ({...prev, enabled: checked}))} />
+                                          <Label htmlFor="enablePdfProtection">{texts.enablePdfProtection}</Label>
+                                        </div>
+                                        {pdfProtectionConfig.enabled && (
+                                          <div>
+                                            <Label htmlFor="pdf-password">{texts.pdfPassword}</Label>
+                                            <Input id="pdf-password" type="password" placeholder={texts.pdfPasswordPlaceholder} value={pdfProtectionConfig.password} onChange={(e) => setPdfProtectionConfig(prev => ({...prev, password: e.target.value}))} />
+                                          </div>
+                                        )}
+                                      </CardContent>
+                                    </Card>
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Card>
+                    </Accordion>
+                </div>
             </div>
           )}
       </div>

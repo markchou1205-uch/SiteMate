@@ -54,6 +54,7 @@ const translations = {
         downloadError: 'Failed to download PDF',
         txtDownloadError: 'Failed to download TXT',
         wordConvertError: 'Failed to convert to Word',
+        pdfCoMethodNotFoundError: 'PDF.co Error: "Method Not Found". Please verify your PDF.co API Key is correct and the API endpoint in the Cloud Function is valid. Check PDF.co documentation.',
         wordConvertLimitTitle: 'Conversion Limit Reached',
         wordConvertLimitDescription: 'Guests can convert one PDF to Word per day. Please log in for unlimited conversions.',
         wordConvertSuccess: 'Conversion successful!',
@@ -116,6 +117,7 @@ const translations = {
         downloadError: '下載 PDF 失敗',
         txtDownloadError: '下載 TXT 失敗',
         wordConvertError: '轉換 Word 失敗',
+        pdfCoMethodNotFoundError: 'PDF.co 錯誤：「方法未找到」。請確認您的 PDF.co API 金鑰是否正確，以及 Cloud Function 中的 API 端點是否有效。請查閱 PDF.co 文件。',
         wordConvertLimitTitle: '已達轉換上限',
         wordConvertLimitDescription: '訪客每日僅可轉換一份 PDF 至 Word。請登入以享受無限轉換次數。',
         wordConvertSuccess: '轉換成功！',
@@ -691,20 +693,16 @@ export default function PdfEditorHomepage() {
         setShowWordLimitModal(true);
         return;
       }
-
     }
 
     setIsConvertingToWord(true);
     setLoadingMessage(texts.convertingToWord);
 
     try {
-
       const fileName = `uploads/${new Date().getTime()}_${uploadedPdfFile.name}`;
       const fileStorageRef = storageRef(storage, fileName);
       await uploadBytes(fileStorageRef, uploadedPdfFile);
       const pdfStorageUrl = await getDownloadURL(fileStorageRef);
-
-
 
       const functionUrl = `https://us-central1-sitemate-otkpt.cloudfunctions.net/convertPdfToWord`;
 
@@ -757,9 +755,15 @@ export default function PdfEditorHomepage() {
 
     } catch (error: any) {
       console.error("Word conversion error in frontend:", error);
-      const errMsg = error.message || "未知錯誤";
-      setWordConversionError(`${texts.wordConvertError}: ${errMsg}`);
-      toast({ title: texts.wordConvertError, description: errMsg, variant: "destructive" });
+      const errMsg = error.message || (currentLanguage === 'zh' ? "未知錯誤" : "Unknown error");
+      
+      let toastDescription = errMsg;
+      if (errMsg && typeof errMsg === 'string' && errMsg.toLowerCase().includes("method not found") && errMsg.toLowerCase().includes("pdf.co")) {
+        toastDescription = texts.pdfCoMethodNotFoundError;
+      }
+
+      setWordConversionError(`${texts.wordConvertError}: ${toastDescription}`);
+      toast({ title: texts.wordConvertError, description: toastDescription, variant: "destructive" });
     } finally {
       setIsConvertingToWord(false);
       setLoadingMessage('');
@@ -1103,6 +1107,3 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
-
-
-    

@@ -207,7 +207,7 @@ const translations = {
         topCenter: '中上',
         topRight: '右上',
         pdfEditingTools: 'PDF 工具',
-        downloadAndConvertTitle: '下載與轉換',
+        downloadAndConvertTitle: '下載与轉換',
         startEditingYourPdf: '開始編輯您的 PDF',
         pagesLoaded: '頁已載入。',
         pageSelected: '頁已選取。',
@@ -436,57 +436,25 @@ export default function PdfEditorHomepage() {
     if (zoomedPageData && zoomCanvasRef.current) {
       const canvas = zoomCanvasRef.current;
       const ctx = canvas.getContext('2d');
-      
-      if (!ctx) {
-        console.error("ZoomDialog: Canvas context not available.");
-        return;
-      }
-  
+      if (!ctx) return;
+
       const sourceCanvas = zoomedPageData.canvas;
-      if (!sourceCanvas || sourceCanvas.width === 0 || sourceCanvas.height === 0) {
-        console.error("ZoomDialog: Source canvas is invalid or has zero dimensions.");
-        // Set a fallback small size and draw an error message if source is unusable
-        canvas.width = 100; 
-        canvas.height = 50; 
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = 'black'; // Ensure text is visible on default canvas color
-        ctx.fillText("Error: No source.", 5, 15);
-        return;
-      }
-  
+      
       const baseWidth = sourceCanvas.width;
       const baseHeight = sourceCanvas.height;
-  
-      // Set canvas internal (drawing) dimensions
-      if (currentRotation % 180 !== 0) { // Rotated 90 or 270 degrees
+
+      if (currentRotation % 180 !== 0) {
         canvas.width = baseHeight;
         canvas.height = baseWidth;
-      } else { // Rotated 0 or 180 degrees
+      } else {
         canvas.width = baseWidth;
         canvas.height = baseHeight;
       }
       
-      // Check for NaN or zero dimensions after potential rotation
-      if (!canvas.width || !canvas.height || isNaN(canvas.width) || isNaN(canvas.height) || canvas.width === 0 || canvas.height === 0) {
-          console.error("ZoomDialog: Calculated zoom canvas dimensions are invalid:", canvas.width, canvas.height);
-          // Fallback drawing for invalid dimensions
-          const fallbackWidth = 100;
-          const fallbackHeight = 50;
-          if (canvas.width !== fallbackWidth || canvas.height !== fallbackHeight) { // Avoid recursive calls if already at fallback
-            canvas.width = fallbackWidth;
-            canvas.height = fallbackHeight;
-          }
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.fillStyle = 'black';
-          ctx.fillText("Error: Sizing.", 5, 15);
-          return;
-      }
-  
       ctx.save();
-      ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear based on new dimensions
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.translate(canvas.width / 2, canvas.height / 2);
       ctx.rotate((currentRotation * Math.PI) / 180);
-      // Draw the source image centered, using its original base dimensions for drawing
       ctx.drawImage(sourceCanvas, -baseWidth / 2, -baseHeight / 2, baseWidth, baseHeight);
       ctx.restore();
     }
@@ -962,9 +930,9 @@ export default function PdfEditorHomepage() {
       )}
 
       <Dialog open={!!zoomedPageData} onOpenChange={(isOpen) => { if (!isOpen) setZoomedPageData(null); }}>
-        <DialogContent 
+        <DialogContent
           className="max-w-3xl w-[90vw] h-[90vh] p-0 flex flex-col"
-          aria-labelledby="zoom-dialog-title" 
+          aria-labelledby="zoom-dialog-title"
           aria-describedby="zoom-dialog-description"
         >
           <DialogHeader className="p-4 border-b">
@@ -1109,7 +1077,6 @@ export default function PdfEditorHomepage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                {/* Left Column: Page Previews */}
                 <div className="md:col-span-8">
                     <Card className="shadow-lg min-h-[calc(100vh-20rem)] md:min-h-[calc(100vh-18rem)]">
                         <CardHeader className="flex flex-row items-center justify-between">
@@ -1117,7 +1084,7 @@ export default function PdfEditorHomepage() {
                                 <CardTitle className="flex items-center text-xl"><Shuffle className="mr-2 h-5 w-5 text-primary" /> {texts.pageManagement}</CardTitle>
                                 <CardDescription> {pages.length} {pages.length === 1 ? texts.page.toLowerCase() : (currentLanguage === 'zh' ? texts.pagesLoaded.replace('頁已載入。', '頁') : texts.pagesLoaded.replace('pages loaded.', 'page(s)'))} {currentLanguage === 'zh' ? '已載入' : 'loaded'}. {selectedPages.size > 0 ? `${texts.page} ${Array.from(selectedPages)[0]+1} ${currentLanguage === 'zh' ? texts.pageSelected.replace('頁已選取。','') : texts.pageSelected.replace('page selected.','')}` : ''} </CardDescription>
                             </div>
-                             <Button
+                            <Button
                                 onClick={handleDeletePages}
                                 variant="destructive"
                                 size="sm"
@@ -1142,7 +1109,6 @@ export default function PdfEditorHomepage() {
                     </Card>
                 </div>
 
-                {/* Right Column: Tools/Operations */}
                 <div className="md:col-span-4 space-y-6">
                     <Card className="shadow-lg">
                       <CardHeader>
@@ -1231,7 +1197,7 @@ export default function PdfEditorHomepage() {
                       </CardContent>
                     </Card>
 
-                    <Accordion type="multiple" defaultValue={[]} className="w-full">
+                    <Accordion type="single" collapsible defaultValue="doc-enhance" className="w-full">
                         <Card className="shadow-lg">
                             <AccordionItem value="doc-enhance" className="border-b-0">
                                 <AccordionTrigger className="p-6 hover:no-underline">
@@ -1309,8 +1275,5 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
-    
 
     
-
-

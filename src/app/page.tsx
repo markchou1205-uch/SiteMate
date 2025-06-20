@@ -214,7 +214,7 @@ export default function PdfEditorHomepage() {
         }
       }
     }
-  }, [router]); // Added router to dependency array for useEffect with redirection
+  }, [router]); 
 
   useEffect(() => {
     setTexts(translations[currentLanguage]);
@@ -662,27 +662,35 @@ export default function PdfEditorHomepage() {
       await uploadBytes(fileRef, uploadedPdfFile);
       const pdfStorageUrl = await getDownloadURL(fileRef);
 
-      // ⚠️ 請將 YOUR_REGION 和 YOUR_PROJECT_ID 替換為您的 Firebase 專案實際的區域和專案 ID
-      // ⚠️ 並確認您的 Function 名稱是 convertPdfToWord
+      // ！！！重要：請將下面的 URL 替換為您 Firebase Function 部署後的實際 URL ！！！
+      // 您可以在 Firebase 控制台的 Functions 頁面找到它，或者 Firebase CLI 部署後會顯示。
+      // 它看起來會像：https://<REGION>-<PROJECT_ID>.cloudfunctions.net/<FUNCTION_NAME>
       const functionUrl = `https://us-central1-sitemate-otkpt.cloudfunctions.net/convertPdfToWord`; 
-      // 您部署 Function 後，Firebase CLI 會顯示確切的 URL，或者您可以在 Firebase 控制台的 Functions 頁面找到它。
+      // 上面的 URL 是基於您之前的截圖，請再次確認是否正確。
 
       const response = await fetch(functionUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ fileUrl: pdfStorageUrl }),
+        body: JSON.stringify({ fileUrl: pdfStorageUrl }), // 後端期望的是 fileUrl
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ detail: response.statusText }));
-        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+        let errorData;
+        try {
+            errorData = await response.json();
+        } catch (e) {
+            errorData = { detail: await response.text() || response.statusText };
+        }
+        console.error("Firebase Function HTTP Error Response:", errorData);
+        throw new Error(errorData.detail || errorData.error || `HTTP error! status: ${response.status}`);
       }
 
       const result = await response.json();
       
-      if (!result.wordUrl) { // 根據您 Function 回傳的格式，之前是 downloadUrl，我改為 wordUrl 以匹配
+      if (!result.wordUrl) { 
+        console.error("Firebase Function did not return a wordUrl:", result);
         throw new Error("Firebase Function did not return a Word file URL.");
       }
 
@@ -699,7 +707,7 @@ export default function PdfEditorHomepage() {
       }
 
     } catch (error: any) {
-      console.error("Word conversion error:", error);
+      console.error("Word conversion error in frontend:", error);
       const errMsg = error.message || "未知錯誤";
       setWordConversionError(`${texts.wordConvertError}: ${errMsg}`);
       toast({ title: texts.wordConvertError, description: errMsg, variant: "destructive" });
@@ -1021,3 +1029,5 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
+
+    

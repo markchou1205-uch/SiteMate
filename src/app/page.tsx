@@ -724,7 +724,7 @@ export default function PdfEditorHomepage() {
             const errorText = await response.text();
             errorData = { detail: errorText || response.statusText };
         }
-
+        
         let displayErrorDataForLog: any = errorData;
         if (errorData && typeof errorData === 'object' && Object.keys(errorData).length === 0 && errorData.constructor === Object) {
             displayErrorDataForLog = "[Empty JSON Object from function]";
@@ -1103,3 +1103,6 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
+
+
+    

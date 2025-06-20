@@ -27,15 +27,6 @@ if (typeof window !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 }
 
-const firebaseConfigKeys = [
-  'NEXT_PUBLIC_FIREBASE_API_KEY',
-  'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN',
-  'NEXT_PUBLIC_FIREBASE_PROJECT_ID',
-  'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET',
-  'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID',
-  'NEXT_PUBLIC_FIREBASE_APP_ID',
-];
-
 const translations = {
     en: {
         pageTitle: 'DocuPilot',
@@ -156,7 +147,7 @@ const translations = {
         login: '登入',
         logout: '登出',
         guest: '訪客',
-        firebaseNotConfigured: `Firebase 前端 SDK 設定不完整。請確保所有 Firebase 環境變數 (%MISSING_KEYS%) 都已正確設定並傳播到客戶端。這可能需要檢查建置日誌或 App Hosting 設定。`,
+        firebaseNotConfigured: `Firebase 前端 SDK 設定不完整。請確保所有 Firebase 環境變數 (NEXT_PUBLIC_FIREBASE_API_KEY 等) 都已在您的 .env 檔案中設定。缺少：%MISSING_KEYS%`,
         firebaseSdkInitError: "Firebase SDK 未能正確初始化 (Storage 或 Functions 等服務可能無法使用)。'轉換為 Word' 及其他 Firebase 功能可能被禁用。請檢查瀏覽器控制台來自 firebase.ts 的詳細資訊。",
     }
 };
@@ -201,27 +192,7 @@ export default function PdfEditorHomepage() {
     console.log("[Page.tsx useEffect] STARTING Firebase readiness check...");
     console.log("[Page.tsx useEffect] Current language:", currentLanguage);
 
-    console.log("[Page.tsx useEffect] Checking NEXT_PUBLIC_ environment variables:");
-    firebaseConfigKeys.forEach(key => {
-        console.log(`[Page.tsx useEffect] ${key}:`, process.env[key]);
-    });
-    
-    let missingKeys: string[] = [];
-    if (typeof window !== 'undefined') { // Ensure client-side
-        missingKeys = firebaseConfigKeys.filter(key => {
-            const value = process.env[key];
-            const isMissing = !value || String(value).trim() === '' || String(value) === 'undefined';
-            if (isMissing) {
-                console.log(`[Page.tsx useEffect] Missing or invalid value for key: ${key}, Value: ${value}`);
-            }
-            return isMissing;
-        });
-    }
-    console.log("[Page.tsx useEffect] Calculated missing NEXT_PUBLIC_ keys:", missingKeys);
-
-    const sdkConfigured = missingKeys.length === 0;
-    console.log("[Page.tsx useEffect] sdkConfigured (all NEXT_PUBLIC_ vars present and valid):", sdkConfigured);
-
+    // The primary check is now whether the services from firebase.ts are available
     console.log("[Page.tsx useEffect] Imported firebaseApp from '@/lib/firebase':", firebaseApp);
     console.log("[Page.tsx useEffect] Imported storage from '@/lib/firebase':", storage);
     console.log("[Page.tsx useEffect] Imported firebaseFunctions from '@/lib/firebase':", firebaseFunctions);
@@ -229,24 +200,20 @@ export default function PdfEditorHomepage() {
     const sdkServicesInitialized = !!firebaseApp && !!storage && !!firebaseFunctions;
     console.log("[Page.tsx useEffect] sdkServicesInitialized (app, storage, functions from firebase.ts are truthy):", sdkServicesInitialized);
 
-    if (sdkConfigured && sdkServicesInitialized) {
+    if (sdkServicesInitialized) {
         setIsFirebaseSystemReady(true);
         setFirebaseConfigWarning('');
-        console.log("[Page.tsx useEffect] Firebase system is READY.");
+        console.log("[Page.tsx useEffect] Firebase system is READY because services from firebase.ts are initialized.");
     } else {
         setIsFirebaseSystemReady(false);
-        let warningMsg = '';
-        if (!sdkConfigured) {
-            const missingKeysString = missingKeys.join(', ');
-            const baseMessage = translations[currentLanguage]?.firebaseNotConfigured || "Firebase Frontend SDK is not fully configured. Missing: %MISSING_KEYS%";
-            warningMsg = baseMessage.replace('%MISSING_KEYS%', missingKeysString || 'unknown');
-            console.warn(`[Page.tsx useEffect] Firebase SDK NOT configured due to missing NEXT_PUBLIC_ vars. Missing keys: ${missingKeysString}`);
-        } else { // This implies sdkConfigured is true, so !sdkServicesInitialized must be true
-            warningMsg = translations[currentLanguage]?.firebaseSdkInitError || "Firebase SDK services (app, storage, functions) NOT initialized.";
-            console.warn(`[Page.tsx useEffect] Firebase SDK services (app, storage, functions) NOT initialized, though NEXT_PUBLIC_ vars might be present. firebaseApp: ${!!firebaseApp}, storage: ${!!storage}, functions: ${!!firebaseFunctions}`);
-        }
+        let warningMsg = translations[currentLanguage]?.firebaseSdkInitError || "Firebase SDK services (app, storage, functions) NOT initialized.";
+        
+        if (!firebaseApp) console.warn("[Page.tsx useEffect] firebaseApp from 'firebase.ts' is falsy or undefined.");
+        if (!storage) console.warn("[Page.tsx useEffect] storage from 'firebase.ts' is falsy or undefined.");
+        if (!firebaseFunctions) console.warn("[Page.tsx useEffect] firebaseFunctions from 'firebase.ts' is falsy or undefined.");
+        
         setFirebaseConfigWarning(warningMsg);
-        console.log("[Page.tsx useEffect] Firebase system is NOT ready. Warning message set:", warningMsg);
+        console.warn(`[Page.tsx useEffect] Firebase system is NOT ready. Warning message set: ${warningMsg}`);
     }
     console.log("[Page.tsx useEffect] ENDING Firebase readiness check.");
   }, [currentLanguage, translations]);
@@ -1096,3 +1063,4 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
+

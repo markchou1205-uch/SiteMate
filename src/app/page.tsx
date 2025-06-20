@@ -263,7 +263,7 @@ export default function PdfEditorHomepage() {
       localStorage.removeItem('isLoggedIn');
     }
     setIsLoggedIn(false);
-    toast({ title: texts.logout, description: "您已成功登出。" });
+    toast({ title: texts.logout, description: "您已成功登出。", });
   };
 
   const renderPagePreviews = useCallback(() => {
@@ -469,7 +469,7 @@ export default function PdfEditorHomepage() {
         setPdfDocumentProxy(null);
         setUploadedPdfFile(null);
     }
-    toast({ title: texts.pageManagement, description: "選取的頁面已刪除。" });
+    toast({ title: texts.pageManagement, description: "選取的頁面已刪除。", });
   };
 
   const handleDownloadPdf = async () => {
@@ -651,7 +651,7 @@ export default function PdfEditorHomepage() {
       }
       setSelectedPages(newSelected);
 
-      toast({ title: texts.insertAreaTitle, description: "PDF 插入成功。" });
+      toast({ title: texts.insertAreaTitle, description: "PDF 插入成功。", });
 
     } catch (err: any) {
       toast({ title: texts.insertError, description: err.message, variant: "destructive" });
@@ -1104,3 +1104,6 @@ export default function PdfEditorHomepage() {
     
 
 
+
+
+    

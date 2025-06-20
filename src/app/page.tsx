@@ -122,6 +122,7 @@ const translations = {
         featureConvert: 'Convert',
         accordionDocEnhanceProtect: 'Document Enhancements & Protection',
         pageActions: 'Page Actions',
+        uploadNewPdfButton: "Upload New PDF",
     },
     zh: {
         pageTitle: 'DocuPilot 文件助手',
@@ -215,6 +216,7 @@ const translations = {
         featureConvert: '轉換',
         accordionDocEnhanceProtect: '文件增強與保護',
         pageActions: '頁面操作',
+        uploadNewPdfButton: "上傳新 PDF",
     }
 };
 
@@ -398,7 +400,7 @@ export default function PdfEditorHomepage() {
       wrapper.addEventListener('dblclick', () => {
         setZoomedPageData({ canvas: pageCanvas, index });
         setCurrentRotation(0); 
-        setZoomLevel(1); // Reset zoom level when opening new page
+        setZoomLevel(1);
         setIsZoomModalOpen(true);
       });
       previewContainerRef.current?.appendChild(wrapper);
@@ -435,42 +437,44 @@ export default function PdfEditorHomepage() {
 
   useEffect(() => {
     if (isZoomModalOpen && zoomedPageData && zoomCanvasRef.current) {
-      const canvas = zoomCanvasRef.current;
+      const canvas = zoomCanvasRef.current; // This is the TARGET canvas
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      const sourceCanvas = zoomedPageData.canvas;
+      const sourceCanvas = zoomedPageData.canvas; // This is the ORIGINAL page canvas
       const srcWidth = sourceCanvas.width;
       const srcHeight = sourceCanvas.height;
 
-      // Calculate the effective dimensions of the canvas element based on rotation and zoom
-      // These are the dimensions of the drawing buffer.
-      let effectiveCanvasWidth = srcWidth * zoomLevel;
-      let effectiveCanvasHeight = srcHeight * zoomLevel;
+      let targetBufferWidth: number;
+      let targetBufferHeight: number;
+
       if (currentRotation % 180 !== 0) { // 90 or 270 degrees
-        effectiveCanvasWidth = srcHeight * zoomLevel;
-        effectiveCanvasHeight = srcWidth * zoomLevel;
+        targetBufferWidth = srcHeight * zoomLevel;
+        targetBufferHeight = srcWidth * zoomLevel;
+      } else { // 0 or 180 degrees
+        targetBufferWidth = srcWidth * zoomLevel;
+        targetBufferHeight = srcHeight * zoomLevel;
       }
       
-      canvas.width = effectiveCanvasWidth;
-      canvas.height = effectiveCanvasHeight;
-
-      // The canvas's CSS style (if set) can be used for display scaling, 
-      // but here we're setting the attribute, so style isn't strictly needed for size.
-      // However, the parent div with overflow:auto will use these attributes.
+      canvas.width = targetBufferWidth;
+      canvas.height = targetBufferHeight;
 
       ctx.save();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Translate to the center of this new effective (zoomed & rotated) canvas for rotation pivot
       ctx.translate(canvas.width / 2, canvas.height / 2);
       ctx.rotate((currentRotation * Math.PI) / 180);
 
-      // Draw the source image. It needs to be scaled to fill the *original* source dimensions
-      // (before zoom was applied to canvas.width/height), but centered.
-      // The canvas context is already scaled because canvas.width/height include zoomLevel.
-      // So, draw the source image at its original size, centered.
-      ctx.drawImage(sourceCanvas, -srcWidth / 2, -srcHeight / 2, srcWidth, srcHeight);
+      // Draw the sourceCanvas, scaled to fill the target canvas's dimensions.
+      // The target canvas (canvas.width, canvas.height) already incorporates zoomLevel.
+      // So, we draw sourceCanvas to fill this target canvas.
+      ctx.drawImage(
+        sourceCanvas,
+        -canvas.width / 2,  // Center the drawn image in the rotated context
+        -canvas.height / 2,
+        canvas.width,       // Draw the source image to fill the target canvas's width
+        canvas.height       // Draw the source image to fill the target canvas's height
+      );
       
       ctx.restore();
     }
@@ -934,21 +938,17 @@ export default function PdfEditorHomepage() {
     setIsZoomModalOpen(false);
     setZoomedPageData(null);
     setCurrentRotation(0);
-    setZoomLevel(1); // Reset zoom level
+    setZoomLevel(1);
   };
 
-  const ZOOM_SPEED = 0.1; // Base speed factor
+  const ZOOM_SPEED = 0.1; 
   const MIN_ZOOM = 0.1;
   const MAX_ZOOM = 5;
 
   const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => {
     if (!isZoomModalOpen || !zoomedPageData) return;
     event.preventDefault();
-
-    // Adjust sensitivity: event.deltaY can be ~100 for a typical wheel notch.
-    // A smaller multiplier makes the zoom smoother.
     const zoomAmount = -event.deltaY * ZOOM_SPEED * 0.01; 
-    
     setZoomLevel(prevZoomLevel => {
       const newZoomLevel = prevZoomLevel + zoomAmount;
       return Math.min(Math.max(newZoomLevel, MIN_ZOOM), MAX_ZOOM);
@@ -973,9 +973,9 @@ export default function PdfEditorHomepage() {
          <div 
           role="dialog" 
           aria-modal="true" 
-          aria-label={zoomedPageData ? `${texts.previewOf} ${texts.page} ${zoomedPageData.index + 1}` : texts.previewOf}
+          aria-label={zoomedPageData ? `${texts.previewOf} ${texts.page} ${zoomedPageData.index + 1} (${(zoomLevel * 100).toFixed(0)}%)` : texts.previewOf}
           className="fixed inset-0 z-50 flex items-center justify-center"
-          onClick={closeZoomModal} // Close on backdrop click
+          onClick={closeZoomModal}
         >
           <div 
             className="fixed inset-0 bg-black/60 backdrop-blur-sm" 
@@ -983,9 +983,8 @@ export default function PdfEditorHomepage() {
           ></div>
           <div 
             className="relative bg-card text-card-foreground shadow-2xl rounded-lg w-[90vw] max-w-4xl h-[90vh] flex flex-col overflow-hidden"
-            onClick={(e) => e.stopPropagation()} // Prevent modal close when clicking inside modal content
+            onClick={(e) => e.stopPropagation()} 
           >
-            {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-border">
               <h2 className="text-lg font-semibold text-foreground">
                  {texts.previewOf} {texts.page} {zoomedPageData.index + 1}
@@ -995,21 +994,17 @@ export default function PdfEditorHomepage() {
                 <X className="h-5 w-5" />
               </Button>
             </div>
-
-            {/* Content - Scrollable and Zoomable Area */}
             <div
               ref={zoomScrollContainerRef}
-              className="flex-grow overflow-auto p-1 bg-muted/40 flex items-center justify-center" // Added flex for centering canvas when smaller than container
+              className="flex-grow overflow-auto p-4 bg-muted/40" 
               onWheel={handleWheel}
             >
               <canvas
                 ref={zoomCanvasRef}
-                className="shadow-lg" // max-w-full, max-h-full, object-contain removed
-                style={{ willReadFrequently: true } as any}
+                className="shadow-lg" 
+                style={{ willReadFrequently: true } as any} 
               />
             </div>
-
-            {/* Footer */}
             <div className="p-4 border-t border-border flex flex-col md:flex-row items-center gap-2 justify-between">
               <Input 
                 type="text" 
@@ -1169,7 +1164,6 @@ export default function PdfEditorHomepage() {
                           ref={previewContainerRef}
                           className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-1 bg-muted/20 rounded-md min-h-[200px]"
                         >
-                          {/* Page previews will be rendered here by renderPagePreviews */}
                         </div>
                          <div className="mt-4 text-sm text-muted-foreground space-y-1">
                             <p><Info className="inline h-4 w-4 mr-1 text-primary/80" /> {texts.instSelect}</p>
@@ -1181,7 +1175,7 @@ export default function PdfEditorHomepage() {
                 </div>
 
                 <div className="md:col-span-4 space-y-6">
-                    <Card className="shadow-lg">
+                     <Card className="shadow-lg">
                       <CardHeader>
                         <CardTitle className="flex items-center text-lg"><FilePlus className="mr-2 h-5 w-5 text-primary" /> {texts.insertAreaTitle}</CardTitle>
                       </CardHeader>
@@ -1346,3 +1340,4 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
+

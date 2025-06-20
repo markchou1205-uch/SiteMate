@@ -206,7 +206,7 @@ export default function PdfEditorHomepage() {
         console.log("[Page.tsx useEffect] Firebase system is READY because services from firebase.ts are initialized.");
     } else {
         setIsFirebaseSystemReady(false);
-        let warningMsg = translations[currentLanguage]?.firebaseSdkInitError || "Firebase SDK services (app, storage, functions) NOT initialized.";
+        let warningMsg = texts?.firebaseSdkInitError || "Firebase SDK services (app, storage, functions) NOT initialized.";
         
         if (!firebaseApp) console.warn("[Page.tsx useEffect] firebaseApp from 'firebase.ts' is falsy or undefined.");
         if (!storage) console.warn("[Page.tsx useEffect] storage from 'firebase.ts' is falsy or undefined.");
@@ -216,7 +216,7 @@ export default function PdfEditorHomepage() {
         console.warn(`[Page.tsx useEffect] Firebase system is NOT ready. Warning message set: ${warningMsg}`);
     }
     console.log("[Page.tsx useEffect] ENDING Firebase readiness check.");
-  }, [currentLanguage, translations]);
+  }, [currentLanguage, texts]);
 
 
   useEffect(() => {
@@ -1066,5 +1066,7 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
+
+    
 
     

@@ -34,7 +34,7 @@ const translations = {
     en: {
         pageTitle: 'DocuPilot',
         uploadLabel: 'Select PDF file to edit:',
-        deletePages: 'Delete Selected',
+        deletePages: 'Delete Selected Pages',
         downloadPdf: 'Download Edited PDF',
         downloadTxt: 'Download as TXT',
         convertToWord: 'Convert to Word',
@@ -43,7 +43,6 @@ const translations = {
         insertOptionsTitle: 'Insertion Options',
         insertBeforeLabel: 'Insert before selected page',
         insertAfterLabel: 'Insert after selected page',
-        // selectFileToInsert: 'Select PDF to insert:', // Label removed from UI
         instSelect: 'Click page to select/deselect.',
         instDrag: 'Drag pages to reorder.',
         instZoom: 'Double click page to zoom.',
@@ -123,14 +122,14 @@ const translations = {
         featureProtect: 'Protect',
         featureConvert: 'Convert',
         uploadNewPdf: 'Upload New PDF',
-        // accordionPageOrg: 'Page Organization', // Removed
+        accordionPageOrg: 'Page Organization',
         accordionDocEnhanceProtect: 'Document Enhancements & Protection',
         pageActions: 'Page Actions',
     },
     zh: {
         pageTitle: 'DocuPilot 文件助手',
         uploadLabel: '選擇要編輯的 PDF 檔案：',
-        deletePages: '刪除選取',
+        deletePages: '刪除選取的頁面',
         downloadPdf: '下載編輯後 PDF',
         downloadTxt: '下載為 TXT 檔案',
         convertToWord: '轉換為 Word',
@@ -139,7 +138,6 @@ const translations = {
         insertOptionsTitle: '插入選項',
         insertBeforeLabel: '插入此頁之前',
         insertAfterLabel: '插入此頁之後',
-        // selectFileToInsert: '選擇要插入的 PDF：', // Label removed from UI
         instSelect: '點選頁面以選取/取消。',
         instDrag: '拖曳頁面以調整順序。',
         instZoom: '雙擊頁面以放大預覽。',
@@ -219,7 +217,7 @@ const translations = {
         featureProtect: '保護',
         featureConvert: '轉換',
         uploadNewPdf: '上傳新 PDF',
-        // accordionPageOrg: '頁面組織', // Removed
+        accordionPageOrg: '頁面組織',
         accordionDocEnhanceProtect: '文件增強與保護',
         pageActions: '頁面操作',
     }
@@ -1094,11 +1092,22 @@ export default function PdfEditorHomepage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
                 {/* Left Column: Page Previews */}
-                <div className="md:col-span-7 lg:col-span-7">
+                <div className="md:col-span-8">
                     <Card className="shadow-lg min-h-[calc(100vh-20rem)] md:min-h-[calc(100vh-18rem)]">
-                      <CardHeader>
-                        <CardTitle className="flex items-center text-xl"><Shuffle className="mr-2 h-5 w-5 text-primary" /> {texts.pageManagement}</CardTitle>
-                        <CardDescription> {pages.length} {pages.length === 1 ? texts.page.toLowerCase() : (currentLanguage === 'zh' ? texts.pagesLoaded.replace('頁已載入。', '頁') : texts.pagesLoaded.replace('pages loaded.', 'page(s)'))} {currentLanguage === 'zh' ? '已載入' : 'loaded'}. {selectedPages.size > 0 ? `${texts.page} ${Array.from(selectedPages)[0]+1} ${currentLanguage === 'zh' ? texts.pageSelected.replace('頁已選取。','') : texts.pageSelected.replace('page selected.','')}` : ''} </CardDescription>
+                      <CardHeader className="flex flex-row items-start justify-between">
+                        <div>
+                            <CardTitle className="flex items-center text-xl"><Shuffle className="mr-2 h-5 w-5 text-primary" /> {texts.pageManagement}</CardTitle>
+                            <CardDescription> {pages.length} {pages.length === 1 ? texts.page.toLowerCase() : (currentLanguage === 'zh' ? texts.pagesLoaded.replace('頁已載入。', '頁') : texts.pagesLoaded.replace('pages loaded.', 'page(s)'))} {currentLanguage === 'zh' ? '已載入' : 'loaded'}. {selectedPages.size > 0 ? `${texts.page} ${Array.from(selectedPages)[0]+1} ${currentLanguage === 'zh' ? texts.pageSelected.replace('頁已選取。','') : texts.pageSelected.replace('page selected.','')}` : ''} </CardDescription>
+                        </div>
+                         <Button
+                            onClick={handleDeletePages}
+                            variant="destructive"
+                            size="sm"
+                            disabled={selectedPages.size === 0 || pages.length === 0}
+                            className="ml-auto"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" /> {texts.deletePages}
+                          </Button>
                       </CardHeader>
                       <CardContent>
                         <div
@@ -1107,20 +1116,23 @@ export default function PdfEditorHomepage() {
                           className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-1 bg-muted/20 rounded-md min-h-[200px]"
                         >
                         </div>
+                         <div className="mt-4 text-sm text-muted-foreground space-y-1">
+                            <p><Info className="inline h-4 w-4 mr-1 text-primary/80" /> {texts.instSelect}</p>
+                            <p><Info className="inline h-4 w-4 mr-1 text-primary/80" /> {texts.instDrag}</p>
+                            <p><Info className="inline h-4 w-4 mr-1 text-primary/80" /> {texts.instZoom}</p>
+                        </div>
                       </CardContent>
                     </Card>
                 </div>
 
                 {/* Right Column: Tools/Operations */}
-                <div className="md:col-span-5 lg:col-span-5 space-y-6">
-                    
+                <div className="md:col-span-4 space-y-6">
                     <Card className="shadow-lg">
                       <CardHeader>
                         <CardTitle className="flex items-center text-lg"><FilePlus className="mr-2 h-5 w-5 text-primary" /> {texts.insertAreaTitle}</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div>
-                          {/* Removed Label: <Label htmlFor="insertPdfInput" className="mb-2 block cursor-pointer text-sm font-medium">{texts.selectFileToInsert}</Label> */}
                           <div
                               className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer"
                               onClick={() => insertPdfRef.current?.click()}
@@ -1151,22 +1163,7 @@ export default function PdfEditorHomepage() {
                             <Label htmlFor="r-after" className="font-normal">{texts.insertAfterLabel}</Label>
                           </div>
                         </RadioGroup>
-                        <p className="text-xs text-muted-foreground">{selectedPages.size === 0 && pages.length > 0 ? texts.insertConfirmDescription.split('.')[0] + '.' : ''}</p>
                       </CardContent>
-                    </Card>
-
-                    <Card className="shadow-lg">
-                        <CardHeader>
-                            <CardTitle className="flex items-center text-lg"><Edit3 className="mr-2 h-5 w-5 text-primary" /> {texts.pageActions}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-2">
-                            <p className="text-sm text-muted-foreground">{texts.instSelect}</p>
-                            <p className="text-sm text-muted-foreground">{texts.instDrag}</p>
-                            <p className="text-sm text-muted-foreground">{texts.instZoom}</p>
-                            <Button onClick={handleDeletePages} variant="destructive" disabled={selectedPages.size === 0 || pages.length === 0} className="w-full mt-2">
-                                <Trash2 className="mr-2 h-4 w-4" /> {texts.deletePages}
-                            </Button>
-                        </CardContent>
                     </Card>
                     
                     <Card className="shadow-lg">

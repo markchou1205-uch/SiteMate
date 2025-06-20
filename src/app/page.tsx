@@ -21,7 +21,7 @@ import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffl
 
 import { storage, functions as firebaseFunctions } from '@/lib/firebase'; // Firebase SDK
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { httpsCallable } from 'firebase/functions';
+import { httpsCallable, type HttpsCallableResult } from 'firebase/functions';
 
 
 if (typeof window !== 'undefined') {
@@ -154,7 +154,6 @@ const translations = {
 const DAILY_DOWNLOAD_LIMIT = 3;
 const DAILY_WORD_CONVERSION_LIMIT = 1;
 
-// Check if Firebase is configured
 const isFirebaseConfigured =
   process.env.NEXT_PUBLIC_FIREBASE_API_KEY &&
   process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
@@ -168,7 +167,7 @@ export default function PdfEditorHomepage() {
   const [selectedPages, setSelectedPages] = useState<Set<number>>(new Set());
   const [zoomedPageData, setZoomedPageData] = useState<{ canvas: HTMLCanvasElement, index: number } | null>(null);
   const [currentRotation, setCurrentRotation] = useState(0);
-  const [currentLanguage, setCurrentLanguage] = useState<'en' | 'zh'>('zh'); // Default to Chinese
+  const [currentLanguage, setCurrentLanguage] = useState<'en' | 'zh'>('zh');
   const [texts, setTexts] = useState(translations.zh);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
@@ -181,7 +180,7 @@ export default function PdfEditorHomepage() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [pdfDocumentProxy, setPdfDocumentProxy] = useState<PDFDocumentProxyType | null>(null);
-  const [uploadedPdfFile, setUploadedPdfFile] = useState<File | null>(null); // Store original PDF file
+  const [uploadedPdfFile, setUploadedPdfFile] = useState<File | null>(null);
 
   const [isConvertingToWord, setIsConvertingToWord] = useState(false);
   const [wordFileUrl, setWordFileUrl] = useState<string | null>(null);
@@ -200,7 +199,6 @@ export default function PdfEditorHomepage() {
       const loggedInStatus = localStorage.getItem('isLoggedIn') === 'true';
       setIsLoggedIn(loggedInStatus);
 
-      // Load download limit info
       const today = new Date().toISOString().split('T')[0];
       let downloadInfoString = localStorage.getItem('DocuPilotDownloadInfo');
       if (downloadInfoString) {
@@ -209,7 +207,6 @@ export default function PdfEditorHomepage() {
           localStorage.removeItem('DocuPilotDownloadInfo');
         }
       }
-       // Load word conversion limit info
       let wordConversionInfoString = localStorage.getItem('DocuPilotWordConversionInfo');
       if (wordConversionInfoString) {
         let wordInfo = JSON.parse(wordConversionInfoString);
@@ -293,7 +290,7 @@ export default function PdfEditorHomepage() {
       sortableInstanceRef.current = Sortable.create(previewContainerRef.current, {
         animation: 150,
         ghostClass: 'opacity-50',
-        chosenClass: 'shadow-2xl',
+        chosenClass: 'shadow-2xl', // Changed from 'ring-2 ring-offset-2 ring-primary'
         dragClass: 'opacity-75',
         onEnd: (evt) => {
           if (evt.oldIndex === undefined || evt.newIndex === undefined) return;
@@ -405,9 +402,9 @@ export default function PdfEditorHomepage() {
         if (file) toast({ title: texts.loadError, description: "無效的檔案類型。請上傳 PDF。", variant: "destructive" });
         return;
     }
-    setUploadedPdfFile(file); // Store the original file
-    setWordFileUrl(null); // Reset word download link
-    setWordConversionError(null); // Reset word conversion error
+    setUploadedPdfFile(file);
+    setWordFileUrl(null);
+    setWordConversionError(null);
 
     setIsLoading(true);
     setLoadingMessage(texts.loadingPdf);
@@ -435,7 +432,6 @@ export default function PdfEditorHomepage() {
     const newPages = pages.filter((_, idx) => !selectedPages.has(idx));
     setPages(newPages);
     setSelectedPages(new Set());
-    // If all pages are deleted, reset pdfDocumentProxy and uploadedPdfFile
     if (newPages.length === 0) {
         setPdfDocumentProxy(null);
         setUploadedPdfFile(null);
@@ -455,7 +451,7 @@ export default function PdfEditorHomepage() {
       let downloadInfo = downloadInfoString ? JSON.parse(downloadInfoString) : { count: 0, date: today };
 
       if (downloadInfo.date !== today) {
-        downloadInfo = { count: 0, date: today }; // Reset for new day
+        downloadInfo = { count: 0, date: today };
       }
 
       if (downloadInfo.count >= DAILY_DOWNLOAD_LIMIT) {
@@ -640,7 +636,6 @@ export default function PdfEditorHomepage() {
         return;
     }
 
-
     setWordFileUrl(null);
     setWordConversionError(null);
 
@@ -650,40 +645,40 @@ export default function PdfEditorHomepage() {
       let wordConversionInfo = wordConversionInfoString ? JSON.parse(wordConversionInfoString) : { count: 0, date: today };
 
       if (wordConversionInfo.date !== today) {
-        wordConversionInfo = { count: 0, date: today }; // Reset for new day
+        wordConversionInfo = { count: 0, date: today };
       }
 
       if (wordConversionInfo.count >= DAILY_WORD_CONVERSION_LIMIT) {
         setShowWordLimitModal(true);
         return;
       }
-      // Increment count after successful conversion attempt
     }
 
     setIsConvertingToWord(true);
     setLoadingMessage(texts.convertingToWord);
 
     try {
-      // 1. Upload PDF to Firebase Storage
       const fileName = `uploads/${new Date().getTime()}_${uploadedPdfFile.name}`;
       const fileRef = storageRef(storage, fileName);
       await uploadBytes(fileRef, uploadedPdfFile);
       const pdfStorageUrl = await getDownloadURL(fileRef);
 
-      // 2. Call Firebase Function (Simulated)
-      // In a real app, you would call your actual Firebase Function here:
-      // const convertPdfToWordFunction = httpsCallable(firebaseFunctions, 'yourFunctionName');
-      // const response = await convertPdfToWordFunction({ pdfUrl: pdfStorageUrl, apiKey: process.env.NEXT_PUBLIC_PDF_CO_API_KEY });
-      // const wordDownloadLink = (response.data as any).wordUrl;
+      // Call the actual Firebase Function
+      type ConvertFunctionInput = { pdfUrl: string };
+      type ConvertFunctionOutput = { wordUrl: string };
 
-      // Simulation:
-      await new Promise(resolve => setTimeout(resolve, 3000)); // Simulate network delay
-      const simulatedWordDownloadLink = `https://placehold.co/mock-document.docx`; // Replace with actual link from function
+      const convertPdfToWordFunction = httpsCallable<ConvertFunctionInput, ConvertFunctionOutput>(firebaseFunctions, 'convertPdfToWord');
+      const response: HttpsCallableResult<ConvertFunctionOutput> = await convertPdfToWordFunction({ pdfUrl: pdfStorageUrl });
+      
+      const wordDownloadLink = response.data.wordUrl;
 
-      setWordFileUrl(simulatedWordDownloadLink);
+      if (!wordDownloadLink) {
+        throw new Error("Firebase Function did not return a Word file URL.");
+      }
+
+      setWordFileUrl(wordDownloadLink);
       toast({ title: texts.wordConvertSuccess, description: texts.downloadWordFile });
 
-      // Update guest conversion count
       if (!isLoggedIn && typeof window !== 'undefined') {
         const today = new Date().toISOString().split('T')[0];
         let wordConversionInfoString = localStorage.getItem('DocuPilotWordConversionInfo');
@@ -984,7 +979,7 @@ export default function PdfEditorHomepage() {
             </Card>
 
             {pages.length > 0 ? (
-              <Card className="shadow-lg min-h-[calc(100vh-26rem)] md:min-h-[calc(100vh-24rem)]">
+              <Card className="shadow-lg min-h-[calc(100vh-20rem)] md:min-h-[calc(100vh-18rem)]">
                 <CardHeader>
                   <CardTitle className="flex items-center text-xl"><Shuffle className="mr-2 h-5 w-5 text-primary" /> {texts.pageManagement}</CardTitle>
                   <CardDescription> {pages.length} {pages.length === 1 ? texts.page.toLowerCase() : (currentLanguage === 'zh' ? texts.page.toLowerCase() : texts.page.toLowerCase() + 's')} 加載完成。 {selectedPages.size > 0 ? `${texts.page} ${Array.from(selectedPages)[0]+1} 已選取。` : ''} </CardDescription>
@@ -999,7 +994,7 @@ export default function PdfEditorHomepage() {
                 </CardContent>
               </Card>
             ) : (
-              <Card className="shadow-lg min-h-[calc(100vh-26rem)] md:min-h-[calc(100vh-24rem)] flex flex-col items-center justify-center bg-muted/30">
+              <Card className="shadow-lg min-h-[calc(100vh-20rem)] md:min-h-[calc(100vh-18rem)] flex flex-col items-center justify-center bg-muted/30">
                 <CardContent className="text-center">
                   <Search className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                   <p className="text-xl font-semibold text-muted-foreground">{texts.pageTitle}</p>
@@ -1016,3 +1011,4 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
+

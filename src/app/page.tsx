@@ -359,19 +359,19 @@ export default function PdfEditorHomepage() {
       const baseHeight = sourceCanvas.height;
 
       const modalContentElement = canvas.parentElement?.parentElement;
-      const modalContentWidth = modalContentElement?.clientWidth ? modalContentElement.clientWidth - 64 : 800 - 64; // Default to 800-64 if clientWidth is not available
-      const modalContentHeight = typeof window !== 'undefined' ? window.innerHeight * 0.7 : 500; // Default to 500 if window is not available
+      const modalContentWidth = modalContentElement?.clientWidth ? modalContentElement.clientWidth - 64 : 800 - 64; 
+      const modalContentHeight = typeof window !== 'undefined' ? window.innerHeight * 0.7 : 500; 
 
 
       let scaleX = modalContentWidth / baseWidth;
       let scaleY = modalContentHeight / baseHeight;
 
-      if (currentRotation % 180 !== 0) { // Swapped dimensions for rotation
+      if (currentRotation % 180 !== 0) { 
         scaleX = modalContentWidth / baseHeight;
         scaleY = modalContentHeight / baseWidth;
       }
 
-      const currentScale = Math.min(scaleX, scaleY, 2); // Max scale 2x
+      const currentScale = Math.min(scaleX, scaleY, 2); 
 
       let displayWidth = baseWidth * currentScale;
       let displayHeight = baseHeight * currentScale;
@@ -385,7 +385,7 @@ export default function PdfEditorHomepage() {
       ctx.rotate((currentRotation * Math.PI) / 180);
       ctx.drawImage(
         sourceCanvas,
-        -displayWidth / 2, // Center the image based on its unrotated dimensions scaled
+        -displayWidth / 2, 
         -displayHeight / 2,
         displayWidth,
         displayHeight
@@ -406,7 +406,7 @@ export default function PdfEditorHomepage() {
     const loadedCanvases: HTMLCanvasElement[] = [];
     for (let i = 1; i <= numPages; i++) {
       const page = await pdfDocProxy.getPage(i);
-      const viewport = page.getViewport({ scale: 1.5 }); // Standard scale for stored canvases
+      const viewport = page.getViewport({ scale: 1.5 }); 
       const canvas = document.createElement('canvas');
       canvas.width = viewport.width;
       canvas.height = viewport.height;
@@ -420,14 +420,14 @@ export default function PdfEditorHomepage() {
 
   const handlePdfUpload = async (event: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLDivElement>) => {
     let file: File | null = null;
-    if ('dataTransfer' in event) { // Drag event
+    if ('dataTransfer' in event) { 
         event.preventDefault();
         event.stopPropagation();
         if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
             file = event.dataTransfer.files[0];
-            event.dataTransfer.clearData(); // Important for some browsers
+            event.dataTransfer.clearData(); 
         }
-    } else { // Change event from input
+    } else { 
         file = event.target.files?.[0] || null;
     }
 
@@ -436,7 +436,7 @@ export default function PdfEditorHomepage() {
         return;
     }
     setUploadedPdfFile(file);
-    setWordFileUrl(null); // Reset previous conversion result
+    setWordFileUrl(null); 
     setWordConversionError(null);
 
     setIsLoading(true);
@@ -445,7 +445,7 @@ export default function PdfEditorHomepage() {
       const { canvases, docProxy } = await processPdfFile(file);
       setPages(canvases);
       setPdfDocumentProxy(docProxy);
-      setSelectedPages(new Set()); // Clear selection on new upload
+      setSelectedPages(new Set()); 
     } catch (err: any) {
       toast({ title: texts.loadError, description: err.message, variant: "destructive" });
       setPdfDocumentProxy(null);
@@ -453,7 +453,7 @@ export default function PdfEditorHomepage() {
     } finally {
       setIsLoading(false);
       setLoadingMessage('');
-      if (pdfUploadRef.current) pdfUploadRef.current.value = ''; // Reset file input
+      if (pdfUploadRef.current) pdfUploadRef.current.value = ''; 
     }
   };
 
@@ -464,8 +464,8 @@ export default function PdfEditorHomepage() {
     }
     const newPages = pages.filter((_, idx) => !selectedPages.has(idx));
     setPages(newPages);
-    setSelectedPages(new Set()); // Clear selection
-    if (newPages.length === 0) { // If all pages deleted
+    setSelectedPages(new Set()); 
+    if (newPages.length === 0) { 
         setPdfDocumentProxy(null);
         setUploadedPdfFile(null);
     }
@@ -478,13 +478,13 @@ export default function PdfEditorHomepage() {
       return;
     }
 
-    // Guest download limit check
+    
     if (!isLoggedIn && typeof window !== 'undefined') {
       const today = new Date().toISOString().split('T')[0];
       let downloadInfoString = localStorage.getItem('DocuPilotDownloadInfo');
       let downloadInfo = downloadInfoString ? JSON.parse(downloadInfoString) : { count: 0, date: today };
 
-      if (downloadInfo.date !== today) { // Reset count if it's a new day
+      if (downloadInfo.date !== today) { 
         downloadInfo = { count: 0, date: today };
       }
 
@@ -499,7 +499,7 @@ export default function PdfEditorHomepage() {
     setIsDownloading(true);
     setLoadingMessage(texts.generatingFile);
     try {
-      await new Promise(resolve => setTimeout(resolve, 100)); // Brief pause for UI update
+      await new Promise(resolve => setTimeout(resolve, 100)); 
       const pdfDocOut = await PDFLibDocument.create();
       const helveticaFont = await pdfDocOut.embedFont(StandardFonts.Helvetica);
 
@@ -509,7 +509,7 @@ export default function PdfEditorHomepage() {
         const page = pdfDocOut.addPage([canvas.width, canvas.height]);
         page.drawImage(pngImage, { x: 0, y: 0, width: canvas.width, height: canvas.height });
 
-        // Apply watermark if text is present
+        
         if (watermarkText.trim() !== '') {
             const textWidth = helveticaFont.widthOfTextAtSize(watermarkText, 50);
             const textHeight = helveticaFont.heightAtSize(50);
@@ -517,10 +517,10 @@ export default function PdfEditorHomepage() {
 
             page.drawText(watermarkText, {
                 x: pageWidth / 2 - textWidth / 2,
-                y: pageHeight / 2 - textHeight / 4, // Approximate vertical center
+                y: pageHeight / 2 - textHeight / 4, 
                 font: helveticaFont,
                 size: 50,
-                color: rgb(0.75, 0.75, 0.75), // Light grey
+                color: rgb(0.75, 0.75, 0.75), 
                 opacity: 0.3,
                 rotate: degrees(45),
             });
@@ -551,7 +551,7 @@ export default function PdfEditorHomepage() {
       return;
     }
 
-     // Guest download limit check (counts as a download)
+     
      if (!isLoggedIn && typeof window !== 'undefined') {
       const today = new Date().toISOString().split('T')[0];
       let downloadInfoString = localStorage.getItem('DocuPilotDownloadInfo');
@@ -577,7 +577,7 @@ export default function PdfEditorHomepage() {
         const page = await pdfDocumentProxy.getPage(i);
         const textContent = await page.getTextContent();
         const pageText = textContent.items.map((item: any) => item.str).join(' ');
-        fullText += pageText + '\n\n'; // Add double newline between pages for readability
+        fullText += pageText + '\n\n'; 
       }
 
       const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
@@ -602,14 +602,14 @@ export default function PdfEditorHomepage() {
 
   const handleInsertPdfFileSelected = (event: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLDivElement>) => {
     let file: File | null = null;
-    if ('dataTransfer' in event) { // Drag event
+    if ('dataTransfer' in event) { 
         event.preventDefault();
         event.stopPropagation();
         if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
             file = event.dataTransfer.files[0];
             event.dataTransfer.clearData();
         }
-    } else { // Change event
+    } else { 
         file = event.target.files?.[0] || null;
     }
 
@@ -619,7 +619,7 @@ export default function PdfEditorHomepage() {
     }
 
     setPendingInsertFile(file);
-    if (pages.length > 0 && selectedPages.size === 0) { // If PDF loaded but no page selected for insertion point
+    if (pages.length > 0 && selectedPages.size === 0) { 
         setIsInsertConfirmOpen(true);
     } else {
         proceedWithInsert(file);
@@ -634,7 +634,7 @@ export default function PdfEditorHomepage() {
     setLoadingMessage(texts.insertingPdf);
     try {
       const { canvases: insertCanvases } = await processPdfFile(file);
-      let insertIdx = pages.length; // Default to end if no selection or initial PDF
+      let insertIdx = pages.length; 
       if (selectedPages.size > 0) {
         const firstSelected = Math.min(...Array.from(selectedPages));
         insertIdx = insertPosition === 'before' ? firstSelected : firstSelected + 1;
@@ -644,7 +644,7 @@ export default function PdfEditorHomepage() {
       newPages.splice(insertIdx, 0, ...insertCanvases);
       setPages(newPages);
 
-      // Select the first of the newly inserted pages for better UX
+      
       const newSelected = new Set<number>();
       if (insertCanvases.length > 0) {
         newSelected.add(insertIdx);
@@ -659,7 +659,7 @@ export default function PdfEditorHomepage() {
       setIsLoading(false);
       setLoadingMessage('');
       setPendingInsertFile(null);
-      if (insertPdfRef.current) insertPdfRef.current.value = ''; // Reset insert file input
+      if (insertPdfRef.current) insertPdfRef.current.value = ''; 
     }
   };
 
@@ -668,22 +668,22 @@ export default function PdfEditorHomepage() {
       toast({ title: texts.wordConvertError, description: texts.noPdfToConvert, variant: "destructive" });
       return;
     }
-    // Check if Firebase services are properly initialized from firebase.ts
+    
     if (!isFirebaseSystemReady || !storage || !firebaseFunctions) { 
         toast({ title: texts.wordConvertError, description: firebaseConfigWarning || (currentLanguage === 'zh' ? translations.zh.firebaseSdkInitError : translations.en.firebaseSdkInitError), variant: "destructive" });
         return;
     }
 
-    setWordFileUrl(null); // Reset previous results
+    setWordFileUrl(null); 
     setWordConversionError(null);
 
-    // Guest Word conversion limit check
+    
     if (!isLoggedIn && typeof window !== 'undefined') {
       const today = new Date().toISOString().split('T')[0];
       let wordConversionInfoString = localStorage.getItem('DocuPilotWordConversionInfo');
       let wordConversionInfo = wordConversionInfoString ? JSON.parse(wordConversionInfoString) : { count: 0, date: today };
 
-      if (wordConversionInfo.date !== today) { // Reset count if it's a new day
+      if (wordConversionInfo.date !== today) { 
         wordConversionInfo = { count: 0, date: today };
       }
 
@@ -691,21 +691,21 @@ export default function PdfEditorHomepage() {
         setShowWordLimitModal(true);
         return;
       }
-      // Note: We increment count only after successful conversion
+      
     }
 
     setIsConvertingToWord(true);
     setLoadingMessage(texts.convertingToWord);
 
     try {
-      // 1. Upload PDF to Firebase Storage
+      
       const fileName = `uploads/${new Date().getTime()}_${uploadedPdfFile.name}`;
       const fileStorageRef = storageRef(storage, fileName);
       await uploadBytes(fileStorageRef, uploadedPdfFile);
       const pdfStorageUrl = await getDownloadURL(fileStorageRef);
       
-      // 2. Call the Cloud Function with the PDF URL
-      // Ensure this URL matches your deployed function's trigger URL
+      
+      
       const functionUrl = `https://us-central1-sitemate-otkpt.cloudfunctions.net/convertPdfToWord`; 
 
       const response = await fetch(functionUrl, {
@@ -719,9 +719,9 @@ export default function PdfEditorHomepage() {
       if (!response.ok) {
         let errorData;
         try {
-            errorData = await response.json(); // Try to parse JSON error from function
+            errorData = await response.json(); 
         } catch (e) {
-            // If not JSON, use text or status
+            
             const errorText = await response.text();
             errorData = { detail: errorText || response.statusText };
         }
@@ -732,7 +732,7 @@ export default function PdfEditorHomepage() {
 
       const result = await response.json();
       
-      if (!result.wordUrl) { // Check if the function returned the expected URL
+      if (!result.wordUrl) { 
         console.error("Firebase Function did not return a wordUrl:", result);
         throw new Error("Firebase Function did not return a Word file URL.");
       }
@@ -740,12 +740,12 @@ export default function PdfEditorHomepage() {
       setWordFileUrl(result.wordUrl);
       toast({ title: texts.wordConvertSuccess, description: texts.downloadWordFile });
 
-      // Increment guest conversion count if successful
+      
       if (!isLoggedIn && typeof window !== 'undefined') {
         const today = new Date().toISOString().split('T')[0];
         let wordConversionInfoString = localStorage.getItem('DocuPilotWordConversionInfo');
         let wordConversionInfo = wordConversionInfoString ? JSON.parse(wordConversionInfoString) : { count: 0, date: today };
-        if (wordConversionInfo.date !== today) { wordConversionInfo = { count: 0, date: today };} // Ensure reset if day changed mid-session
+        if (wordConversionInfo.date !== today) { wordConversionInfo = { count: 0, date: today };} 
         wordConversionInfo.count++;
         localStorage.setItem('DocuPilotWordConversionInfo', JSON.stringify(wordConversionInfo));
       }
@@ -773,18 +773,18 @@ export default function PdfEditorHomepage() {
         e.stopPropagation();
         e.currentTarget.classList.remove('border-primary', 'bg-primary/10');
     },
-    // Pass the specific handler (handlePdfUpload or handleInsertPdfFileSelected)
+    
     onDrop: (e: React.DragEvent<HTMLDivElement>, handler: (event: React.DragEvent<HTMLDivElement>) => void) => {
         e.preventDefault();
         e.stopPropagation();
         e.currentTarget.classList.remove('border-primary', 'bg-primary/10');
-        handler(e); // Call the appropriate handler
+        handler(e); 
     }
   };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Loading Overlay */}
+      
       {(isLoading || isDownloading || isExtractingText || isConvertingToWord) && (
         <div className="fixed inset-0 bg-black/50 z-50 flex flex-col items-center justify-center">
           <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
@@ -796,12 +796,12 @@ export default function PdfEditorHomepage() {
         </div>
       )}
 
-      {/* Zoomed Page Dialog */}
+      
       <Dialog open={!!zoomedPageData} onOpenChange={(isOpen) => !isOpen && setZoomedPageData(null)}>
         <DialogContent className="max-w-3xl w-[90vw] h-[90vh] p-0 flex flex-col">
           <DialogHeader className="p-4 border-b">
             <DialogTitle>{texts.previewOf} {zoomedPageData ? `${texts.page} ${zoomedPageData.index + 1}` : ''}</DialogTitle>
-            <ShadDialogDescription> {/* Added ShadDialogDescription */}
+            <ShadDialogDescription>
               {texts.zoomDialogDescription}
             </ShadDialogDescription>
           </DialogHeader>
@@ -822,7 +822,7 @@ export default function PdfEditorHomepage() {
         </DialogContent>
       </Dialog>
 
-      {/* Insert Confirmation Dialog */}
+      
       <AlertDialog open={isInsertConfirmOpen} onOpenChange={setIsInsertConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -838,7 +838,7 @@ export default function PdfEditorHomepage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Download Limit Modal */}
+      
       <AlertDialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
         <AlertDialogContent>
             <AlertDialogHeader>
@@ -854,7 +854,7 @@ export default function PdfEditorHomepage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Word Conversion Limit Modal */}
+      
       <AlertDialog open={showWordLimitModal} onOpenChange={setShowWordLimitModal}>
         <AlertDialogContent>
             <AlertDialogHeader>
@@ -870,19 +870,19 @@ export default function PdfEditorHomepage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Header */}
+      
       <header className="p-4 border-b bg-card sticky top-0 z-40">
         <div className="container mx-auto flex justify-between items-center">
             <h1 className="text-xl font-bold text-primary flex items-center">
               <Edit3 className="mr-2 h-6 w-6"/> {texts.pageTitle}
             </h1>
             <div className="flex items-center gap-4">
-                {/* Language Switcher */}
+                
                 <div className="flex gap-2">
                     <Button variant={currentLanguage === 'en' ? "secondary" : "outline"} size="sm" onClick={() => updateLanguage('en')}>English</Button>
                     <Button variant={currentLanguage === 'zh' ? "secondary" : "outline"} size="sm" onClick={() => updateLanguage('zh')}>中文</Button>
                 </div>
-                {/* Auth Status & Actions */}
+                
                 {isLoggedIn ? (
                     <div className="flex items-center gap-2">
                         <UserCircle className="h-5 w-5 text-muted-foreground" />
@@ -906,12 +906,12 @@ export default function PdfEditorHomepage() {
         </div>
       </header>
 
-      {/* Main Content Area */}
+      
       <div className="container mx-auto p-4 md:p-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Left Column: Tools */}
+          
           <div className="md:col-span-1 space-y-6">
-            {/* Insert PDF Section - Only show if a PDF is loaded */}
+            
             {pages.length > 0 && (
               <Card className="shadow-lg">
                 <CardHeader>
@@ -955,7 +955,7 @@ export default function PdfEditorHomepage() {
               </Card>
             )}
 
-            {/* Watermark Section - Only show if a PDF is loaded */}
+            
             {pages.length > 0 && (
               <Card className="shadow-lg">
                 <CardHeader>
@@ -974,7 +974,7 @@ export default function PdfEditorHomepage() {
               </Card>
             )}
 
-            {/* Instructions & Delete Card */}
+            
             <Card className="shadow-lg">
                 <CardHeader>
                     <CardTitle className="flex items-center text-xl"><Info className="mr-2 h-5 w-5 text-primary" /> {texts.tools}</CardTitle>
@@ -990,9 +990,9 @@ export default function PdfEditorHomepage() {
             </Card>
           </div>
 
-          {/* Right Column: File Ops & Previews */}
+          
           <div className="md:col-span-2 space-y-6">
-            {/* File Operations Card */}
+            
             <Card className="shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center text-xl"><Upload className="mr-2 h-5 w-5 text-primary" /> {texts.fileOperations}</CardTitle>
@@ -1032,13 +1032,13 @@ export default function PdfEditorHomepage() {
                         onClick={handleConvertToWord} 
                         disabled={!uploadedPdfFile || isConvertingToWord || !isFirebaseSystemReady} 
                         className="w-full"
-                        title={!isFirebaseSystemReady ? firebaseConfigWarning : ""} // Show warning as tooltip
+                        title={!isFirebaseSystemReady ? firebaseConfigWarning : ""} 
                     >
                         {isConvertingToWord ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileType className="mr-2 h-4 w-4" />}
                         {texts.convertToWord}
                     </Button>
                 </div>
-                 {/* Word Conversion Results */}
+                 
                  {wordFileUrl && (
                     <div className="mt-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded text-sm">
                         <p>
@@ -1054,18 +1054,18 @@ export default function PdfEditorHomepage() {
                         <p>{wordConversionError}</p>
                     </div>
                 )}
-                {/* Firebase System Readiness Warning (if any) */}
+                
                  {!isFirebaseSystemReady && firebaseConfigWarning && (
-                    <p className="text-xs text-amber-600 mt-2"> {/* Using amber for warning */}
+                    <p className="text-xs text-amber-600 mt-2"> 
                       {firebaseConfigWarning}
                     </p>
                  )}
               </CardContent>
             </Card>
 
-            {/* Page Previews or Upload Prompt */}
+            
             {pages.length > 0 ? (
-              <Card className="shadow-lg min-h-[calc(100vh-20rem)] md:min-h-[calc(100vh-18rem)]"> {/* Adjusted min-height */}
+              <Card className="shadow-lg min-h-[calc(100vh-20rem)] md:min-h-[calc(100vh-18rem)]"> 
                 <CardHeader>
                   <CardTitle className="flex items-center text-xl"><Shuffle className="mr-2 h-5 w-5 text-primary" /> {texts.pageManagement}</CardTitle>
                   <CardDescription> {pages.length} {pages.length === 1 ? texts.page.toLowerCase() : (currentLanguage === 'zh' ? texts.page.toLowerCase() : texts.page.toLowerCase() + 's')} 加載完成。 {selectedPages.size > 0 ? `${texts.page} ${Array.from(selectedPages)[0]+1} 已選取。` : ''} </CardDescription>
@@ -1076,12 +1076,12 @@ export default function PdfEditorHomepage() {
                     ref={previewContainerRef}
                     className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-1 bg-muted/20 rounded-md min-h-[200px]"
                   >
-                    {/* Page previews are rendered here by renderPagePreviews via useEffect */}
+                    
                   </div>
                 </CardContent>
               </Card>
             ) : (
-              <Card className="shadow-lg min-h-[calc(100vh-20rem)] md:min-h-[calc(100vh-18rem)] flex flex-col items-center justify-center bg-muted/30"> {/* Placeholder card */}
+              <Card className="shadow-lg min-h-[calc(100vh-20rem)] md:min-h-[calc(100vh-18rem)] flex flex-col items-center justify-center bg-muted/30"> 
                 <CardContent className="text-center">
                   <Search className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                   <p className="text-xl font-semibold text-muted-foreground">{texts.pageTitle}</p>
@@ -1102,3 +1102,4 @@ export default function PdfEditorHomepage() {
     
 
     
+

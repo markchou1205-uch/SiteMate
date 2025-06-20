@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import * as pdfjsLib from 'pdfjs-dist';
 import type { PDFDocumentProxy as PDFDocumentProxyType } from 'pdfjs-dist';
-import { PDFDocument as PDFLibDocument, StandardFonts, rgb, degrees, grayscale } from 'pdf-lib';
+import { PDFDocument as PDFLibDocument, StandardFonts, rgb, degrees, grayscale, popGraphicsState, pushGraphicsState, translate } from 'pdf-lib';
 import Sortable from 'sortablejs';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, FileType, FileDigit, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2 } from 'lucide-react';
+import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, FileType, FileDigit, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, FontSize } from 'lucide-react';
 
 import { storage, functions as firebaseFunctions, app as firebaseApp } from '@/lib/firebase'; // Firebase SDK
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -36,7 +36,7 @@ interface PageObject {
   rotation: number; // 0, 90, 180, 270
 }
 
-type WatermarkPosition =
+type WatermarkLegacyPosition = // Kept for translation keys if needed, but functionality changes
   | 'center'
   | 'top-left' | 'top-center' | 'top-right'
   | 'middle-left' | 'middle-right'
@@ -83,12 +83,10 @@ const translations = {
         noteInputPlaceholder: 'Add a temporary note (not saved in PDF)',
         pageManagement: 'Page Management',
         fileOperations: 'File Operations',
-        watermarkSectionTitle: 'Watermark',
+        watermarkSectionTitle: 'Watermark (Drag to Position)',
         watermarkInputPlaceholder: 'Enter watermark text',
-        watermarkPositionLabel: 'Position',
-        watermarkCenter: 'Center',
-        watermarkDiagonalTopLeftBottomRight: 'Diagonal (TL-BR)',
-        watermarkDiagonalBottomLeftTopRight: 'Diagonal (BL-TR)',
+        watermarkFontSizeLabel: 'Font Size (px)',
+        watermarkColorLabel: 'Color',
         pageNumberingSectionTitle: 'Page Numbering',
         enablePageNumbering: 'Enable Page Numbering',
         pageNumberPosition: 'Position',
@@ -157,6 +155,7 @@ const translations = {
         pdfCompressionSuccess: 'PDF processed successfully!',
         pdfCompressionError: 'Error processing PDF',
         pdfCompressionNote: 'Note: This uses pdf-lib to re-save the PDF. File size reduction varies. useObjectStreams:false is applied.',
+        noPdfToCompress: 'No PDF selected to compress.',
     },
     zh: {
         pageTitle: 'DocuPilot 文件助手',
@@ -196,12 +195,10 @@ const translations = {
         noteInputPlaceholder: '新增臨時筆記（不會儲存於 PDF）',
         pageManagement: '頁面管理',
         fileOperations: '檔案操作',
-        watermarkSectionTitle: '浮水印',
+        watermarkSectionTitle: '浮水印 (拖曳定位)',
         watermarkInputPlaceholder: '輸入浮水印文字',
-        watermarkPositionLabel: '位置',
-        watermarkCenter: '置中',
-        watermarkDiagonalTopLeftBottomRight: '對角線 (左上-右下)',
-        watermarkDiagonalBottomLeftTopRight: '對角線 (左下-右上)',
+        watermarkFontSizeLabel: '字體大小 (px)',
+        watermarkColorLabel: '顏色',
         pageNumberingSectionTitle: '頁碼',
         enablePageNumbering: '啟用頁碼',
         pageNumberPosition: '位置',
@@ -270,6 +267,7 @@ const translations = {
         pdfCompressionSuccess: 'PDF 處理成功！',
         pdfCompressionError: '處理 PDF 時發生錯誤',
         pdfCompressionNote: '注意：此功能使用 pdf-lib 重新儲存 PDF。檔案大小縮減效果不一。已套用 useObjectStreams:false。',
+        noPdfToCompress: '尚未選擇要壓縮的 PDF。',
     }
 };
 
@@ -287,19 +285,138 @@ const pageNumberPositions: {value: PageNumberPosition, labelKey: keyof typeof tr
   { value: 'top-right', labelKey: 'topRight'},
 ];
 
-const watermarkPositions: { value: WatermarkPosition; labelKey: keyof typeof translations.en }[] = [
-    { value: 'diagonal-tl-br', labelKey: 'watermarkDiagonalTopLeftBottomRight' },
-    { value: 'diagonal-bl-tr', labelKey: 'watermarkDiagonalBottomLeftTopRight' },
-    { value: 'center', labelKey: 'watermarkCenter' },
-    { value: 'top-left', labelKey: 'topLeft' },
-    { value: 'top-center', labelKey: 'topCenter' },
-    { value: 'top-right', labelKey: 'topRight' },
-    { value: 'middle-left', labelKey: 'middleLeft'},
-    { value: 'middle-right', labelKey: 'middleRight'},
-    { value: 'bottom-left', labelKey: 'bottomLeft' },
-    { value: 'bottom-center', labelKey: 'bottomCenter' },
-    { value: 'bottom-right', labelKey: 'bottomRight' },
-];
+interface WatermarkConfig {
+  text: string;
+  topRatio: number; // 0.0 to 1.0 for top-left corner
+  leftRatio: number; // 0.0 to 1.0 for top-left corner
+  fontSize: number; // in points for PDF, scaled for preview
+  color: string; // e.g., 'rgba(128, 128, 128, 0.5)'
+}
+
+
+// Helper function to parse RGBA string to an object for pdf-lib
+const parseRgbaColor = (rgbaColor: string): { r: number; g: number; b: number; alpha: number } => {
+    const match = rgbaColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/i);
+    if (match) {
+        return {
+            r: parseInt(match[1], 10) / 255,
+            g: parseInt(match[2], 10) / 255,
+            b: parseInt(match[3], 10) / 255,
+            alpha: match[4] ? parseFloat(match[4]) : 1,
+        };
+    }
+    // Fallback for hex or other color strings if needed, for now default to black
+    return { r: 0, g: 0, b: 0, alpha: 0.5 }; 
+};
+
+
+interface PagePreviewItemProps {
+  pageObj: PageObject;
+  index: number;
+  isSelected: boolean;
+  onClick: () => void;
+  onDoubleClick: () => void;
+  watermarkConfig: WatermarkConfig;
+  onWatermarkMouseDown: (event: React.MouseEvent<HTMLElement>, previewWrapper: HTMLElement, pageIndex: number) => void;
+  texts: typeof translations.en;
+}
+
+const PagePreviewItem: React.FC<PagePreviewItemProps> = React.memo(({
+  pageObj, index, isSelected, onClick, onDoubleClick, watermarkConfig, onWatermarkMouseDown, texts
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (canvasRef.current) {
+      const previewDisplayCanvas = canvasRef.current;
+      const previewCtx = previewDisplayCanvas.getContext('2d');
+      if (!previewCtx) return;
+
+      const sourceCanvas = pageObj.sourceCanvas;
+      const rotation = pageObj.rotation;
+      const rad = rotation * Math.PI / 180;
+
+      let rotatedSourceWidth, rotatedSourceHeight;
+      if (rotation % 180 !== 0) {
+        rotatedSourceWidth = sourceCanvas.height;
+        rotatedSourceHeight = sourceCanvas.width;
+      } else {
+        rotatedSourceWidth = sourceCanvas.width;
+        rotatedSourceHeight = sourceCanvas.height;
+      }
+      
+      const targetAspectRatio = rotatedSourceWidth / rotatedSourceHeight;
+      // Fixed width for thumbnail container, height adjusts.
+      // The canvas buffer itself will be high-res, CSS scales it down.
+      const cssDisplayWidth = 120; 
+      const cssDisplayHeight = cssDisplayWidth / targetAspectRatio;
+
+      previewDisplayCanvas.width = rotatedSourceWidth; 
+      previewDisplayCanvas.height = rotatedSourceHeight;
+
+      previewCtx.save();
+      previewCtx.translate(previewDisplayCanvas.width / 2, previewDisplayCanvas.height / 2);
+      previewCtx.rotate(rad);
+      previewCtx.drawImage(sourceCanvas, -sourceCanvas.width / 2, -sourceCanvas.height / 2, sourceCanvas.width, sourceCanvas.height);
+      previewCtx.restore();
+      
+      previewDisplayCanvas.style.width = `${cssDisplayWidth}px`;
+      previewDisplayCanvas.style.height = `${cssDisplayHeight}px`;
+    }
+  }, [pageObj.sourceCanvas, pageObj.rotation]);
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLElement>) => {
+    if (wrapperRef.current) {
+      // Pass the watermark div (e.currentTarget) and its parent (wrapperRef.current)
+      onWatermarkMouseDown(e, wrapperRef.current, index);
+    }
+  };
+
+  const previewWatermarkFontSize = Math.max(6, watermarkConfig.fontSize / (150/20)); // Scale based on typical preview width vs. font size
+
+  return (
+    <div
+      ref={wrapperRef}
+      className={`page-preview-wrapper p-2 border-2 rounded-lg cursor-pointer transition-all bg-card hover:border-primary ${isSelected ? 'border-primary ring-2 ring-primary' : 'border-transparent'}`}
+      data-id={pageObj.id}
+      data-index={index}
+      onClick={onClick}
+      onDoubleClick={onDoubleClick}
+      style={{ position: 'relative' }} 
+    >
+      <canvas ref={canvasRef} className="rounded-md shadow-md" style={{ willReadFrequently: true } as any}></canvas>
+      <div className="text-xs text-muted-foreground mt-1 text-center">
+        {texts.page} {index + 1}
+      </div>
+      {watermarkConfig.text && (
+        <div
+          onMouseDown={handleMouseDown}
+          style={{
+            position: 'absolute',
+            top: `${watermarkConfig.topRatio * 100}%`,
+            left: `${watermarkConfig.leftRatio * 100}%`,
+            cursor: 'grab',
+            padding: '1px 3px',
+            backgroundColor: 'rgba(220,220,220,0.4)',
+            border: '1px dashed rgba(100,100,100,0.5)',
+            borderRadius: '2px',
+            whiteSpace: 'nowrap',
+            userSelect: 'none',
+            fontSize: `${previewWatermarkFontSize}px`, 
+            color: watermarkConfig.color, 
+            zIndex: 10,
+            willChange: 'top, left', 
+          }}
+          className="draggable-watermark" 
+        >
+          {watermarkConfig.text}
+        </div>
+      )}
+    </div>
+  );
+});
+PagePreviewItem.displayName = 'PagePreviewItem';
 
 
 export default function PdfEditorHomepage() {
@@ -311,6 +428,11 @@ export default function PdfEditorHomepage() {
   
   const [zoomedPageData, setZoomedPageData] = useState<{ page: PageObject, index: number } | null>(null);
   const [currentModalRotation, setCurrentModalRotation] = useState(0); 
+  const [isCustomZoomModalOpen, setIsCustomZoomModalOpen] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const zoomCanvasRef = useRef<HTMLCanvasElement>(null);
+  const zoomScrollContainerRef = useRef<HTMLDivElement>(null);
+
 
   const [currentLanguage, setCurrentLanguage] = useState<'en' | 'zh'>('zh');
   const [texts, setTexts] = useState(translations.zh);
@@ -322,8 +444,23 @@ export default function PdfEditorHomepage() {
   const [isInsertConfirmOpen, setIsInsertConfirmOpen] = useState(false);
   const [pendingInsertFile, setPendingInsertFile] = useState<File | null>(null);
   
-  const [watermarkText, setWatermarkText] = useState('');
-  const [watermarkPosition, setWatermarkPosition] = useState<WatermarkPosition>('diagonal-tl-br');
+  const [watermarkConfig, setWatermarkConfig] = useState<WatermarkConfig>({
+    text: '',
+    topRatio: 0.1, 
+    leftRatio: 0.1,
+    fontSize: 48, 
+    color: 'rgba(128, 128, 128, 0.5)',
+  });
+  const [isDraggingWatermark, setIsDraggingWatermark] = useState(false);
+  const dragDataRef = useRef<{
+    initialMouseX: number;
+    initialMouseY: number;
+    initialWatermarkTopInPx: number; // Watermark's initial top in pixels relative to preview wrapper
+    initialWatermarkLeftInPx: number; // Watermark's initial left in pixels relative to preview wrapper
+    draggedWatermarkElement: HTMLElement; // The specific watermark div being dragged (e.target)
+    previewWrapperElement: HTMLElement; // The parent .page-preview-wrapper of the dragged watermark
+  } | null>(null);
+
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -352,12 +489,7 @@ export default function PdfEditorHomepage() {
     password: '',
   });
 
-  const [isZoomModalOpen, setIsZoomModalOpen] = useState(false);
-  const [zoomLevel, setZoomLevel] = useState(1);
-
   const previewContainerRef = useRef<HTMLDivElement>(null);
-  const zoomCanvasRef = useRef<HTMLCanvasElement>(null);
-  const zoomScrollContainerRef = useRef<HTMLDivElement>(null);
 
   const pdfUploadRef = useRef<HTMLInputElement>(null);
   const insertPdfRef = useRef<HTMLInputElement>(null);
@@ -375,37 +507,21 @@ export default function PdfEditorHomepage() {
 
 
   useEffect(() => {
-    console.log("[Page.tsx useEffect] STARTING Firebase readiness check...");
-    console.log("[Page.tsx useEffect] Current language:", currentLanguage);
-
-    const sdkServicesInitialized = !!firebaseApp && !!storage && !!firebaseFunctions;
-    console.log("[Page.tsx useEffect] Imported firebaseApp from '@/lib/firebase':", firebaseApp ? firebaseApp.constructor.name : firebaseApp);
-    console.log("[Page.tsx useEffect] Imported storage from '@/lib/firebase':", storage ? storage.constructor.name : storage);
-    console.log("[Page.tsx useEffect] Imported firebaseFunctions from '@/lib/firebase':", firebaseFunctions ? firebaseFunctions.constructor.name : firebaseFunctions);
-    console.log("[Page.tsx useEffect] sdkServicesInitialized (app, storage, functions from firebase.ts are truthy):", sdkServicesInitialized);
-
-    if (sdkServicesInitialized) {
-        setIsFirebaseSystemReady(true);
-        setFirebaseConfigWarning('');
-        console.log("[Page.tsx useEffect] Firebase system is READY because services from firebase.ts are initialized.");
-    } else {
-        setIsFirebaseSystemReady(false);
-        let warningMsg = texts?.firebaseSdkInitError || "Firebase SDK services (app, storage, functions) NOT initialized.";
-
-        if (!firebaseApp) console.warn("[Page.tsx useEffect] firebaseApp from 'firebase.ts' is falsy or undefined.");
-        if (!storage) console.warn("[Page.tsx useEffect] storage from 'firebase.ts' is falsy or undefined.");
-        if (!firebaseFunctions) console.warn("[Page.tsx useEffect] firebaseFunctions from 'firebase.ts' is falsy or undefined.");
-
-        setFirebaseConfigWarning(warningMsg);
-        console.warn(`[Page.tsx useEffect] Firebase system is NOT ready. Warning message set: ${warningMsg}`);
-    }
-    console.log("[Page.tsx useEffect] ENDING Firebase readiness check.");
-  }, [currentLanguage, texts]);
+    setTexts(translations[currentLanguage] || translations.en);
+  }, [currentLanguage]);
 
 
   useEffect(() => {
-    setTexts(translations[currentLanguage] || translations.en);
-  }, [currentLanguage]);
+    const sdkServicesInitialized = !!firebaseApp && !!storage && !!firebaseFunctions;
+    if (sdkServicesInitialized) {
+        setIsFirebaseSystemReady(true);
+        setFirebaseConfigWarning('');
+    } else {
+        setIsFirebaseSystemReady(false);
+        let warningMsg = texts?.firebaseSdkInitError || "Firebase SDK services (app, storage, functions) NOT initialized.";
+        setFirebaseConfigWarning(warningMsg);
+    }
+  }, [currentLanguage, texts]);
 
 
   useEffect(() => {
@@ -429,7 +545,7 @@ export default function PdfEditorHomepage() {
         }
       }
     }
-  }, [router]);
+  }, []);
 
 
   const updateLanguage = (lang: 'en' | 'zh') => {
@@ -444,102 +560,37 @@ export default function PdfEditorHomepage() {
     toast({ title: texts.logout, description: currentLanguage === 'zh' ? "您已成功登出。" : "You have been logged out successfully." });
   };
 
-  const renderPagePreviews = useCallback(() => {
-    if (!previewContainerRef.current) return;
-
-    if (sortableInstanceRef.current) {
-      sortableInstanceRef.current.destroy();
-      sortableInstanceRef.current = null;
-    }
-
-    previewContainerRef.current.innerHTML = ''; // Clear existing previews
-
-    pageObjects.forEach((pageObj, index) => {
-      const wrapper = document.createElement('div');
-      wrapper.className = `page-preview-wrapper p-2 border-2 rounded-lg cursor-pointer transition-all bg-card hover:border-primary ${selectedPageIds.has(pageObj.id) ? 'border-primary ring-2 ring-primary' : 'border-transparent'}`;
-      wrapper.dataset.id = pageObj.id;
-      wrapper.dataset.index = index.toString();
-
-
-      const previewDisplayCanvas = document.createElement('canvas');
-      const previewCtx = previewDisplayCanvas.getContext('2d');
-      if (!previewCtx) return;
-
-      const sourceCanvas = pageObj.sourceCanvas;
-      const rotation = pageObj.rotation;
-
-      const rad = rotation * Math.PI / 180;
-      
-      let rotatedSourceWidth, rotatedSourceHeight;
-      if (rotation % 180 !== 0) { // 90 or 270 degrees
-        rotatedSourceWidth = sourceCanvas.height;
-        rotatedSourceHeight = sourceCanvas.width;
-      } else { // 0 or 180 degrees
-        rotatedSourceWidth = sourceCanvas.width;
-        rotatedSourceHeight = sourceCanvas.height;
-      }
-      
-      const aspectRatio = rotatedSourceWidth / rotatedSourceHeight;
-      const displayWidth = 120; 
-      const displayHeight = displayWidth / aspectRatio;
-
-      previewDisplayCanvas.width = rotatedSourceWidth; 
-      previewDisplayCanvas.height = rotatedSourceHeight;
-
-      previewCtx.translate(previewDisplayCanvas.width / 2, previewDisplayCanvas.height / 2);
-      previewCtx.rotate(rad);
-      previewCtx.drawImage(sourceCanvas, -sourceCanvas.width / 2, -sourceCanvas.height / 2, sourceCanvas.width, sourceCanvas.height);
-      
-      previewDisplayCanvas.style.width = `${displayWidth}px`;
-      previewDisplayCanvas.style.height = `${displayHeight}px`;
-      previewDisplayCanvas.className = "rounded-md shadow-md";
-
-      const pageNumberDiv = document.createElement('div');
-      pageNumberDiv.className = "text-xs text-muted-foreground mt-1 text-center";
-      pageNumberDiv.textContent = `${texts.page} ${index + 1}`;
-
-      wrapper.appendChild(previewDisplayCanvas);
-      wrapper.appendChild(pageNumberDiv);
-
-      wrapper.addEventListener('click', () => {
-        const newSelectedIds = new Set<string>();
-        if (!selectedPageIds.has(pageObj.id)) { 
-            newSelectedIds.add(pageObj.id);
-        } 
-        setSelectedPageIds(newSelectedIds);
-      });
-
-      wrapper.addEventListener('dblclick', () => {
-        setZoomedPageData({ page: pageObj, index });
-        setCurrentModalRotation(pageObj.rotation); 
-        setZoomLevel(1);
-        setIsZoomModalOpen(true);
-      });
-      previewContainerRef.current?.appendChild(wrapper);
-    });
-
-    if (pageObjects.length > 0 && previewContainerRef.current) {
-      sortableInstanceRef.current = Sortable.create(previewContainerRef.current, {
-        animation: 150,
-        ghostClass: 'opacity-50',
-        chosenClass: 'shadow-2xl',
-        dragClass: 'opacity-75',
-        onEnd: (evt) => {
-          if (evt.oldIndex === undefined || evt.newIndex === undefined || evt.oldIndex === evt.newIndex) return;
-          
-          const reorderedPageObjects = Array.from(pageObjects);
-          const [movedItem] = reorderedPageObjects.splice(evt.oldIndex, 1);
-          reorderedPageObjects.splice(evt.newIndex, 0, movedItem);
-          setPageObjects(reorderedPageObjects);
-        }
-      });
-    }
-  }, [pageObjects, selectedPageIds, texts.page]);
-
-
+  // Initialize SortableJS
   useEffect(() => {
-    renderPagePreviews();
-  }, [pageObjects, selectedPageIds, renderPagePreviews]);
+    if (pageObjects.length > 0 && previewContainerRef.current && !sortableInstanceRef.current) {
+        sortableInstanceRef.current = Sortable.create(previewContainerRef.current, {
+            animation: 150,
+            ghostClass: 'opacity-50',
+            chosenClass: 'shadow-2xl',
+            dragClass: 'opacity-75',
+            onEnd: (evt) => {
+                if (evt.oldIndex === undefined || evt.newIndex === undefined || evt.oldIndex === evt.newIndex) return;
+                
+                setPageObjects(prevPageObjects => {
+                    const reorderedPageObjects = Array.from(prevPageObjects);
+                    const [movedItem] = reorderedPageObjects.splice(evt.oldIndex!, 1);
+                    reorderedPageObjects.splice(evt.newIndex!, 0, movedItem);
+                    return reorderedPageObjects;
+                });
+            }
+        });
+    } else if (pageObjects.length === 0 && sortableInstanceRef.current) {
+        sortableInstanceRef.current.destroy();
+        sortableInstanceRef.current = null;
+    }
+    // Cleanup on unmount
+    return () => {
+        if (sortableInstanceRef.current) {
+            sortableInstanceRef.current.destroy();
+            sortableInstanceRef.current = null;
+        }
+    };
+  }, [pageObjects.length]); // Re-run if number of pages changes
 
 
   const ZOOM_SPEED = 0.1; 
@@ -547,7 +598,7 @@ export default function PdfEditorHomepage() {
   const MAX_ZOOM = 5;   
 
   const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => {
-    if (!isZoomModalOpen || !zoomedPageData || !zoomScrollContainerRef.current?.contains(event.target as Node) ) return; 
+    if (!isCustomZoomModalOpen || !zoomedPageData || !zoomScrollContainerRef.current?.contains(event.target as Node) ) return; 
     event.preventDefault(); 
     
     const zoomAmount = -event.deltaY * ZOOM_SPEED * 0.01; 
@@ -560,21 +611,20 @@ export default function PdfEditorHomepage() {
   };
 
   useEffect(() => {
-    if (isZoomModalOpen && zoomedPageData && zoomCanvasRef.current) {
-      const canvas = zoomCanvasRef.current; // This is the target canvas
+    if (isCustomZoomModalOpen && zoomedPageData && zoomCanvasRef.current) {
+      const canvas = zoomCanvasRef.current; 
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
   
-      const sourceCanvas = zoomedPageData.page.sourceCanvas; // This is the original, unzoomed page canvas
+      const sourceCanvas = zoomedPageData.page.sourceCanvas; 
       const srcWidth = sourceCanvas.width;
       const srcHeight = sourceCanvas.height;
   
-      // Calculate the dimensions of the drawing buffer based on original size, rotation, and zoom
       let bufferWidth, bufferHeight;
-      if (currentModalRotation % 180 !== 0) { // 90 or 270 degrees
+      if (currentModalRotation % 180 !== 0) { 
         bufferWidth = srcHeight * zoomLevel;
         bufferHeight = srcWidth * zoomLevel;
-      } else { // 0 or 180 degrees
+      } else { 
         bufferWidth = srcWidth * zoomLevel;
         bufferHeight = srcHeight * zoomLevel;
       }
@@ -587,24 +637,17 @@ export default function PdfEditorHomepage() {
       ctx.translate(canvas.width / 2, canvas.height / 2);
       ctx.rotate(currentModalRotation * Math.PI / 180);
   
-      // Draw the sourceCanvas scaled to fill the entire buffer
-      // The source image itself needs to be considered as if it's scaled by zoomLevel
-      // then drawn into the center of the (already scaled) buffer.
-      // For centering, draw from - (scaled source width / 2)
-      const scaledSourceDrawWidth = srcWidth * zoomLevel;
-      const scaledSourceDrawHeight = srcHeight * zoomLevel;
-
       ctx.drawImage(
         sourceCanvas,
-        -scaledSourceDrawWidth / 2, 
-        -scaledSourceDrawHeight / 2,
-        scaledSourceDrawWidth,       
-        scaledSourceDrawHeight      
+        -canvas.width / 2, 
+        -canvas.height / 2,
+        canvas.width,       
+        canvas.height      
       );
       
       ctx.restore(); 
     }
-  }, [isZoomModalOpen, zoomedPageData, currentModalRotation, zoomLevel]);
+  }, [isCustomZoomModalOpen, zoomedPageData, currentModalRotation, zoomLevel]);
 
 
   const processPdfFile = async (file: File): Promise<{ newPageObjects: PageObject[], docProxy: PDFDocumentProxyType }> => {
@@ -619,7 +662,8 @@ export default function PdfEditorHomepage() {
     const loadedPageObjects: PageObject[] = [];
     for (let i = 1; i <= numPages; i++) {
       const page = await pdfDocProxy.getPage(i);
-      const viewport = page.getViewport({ scale: 1.5 }); 
+      // Render at a higher resolution for better quality when zoomed or for PDF generation
+      const viewport = page.getViewport({ scale: 2.0 }); 
       const canvas = document.createElement('canvas');
       canvas.width = viewport.width;
       canvas.height = viewport.height;
@@ -714,7 +758,7 @@ export default function PdfEditorHomepage() {
     try {
       await new Promise(resolve => setTimeout(resolve, 100)); 
       const pdfDocOut = await PDFLibDocument.create();
-      const helveticaFont = await pdfDocOut.embedFont(StandardFonts.Helvetica);
+      const helveticaFont = await pdfDocOut.embedFont(StandardFonts.Helvetica); // Or a user-selected font
 
       for (const pageObj of pageObjects) {
         const { sourceCanvas, rotation } = pageObj;
@@ -737,75 +781,42 @@ export default function PdfEditorHomepage() {
         tempCtx.rotate(rad);
         tempCtx.drawImage(sourceCanvas, -sourceCanvas.width / 2, -sourceCanvas.height / 2, sourceCanvas.width, sourceCanvas.height);
        
-        const imgDataUrl = tempRenderCanvas.toDataURL('image/png');
+        const imgDataUrl = tempRenderCanvas.toDataURL('image/png'); // Consider image/jpeg for smaller size if quality allows
         const pngImage = await pdfDocOut.embedPng(imgDataUrl);
         
         const pdfLibPage = pdfDocOut.addPage([tempRenderCanvas.width, tempRenderCanvas.height]);
         pdfLibPage.drawImage(pngImage, { x: 0, y: 0, width: tempRenderCanvas.width, height: tempRenderCanvas.height });
         
-        if (watermarkText.trim() !== '') {
+        // Apply Watermark
+        if (watermarkConfig.text && watermarkConfig.topRatio !== null && watermarkConfig.leftRatio !== null) {
             const { width: pageWidth, height: pageHeight } = pdfLibPage.getSize();
-            const watermarkFontSize = Math.min(pageWidth, pageHeight) / 15; 
-            const textWidth = helveticaFont.widthOfTextAtSize(watermarkText, watermarkFontSize);
-            const textHeight = helveticaFont.heightAtSize(watermarkFontSize); 
-            const textAscent = helveticaFont.ascender / helveticaFont.unitsPerEm * watermarkFontSize;
-            
-            let wX, wY, wRotationDegrees = 0;
+            const pdfWatermarkFontSize = watermarkConfig.fontSize; // Use configured font size
+            const parsedColor = parseRgbaColor(watermarkConfig.color);
 
-            switch (watermarkPosition) {
-                case 'top-left': wX = 20; wY = pageHeight - 20 - textAscent; break;
-                case 'top-center': wX = pageWidth / 2 - textWidth / 2; wY = pageHeight - 20 - textAscent; break;
-                case 'top-right': wX = pageWidth - 20 - textWidth; wY = pageHeight - 20 - textAscent; break;
-                case 'middle-left': wX = 20; wY = pageHeight / 2 - textHeight / 2 + textAscent; break;
-                case 'center': wX = pageWidth / 2 - textWidth / 2; wY = pageHeight / 2 - textHeight/2 + textAscent; break;
-                case 'middle-right': wX = pageWidth - 20 - textWidth; wY = pageHeight / 2 - textHeight / 2 + textAscent; break;
-                case 'bottom-left': wX = 20; wY = 20; break; 
-                case 'bottom-center': wX = pageWidth / 2 - textWidth / 2; wY = 20; break;
-                case 'bottom-right': wX = pageWidth - 20 - textWidth; wY = 20; break;
-                case 'diagonal-tl-br':
-                    wRotationDegrees = Math.atan2(pageHeight, pageWidth) * 180 / Math.PI;
-                    pdfLibPage.translateContent(pageWidth/2, pageHeight/2);
-                    pdfLibPage.rotateDegrees(wRotationDegrees);
-                    pdfLibPage.drawText(watermarkText, {
-                        x: -textWidth/2,
-                        y: -textHeight/2 + textAscent, 
-                        font: helveticaFont,
-                        size: watermarkFontSize,
-                        color: rgb(0.7, 0.7, 0.7), 
-                        opacity: 0.35,
-                    });
-                    pdfLibPage.rotateDegrees(-wRotationDegrees); 
-                    pdfLibPage.translateContent(-pageWidth/2, -pageHeight/2); 
-                    continue; 
-                case 'diagonal-bl-tr':
-                    wRotationDegrees = -Math.atan2(pageHeight, pageWidth) * 180 / Math.PI;
-                    pdfLibPage.translateContent(pageWidth/2, pageHeight/2);
-                    pdfLibPage.rotateDegrees(wRotationDegrees);
-                    pdfLibPage.drawText(watermarkText, {
-                        x: -textWidth/2,
-                        y: -textHeight/2 + textAscent,
-                        font: helveticaFont,
-                        size: watermarkFontSize,
-                        color: rgb(0.7, 0.7, 0.7), 
-                        opacity: 0.35,
-                    });
-                    pdfLibPage.rotateDegrees(-wRotationDegrees);
-                    pdfLibPage.translateContent(-pageWidth/2, -pageHeight/2);
-                    continue; 
-                default: 
-                    wX = pageWidth / 2 - textWidth / 2; wY = pageHeight / 2 - textHeight/2 + textAscent;
-            }
-             if (watermarkPosition !== 'diagonal-tl-br' && watermarkPosition !== 'diagonal-bl-tr') {
-                pdfLibPage.drawText(watermarkText, {
-                    x: wX,
-                    y: wY,
-                    font: helveticaFont,
-                    size: watermarkFontSize,
-                    color: rgb(0.7, 0.7, 0.7), 
-                    opacity: 0.35,
-                });
-            }
+            const textWidth = helveticaFont.widthOfTextAtSize(watermarkConfig.text, pdfWatermarkFontSize);
+            // const textHeight = helveticaFont.heightAtSize(pdfWatermarkFontSize); // Full height
+            const capHeight = helveticaFont.capHeightAtSize(pdfWatermarkFontSize); // More like visual top of text
+
+            // Assuming topRatio and leftRatio are for the top-left corner of the text block
+            const wmX_pdf = watermarkConfig.leftRatio * pageWidth;
+            // Y in PDF-Lib is from bottom-left. We want topRatio from top.
+            const wmY_pdf = pageHeight - (watermarkConfig.topRatio * pageHeight) - capHeight;
+
+
+            pdfLibPage.pushGraphicsState(); // Save current graphics state
+            pdfLibPage.setOpacity(parsedColor.alpha); // Set opacity for the watermark
+
+            pdfLibPage.drawText(watermarkConfig.text, {
+                x: wmX_pdf,
+                y: wmY_pdf,
+                font: helveticaFont,
+                size: pdfWatermarkFontSize,
+                color: rgb(parsedColor.r, parsedColor.g, parsedColor.b),
+                // Opacity is handled by graphics state
+            });
+            pdfLibPage.popGraphicsState(); // Restore graphics state
         }
+
 
         if (pageNumberingConfig.enabled) {
             const { width: pnPageWidth, height: pnPageHeight } = pdfLibPage.getSize();
@@ -818,18 +829,18 @@ export default function PdfEditorHomepage() {
 
             const textSize = pageNumberingConfig.fontSize;
             const pnFont = await pdfDocOut.embedFont(StandardFonts.Helvetica);
-            const textWidth = pnFont.widthOfTextAtSize(text, textSize);
+            const textWidthNum = pnFont.widthOfTextAtSize(text, textSize);
             const pnAscent = pnFont.ascender / pnFont.unitsPerEm * textSize;
 
             let x, y;
             switch (pageNumberingConfig.position) {
                 case 'top-left': x = pageNumberingConfig.margin; y = pnPageHeight - pageNumberingConfig.margin - pnAscent; break;
-                case 'top-center': x = pnPageWidth / 2 - textWidth / 2; y = pnPageHeight - pageNumberingConfig.margin - pnAscent; break;
-                case 'top-right': x = pnPageWidth - pageNumberingConfig.margin - textWidth; y = pnPageHeight - pageNumberingConfig.margin - pnAscent; break;
+                case 'top-center': x = pnPageWidth / 2 - textWidthNum / 2; y = pnPageHeight - pageNumberingConfig.margin - pnAscent; break;
+                case 'top-right': x = pnPageWidth - pageNumberingConfig.margin - textWidthNum; y = pnPageHeight - pageNumberingConfig.margin - pnAscent; break;
                 case 'bottom-left': x = pageNumberingConfig.margin; y = pageNumberingConfig.margin; break; 
-                case 'bottom-center': x = pnPageWidth / 2 - textWidth / 2; y = pageNumberingConfig.margin; break;
-                case 'bottom-right': x = pnPageWidth - pageNumberingConfig.margin - textWidth; y = pageNumberingConfig.margin; break;
-                default: x = pnPageWidth / 2 - textWidth / 2; y = pageNumberingConfig.margin;
+                case 'bottom-center': x = pnPageWidth / 2 - textWidthNum / 2; y = pageNumberingConfig.margin; break;
+                case 'bottom-right': x = pnPageWidth - pageNumberingConfig.margin - textWidthNum; y = pageNumberingConfig.margin; break;
+                default: x = pnPageWidth / 2 - textWidthNum / 2; y = pageNumberingConfig.margin;
             }
             pdfLibPage.drawText(text, { x, y, font: pnFont, size: textSize, color: grayscale(0) });
         }
@@ -891,11 +902,22 @@ export default function PdfEditorHomepage() {
     try {
       let fullText = '';
       for (let i = 0; i < pageObjects.length; i++) { 
-        const originalPageIndex = pageObjects[i] ? 
-            (await pdfDocumentProxy.getPage(i + 1)).pageNumber 
-            : i + 1;
+        // Find the original page index in pdfDocumentProxy corresponding to pageObjects[i]
+        // This assumes pageObjects maintain order relative to original document pages,
+        // but if pages are deleted, this might need adjustment or direct use of sourceCanvases.
+        // For simplicity, if pageObjects map 1:1 to initial doc, originalPageIndex = i + 1.
+        // If pages can be reordered or source document structure changes, this needs a more robust mapping.
+        // The current pageObjects structure only has sourceCanvas and rotation, no direct link to original page number.
+        // Assuming `pdfDocumentProxy.getPage(i + 1)` refers to the *original* document's pages.
+        // This might be problematic if `pageObjects` is reordered or filtered.
+        // A safer approach would be to store original page number with pageObject if text extraction per displayed page is needed.
+        // However, `handleDownloadTxt` seems to want to extract text from the *original uploaded PDF*.
         
-        const pdfJsPage = await pdfDocumentProxy.getPage(originalPageIndex); 
+        // Re-evaluating: pageObjects[i] comes from the original pdfDocumentProxy in order.
+        // So, if pageObjects[0] is the first page of the PDF, its source is from pdfDocumentProxy.getPage(1).
+        // This mapping should hold unless pageObjects themselves are re-ordered copies from *multiple* source PDFs.
+        // For now, assume pageObjects[i] corresponds to original page i+1.
+        const pdfJsPage = await pdfDocumentProxy.getPage(i + 1); // If pageObjects are from a single PDF and in order
         const textContent = await pdfJsPage.getTextContent();
         const pageText = textContent.items.map((item: any) => item.str).join(' '); 
         fullText += pageText + '\n\n'; 
@@ -954,6 +976,9 @@ export default function PdfEditorHomepage() {
     setIsLoading(true);
     setLoadingMessage(texts.insertingPdf);
     try {
+      // Note: processPdfFile returns its own pdfDocProxy. If inserting into an existing document,
+      // and features rely on the *original* pdfDocumentProxy (like text extraction), this needs thought.
+      // For now, we're just adding page *objects* (canvases).
       const { newPageObjects: insertPageObjects } = await processPdfFile(file); 
 
       let insertAtIndex = pageObjects.length; 
@@ -969,6 +994,7 @@ export default function PdfEditorHomepage() {
       newCombinedPageObjects.splice(insertAtIndex, 0, ...insertPageObjects); 
       setPageObjects(newCombinedPageObjects);
 
+      // Select the first inserted page
       const newSelectedIds = new Set<string>();
       if (insertPageObjects.length > 0) {
         newSelectedIds.add(insertPageObjects[0].id); 
@@ -1044,12 +1070,6 @@ export default function PdfEditorHomepage() {
             errorData = { detail: errorText || response.statusText }; 
         }
         
-        let displayErrorDataForLog: any = errorData;
-        if (errorData && typeof errorData === 'object' && Object.keys(errorData).length === 0 && errorData.constructor === Object) {
-            displayErrorDataForLog = "[Empty JSON Object from function]";
-        }
-        console.error("Firebase Function HTTP Error Response:", displayErrorDataForLog, `(Status: ${response.status})`);
-
         const detailMessage = errorData?.detail || errorData?.error || `HTTP error! status: ${response.status}`;
         let toastDescription = detailMessage;
         if (typeof detailMessage === 'string' && (detailMessage.toLowerCase().includes("method not found") || detailMessage.toLowerCase().includes("api key not configured") || detailMessage.toLowerCase().includes("please provide your api key")) ) { 
@@ -1061,7 +1081,6 @@ export default function PdfEditorHomepage() {
       const result = await response.json();
 
       if (!result.wordUrl) {
-        console.error("Firebase Function did not return a wordUrl:", result);
         throw new Error("Firebase Function did not return a Word file URL.");
       }
 
@@ -1078,7 +1097,6 @@ export default function PdfEditorHomepage() {
       }
 
     } catch (error: any) {
-      console.error("Word conversion error in frontend:", error);
       let errMsg = error.message || (currentLanguage === 'zh' ? "未知錯誤" : "Unknown error");
       
       if (typeof errMsg === 'string' && (errMsg.toLowerCase().includes("method not found") || errMsg.toLowerCase().includes("api key") || errMsg.toLowerCase().includes("please provide your api key") )) {
@@ -1116,11 +1134,11 @@ export default function PdfEditorHomepage() {
 
 
   const headerFeatures = [
-    { icon: Edit3, labelKey: 'featureEdit' as keyof typeof texts },
-    { icon: Columns, labelKey: 'featureMerge' as keyof typeof texts },
-    { icon: ListOrdered, labelKey: 'featurePageNum' as keyof typeof texts },
-    { icon: ShieldCheck, labelKey: 'featureProtect' as keyof typeof texts },
-    { icon: FileType, labelKey: 'featureConvert' as keyof typeof texts },
+    { icon: Edit3, labelKey: 'featureEdit' as keyof (typeof translations.en) },
+    { icon: Columns, labelKey: 'featureMerge' as keyof (typeof translations.en) },
+    { icon: ListOrdered, labelKey: 'featurePageNum' as keyof (typeof translations.en) },
+    { icon: ShieldCheck, labelKey: 'featureProtect' as keyof (typeof translations.en) },
+    { icon: FileType, labelKey: 'featureConvert' as keyof (typeof translations.en) },
   ];
 
   const closeZoomModal = () => {
@@ -1133,7 +1151,7 @@ export default function PdfEditorHomepage() {
         });
         setPageObjects(updatedPageObjects);
     }
-    setIsZoomModalOpen(false);
+    setIsCustomZoomModalOpen(false);
     setZoomedPageData(null); 
     setCurrentModalRotation(0);   
     setZoomLevel(1);         
@@ -1152,12 +1170,13 @@ export default function PdfEditorHomepage() {
         const file = imageFiles[i];
         const imageBytes = await file.arrayBuffer();
         let image;
-        if (file.type === 'image/jpeg') {
+        if (file.type === 'image/jpeg' || file.type === 'image/jpg') {
           image = await pdfDoc.embedJpg(imageBytes);
         } else if (file.type === 'image/png') {
           image = await pdfDoc.embedPng(imageBytes);
         } else {
           console.warn(`Skipping unsupported image type: ${file.type}`);
+          toast({ title: texts.imageToPdfError, description: `Unsupported image type: ${file.name}`, variant: "destructive" });
           continue;
         }
         const page = pdfDoc.addPage([image.width, image.height]);
@@ -1167,6 +1186,12 @@ export default function PdfEditorHomepage() {
           width: image.width,
           height: image.height,
         });
+      }
+      if (pdfDoc.getPageCount() === 0) {
+        toast({ title: texts.imageToPdfError, description: texts.noImagesSelected, variant: "destructive" });
+        setIsConvertingImagesToPdf(false);
+        setLoadingMessage('');
+        return;
       }
       const pdfBytes = await pdfDoc.save();
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
@@ -1200,6 +1225,7 @@ export default function PdfEditorHomepage() {
     try {
       const arrayBuffer = await pdfToCompress.arrayBuffer();
       const pdfDoc = await PDFLibDocument.load(arrayBuffer);
+      // Re-save with useObjectStreams: false. This is one form of "compression" pdf-lib offers.
       const pdfBytes = await pdfDoc.save({ useObjectStreams: false }); 
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
@@ -1222,6 +1248,92 @@ export default function PdfEditorHomepage() {
     }
   };
 
+  // Watermark Drag Logic
+  const handleWatermarkMouseDown = (
+    event: React.MouseEvent<HTMLElement>,
+    previewWrapperElement: HTMLElement,
+    // pageIndex: number // Not strictly needed if watermark config is global
+  ) => {
+    event.preventDefault();
+    const draggedWatermarkElement = event.currentTarget as HTMLElement;
+    
+    setIsDraggingWatermark(true);
+    draggedWatermarkElement.style.cursor = 'grabbing';
+
+    // Calculate initial offset in pixels based on current percentage and wrapper size
+    const wrapperRect = previewWrapperElement.getBoundingClientRect();
+    const initialTopPx = watermarkConfig.topRatio * wrapperRect.height;
+    const initialLeftPx = watermarkConfig.leftRatio * wrapperRect.width;
+
+    dragDataRef.current = {
+      initialMouseX: event.clientX,
+      initialMouseY: event.clientY,
+      initialWatermarkTopInPx: initialTopPx,
+      initialWatermarkLeftInPx: initialLeftPx,
+      draggedElement: draggedWatermarkElement,
+      previewWrapperElement: previewWrapperElement,
+    };
+
+    document.addEventListener('mousemove', handleWatermarkMouseMove);
+    document.addEventListener('mouseup', handleWatermarkMouseUp);
+  };
+
+  const handleWatermarkMouseMove = useCallback((event: MouseEvent) => {
+    if (!isDraggingWatermark || !dragDataRef.current) return;
+    event.preventDefault();
+
+    const { 
+        initialMouseX, initialMouseY, 
+        initialWatermarkTopInPx, initialWatermarkLeftInPx, 
+        draggedElement, previewWrapperElement 
+    } = dragDataRef.current;
+
+    const deltaX = event.clientX - initialMouseX;
+    const deltaY = event.clientY - initialMouseY;
+
+    let newPixelTop = initialWatermarkTopInPx + deltaY;
+    let newPixelLeft = initialWatermarkLeftInPx + deltaX;
+    
+    const wrapperRect = previewWrapperElement.getBoundingClientRect();
+    const watermarkRect = draggedElement.getBoundingClientRect(); // Get live dimensions
+
+    // Constrain within the previewWrapperElement boundaries
+    newPixelTop = Math.max(0, Math.min(newPixelTop, wrapperRect.height - watermarkRect.height));
+    newPixelLeft = Math.max(0, Math.min(newPixelLeft, wrapperRect.width - watermarkRect.width));
+
+    // Update state with ratios for React to re-render all previews
+    const newTopRatio = wrapperRect.height > 0 ? newPixelTop / wrapperRect.height : 0;
+    const newLeftRatio = wrapperRect.width > 0 ? newPixelLeft / wrapperRect.width : 0;
+    
+    setWatermarkConfig(prev => ({ 
+        ...prev, 
+        topRatio: parseFloat(newTopRatio.toFixed(4)), // Store with some precision
+        leftRatio: parseFloat(newLeftRatio.toFixed(4)) 
+    }));
+
+  }, [isDraggingWatermark]); // Only depends on isDraggingWatermark for adding/removing listener effect
+
+  const handleWatermarkMouseUp = useCallback(() => {
+    if (!isDraggingWatermark) return;
+
+    setIsDraggingWatermark(false);
+    if (dragDataRef.current && dragDataRef.current.draggedElement) {
+      dragDataRef.current.draggedElement.style.cursor = 'grab';
+    }
+    // dragDataRef.current = null; // Keep data for potential immediate re-drag debugging
+
+    document.removeEventListener('mousemove', handleWatermarkMouseMove);
+    document.removeEventListener('mouseup', handleWatermarkMouseUp);
+  }, [isDraggingWatermark, handleWatermarkMouseMove]);
+
+  useEffect(() => {
+    // Cleanup listeners if component unmounts while dragging
+    return () => {
+      document.removeEventListener('mousemove', handleWatermarkMouseMove);
+      document.removeEventListener('mouseup', handleWatermarkMouseUp);
+    };
+  }, [handleWatermarkMouseMove, handleWatermarkMouseUp]);
+
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -1240,7 +1352,7 @@ export default function PdfEditorHomepage() {
         </div>
       )}
 
-      {isZoomModalOpen && zoomedPageData && (
+      {isCustomZoomModalOpen && zoomedPageData && (
          <div 
           role="dialog" 
           aria-modal="true" 
@@ -1251,6 +1363,7 @@ export default function PdfEditorHomepage() {
           <div 
             className="fixed inset-0 bg-black/60 backdrop-blur-sm" 
             aria-hidden="true"
+            onClick={closeZoomModal} 
           ></div>
           <div 
             className="relative bg-card text-card-foreground shadow-2xl rounded-lg w-[90vw] max-w-4xl h-[90vh] flex flex-col overflow-hidden"
@@ -1258,7 +1371,7 @@ export default function PdfEditorHomepage() {
             role="document"
           >
             <div className="flex items-center justify-between p-4 border-b border-border">
-              <h2 className="text-lg font-semibold text-foreground" id="zoom-dialog-title">
+              <h2 className="text-lg font-semibold text-foreground" id="zoom-dialog-title-custom">
                  {texts.previewOf} {texts.page} {zoomedPageData.index + 1}
                  <span className="text-sm text-muted-foreground ml-2">({(zoomLevel * 100).toFixed(0)}%)</span>
               </h2>
@@ -1268,8 +1381,9 @@ export default function PdfEditorHomepage() {
             </div>
             <div
               ref={zoomScrollContainerRef}
-              className="flex-grow bg-muted/40 overflow-auto p-4" 
+              className="flex-grow bg-muted/40 overflow-auto p-4 flex items-center justify-center" // Added flex centering for canvas
               onWheel={handleWheel} 
+              style={{ touchAction: 'none' }} // Might help with passive event listeners on some browsers
             >
               <canvas
                 ref={zoomCanvasRef}
@@ -1506,6 +1620,30 @@ export default function PdfEditorHomepage() {
                           ref={previewContainerRef}
                           className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-1 bg-muted/20 rounded-md min-h-[200px]"
                         >
+                           {pageObjects.map((pageObj, index) => (
+                            <PagePreviewItem
+                              key={pageObj.id}
+                              pageObj={pageObj}
+                              index={index}
+                              isSelected={selectedPageIds.has(pageObj.id)}
+                              onClick={() => {
+                                const newSelectedIds = new Set<string>();
+                                if (!selectedPageIds.has(pageObj.id)) {
+                                    newSelectedIds.add(pageObj.id);
+                                } 
+                                setSelectedPageIds(newSelectedIds);
+                              }}
+                              onDoubleClick={() => {
+                                setZoomedPageData({ page: pageObj, index });
+                                setCurrentModalRotation(pageObj.rotation); 
+                                setZoomLevel(1);
+                                setIsCustomZoomModalOpen(true);
+                              }}
+                              watermarkConfig={watermarkConfig}
+                              onWatermarkMouseDown={handleWatermarkMouseDown}
+                              texts={texts}
+                            />
+                          ))}
                         </div>
                          <div className="mt-4 text-sm text-muted-foreground space-y-1">
                             <p><Info className="inline h-4 w-4 mr-1 text-primary/80" /> {texts.instSelect}</p>
@@ -1614,6 +1752,70 @@ export default function PdfEditorHomepage() {
                                 <AccordionContent className="px-6 pb-6 space-y-6">
                                     <Card>
                                       <CardHeader>
+                                        <CardTitle className="flex items-center text-lg"><Droplet className="mr-2 h-5 w-5 text-primary" /> {texts.watermarkSectionTitle}</CardTitle>
+                                      </CardHeader>
+                                      <CardContent className="space-y-4">
+                                        <div>
+                                            <Label htmlFor="watermarkInput" className="mb-1 block text-sm font-medium">{texts.watermarkInputPlaceholder}</Label>
+                                            <Input
+                                                id="watermarkInput"
+                                                type="text"
+                                                placeholder={texts.watermarkInputPlaceholder}
+                                                value={watermarkConfig.text}
+                                                onChange={(e) => setWatermarkConfig(prev => ({...prev, text: e.target.value}))}
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="watermarkFontSize" className="mb-1 block text-sm font-medium">{texts.watermarkFontSizeLabel}</Label>
+                                            <Input
+                                                id="watermarkFontSize"
+                                                type="number"
+                                                value={watermarkConfig.fontSize}
+                                                onChange={(e) => setWatermarkConfig(prev => ({...prev, fontSize: parseInt(e.target.value, 10) || 20}))}
+                                                min="8"
+                                                max="120"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="watermarkColor" className="mb-1 block text-sm font-medium">{texts.watermarkColorLabel}</Label>
+                                            <Input
+                                                id="watermarkColor"
+                                                type="color" // Using type="color" for a color picker
+                                                value={(() => { // Convert rgba to hex for color input
+                                                    const parsed = parseRgbaColor(watermarkConfig.color);
+                                                    const toHex = (c: number) => Math.round(c * 255).toString(16).padStart(2, '0');
+                                                    return `#${toHex(parsed.r)}${toHex(parsed.g)}${toHex(parsed.b)}`;
+                                                })()}
+                                                onChange={(e) => {
+                                                    // Convert hex back to rgba for storage, keeping existing alpha
+                                                    const hex = e.target.value;
+                                                    const r = parseInt(hex.slice(1, 3), 16);
+                                                    const g = parseInt(hex.slice(3, 5), 16);
+                                                    const b = parseInt(hex.slice(5, 7), 16);
+                                                    const currentAlpha = parseRgbaColor(watermarkConfig.color).alpha;
+                                                    setWatermarkConfig(prev => ({...prev, color: `rgba(${r}, ${g}, ${b}, ${currentAlpha})`}));
+                                                }}
+                                                className="h-10" // Ensure color input is visible
+                                            />
+                                             <Input
+                                                type="range"
+                                                min="0"
+                                                max="1"
+                                                step="0.05"
+                                                title={`Opacity: ${parseRgbaColor(watermarkConfig.color).alpha.toFixed(2)}`}
+                                                value={parseRgbaColor(watermarkConfig.color).alpha}
+                                                onChange={(e) => {
+                                                    const newAlpha = parseFloat(e.target.value);
+                                                    const parsed = parseRgbaColor(watermarkConfig.color);
+                                                    setWatermarkConfig(prev => ({...prev, color: `rgba(${Math.round(parsed.r*255)}, ${Math.round(parsed.g*255)}, ${Math.round(parsed.b*255)}, ${newAlpha})`}));
+                                                }}
+                                                className="w-full mt-2 h-2"
+                                            />
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                    <Card>
+                                      <CardHeader>
                                         <CardTitle className="flex items-center text-lg"><FileDigit className="mr-2 h-5 w-5 text-primary" /> {texts.pageNumberingSectionTitle}</CardTitle>
                                       </CardHeader>
                                       <CardContent className="space-y-4">
@@ -1638,38 +1840,6 @@ export default function PdfEditorHomepage() {
                                             <div><Label htmlFor="pn-format">{texts.pageNumberFormat}</Label><Input id="pn-format" type="text" value={pageNumberingConfig.format} placeholder={texts.pageNumberFormatPlaceholder} onChange={(e) => setPageNumberingConfig(prev => ({...prev, format: e.target.value}))} /></div>
                                           </>
                                         )}
-                                      </CardContent>
-                                    </Card>
-                                    <Card>
-                                      <CardHeader>
-                                        <CardTitle className="flex items-center text-lg"><Droplet className="mr-2 h-5 w-5 text-primary" /> {texts.watermarkSectionTitle}</CardTitle>
-                                      </CardHeader>
-                                      <CardContent className="space-y-4">
-                                        <div>
-                                            <Label htmlFor="watermarkInput" className="mb-1 block text-sm font-medium">{texts.watermarkInputPlaceholder}</Label>
-                                            <Input
-                                            id="watermarkInput"
-                                            type="text"
-                                            placeholder={texts.watermarkInputPlaceholder}
-                                            value={watermarkText}
-                                            onChange={(e) => setWatermarkText(e.target.value)}
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label htmlFor="watermark-position">{texts.watermarkPositionLabel}</Label>
-                                            <Select value={watermarkPosition} onValueChange={(value: WatermarkPosition) => setWatermarkPosition(value)}>
-                                                <SelectTrigger id="watermark-position">
-                                                    <SelectValue placeholder={texts.watermarkPositionLabel} />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {watermarkPositions.map(pos => (
-                                                        <SelectItem key={pos.value} value={pos.value}>
-                                                            {texts[pos.labelKey]}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
                                       </CardContent>
                                     </Card>
                                     <Card>
@@ -1770,3 +1940,5 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
+
+    

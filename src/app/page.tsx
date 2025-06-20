@@ -399,7 +399,7 @@ export default function PdfEditorHomepage() {
 
       wrapper.addEventListener('dblclick', () => {
         setZoomedPageData({ canvas: pageCanvas, index });
-        setCurrentRotation(0);
+        setCurrentRotation(0); // Reset rotation when opening
         setIsZoomModalOpen(true);
       });
       previewContainerRef.current?.appendChild(wrapper);
@@ -444,18 +444,21 @@ export default function PdfEditorHomepage() {
       const baseWidth = sourceCanvas.width;
       const baseHeight = sourceCanvas.height;
       
+      // Set canvas drawing surface size
       if (currentRotation % 180 !== 0) {
-        canvas.width = baseHeight; 
+        canvas.width = baseHeight; // Swapped for 90/270 deg rotation
         canvas.height = baseWidth;  
       } else {
         canvas.width = baseWidth; 
         canvas.height = baseHeight;
       }
       
+      // Apply transformations and draw
       ctx.save();
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear with new dimensions
       ctx.translate(canvas.width / 2, canvas.height / 2);
       ctx.rotate((currentRotation * Math.PI) / 180);
+      // Draw source centered on its own dimensions
       ctx.drawImage(sourceCanvas, -baseWidth / 2, -baseHeight / 2, baseWidth, baseHeight);
       ctx.restore();
     }
@@ -473,12 +476,12 @@ export default function PdfEditorHomepage() {
     const loadedCanvases: HTMLCanvasElement[] = [];
     for (let i = 1; i <= numPages; i++) {
       const page = await pdfDocProxy.getPage(i);
-      const viewport = page.getViewport({ scale: 1.5 });
+      const viewport = page.getViewport({ scale: 1.5 }); // Render at 1.5x for better quality
       const canvas = document.createElement('canvas');
       canvas.width = viewport.width;
       canvas.height = viewport.height;
       const ctx = canvas.getContext('2d');
-      if (!ctx) continue;
+      if (!ctx) continue; // Should not happen
       await page.render({ canvasContext: ctx, viewport }).promise;
       loadedCanvases.push(canvas);
     }
@@ -502,7 +505,7 @@ export default function PdfEditorHomepage() {
         if (file) toast({ title: texts.loadError, description: "無效的檔案類型。請上傳 PDF。", variant: "destructive" });
         return;
     }
-    setUploadedPdfFile(file);
+    setUploadedPdfFile(file); // Store the original uploaded file
     setWordFileUrl(null);
     setWordConversionError(null);
 
@@ -511,8 +514,8 @@ export default function PdfEditorHomepage() {
     try {
       const { canvases, docProxy } = await processPdfFile(file);
       setPages(canvases);
-      setPdfDocumentProxy(docProxy);
-      setSelectedPages(new Set());
+      setPdfDocumentProxy(docProxy); // Store the PDFDocumentProxy
+      setSelectedPages(new Set()); // Clear selected pages on new upload
     } catch (err: any) {
       toast({ title: texts.loadError, description: err.message, variant: "destructive" });
       setPdfDocumentProxy(null);
@@ -520,7 +523,7 @@ export default function PdfEditorHomepage() {
     } finally {
       setIsLoading(false);
       setLoadingMessage('');
-      if (pdfUploadRef.current) pdfUploadRef.current.value = '';
+      if (pdfUploadRef.current) pdfUploadRef.current.value = ''; // Reset file input
     }
   };
 
@@ -531,8 +534,8 @@ export default function PdfEditorHomepage() {
     }
     const newPages = pages.filter((_, idx) => !selectedPages.has(idx));
     setPages(newPages);
-    setSelectedPages(new Set());
-    if (newPages.length === 0) {
+    setSelectedPages(new Set()); // Clear selection
+    if (newPages.length === 0) { // If all pages are deleted
         setPdfDocumentProxy(null);
         setUploadedPdfFile(null);
     }
@@ -565,12 +568,12 @@ export default function PdfEditorHomepage() {
     setIsDownloading(true);
     setLoadingMessage(texts.generatingFile);
     try {
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 100)); // Simulate short delay
       const pdfDocOut = await PDFLibDocument.create();
       const helveticaFont = await pdfDocOut.embedFont(StandardFonts.Helvetica);
 
       for (let canvas of pages) {
-        const imgDataUrl = canvas.toDataURL('image/png');
+        const imgDataUrl = canvas.toDataURL('image/png'); // Use PNG for better quality than JPEG for sharp text/lines
         const pngImage = await pdfDocOut.embedPng(imgDataUrl);
         const page = pdfDocOut.addPage([canvas.width, canvas.height]);
         page.drawImage(pngImage, { x: 0, y: 0, width: canvas.width, height: canvas.height });
@@ -579,7 +582,7 @@ export default function PdfEditorHomepage() {
       const pdfLibPages = pdfDocOut.getPages();
 
       if (pageNumberingConfig.enabled) {
-        const font = await pdfDocOut.embedFont(StandardFonts.Helvetica);
+        const font = await pdfDocOut.embedFont(StandardFonts.Helvetica); // Could be configurable
         for (let i = 0; i < pdfLibPages.length; i++) {
           const pdfLibPage = pdfLibPages[i];
           const { width, height } = pdfLibPage.getSize();
@@ -592,7 +595,7 @@ export default function PdfEditorHomepage() {
 
           const textSize = pageNumberingConfig.fontSize;
           const textWidth = font.widthOfTextAtSize(text, textSize);
-          const textHeight = font.heightAtSize(textSize);
+          const textHeight = font.heightAtSize(textSize); // Approximation
           const margin = pageNumberingConfig.margin;
 
           let x, y;
@@ -603,25 +606,25 @@ export default function PdfEditorHomepage() {
             case 'bottom-left': x = margin; y = margin; break;
             case 'bottom-center': x = width / 2 - textWidth / 2; y = margin; break;
             case 'bottom-right': x = width - margin - textWidth; y = margin; break;
-            default: x = width / 2 - textWidth / 2; y = margin; 
+            default: x = width / 2 - textWidth / 2; y = margin; // Default to bottom-center
           }
-          pdfLibPage.drawText(text, { x, y, font, size: textSize, color: grayscale(0) });
+          pdfLibPage.drawText(text, { x, y, font, size: textSize, color: grayscale(0) }); // Black color
         }
       }
       
       if (watermarkText.trim() !== '') {
           const textWidth = helveticaFont.widthOfTextAtSize(watermarkText, 50);
-          const textHeight = helveticaFont.heightAtSize(50);
+          const textHeight = helveticaFont.heightAtSize(50); // For centering
           pdfLibPages.forEach(page => {
             const { width: pageWidth, height: pageHeight } = page.getSize();
             page.drawText(watermarkText, {
                 x: pageWidth / 2 - textWidth / 2,
-                y: pageHeight / 2 - textHeight / 4, 
+                y: pageHeight / 2 - textHeight / 4, // Adjust Y for better visual center
                 font: helveticaFont,
                 size: 50,
-                color: rgb(0.75, 0.75, 0.75),
-                opacity: 0.3,
-                rotate: degrees(45),
+                color: rgb(0.75, 0.75, 0.75), // Light grey
+                opacity: 0.3, // Semi-transparent
+                rotate: degrees(45), // Diagonal watermark
             });
           });
       }
@@ -629,8 +632,8 @@ export default function PdfEditorHomepage() {
       if (pdfProtectionConfig.enabled && pdfProtectionConfig.password) {
         await pdfDocOut.encrypt({
           userPassword: pdfProtectionConfig.password,
-          ownerPassword: pdfProtectionConfig.password, 
-          permissions: {}, 
+          ownerPassword: pdfProtectionConfig.password, // Or a different owner password
+          permissions: {}, // Define permissions if needed
         });
       }
 
@@ -685,7 +688,7 @@ export default function PdfEditorHomepage() {
         const page = await pdfDocumentProxy.getPage(i);
         const textContent = await page.getTextContent();
         const pageText = textContent.items.map((item: any) => item.str).join(' ');
-        fullText += pageText + '\n\n';
+        fullText += pageText + '\n\n'; // Add double newline for page separation
       }
 
       const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
@@ -727,7 +730,7 @@ export default function PdfEditorHomepage() {
     }
 
     setPendingInsertFile(file);
-    if (pages.length > 0 && selectedPages.size === 0) {
+    if (pages.length > 0 && selectedPages.size === 0) { // If PDF loaded but no page selected
         setIsInsertConfirmOpen(true);
     } else {
         proceedWithInsert(file);
@@ -742,7 +745,7 @@ export default function PdfEditorHomepage() {
     setLoadingMessage(texts.insertingPdf);
     try {
       const { canvases: insertCanvases } = await processPdfFile(file);
-      let insertIdx = pages.length;
+      let insertIdx = pages.length; // Default to end
       if (selectedPages.size > 0) {
         const firstSelected = Math.min(...Array.from(selectedPages));
         insertIdx = insertPosition === 'before' ? firstSelected : firstSelected + 1;
@@ -752,6 +755,7 @@ export default function PdfEditorHomepage() {
       newPages.splice(insertIdx, 0, ...insertCanvases);
       setPages(newPages);
 
+      // Select the first of the newly inserted pages for immediate feedback
       const newSelected = new Set<number>();
       if (insertCanvases.length > 0) {
         newSelected.add(insertIdx);
@@ -766,7 +770,7 @@ export default function PdfEditorHomepage() {
       setIsLoading(false);
       setLoadingMessage('');
       setPendingInsertFile(null);
-      if (insertPdfRef.current) insertPdfRef.current.value = '';
+      if (insertPdfRef.current) insertPdfRef.current.value = ''; // Reset file input
     }
   };
 
@@ -808,6 +812,7 @@ export default function PdfEditorHomepage() {
       await uploadBytes(fileStorageRef, uploadedPdfFile);
       const pdfStorageUrl = await getDownloadURL(fileStorageRef);
 
+      // Ensure your Firebase project ID is correct here
       const functionUrl = `https://us-central1-sitemate-otkpt.cloudfunctions.net/convertPdfToWord`;
 
       const response = await fetch(functionUrl, {
@@ -821,14 +826,16 @@ export default function PdfEditorHomepage() {
       if (!response.ok) {
         let errorData;
         try {
-            errorData = await response.json();
+            errorData = await response.json(); // Try to parse as JSON first
         } catch (e) {
+            // If JSON parsing fails, it might be plain text or HTML error
             const errorText = await response.text();
-            errorData = { detail: errorText || response.statusText };
+            errorData = { detail: errorText || response.statusText }; // Fallback
         }
         
         let displayErrorDataForLog: any = errorData;
         if (errorData && typeof errorData === 'object' && Object.keys(errorData).length === 0 && errorData.constructor === Object) {
+            // Handle case where errorData is an empty object {}
             displayErrorDataForLog = "[Empty JSON Object from function]";
         }
         console.error("Firebase Function HTTP Error Response:", displayErrorDataForLog, `(Status: ${response.status})`);
@@ -838,7 +845,7 @@ export default function PdfEditorHomepage() {
         if (typeof detailMessage === 'string' && (detailMessage.toLowerCase().includes("method not found") || detailMessage.toLowerCase().includes("api key not configured") || detailMessage.toLowerCase().includes("please provide your api key")) ) { 
              toastDescription = texts.pdfCoMethodNotFoundError;
         }
-        throw new Error(detailMessage);
+        throw new Error(detailMessage); // Throw an error to be caught by the catch block
       }
 
       const result = await response.json();
@@ -851,6 +858,7 @@ export default function PdfEditorHomepage() {
       setWordFileUrl(result.wordUrl);
       toast({ title: texts.wordConvertSuccess, description: texts.downloadWordFile });
 
+      // Update conversion count for guests
       if (!isLoggedIn && typeof window !== 'undefined') {
         const today = new Date().toISOString().split('T')[0];
         let wordConversionInfoString = localStorage.getItem('DocuPilotWordConversionInfo');
@@ -864,9 +872,10 @@ export default function PdfEditorHomepage() {
       console.error("Word conversion error in frontend:", error);
       let errMsg = error.message || (currentLanguage === 'zh' ? "未知錯誤" : "Unknown error");
       
+      // Check if the error message indicates an API key issue specifically
       if (typeof errMsg === 'string' && (errMsg.toLowerCase().includes("method not found") || errMsg.toLowerCase().includes("api key") || errMsg.toLowerCase().includes("please provide your api key") )) {
         errMsg = texts.pdfCoMethodNotFoundError;
-      } else if (errMsg.toLowerCase().includes("pdf.co api key is not correctly hardcoded")) {
+      } else if (errMsg.toLowerCase().includes("pdf.co api key is not correctly hardcoded")) { // Specific check for your backend's message
         errMsg = (currentLanguage === 'zh' ? "後端 API 金鑰設定錯誤，請聯絡管理員。" : "Backend API Key configuration error. Please contact administrator.");
       }
 
@@ -908,17 +917,17 @@ export default function PdfEditorHomepage() {
   ];
 
   const headerFeatures = [
-    { icon: Edit3, labelKey: 'featureEdit' },
-    { icon: Columns, labelKey: 'featureMerge' },
-    { icon: ListOrdered, labelKey: 'featurePageNum' },
-    { icon: ShieldCheck, labelKey: 'featureProtect' },
-    { icon: FileType, labelKey: 'featureConvert' },
+    { icon: Edit3, labelKey: 'featureEdit' as keyof typeof texts },
+    { icon: Columns, labelKey: 'featureMerge' as keyof typeof texts },
+    { icon: ListOrdered, labelKey: 'featurePageNum' as keyof typeof texts },
+    { icon: ShieldCheck, labelKey: 'featureProtect' as keyof typeof texts },
+    { icon: FileType, labelKey: 'featureConvert' as keyof typeof texts },
   ];
 
   const closeZoomModal = () => {
     setIsZoomModalOpen(false);
-    setZoomedPageData(null);
-    setCurrentRotation(0);
+    setZoomedPageData(null); // Clear data when closing
+    setCurrentRotation(0); // Reset rotation
   };
 
   return (
@@ -955,10 +964,10 @@ export default function PdfEditorHomepage() {
             </div>
 
             {/* Content */}
-            <div className="flex-grow overflow-auto flex items-center justify-center p-4 bg-muted/40">
+            <div className="flex-grow overflow-auto p-4 bg-muted/40">
               <canvas 
                 ref={zoomCanvasRef} 
-                className="max-w-full max-h-full object-contain shadow-lg"
+                className="shadow-lg"
                 style={{ willReadFrequently: true } as any} 
               ></canvas>
             </div>
@@ -1101,7 +1110,7 @@ export default function PdfEditorHomepage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                <div className="md:col-span-8">
+                <div className="md:col-span-8"> {/* Left column for PDF preview (70% width) */}
                     <Card className="shadow-lg min-h-[calc(100vh-20rem)] md:min-h-[calc(100vh-18rem)]">
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
@@ -1123,6 +1132,7 @@ export default function PdfEditorHomepage() {
                           ref={previewContainerRef}
                           className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-1 bg-muted/20 rounded-md min-h-[200px]"
                         >
+                          {/* Page previews will be rendered here by renderPagePreviews */}
                         </div>
                          <div className="mt-4 text-sm text-muted-foreground space-y-1">
                             <p><Info className="inline h-4 w-4 mr-1 text-primary/80" /> {texts.instSelect}</p>
@@ -1133,7 +1143,7 @@ export default function PdfEditorHomepage() {
                     </Card>
                 </div>
 
-                <div className="md:col-span-4 space-y-6">
+                <div className="md:col-span-4 space-y-6"> {/* Right column for tools (30% width) */}
                     <Card className="shadow-lg">
                       <CardHeader>
                         <CardTitle className="flex items-center text-lg"><FilePlus className="mr-2 h-5 w-5 text-primary" /> {texts.insertAreaTitle}</CardTitle>
@@ -1299,5 +1309,3 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
-
-    

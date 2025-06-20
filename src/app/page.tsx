@@ -19,7 +19,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, FileType } from 'lucide-react';
 
-import { storage } from '@/lib/firebase'; // Firebase SDK for storage
+import { storage, functions as firebaseFunctions, app as firebaseApp } from '@/lib/firebase'; // Firebase SDK
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 
@@ -95,8 +95,8 @@ const translations = {
         login: 'Login',
         logout: 'Logout',
         guest: 'Guest',
-        firebaseNotConfigured: `Firebase Frontend SDK is not fully configured. Please ensure all Firebase environment variables (e.g., NEXT_PUBLIC_FIREBASE_API_KEY) are set in your .env file and the application is rebuilt/restarted. Missing: `,
-        firebaseConfiguredButWarn: "Firebase configuration seems complete, but 'Convert to Word' might be disabled if there's an issue detected by the component."
+        firebaseNotConfigured: `Firebase Frontend SDK is not fully configured. Please ensure all Firebase environment variables (%MISSING_KEYS%) are correctly set and propagated to the client. This might require checking build logs or App Hosting settings.`,
+        firebaseSdkInitError: "Firebase SDK could not be initialized. 'Convert to Word' and other Firebase features will be disabled. Check browser console for details.",
     },
     zh: {
         pageTitle: 'DocuPilot 文件助手',
@@ -156,8 +156,8 @@ const translations = {
         login: '登入',
         logout: '登出',
         guest: '訪客',
-        firebaseNotConfigured: `Firebase 前端 SDK 設定不完整。請確保所有 Firebase 環境變數 (例如 NEXT_PUBLIC_FIREBASE_API_KEY) 都已在您的 .env 檔案中設定，且應用程式已重新建置/啟動。缺少：`,
-        firebaseConfiguredButWarn: "Firebase 設定看起來完整，但如果組件偵測到問題，'轉換為 Word' 功能可能仍被禁用。"
+        firebaseNotConfigured: `Firebase 前端 SDK 設定不完整。請確保所有 Firebase 環境變數 (%MISSING_KEYS%) 都已正確設定並傳播到客戶端。這可能需要檢查建置日誌或 App Hosting 設定。`,
+        firebaseSdkInitError: "Firebase SDK 無法初始化。'轉換為 Word' 及其他 Firebase 功能將被禁用。請檢查瀏覽器控制台以獲取詳細資訊。",
     }
 };
 
@@ -193,42 +193,50 @@ export default function PdfEditorHomepage() {
   const [wordConversionError, setWordConversionError] = useState<string | null>(null);
   const [showWordLimitModal, setShowWordLimitModal] = useState(false);
   
-  const [isFirebaseFullyConfigured, setIsFirebaseFullyConfigured] = useState(true);
+  const [isFirebaseSystemReady, setIsFirebaseSystemReady] = useState(false);
   const [firebaseConfigWarning, setFirebaseConfigWarning] = useState('');
 
 
   useEffect(() => {
+    console.log("Page.tsx useEffect: Checking Firebase env vars on client...");
+    console.log("NEXT_PUBLIC_FIREBASE_API_KEY:", process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
+    console.log("NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN:", process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN);
+    console.log("NEXT_PUBLIC_FIREBASE_PROJECT_ID:", process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
+    console.log("NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET:", process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET);
+    console.log("NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID:", process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID);
+    console.log("NEXT_PUBLIC_FIREBASE_APP_ID:", process.env.NEXT_PUBLIC_FIREBASE_APP_ID);
+    
     let missingKeys: string[] = [];
     if (typeof window !== 'undefined') { // Ensure client-side
-      missingKeys = firebaseConfigKeys.filter(key => {
-        const value = process.env[key];
-        return !value || value.trim() === '';
-      });
+        missingKeys = firebaseConfigKeys.filter(key => {
+            const value = process.env[key];
+            // Check if value is null, undefined, an empty string, or the string "undefined"
+            return !value || value.trim() === '' || value === 'undefined';
+        });
     }
     
-    const configured = missingKeys.length === 0;
-    setIsFirebaseFullyConfigured(configured);
+    const sdkConfigured = missingKeys.length === 0;
+    const sdkInitialized = !!firebaseApp && !!storage && !!firebaseFunctions;
 
-    if (!configured) {
-      const missingKeysString = missingKeys.join(', ');
-      setFirebaseConfigWarning(
-        currentLanguage === 'zh' 
-        ? translations.zh.firebaseNotConfigured + missingKeysString
-        : translations.en.firebaseNotConfigured + missingKeysString
-      );
+    if (sdkConfigured && sdkInitialized) {
+        setIsFirebaseSystemReady(true);
+        setFirebaseConfigWarning('');
     } else {
-      setFirebaseConfigWarning('');
+        setIsFirebaseSystemReady(false);
+        if (!sdkConfigured) {
+            const missingKeysString = missingKeys.join(', ');
+            const baseMessage = translations[currentLanguage].firebaseNotConfigured;
+            setFirebaseConfigWarning(baseMessage.replace('%MISSING_KEYS%', missingKeysString || 'unknown'));
+        } else if (!sdkInitialized) { // Configured but not initialized (e.g. firebase.ts had issues)
+            setFirebaseConfigWarning(translations[currentLanguage].firebaseSdkInitError);
+        }
     }
-  }, [currentLanguage]); // Rerun on language change to update message
+  }, [currentLanguage]); // Rerun on language change for text updates & initial check
 
 
   useEffect(() => {
-    const newTexts = { ...translations[currentLanguage] };
-    if (firebaseConfigWarning) { // If there's a warning, use it
-        newTexts.firebaseNotConfigured = firebaseConfigWarning;
-    }
-    setTexts(newTexts);
-  }, [currentLanguage, firebaseConfigWarning]);
+    setTexts(translations[currentLanguage]);
+  }, [currentLanguage]);
 
 
   const previewContainerRef = useRef<HTMLDivElement>(null);
@@ -671,8 +679,8 @@ export default function PdfEditorHomepage() {
       toast({ title: texts.wordConvertError, description: texts.noPdfToConvert, variant: "destructive" });
       return;
     }
-    if (!isFirebaseFullyConfigured) { // Check our state variable
-        toast({ title: texts.wordConvertError, description: firebaseConfigWarning || (currentLanguage === 'zh' ? translations.zh.firebaseConfiguredButWarn : translations.en.firebaseConfiguredButWarn), variant: "destructive" });
+    if (!isFirebaseSystemReady || !storage || !firebaseFunctions) { 
+        toast({ title: texts.wordConvertError, description: firebaseConfigWarning || (currentLanguage === 'zh' ? translations.zh.firebaseSdkInitError : translations.en.firebaseSdkInitError), variant: "destructive" });
         return;
     }
 
@@ -699,9 +707,9 @@ export default function PdfEditorHomepage() {
 
     try {
       const fileName = `uploads/${new Date().getTime()}_${uploadedPdfFile.name}`;
-      const fileRef = storageRef(storage, fileName);
-      await uploadBytes(fileRef, uploadedPdfFile);
-      const pdfStorageUrl = await getDownloadURL(fileRef);
+      const fileStorageRef = storageRef(storage, fileName);
+      await uploadBytes(fileStorageRef, uploadedPdfFile);
+      const pdfStorageUrl = await getDownloadURL(fileStorageRef);
       
       const functionUrl = `https://us-central1-sitemate-otkpt.cloudfunctions.net/convertPdfToWord`; 
 
@@ -710,7 +718,7 @@ export default function PdfEditorHomepage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ fileUrl: pdfStorageUrl }),
+        body: JSON.stringify({ fileUrl: pdfStorageUrl }), // HTTP function expects 'fileUrl'
       });
 
       if (!response.ok) {
@@ -1006,9 +1014,9 @@ export default function PdfEditorHomepage() {
                     </Button>
                     <Button 
                         onClick={handleConvertToWord} 
-                        disabled={!uploadedPdfFile || isConvertingToWord || !isFirebaseFullyConfigured} 
+                        disabled={!uploadedPdfFile || isConvertingToWord || !isFirebaseSystemReady} 
                         className="w-full"
-                        title={!isFirebaseFullyConfigured ? firebaseConfigWarning : ""}
+                        title={!isFirebaseSystemReady ? firebaseConfigWarning : ""}
                     >
                         {isConvertingToWord ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileType className="mr-2 h-4 w-4" />}
                         {texts.convertToWord}
@@ -1029,7 +1037,7 @@ export default function PdfEditorHomepage() {
                         <p>{wordConversionError}</p>
                     </div>
                 )}
-                 {!isFirebaseFullyConfigured && firebaseConfigWarning && (
+                 {!isFirebaseSystemReady && firebaseConfigWarning && (
                     <p className="text-xs text-amber-600 mt-2">
                       {firebaseConfigWarning}
                     </p>
@@ -1070,9 +1078,3 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
-    
-
-    
-
-    
-

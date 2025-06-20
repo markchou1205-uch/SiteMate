@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription as ShadDialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter } from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
@@ -88,6 +88,7 @@ const translations = {
         guest: 'Guest',
         firebaseNotConfigured: `Firebase Frontend SDK is not fully configured. Please ensure all Firebase environment variables (%MISSING_KEYS%) are correctly set and propagated to the client. This might require checking build logs or App Hosting settings.`,
         firebaseSdkInitError: "Firebase SDK could not be initialized properly (services like Storage or Functions might be unavailable). 'Convert to Word' and other Firebase features might be disabled. Check browser console for details from firebase.ts.",
+        zoomDialogDescription: 'View a larger preview of the selected page. You can rotate the page or add temporary notes.',
     },
     zh: {
         pageTitle: 'DocuPilot 文件助手',
@@ -149,6 +150,7 @@ const translations = {
         guest: '訪客',
         firebaseNotConfigured: `Firebase 前端 SDK 設定不完整。請確保所有 Firebase 環境變數 (NEXT_PUBLIC_FIREBASE_API_KEY 等) 都已在您的 .env 檔案中設定。缺少：%MISSING_KEYS%`,
         firebaseSdkInitError: "Firebase SDK 未能正確初始化 (Storage 或 Functions 等服務可能無法使用)。'轉換為 Word' 及其他 Firebase 功能可能被禁用。請檢查瀏覽器控制台來自 firebase.ts 的詳細資訊。",
+        zoomDialogDescription: '查看所選頁面的放大預覽。您可以旋轉頁面或新增臨時筆記。',
     }
 };
 
@@ -191,13 +193,11 @@ export default function PdfEditorHomepage() {
   useEffect(() => {
     console.log("[Page.tsx useEffect] STARTING Firebase readiness check...");
     console.log("[Page.tsx useEffect] Current language:", currentLanguage);
-
-    // The primary check is now whether the services from firebase.ts are available
-    console.log("[Page.tsx useEffect] Imported firebaseApp from '@/lib/firebase':", firebaseApp);
-    console.log("[Page.tsx useEffect] Imported storage from '@/lib/firebase':", storage);
-    console.log("[Page.tsx useEffect] Imported firebaseFunctions from '@/lib/firebase':", firebaseFunctions);
     
     const sdkServicesInitialized = !!firebaseApp && !!storage && !!firebaseFunctions;
+    console.log("[Page.tsx useEffect] Imported firebaseApp from '@/lib/firebase':", firebaseApp ? firebaseApp.constructor.name : firebaseApp);
+    console.log("[Page.tsx useEffect] Imported storage from '@/lib/firebase':", storage ? storage.constructor.name : storage);
+    console.log("[Page.tsx useEffect] Imported firebaseFunctions from '@/lib/firebase':", firebaseFunctions ? firebaseFunctions.constructor.name : firebaseFunctions);
     console.log("[Page.tsx useEffect] sdkServicesInitialized (app, storage, functions from firebase.ts are truthy):", sdkServicesInitialized);
 
     if (sdkServicesInitialized) {
@@ -786,6 +786,9 @@ export default function PdfEditorHomepage() {
         <DialogContent className="max-w-3xl w-[90vw] h-[90vh] p-0 flex flex-col">
           <DialogHeader className="p-4 border-b">
             <DialogTitle>{texts.previewOf} {zoomedPageData ? `${texts.page} ${zoomedPageData.index + 1}` : ''}</DialogTitle>
+            <ShadDialogDescription>
+              {texts.zoomDialogDescription}
+            </ShadDialogDescription>
           </DialogHeader>
           <div className="flex-grow overflow-auto flex items-center justify-center p-4 bg-muted/40">
             <canvas ref={zoomCanvasRef} style={{ willReadFrequently: true } as any} className="max-w-full max-h-full object-contain shadow-lg"></canvas>
@@ -1064,3 +1067,4 @@ export default function PdfEditorHomepage() {
   );
 }
 
+    

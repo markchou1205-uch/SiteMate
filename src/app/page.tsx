@@ -103,7 +103,7 @@ const translations = {
         guest: 'Guest',
         firebaseNotConfigured: `Firebase Frontend SDK is not fully configured. Please ensure all Firebase environment variables (%MISSING_KEYS%) are correctly set and propagated to the client. This might require checking build logs or App Hosting settings.`,
         firebaseSdkInitError: "Firebase SDK could not be initialized properly (services like Storage or Functions might be unavailable). 'Convert to Word' and other Firebase features might be disabled. Check browser console for details from firebase.ts.",
-        zoomDialogDescription: 'View a larger preview of the selected page. You can rotate the page or add temporary notes here.',
+        zoomDialogDescription: 'View a larger preview of the selected page. You can rotate the page or add temporary notes here. Use mouse wheel to zoom.',
         bottomLeft: 'Bottom Left',
         bottomCenter: 'Bottom Center',
         bottomRight: 'Bottom Right',
@@ -120,8 +120,6 @@ const translations = {
         featurePageNum: 'Page #',
         featureProtect: 'Protect',
         featureConvert: 'Convert',
-        uploadNewPdf: 'Upload New PDF',
-        accordionPageOrg: 'Page Organization',
         accordionDocEnhanceProtect: 'Document Enhancements & Protection',
         pageActions: 'Page Actions',
     },
@@ -198,7 +196,7 @@ const translations = {
         guest: '訪客',
         firebaseNotConfigured: `Firebase 前端 SDK 設定不完整。請確保所有 Firebase 環境變數 (NEXT_PUBLIC_FIREBASE_API_KEY 等) 都已在您的 .env 檔案中設定。缺少：%MISSING_KEYS%`,
         firebaseSdkInitError: "Firebase SDK 未能正確初始化 (Storage 或 Functions 等服務可能無法使用)。'轉換為 Word' 及其他 Firebase 功能可能被禁用。請檢查瀏覽器控制台來自 firebase.ts 的詳細資訊。",
-        zoomDialogDescription: '查看所選頁面的放大預覽。您可以在此旋轉頁面或新增臨時筆記。',
+        zoomDialogDescription: '查看所選頁面的放大預覽。您可以在此旋轉頁面或新增臨時筆記。使用滑鼠滾輪縮放。',
         bottomLeft: '左下',
         bottomCenter: '中下',
         bottomRight: '右下',
@@ -215,8 +213,6 @@ const translations = {
         featurePageNum: '頁碼',
         featureProtect: '保護',
         featureConvert: '轉換',
-        uploadNewPdf: '上傳新 PDF',
-        accordionPageOrg: '頁面組織',
         accordionDocEnhanceProtect: '文件增強與保護',
         pageActions: '頁面操作',
     }
@@ -273,6 +269,7 @@ export default function PdfEditorHomepage() {
   });
 
   const [isZoomModalOpen, setIsZoomModalOpen] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(1);
 
 
   useEffect(() => {
@@ -311,6 +308,7 @@ export default function PdfEditorHomepage() {
 
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const zoomCanvasRef = useRef<HTMLCanvasElement>(null);
+  const zoomScrollContainerRef = useRef<HTMLDivElement>(null);
   const pdfUploadRef = useRef<HTMLInputElement>(null);
   const insertPdfRef = useRef<HTMLInputElement>(null);
   const sortableInstanceRef = useRef<Sortable | null>(null);
@@ -399,7 +397,8 @@ export default function PdfEditorHomepage() {
 
       wrapper.addEventListener('dblclick', () => {
         setZoomedPageData({ canvas: pageCanvas, index });
-        setCurrentRotation(0); // Reset rotation when opening
+        setCurrentRotation(0); 
+        setZoomLevel(1); // Reset zoom level when opening new page
         setIsZoomModalOpen(true);
       });
       previewContainerRef.current?.appendChild(wrapper);
@@ -434,35 +433,48 @@ export default function PdfEditorHomepage() {
   }, [pages, selectedPages, renderPagePreviews]);
 
 
- useEffect(() => {
+  useEffect(() => {
     if (isZoomModalOpen && zoomedPageData && zoomCanvasRef.current) {
       const canvas = zoomCanvasRef.current;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
       const sourceCanvas = zoomedPageData.canvas;
-      const baseWidth = sourceCanvas.width;
-      const baseHeight = sourceCanvas.height;
-      
-      // Set canvas drawing surface size
-      if (currentRotation % 180 !== 0) {
-        canvas.width = baseHeight; // Swapped for 90/270 deg rotation
-        canvas.height = baseWidth;  
-      } else {
-        canvas.width = baseWidth; 
-        canvas.height = baseHeight;
+      const srcWidth = sourceCanvas.width;
+      const srcHeight = sourceCanvas.height;
+
+      // Calculate the effective dimensions of the canvas element based on rotation and zoom
+      // These are the dimensions of the drawing buffer.
+      let effectiveCanvasWidth = srcWidth * zoomLevel;
+      let effectiveCanvasHeight = srcHeight * zoomLevel;
+      if (currentRotation % 180 !== 0) { // 90 or 270 degrees
+        effectiveCanvasWidth = srcHeight * zoomLevel;
+        effectiveCanvasHeight = srcWidth * zoomLevel;
       }
       
-      // Apply transformations and draw
+      canvas.width = effectiveCanvasWidth;
+      canvas.height = effectiveCanvasHeight;
+
+      // The canvas's CSS style (if set) can be used for display scaling, 
+      // but here we're setting the attribute, so style isn't strictly needed for size.
+      // However, the parent div with overflow:auto will use these attributes.
+
       ctx.save();
-      ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear with new dimensions
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Translate to the center of this new effective (zoomed & rotated) canvas for rotation pivot
       ctx.translate(canvas.width / 2, canvas.height / 2);
       ctx.rotate((currentRotation * Math.PI) / 180);
-      // Draw source centered on its own dimensions
-      ctx.drawImage(sourceCanvas, -baseWidth / 2, -baseHeight / 2, baseWidth, baseHeight);
+
+      // Draw the source image. It needs to be scaled to fill the *original* source dimensions
+      // (before zoom was applied to canvas.width/height), but centered.
+      // The canvas context is already scaled because canvas.width/height include zoomLevel.
+      // So, draw the source image at its original size, centered.
+      ctx.drawImage(sourceCanvas, -srcWidth / 2, -srcHeight / 2, srcWidth, srcHeight);
+      
       ctx.restore();
     }
-  }, [isZoomModalOpen, zoomedPageData, currentRotation]);
+  }, [isZoomModalOpen, zoomedPageData, currentRotation, zoomLevel]);
 
   const processPdfFile = async (file: File): Promise<{ canvases: HTMLCanvasElement[], docProxy: PDFDocumentProxyType }> => {
     const arrayBuffer = await file.arrayBuffer();
@@ -476,12 +488,12 @@ export default function PdfEditorHomepage() {
     const loadedCanvases: HTMLCanvasElement[] = [];
     for (let i = 1; i <= numPages; i++) {
       const page = await pdfDocProxy.getPage(i);
-      const viewport = page.getViewport({ scale: 1.5 }); // Render at 1.5x for better quality
+      const viewport = page.getViewport({ scale: 1.5 });
       const canvas = document.createElement('canvas');
       canvas.width = viewport.width;
       canvas.height = viewport.height;
       const ctx = canvas.getContext('2d');
-      if (!ctx) continue; // Should not happen
+      if (!ctx) continue;
       await page.render({ canvasContext: ctx, viewport }).promise;
       loadedCanvases.push(canvas);
     }
@@ -505,7 +517,7 @@ export default function PdfEditorHomepage() {
         if (file) toast({ title: texts.loadError, description: "無效的檔案類型。請上傳 PDF。", variant: "destructive" });
         return;
     }
-    setUploadedPdfFile(file); // Store the original uploaded file
+    setUploadedPdfFile(file);
     setWordFileUrl(null);
     setWordConversionError(null);
 
@@ -514,8 +526,8 @@ export default function PdfEditorHomepage() {
     try {
       const { canvases, docProxy } = await processPdfFile(file);
       setPages(canvases);
-      setPdfDocumentProxy(docProxy); // Store the PDFDocumentProxy
-      setSelectedPages(new Set()); // Clear selected pages on new upload
+      setPdfDocumentProxy(docProxy);
+      setSelectedPages(new Set());
     } catch (err: any) {
       toast({ title: texts.loadError, description: err.message, variant: "destructive" });
       setPdfDocumentProxy(null);
@@ -523,7 +535,7 @@ export default function PdfEditorHomepage() {
     } finally {
       setIsLoading(false);
       setLoadingMessage('');
-      if (pdfUploadRef.current) pdfUploadRef.current.value = ''; // Reset file input
+      if (pdfUploadRef.current) pdfUploadRef.current.value = '';
     }
   };
 
@@ -534,8 +546,8 @@ export default function PdfEditorHomepage() {
     }
     const newPages = pages.filter((_, idx) => !selectedPages.has(idx));
     setPages(newPages);
-    setSelectedPages(new Set()); // Clear selection
-    if (newPages.length === 0) { // If all pages are deleted
+    setSelectedPages(new Set());
+    if (newPages.length === 0) {
         setPdfDocumentProxy(null);
         setUploadedPdfFile(null);
     }
@@ -568,12 +580,12 @@ export default function PdfEditorHomepage() {
     setIsDownloading(true);
     setLoadingMessage(texts.generatingFile);
     try {
-      await new Promise(resolve => setTimeout(resolve, 100)); // Simulate short delay
+      await new Promise(resolve => setTimeout(resolve, 100));
       const pdfDocOut = await PDFLibDocument.create();
       const helveticaFont = await pdfDocOut.embedFont(StandardFonts.Helvetica);
 
       for (let canvas of pages) {
-        const imgDataUrl = canvas.toDataURL('image/png'); // Use PNG for better quality than JPEG for sharp text/lines
+        const imgDataUrl = canvas.toDataURL('image/png');
         const pngImage = await pdfDocOut.embedPng(imgDataUrl);
         const page = pdfDocOut.addPage([canvas.width, canvas.height]);
         page.drawImage(pngImage, { x: 0, y: 0, width: canvas.width, height: canvas.height });
@@ -582,7 +594,7 @@ export default function PdfEditorHomepage() {
       const pdfLibPages = pdfDocOut.getPages();
 
       if (pageNumberingConfig.enabled) {
-        const font = await pdfDocOut.embedFont(StandardFonts.Helvetica); // Could be configurable
+        const font = await pdfDocOut.embedFont(StandardFonts.Helvetica);
         for (let i = 0; i < pdfLibPages.length; i++) {
           const pdfLibPage = pdfLibPages[i];
           const { width, height } = pdfLibPage.getSize();
@@ -595,7 +607,7 @@ export default function PdfEditorHomepage() {
 
           const textSize = pageNumberingConfig.fontSize;
           const textWidth = font.widthOfTextAtSize(text, textSize);
-          const textHeight = font.heightAtSize(textSize); // Approximation
+          const textHeight = font.heightAtSize(textSize);
           const margin = pageNumberingConfig.margin;
 
           let x, y;
@@ -606,25 +618,25 @@ export default function PdfEditorHomepage() {
             case 'bottom-left': x = margin; y = margin; break;
             case 'bottom-center': x = width / 2 - textWidth / 2; y = margin; break;
             case 'bottom-right': x = width - margin - textWidth; y = margin; break;
-            default: x = width / 2 - textWidth / 2; y = margin; // Default to bottom-center
+            default: x = width / 2 - textWidth / 2; y = margin;
           }
-          pdfLibPage.drawText(text, { x, y, font, size: textSize, color: grayscale(0) }); // Black color
+          pdfLibPage.drawText(text, { x, y, font, size: textSize, color: grayscale(0) });
         }
       }
       
       if (watermarkText.trim() !== '') {
           const textWidth = helveticaFont.widthOfTextAtSize(watermarkText, 50);
-          const textHeight = helveticaFont.heightAtSize(50); // For centering
+          const textHeight = helveticaFont.heightAtSize(50);
           pdfLibPages.forEach(page => {
             const { width: pageWidth, height: pageHeight } = page.getSize();
             page.drawText(watermarkText, {
                 x: pageWidth / 2 - textWidth / 2,
-                y: pageHeight / 2 - textHeight / 4, // Adjust Y for better visual center
+                y: pageHeight / 2 - textHeight / 4,
                 font: helveticaFont,
                 size: 50,
-                color: rgb(0.75, 0.75, 0.75), // Light grey
-                opacity: 0.3, // Semi-transparent
-                rotate: degrees(45), // Diagonal watermark
+                color: rgb(0.75, 0.75, 0.75),
+                opacity: 0.3,
+                rotate: degrees(45),
             });
           });
       }
@@ -632,8 +644,8 @@ export default function PdfEditorHomepage() {
       if (pdfProtectionConfig.enabled && pdfProtectionConfig.password) {
         await pdfDocOut.encrypt({
           userPassword: pdfProtectionConfig.password,
-          ownerPassword: pdfProtectionConfig.password, // Or a different owner password
-          permissions: {}, // Define permissions if needed
+          ownerPassword: pdfProtectionConfig.password,
+          permissions: {},
         });
       }
 
@@ -688,7 +700,7 @@ export default function PdfEditorHomepage() {
         const page = await pdfDocumentProxy.getPage(i);
         const textContent = await page.getTextContent();
         const pageText = textContent.items.map((item: any) => item.str).join(' ');
-        fullText += pageText + '\n\n'; // Add double newline for page separation
+        fullText += pageText + '\n\n';
       }
 
       const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
@@ -730,7 +742,7 @@ export default function PdfEditorHomepage() {
     }
 
     setPendingInsertFile(file);
-    if (pages.length > 0 && selectedPages.size === 0) { // If PDF loaded but no page selected
+    if (pages.length > 0 && selectedPages.size === 0) {
         setIsInsertConfirmOpen(true);
     } else {
         proceedWithInsert(file);
@@ -745,7 +757,7 @@ export default function PdfEditorHomepage() {
     setLoadingMessage(texts.insertingPdf);
     try {
       const { canvases: insertCanvases } = await processPdfFile(file);
-      let insertIdx = pages.length; // Default to end
+      let insertIdx = pages.length;
       if (selectedPages.size > 0) {
         const firstSelected = Math.min(...Array.from(selectedPages));
         insertIdx = insertPosition === 'before' ? firstSelected : firstSelected + 1;
@@ -755,7 +767,6 @@ export default function PdfEditorHomepage() {
       newPages.splice(insertIdx, 0, ...insertCanvases);
       setPages(newPages);
 
-      // Select the first of the newly inserted pages for immediate feedback
       const newSelected = new Set<number>();
       if (insertCanvases.length > 0) {
         newSelected.add(insertIdx);
@@ -770,7 +781,7 @@ export default function PdfEditorHomepage() {
       setIsLoading(false);
       setLoadingMessage('');
       setPendingInsertFile(null);
-      if (insertPdfRef.current) insertPdfRef.current.value = ''; // Reset file input
+      if (insertPdfRef.current) insertPdfRef.current.value = '';
     }
   };
 
@@ -812,7 +823,6 @@ export default function PdfEditorHomepage() {
       await uploadBytes(fileStorageRef, uploadedPdfFile);
       const pdfStorageUrl = await getDownloadURL(fileStorageRef);
 
-      // Ensure your Firebase project ID is correct here
       const functionUrl = `https://us-central1-sitemate-otkpt.cloudfunctions.net/convertPdfToWord`;
 
       const response = await fetch(functionUrl, {
@@ -826,16 +836,14 @@ export default function PdfEditorHomepage() {
       if (!response.ok) {
         let errorData;
         try {
-            errorData = await response.json(); // Try to parse as JSON first
+            errorData = await response.json();
         } catch (e) {
-            // If JSON parsing fails, it might be plain text or HTML error
             const errorText = await response.text();
-            errorData = { detail: errorText || response.statusText }; // Fallback
+            errorData = { detail: errorText || response.statusText };
         }
         
         let displayErrorDataForLog: any = errorData;
         if (errorData && typeof errorData === 'object' && Object.keys(errorData).length === 0 && errorData.constructor === Object) {
-            // Handle case where errorData is an empty object {}
             displayErrorDataForLog = "[Empty JSON Object from function]";
         }
         console.error("Firebase Function HTTP Error Response:", displayErrorDataForLog, `(Status: ${response.status})`);
@@ -845,7 +853,7 @@ export default function PdfEditorHomepage() {
         if (typeof detailMessage === 'string' && (detailMessage.toLowerCase().includes("method not found") || detailMessage.toLowerCase().includes("api key not configured") || detailMessage.toLowerCase().includes("please provide your api key")) ) { 
              toastDescription = texts.pdfCoMethodNotFoundError;
         }
-        throw new Error(detailMessage); // Throw an error to be caught by the catch block
+        throw new Error(detailMessage);
       }
 
       const result = await response.json();
@@ -858,7 +866,6 @@ export default function PdfEditorHomepage() {
       setWordFileUrl(result.wordUrl);
       toast({ title: texts.wordConvertSuccess, description: texts.downloadWordFile });
 
-      // Update conversion count for guests
       if (!isLoggedIn && typeof window !== 'undefined') {
         const today = new Date().toISOString().split('T')[0];
         let wordConversionInfoString = localStorage.getItem('DocuPilotWordConversionInfo');
@@ -872,10 +879,9 @@ export default function PdfEditorHomepage() {
       console.error("Word conversion error in frontend:", error);
       let errMsg = error.message || (currentLanguage === 'zh' ? "未知錯誤" : "Unknown error");
       
-      // Check if the error message indicates an API key issue specifically
       if (typeof errMsg === 'string' && (errMsg.toLowerCase().includes("method not found") || errMsg.toLowerCase().includes("api key") || errMsg.toLowerCase().includes("please provide your api key") )) {
         errMsg = texts.pdfCoMethodNotFoundError;
-      } else if (errMsg.toLowerCase().includes("pdf.co api key is not correctly hardcoded")) { // Specific check for your backend's message
+      } else if (errMsg.toLowerCase().includes("pdf.co api key is not correctly hardcoded")) {
         errMsg = (currentLanguage === 'zh' ? "後端 API 金鑰設定錯誤，請聯絡管理員。" : "Backend API Key configuration error. Please contact administrator.");
       }
 
@@ -926,8 +932,27 @@ export default function PdfEditorHomepage() {
 
   const closeZoomModal = () => {
     setIsZoomModalOpen(false);
-    setZoomedPageData(null); // Clear data when closing
-    setCurrentRotation(0); // Reset rotation
+    setZoomedPageData(null);
+    setCurrentRotation(0);
+    setZoomLevel(1); // Reset zoom level
+  };
+
+  const ZOOM_SPEED = 0.1; // Base speed factor
+  const MIN_ZOOM = 0.1;
+  const MAX_ZOOM = 5;
+
+  const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+    if (!isZoomModalOpen || !zoomedPageData) return;
+    event.preventDefault();
+
+    // Adjust sensitivity: event.deltaY can be ~100 for a typical wheel notch.
+    // A smaller multiplier makes the zoom smoother.
+    const zoomAmount = -event.deltaY * ZOOM_SPEED * 0.01; 
+    
+    setZoomLevel(prevZoomLevel => {
+      const newZoomLevel = prevZoomLevel + zoomAmount;
+      return Math.min(Math.max(newZoomLevel, MIN_ZOOM), MAX_ZOOM);
+    });
   };
 
   return (
@@ -945,31 +970,43 @@ export default function PdfEditorHomepage() {
       )}
 
       {isZoomModalOpen && zoomedPageData && (
-        <div 
+         <div 
           role="dialog" 
           aria-modal="true" 
-          aria-label={`${texts.previewOf} ${texts.page} ${zoomedPageData.index + 1}`}
+          aria-label={zoomedPageData ? `${texts.previewOf} ${texts.page} ${zoomedPageData.index + 1}` : texts.previewOf}
           className="fixed inset-0 z-50 flex items-center justify-center"
+          onClick={closeZoomModal} // Close on backdrop click
         >
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={closeZoomModal}></div>
-          <div className="relative bg-card text-card-foreground shadow-2xl rounded-lg w-[90vw] max-w-3xl h-[90vh] flex flex-col overflow-hidden">
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm" 
+            aria-hidden="true"
+          ></div>
+          <div 
+            className="relative bg-card text-card-foreground shadow-2xl rounded-lg w-[90vw] max-w-4xl h-[90vh] flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()} // Prevent modal close when clicking inside modal content
+          >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-border">
-              <h2 className="text-lg font-semibold text-foreground" id="zoom-modal-title">
-                {texts.previewOf} {texts.page} {zoomedPageData.index + 1}
+              <h2 className="text-lg font-semibold text-foreground">
+                 {texts.previewOf} {texts.page} {zoomedPageData.index + 1}
+                 <span className="text-sm text-muted-foreground ml-2">({(zoomLevel * 100).toFixed(0)}%)</span>
               </h2>
               <Button variant="ghost" size="icon" onClick={closeZoomModal} aria-label={texts.modalCloseButton}>
                 <X className="h-5 w-5" />
               </Button>
             </div>
 
-            {/* Content */}
-            <div className="flex-grow overflow-auto p-4 bg-muted/40">
-              <canvas 
-                ref={zoomCanvasRef} 
-                className="shadow-lg"
-                style={{ willReadFrequently: true } as any} 
-              ></canvas>
+            {/* Content - Scrollable and Zoomable Area */}
+            <div
+              ref={zoomScrollContainerRef}
+              className="flex-grow overflow-auto p-1 bg-muted/40 flex items-center justify-center" // Added flex for centering canvas when smaller than container
+              onWheel={handleWheel}
+            >
+              <canvas
+                ref={zoomCanvasRef}
+                className="shadow-lg" // max-w-full, max-h-full, object-contain removed
+                style={{ willReadFrequently: true } as any}
+              />
             </div>
 
             {/* Footer */}
@@ -983,7 +1020,7 @@ export default function PdfEditorHomepage() {
               <div className="flex flex-wrap gap-2 justify-center sm:justify-end">
                   <Button variant="outline" onClick={() => setCurrentRotation((r) => (r - 90 + 360) % 360)}><RotateCcw className="mr-2 h-4 w-4" /> {texts.rotateLeft}</Button>
                   <Button variant="outline" onClick={() => setCurrentRotation((r) => (r + 90) % 360)}><RotateCw className="mr-2 h-4 w-4" /> {texts.rotateRight}</Button>
-                  <Button variant="outline" onClick={() => setCurrentRotation(0)}><X className="mr-2 h-4 w-4" /> {texts.resetRotation}</Button>
+                  <Button variant="outline" onClick={() => { setCurrentRotation(0); setZoomLevel(1); }}><X className="mr-2 h-4 w-4" /> {texts.resetRotation}</Button>
               </div>
             </div>
           </div>
@@ -1110,14 +1147,14 @@ export default function PdfEditorHomepage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                <div className="md:col-span-8"> {/* Left column for PDF preview (70% width) */}
+                <div className="md:col-span-8">
                     <Card className="shadow-lg min-h-[calc(100vh-20rem)] md:min-h-[calc(100vh-18rem)]">
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
                                 <CardTitle className="flex items-center text-xl"><Shuffle className="mr-2 h-5 w-5 text-primary" /> {texts.pageManagement}</CardTitle>
                                 <CardDescription> {pages.length} {pages.length === 1 ? texts.page.toLowerCase() : (currentLanguage === 'zh' ? texts.pagesLoaded.replace('頁已載入。', '頁') : texts.pagesLoaded.replace('pages loaded.', 'page(s)'))} {currentLanguage === 'zh' ? '已載入' : 'loaded'}. {selectedPages.size > 0 ? `${texts.page} ${Array.from(selectedPages)[0]+1} ${currentLanguage === 'zh' ? texts.pageSelected.replace('頁已選取。','') : texts.pageSelected.replace('page selected.','')}` : ''} </CardDescription>
                             </div>
-                            <Button
+                             <Button
                                 onClick={handleDeletePages}
                                 variant="destructive"
                                 size="sm"
@@ -1143,7 +1180,7 @@ export default function PdfEditorHomepage() {
                     </Card>
                 </div>
 
-                <div className="md:col-span-4 space-y-6"> {/* Right column for tools (30% width) */}
+                <div className="md:col-span-4 space-y-6">
                     <Card className="shadow-lg">
                       <CardHeader>
                         <CardTitle className="flex items-center text-lg"><FilePlus className="mr-2 h-5 w-5 text-primary" /> {texts.insertAreaTitle}</CardTitle>

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import * as pdfjsLib from 'pdfjs-dist';
 import type { PDFDocumentProxy as PDFDocumentProxyType } from 'pdfjs-dist';
-import { PDFDocument as PDFLibDocument, StandardFonts, rgb, degrees, grayscale, popGraphicsState, pushGraphicsState, translate } from 'pdf-lib';
+import { PDFDocument as PDFLibDocument, StandardFonts, rgb, degrees, grayscale, pushGraphicsState, popGraphicsState, setOpacity } from 'pdf-lib';
 import Sortable from 'sortablejs';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -20,7 +20,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, FileType, FileDigit, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, FontSize } from 'lucide-react';
+import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, FileType, FileDigit, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, FontSize, Eye } from 'lucide-react';
+import { Slider } from "@/components/ui/slider";
 
 import { storage, functions as firebaseFunctions, app as firebaseApp } from '@/lib/firebase'; // Firebase SDK
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -35,14 +36,6 @@ interface PageObject {
   sourceCanvas: HTMLCanvasElement;
   rotation: number; // 0, 90, 180, 270
 }
-
-type WatermarkLegacyPosition = // Kept for translation keys if needed, but functionality changes
-  | 'center'
-  | 'top-left' | 'top-center' | 'top-right'
-  | 'middle-left' | 'middle-right'
-  | 'bottom-left' | 'bottom-center' | 'bottom-right'
-  | 'diagonal-tl-br' | 'diagonal-bl-tr';
-
 
 const translations = {
     en: {
@@ -83,10 +76,20 @@ const translations = {
         noteInputPlaceholder: 'Add a temporary note (not saved in PDF)',
         pageManagement: 'Page Management',
         fileOperations: 'File Operations',
-        watermarkSectionTitle: 'Watermark (Drag to Position)',
+        watermarkSectionTitle: 'Watermark',
         watermarkInputPlaceholder: 'Enter watermark text',
         watermarkFontSizeLabel: 'Font Size (px)',
-        watermarkColorLabel: 'Color',
+        watermarkColorLabel: 'Color (Text)',
+        watermarkOpacityLabel: 'Opacity',
+        watermarkTypeLabel: 'Watermark Type',
+        watermarkTypeText: 'Text',
+        watermarkTypeImage: 'Image',
+        watermarkImageLabel: 'Select Image',
+        watermarkPreviewButton: 'Preview & Position Watermark',
+        watermarkPreviewModalTitle: 'Preview & Position Watermark',
+        watermarkPreviewInfo: 'Drag watermark to desired position on page 1. This position will be applied to all pages.',
+        watermarkConfirmPosition: 'Confirm Position',
+        noPdfForWatermarkPreview: 'Upload a PDF to preview watermark.',
         pageNumberingSectionTitle: 'Page Numbering',
         enablePageNumbering: 'Enable Page Numbering',
         pageNumberPosition: 'Position',
@@ -195,10 +198,20 @@ const translations = {
         noteInputPlaceholder: '新增臨時筆記（不會儲存於 PDF）',
         pageManagement: '頁面管理',
         fileOperations: '檔案操作',
-        watermarkSectionTitle: '浮水印 (拖曳定位)',
+        watermarkSectionTitle: '浮水印',
         watermarkInputPlaceholder: '輸入浮水印文字',
         watermarkFontSizeLabel: '字體大小 (px)',
-        watermarkColorLabel: '顏色',
+        watermarkColorLabel: '顏色 (文字)',
+        watermarkOpacityLabel: '透明度',
+        watermarkTypeLabel: '浮水印類型',
+        watermarkTypeText: '文字',
+        watermarkTypeImage: '圖片',
+        watermarkImageLabel: '選擇圖片',
+        watermarkPreviewButton: '預覽並定位浮水印',
+        watermarkPreviewModalTitle: '預覽並定位浮水印',
+        watermarkPreviewInfo: '將浮水印拖曳到第一頁的目標位置。此位置將套用於所有頁面。',
+        watermarkConfirmPosition: '確認位置',
+        noPdfForWatermarkPreview: '請先上傳 PDF 以預覽浮水印。',
         pageNumberingSectionTitle: '頁碼',
         enablePageNumbering: '啟用頁碼',
         pageNumberPosition: '位置',
@@ -241,7 +254,7 @@ const translations = {
         topCenter: '中上',
         topRight: '右上',
         pdfEditingTools: 'PDF 工具',
-        downloadAndConvertTitle: '下載與轉換',
+        downloadAndConvertTitle: '下載与轉換',
         startEditingYourPdf: '開始編輯您的 PDF',
         pagesLoaded: '頁已載入。',
         pageSelectedSuffix: '已選取。',
@@ -287,28 +300,14 @@ const pageNumberPositions: {value: PageNumberPosition, labelKey: keyof typeof tr
 
 interface WatermarkConfig {
   text: string;
-  topRatio: number; // 0.0 to 1.0 for top-left corner
-  leftRatio: number; // 0.0 to 1.0 for top-left corner
-  fontSize: number; // in points for PDF, scaled for preview
-  color: string; // e.g., 'rgba(128, 128, 128, 0.5)'
+  type: 'text' | 'image';
+  imageUrl: string | null; // Data URI for image
+  topRatio: number; // 0.0 to 1.0 for top-left corner of watermark element
+  leftRatio: number; // 0.0 to 1.0 for top-left corner of watermark element
+  fontSize: number; // in points for PDF text, scaled for preview
+  color: string; // hex color string for text (e.g., '#808080')
+  opacity: number; // 0.0 to 1.0
 }
-
-
-// Helper function to parse RGBA string to an object for pdf-lib
-const parseRgbaColor = (rgbaColor: string): { r: number; g: number; b: number; alpha: number } => {
-    const match = rgbaColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/i);
-    if (match) {
-        return {
-            r: parseInt(match[1], 10) / 255,
-            g: parseInt(match[2], 10) / 255,
-            b: parseInt(match[3], 10) / 255,
-            alpha: match[4] ? parseFloat(match[4]) : 1,
-        };
-    }
-    // Fallback for hex or other color strings if needed, for now default to black
-    return { r: 0, g: 0, b: 0, alpha: 0.5 }; 
-};
-
 
 interface PagePreviewItemProps {
   pageObj: PageObject;
@@ -316,13 +315,12 @@ interface PagePreviewItemProps {
   isSelected: boolean;
   onClick: () => void;
   onDoubleClick: () => void;
-  watermarkConfig: WatermarkConfig;
-  onWatermarkMouseDown: (event: React.MouseEvent<HTMLElement>, previewWrapper: HTMLElement, pageIndex: number) => void;
+  watermarkConfig: WatermarkConfig; // Global confirmed watermark config
   texts: typeof translations.en;
 }
 
 const PagePreviewItem: React.FC<PagePreviewItemProps> = React.memo(({
-  pageObj, index, isSelected, onClick, onDoubleClick, watermarkConfig, onWatermarkMouseDown, texts
+  pageObj, index, isSelected, onClick, onDoubleClick, watermarkConfig, texts
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -347,8 +345,6 @@ const PagePreviewItem: React.FC<PagePreviewItemProps> = React.memo(({
       }
       
       const targetAspectRatio = rotatedSourceWidth / rotatedSourceHeight;
-      // Fixed width for thumbnail container, height adjusts.
-      // The canvas buffer itself will be high-res, CSS scales it down.
       const cssDisplayWidth = 120; 
       const cssDisplayHeight = cssDisplayWidth / targetAspectRatio;
 
@@ -366,14 +362,7 @@ const PagePreviewItem: React.FC<PagePreviewItemProps> = React.memo(({
     }
   }, [pageObj.sourceCanvas, pageObj.rotation]);
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLElement>) => {
-    if (wrapperRef.current) {
-      // Pass the watermark div (e.currentTarget) and its parent (wrapperRef.current)
-      onWatermarkMouseDown(e, wrapperRef.current, index);
-    }
-  };
-
-  const previewWatermarkFontSize = Math.max(6, watermarkConfig.fontSize / (150/20)); // Scale based on typical preview width vs. font size
+  const previewWatermarkFontSize = Math.max(6, watermarkConfig.fontSize / (150/15)); 
 
   return (
     <div
@@ -389,29 +378,45 @@ const PagePreviewItem: React.FC<PagePreviewItemProps> = React.memo(({
       <div className="text-xs text-muted-foreground mt-1 text-center">
         {texts.page} {index + 1}
       </div>
-      {watermarkConfig.text && (
+      {/* Static Watermark Preview based on confirmed global config */}
+      {watermarkConfig.type === 'text' && watermarkConfig.text && (
         <div
-          onMouseDown={handleMouseDown}
           style={{
             position: 'absolute',
             top: `${watermarkConfig.topRatio * 100}%`,
             left: `${watermarkConfig.leftRatio * 100}%`,
-            cursor: 'grab',
             padding: '1px 3px',
-            backgroundColor: 'rgba(220,220,220,0.4)',
-            border: '1px dashed rgba(100,100,100,0.5)',
+            backgroundColor: 'rgba(220,220,220,0.1)', // Lighter for less obtrusive preview
+            border: '1px dashed rgba(150,150,150,0.3)',
             borderRadius: '2px',
             whiteSpace: 'nowrap',
             userSelect: 'none',
             fontSize: `${previewWatermarkFontSize}px`, 
-            color: watermarkConfig.color, 
-            zIndex: 10,
-            willChange: 'top, left', 
+            color: watermarkConfig.color,
+            opacity: watermarkConfig.opacity,
+            zIndex: 5, // Lower z-index than modal's watermark
+            pointerEvents: 'none', // Not draggable here
           }}
-          className="draggable-watermark" 
         >
           {watermarkConfig.text}
         </div>
+      )}
+      {watermarkConfig.type === 'image' && watermarkConfig.imageUrl && (
+        <img
+          src={watermarkConfig.imageUrl}
+          alt="Watermark Preview"
+          style={{
+            position: 'absolute',
+            top: `${watermarkConfig.topRatio * 100}%`,
+            left: `${watermarkConfig.leftRatio * 100}%`,
+            opacity: watermarkConfig.opacity,
+            zIndex: 5,
+            pointerEvents: 'none',
+            maxWidth: '30px', // Constrain image size on small thumbnail
+            maxHeight: '30px',
+            objectFit: 'contain',
+          }}
+        />
       )}
     </div>
   );
@@ -426,9 +431,9 @@ export default function PdfEditorHomepage() {
   const [pageObjects, setPageObjects] = useState<PageObject[]>([]);
   const [selectedPageIds, setSelectedPageIds] = useState<Set<string>>(new Set());
   
+  const [isCustomZoomModalOpen, setIsCustomZoomModalOpen] = useState(false);
   const [zoomedPageData, setZoomedPageData] = useState<{ page: PageObject, index: number } | null>(null);
   const [currentModalRotation, setCurrentModalRotation] = useState(0); 
-  const [isCustomZoomModalOpen, setIsCustomZoomModalOpen] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
   const zoomCanvasRef = useRef<HTMLCanvasElement>(null);
   const zoomScrollContainerRef = useRef<HTMLDivElement>(null);
@@ -444,22 +449,35 @@ export default function PdfEditorHomepage() {
   const [isInsertConfirmOpen, setIsInsertConfirmOpen] = useState(false);
   const [pendingInsertFile, setPendingInsertFile] = useState<File | null>(null);
   
+  // Global, confirmed watermark configuration
   const [watermarkConfig, setWatermarkConfig] = useState<WatermarkConfig>({
     text: '',
+    type: 'text',
+    imageUrl: null,
     topRatio: 0.1, 
     leftRatio: 0.1,
     fontSize: 48, 
-    color: 'rgba(128, 128, 128, 0.5)',
+    color: '#808080', // Default to hex grey
+    opacity: 0.5,
   });
-  const [isDraggingWatermark, setIsDraggingWatermark] = useState(false);
-  const dragDataRef = useRef<{
+
+  // Temporary watermark configuration for the preview modal
+  const [tempWatermarkConfig, setTempWatermarkConfig] = useState<WatermarkConfig>(watermarkConfig);
+  const [isWatermarkPreviewModalOpen, setIsWatermarkPreviewModalOpen] = useState(false);
+  const [watermarkPreviewPageCanvas, setWatermarkPreviewPageCanvas] = useState<HTMLCanvasElement | null>(null);
+  const watermarkImageUploadRef = useRef<HTMLInputElement>(null);
+
+  // Drag state for watermark in preview modal
+  const [isDraggingWatermarkInModal, setIsDraggingWatermarkInModal] = useState(false);
+  const dragDataModalRef = useRef<{
     initialMouseX: number;
     initialMouseY: number;
-    initialWatermarkTopInPx: number; // Watermark's initial top in pixels relative to preview wrapper
-    initialWatermarkLeftInPx: number; // Watermark's initial left in pixels relative to preview wrapper
-    draggedElement: HTMLElement; // The specific watermark div being dragged (e.target)
-    previewWrapperElement: HTMLElement; // The parent .page-preview-wrapper of the dragged watermark
+    initialWatermarkTopInPx: number;
+    initialWatermarkLeftInPx: number;
+    draggedElement: HTMLElement;
+    previewWrapperElement: HTMLElement; // This will be the container of the large preview canvas in modal
   } | null>(null);
+  const watermarkPreviewCanvasContainerRef = useRef<HTMLDivElement>(null);
 
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -495,12 +513,10 @@ export default function PdfEditorHomepage() {
   const insertPdfRef = useRef<HTMLInputElement>(null);
   const sortableInstanceRef = useRef<Sortable | null>(null);
 
-  // State for Image to PDF feature
   const [imageFiles, setImageFiles] = useState<FileList | null>(null);
   const imageToPdfUploadRef = useRef<HTMLInputElement>(null);
   const [isConvertingImagesToPdf, setIsConvertingImagesToPdf] = useState(false);
 
-  // State for PDF Compression feature
   const [pdfToCompress, setPdfToCompress] = useState<File | null>(null);
   const pdfCompressUploadRef = useRef<HTMLInputElement>(null);
   const [isCompressingPdf, setIsCompressingPdf] = useState(false);
@@ -560,7 +576,6 @@ export default function PdfEditorHomepage() {
     toast({ title: texts.logout, description: currentLanguage === 'zh' ? "您已成功登出。" : "You have been logged out successfully." });
   };
 
-  // Initialize SortableJS
   useEffect(() => {
     if (pageObjects.length > 0 && previewContainerRef.current && !sortableInstanceRef.current) {
         sortableInstanceRef.current = Sortable.create(previewContainerRef.current, {
@@ -583,21 +598,20 @@ export default function PdfEditorHomepage() {
         sortableInstanceRef.current.destroy();
         sortableInstanceRef.current = null;
     }
-    // Cleanup on unmount
     return () => {
         if (sortableInstanceRef.current) {
             sortableInstanceRef.current.destroy();
             sortableInstanceRef.current = null;
         }
     };
-  }, [pageObjects.length]); // Re-run if number of pages changes
+  }, [pageObjects.length]); 
 
 
   const ZOOM_SPEED = 0.1; 
   const MIN_ZOOM = 0.1;   
   const MAX_ZOOM = 5;   
 
-  const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+  const handleWheelZoom = (event: React.WheelEvent<HTMLDivElement>) => {
     if (!isCustomZoomModalOpen || !zoomedPageData || !zoomScrollContainerRef.current?.contains(event.target as Node) ) return; 
     event.preventDefault(); 
     
@@ -637,7 +651,6 @@ export default function PdfEditorHomepage() {
       ctx.translate(canvas.width / 2, canvas.height / 2);
       ctx.rotate(currentModalRotation * Math.PI / 180);
   
-      // Draw the sourceCanvas scaled to fill the target canvas (which is already scaled by zoomLevel)
       ctx.drawImage(
         sourceCanvas,
         -canvas.width / 2, 
@@ -663,7 +676,6 @@ export default function PdfEditorHomepage() {
     const loadedPageObjects: PageObject[] = [];
     for (let i = 1; i <= numPages; i++) {
       const page = await pdfDocProxy.getPage(i);
-      // Render at a higher resolution for better quality when zoomed or for PDF generation
       const viewport = page.getViewport({ scale: 2.0 }); 
       const canvas = document.createElement('canvas');
       canvas.width = viewport.width;
@@ -731,6 +743,17 @@ export default function PdfEditorHomepage() {
     toast({ title: texts.pageManagement, description: currentLanguage === 'zh' ? "選取的頁面已刪除。" : "Selected pages have been deleted." });
   };
 
+  // Helper to convert hex to RGB for pdf-lib
+  const hexToRgb = (hex: string): { r: number; g: number; b: number } => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16) / 255,
+      g: parseInt(result[2], 16) / 255,
+      b: parseInt(result[3], 16) / 255
+    } : { r: 0, g: 0, b: 0 }; // Default to black if parse fails
+  };
+
+
   const handleDownloadPdf = async () => {
     if (pageObjects.length === 0) {
       toast({ title: texts.downloadPdf, description: texts.noPagesToDownload, variant: "destructive" });
@@ -759,7 +782,7 @@ export default function PdfEditorHomepage() {
     try {
       await new Promise(resolve => setTimeout(resolve, 100)); 
       const pdfDocOut = await PDFLibDocument.create();
-      const helveticaFont = await pdfDocOut.embedFont(StandardFonts.Helvetica); // Or a user-selected font
+      const helveticaFont = await pdfDocOut.embedFont(StandardFonts.Helvetica);
 
       for (const pageObj of pageObjects) {
         const { sourceCanvas, rotation } = pageObj;
@@ -770,10 +793,10 @@ export default function PdfEditorHomepage() {
 
         const rad = rotation * Math.PI / 180;
         
-        if (rotation % 180 !== 0) { // Rotated 90 or 270
+        if (rotation % 180 !== 0) {
           tempRenderCanvas.width = sourceCanvas.height;
           tempRenderCanvas.height = sourceCanvas.width;
-        } else { // 0 or 180
+        } else {
           tempRenderCanvas.width = sourceCanvas.width;
           tempRenderCanvas.height = sourceCanvas.height;
         }
@@ -782,41 +805,62 @@ export default function PdfEditorHomepage() {
         tempCtx.rotate(rad);
         tempCtx.drawImage(sourceCanvas, -sourceCanvas.width / 2, -sourceCanvas.height / 2, sourceCanvas.width, sourceCanvas.height);
        
-        const imgDataUrl = tempRenderCanvas.toDataURL('image/png'); // Consider image/jpeg for smaller size if quality allows
+        const imgDataUrl = tempRenderCanvas.toDataURL('image/png');
         const pngImage = await pdfDocOut.embedPng(imgDataUrl);
         
         const pdfLibPage = pdfDocOut.addPage([tempRenderCanvas.width, tempRenderCanvas.height]);
         pdfLibPage.drawImage(pngImage, { x: 0, y: 0, width: tempRenderCanvas.width, height: tempRenderCanvas.height });
         
         // Apply Watermark
-        if (watermarkConfig.text && watermarkConfig.topRatio !== null && watermarkConfig.leftRatio !== null) {
-            const { width: pageWidth, height: pageHeight } = pdfLibPage.getSize();
-            const pdfWatermarkFontSize = watermarkConfig.fontSize; // Use configured font size
-            const parsedColor = parseRgbaColor(watermarkConfig.color);
+        const { width: pageWidth, height: pageHeight } = pdfLibPage.getSize();
+        pdfLibPage.pushGraphicsState();
+        pdfLibPage.setOpacity(watermarkConfig.opacity);
 
+        if (watermarkConfig.type === 'text' && watermarkConfig.text) {
+            const pdfWatermarkFontSize = watermarkConfig.fontSize;
+            const textColor = hexToRgb(watermarkConfig.color);
             const textWidth = helveticaFont.widthOfTextAtSize(watermarkConfig.text, pdfWatermarkFontSize);
-            // const textHeight = helveticaFont.heightAtSize(pdfWatermarkFontSize); // Full height
-            const capHeight = helveticaFont.capHeightAtSize(pdfWatermarkFontSize); // More like visual top of text
-
-            // Assuming topRatio and leftRatio are for the top-left corner of the text block
-            const wmX_pdf = watermarkConfig.leftRatio * pageWidth;
-            // Y in PDF-Lib is from bottom-left. We want topRatio from top.
-            const wmY_pdf = pageHeight - (watermarkConfig.topRatio * pageHeight) - capHeight;
-
-
-            pdfLibPage.pushGraphicsState(); // Save current graphics state
-            pdfLibPage.setOpacity(parsedColor.alpha); // Set opacity for the watermark
+            const capHeight = helveticaFont.capHeightAtSize(pdfWatermarkFontSize);
+            const wmX_pdf_text = watermarkConfig.leftRatio * pageWidth;
+            const wmY_pdf_text = pageHeight - (watermarkConfig.topRatio * pageHeight) - capHeight;
 
             pdfLibPage.drawText(watermarkConfig.text, {
-                x: wmX_pdf,
-                y: wmY_pdf,
+                x: wmX_pdf_text,
+                y: wmY_pdf_text,
                 font: helveticaFont,
                 size: pdfWatermarkFontSize,
-                color: rgb(parsedColor.r, parsedColor.g, parsedColor.b),
-                // Opacity is handled by graphics state
+                color: rgb(textColor.r, textColor.g, textColor.b),
             });
-            pdfLibPage.popGraphicsState(); // Restore graphics state
+        } else if (watermarkConfig.type === 'image' && watermarkConfig.imageUrl) {
+            try {
+                const imageBytes = await fetch(watermarkConfig.imageUrl).then(res => res.arrayBuffer());
+                let wmEmbedImage;
+                if (watermarkConfig.imageUrl.startsWith('data:image/png')) {
+                    wmEmbedImage = await pdfDocOut.embedPng(imageBytes);
+                } else if (watermarkConfig.imageUrl.startsWith('data:image/jpeg') || watermarkConfig.imageUrl.startsWith('data:image/jpg')) {
+                    wmEmbedImage = await pdfDocOut.embedJpg(imageBytes);
+                }
+                
+                if (wmEmbedImage) {
+                    // For now, draw image at its original size. Add scaling controls later if needed.
+                    const { width: imgOriginalWidth, height: imgOriginalHeight } = wmEmbedImage.scale(1);
+                    // Position based on top-left of the image
+                    const wmX_pdf_img = watermarkConfig.leftRatio * pageWidth;
+                    const wmY_pdf_img = pageHeight - (watermarkConfig.topRatio * pageHeight) - imgOriginalHeight;
+
+                    pdfLibPage.drawImage(wmEmbedImage, {
+                        x: wmX_pdf_img,
+                        y: wmY_pdf_img,
+                        width: imgOriginalWidth,
+                        height: imgOriginalHeight,
+                    });
+                }
+            } catch (imgErr) {
+                console.error("Error embedding watermark image:", imgErr);
+                toast({ title: "Watermark Error", description: "Could not embed watermark image.", variant: "destructive" });
+            }
         }
+        pdfLibPage.popGraphicsState();
 
 
         if (pageNumberingConfig.enabled) {
@@ -903,22 +947,7 @@ export default function PdfEditorHomepage() {
     try {
       let fullText = '';
       for (let i = 0; i < pageObjects.length; i++) { 
-        // Find the original page index in pdfDocumentProxy corresponding to pageObjects[i]
-        // This assumes pageObjects maintain order relative to original document pages,
-        // but if pages are deleted, this might need adjustment or direct use of sourceCanvases.
-        // For simplicity, if pageObjects map 1:1 to initial doc, originalPageIndex = i + 1.
-        // If pages can be reordered or source document structure changes, this needs a more robust mapping.
-        // The current pageObjects structure only has sourceCanvas and rotation, no direct link to original page number.
-        // Assuming `pdfDocumentProxy.getPage(i + 1)` refers to the *original* document's pages.
-        // This might be problematic if `pageObjects` is reordered or filtered.
-        // A safer approach would be to store original page number with pageObject if text extraction per displayed page is needed.
-        // However, `handleDownloadTxt` seems to want to extract text from the *original uploaded PDF*.
-        
-        // Re-evaluating: pageObjects[i] comes from the original pdfDocumentProxy in order.
-        // So, if pageObjects[0] is the first page of the PDF, its source is from pdfDocumentProxy.getPage(1).
-        // This mapping should hold unless pageObjects themselves are re-ordered copies from *multiple* source PDFs.
-        // For now, assume pageObjects[i] corresponds to original page i+1.
-        const pdfJsPage = await pdfDocumentProxy.getPage(i + 1); // If pageObjects are from a single PDF and in order
+        const pdfJsPage = await pdfDocumentProxy.getPage(i + 1); 
         const textContent = await pdfJsPage.getTextContent();
         const pageText = textContent.items.map((item: any) => item.str).join(' '); 
         fullText += pageText + '\n\n'; 
@@ -977,9 +1006,6 @@ export default function PdfEditorHomepage() {
     setIsLoading(true);
     setLoadingMessage(texts.insertingPdf);
     try {
-      // Note: processPdfFile returns its own pdfDocProxy. If inserting into an existing document,
-      // and features rely on the *original* pdfDocumentProxy (like text extraction), this needs thought.
-      // For now, we're just adding page *objects* (canvases).
       const { newPageObjects: insertPageObjects } = await processPdfFile(file); 
 
       let insertAtIndex = pageObjects.length; 
@@ -995,7 +1021,6 @@ export default function PdfEditorHomepage() {
       newCombinedPageObjects.splice(insertAtIndex, 0, ...insertPageObjects); 
       setPageObjects(newCombinedPageObjects);
 
-      // Select the first inserted page
       const newSelectedIds = new Set<string>();
       if (insertPageObjects.length > 0) {
         newSelectedIds.add(insertPageObjects[0].id); 
@@ -1226,7 +1251,6 @@ export default function PdfEditorHomepage() {
     try {
       const arrayBuffer = await pdfToCompress.arrayBuffer();
       const pdfDoc = await PDFLibDocument.load(arrayBuffer);
-      // Re-save with useObjectStreams: false. This is one form of "compression" pdf-lib offers.
       const pdfBytes = await pdfDoc.save({ useObjectStreams: false }); 
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
@@ -1249,24 +1273,22 @@ export default function PdfEditorHomepage() {
     }
   };
 
-  // Watermark Drag Logic
-  const handleWatermarkMouseDown = (
+  // Watermark Preview Modal Drag Logic
+  const handleWatermarkModalMouseDown = (
     event: React.MouseEvent<HTMLElement>,
     previewWrapperElement: HTMLElement,
-    // pageIndex: number // Not strictly needed if watermark config is global
   ) => {
     event.preventDefault();
     const draggedWatermarkElement = event.currentTarget as HTMLElement;
     
-    setIsDraggingWatermark(true);
+    setIsDraggingWatermarkInModal(true);
     draggedWatermarkElement.style.cursor = 'grabbing';
 
-    // Calculate initial offset in pixels based on current percentage and wrapper size
     const wrapperRect = previewWrapperElement.getBoundingClientRect();
-    const initialTopPx = watermarkConfig.topRatio * wrapperRect.height;
-    const initialLeftPx = watermarkConfig.leftRatio * wrapperRect.width;
+    const initialTopPx = tempWatermarkConfig.topRatio * wrapperRect.height;
+    const initialLeftPx = tempWatermarkConfig.leftRatio * wrapperRect.width;
 
-    dragDataRef.current = {
+    dragDataModalRef.current = {
       initialMouseX: event.clientX,
       initialMouseY: event.clientY,
       initialWatermarkTopInPx: initialTopPx,
@@ -1275,19 +1297,19 @@ export default function PdfEditorHomepage() {
       previewWrapperElement: previewWrapperElement,
     };
 
-    document.addEventListener('mousemove', handleWatermarkMouseMove, { passive: false });
-    document.addEventListener('mouseup', handleWatermarkMouseUp);
+    document.addEventListener('mousemove', handleWatermarkModalMouseMove, { passive: false });
+    document.addEventListener('mouseup', handleWatermarkModalMouseUp, { passive: false });
   };
 
-  const handleWatermarkMouseMove = useCallback((event: MouseEvent) => {
-    if (!isDraggingWatermark || !dragDataRef.current) return;
+  const handleWatermarkModalMouseMove = useCallback((event: MouseEvent) => {
+    if (!isDraggingWatermarkInModal || !dragDataModalRef.current) return;
     event.preventDefault();
 
     const { 
         initialMouseX, initialMouseY, 
         initialWatermarkTopInPx, initialWatermarkLeftInPx, 
         draggedElement, previewWrapperElement 
-    } = dragDataRef.current;
+    } = dragDataModalRef.current;
 
     const deltaX = event.clientX - initialMouseX;
     const deltaY = event.clientY - initialMouseY;
@@ -1296,45 +1318,88 @@ export default function PdfEditorHomepage() {
     let newPixelLeft = initialWatermarkLeftInPx + deltaX;
     
     const wrapperRect = previewWrapperElement.getBoundingClientRect();
-    const watermarkRect = draggedElement.getBoundingClientRect(); // Get live dimensions
+    // Get live dimensions of the *draggable element itself* for boundary checks
+    const watermarkElementRect = draggedElement.getBoundingClientRect(); 
 
-    // Constrain within the previewWrapperElement boundaries
-    newPixelTop = Math.max(0, Math.min(newPixelTop, wrapperRect.height - watermarkRect.height));
-    newPixelLeft = Math.max(0, Math.min(newPixelLeft, wrapperRect.width - watermarkRect.width));
 
-    // Update state with ratios for React to re-render all previews
+    newPixelTop = Math.max(0, Math.min(newPixelTop, wrapperRect.height - watermarkElementRect.height));
+    newPixelLeft = Math.max(0, Math.min(newPixelLeft, wrapperRect.width - watermarkElementRect.width));
+
     const newTopRatio = wrapperRect.height > 0 ? newPixelTop / wrapperRect.height : 0;
     const newLeftRatio = wrapperRect.width > 0 ? newPixelLeft / wrapperRect.width : 0;
     
-    setWatermarkConfig(prev => ({ 
+    setTempWatermarkConfig(prev => ({ 
         ...prev, 
-        topRatio: parseFloat(newTopRatio.toFixed(4)), // Store with some precision
+        topRatio: parseFloat(newTopRatio.toFixed(4)), 
         leftRatio: parseFloat(newLeftRatio.toFixed(4)) 
     }));
 
-  }, [isDraggingWatermark]); // Only depends on isDraggingWatermark for adding/removing listener effect
+  }, [isDraggingWatermarkInModal]); 
 
-  const handleWatermarkMouseUp = useCallback(() => {
-    if (!isDraggingWatermark) return;
+  const handleWatermarkModalMouseUp = useCallback((event: MouseEvent) => {
+    if (!isDraggingWatermarkInModal) return;
+    event.preventDefault();
 
-    setIsDraggingWatermark(false);
-    if (dragDataRef.current && dragDataRef.current.draggedElement) {
-      dragDataRef.current.draggedElement.style.cursor = 'grab';
+    setIsDraggingWatermarkInModal(false);
+    if (dragDataModalRef.current && dragDataModalRef.current.draggedElement) {
+      dragDataModalRef.current.draggedElement.style.cursor = 'grab';
     }
-    // dragDataRef.current = null; // Keep data for potential immediate re-drag debugging
+    // dragDataModalRef.current = null; // Keep data for potential immediate re-drag debugging
 
-    document.removeEventListener('mousemove', handleWatermarkMouseMove, { passive: false });
-    document.removeEventListener('mouseup', handleWatermarkMouseUp);
-  }, [isDraggingWatermark, handleWatermarkMouseMove]);
+    document.removeEventListener('mousemove', handleWatermarkModalMouseMove, { passive: false });
+    document.removeEventListener('mouseup', handleWatermarkModalMouseUp, { passive: false });
+  }, [isDraggingWatermarkInModal, handleWatermarkModalMouseMove]);
 
   useEffect(() => {
-    // Cleanup listeners if component unmounts while dragging
     return () => {
-      document.removeEventListener('mousemove', handleWatermarkMouseMove, { passive: false });
-      document.removeEventListener('mouseup', handleWatermarkMouseUp);
+      document.removeEventListener('mousemove', handleWatermarkModalMouseMove, { passive: false });
+      document.removeEventListener('mouseup', handleWatermarkModalMouseUp, { passive: false });
     };
-  }, [handleWatermarkMouseMove, handleWatermarkMouseUp]);
+  }, [handleWatermarkModalMouseMove, handleWatermarkModalMouseUp]);
 
+
+  const openWatermarkPreviewModal = () => {
+    if (pageObjects.length === 0) {
+        toast({ title: texts.watermarkSectionTitle, description: texts.noPdfForWatermarkPreview, variant: "destructive"});
+        return;
+    }
+    setWatermarkPreviewPageCanvas(pageObjects[0].sourceCanvas);
+    // Initialize tempWatermarkConfig with current form values, but keep existing position if user is re-opening
+    setTempWatermarkConfig(prevTemp => ({
+        ...prevTemp, // Keep existing temp position if any from a previous modal session
+        text: watermarkConfig.text, // Or a state tied directly to the input field
+        type: watermarkConfig.type,
+        imageUrl: watermarkConfig.imageUrl,
+        fontSize: watermarkConfig.fontSize,
+        color: watermarkConfig.color,
+        opacity: watermarkConfig.opacity,
+        // Reset position to current global if needed, or let it persist from temp
+        // topRatio: watermarkConfig.topRatio, // To always start from global confirmed position
+        // leftRatio: watermarkConfig.leftRatio,
+    }));
+    setIsWatermarkPreviewModalOpen(true);
+  };
+
+  const handleWatermarkImageFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            // Update the main watermarkConfig as this is an input change, not just modal temp
+            setWatermarkConfig(prev => ({ ...prev, imageUrl: reader.result as string, type: 'image' }));
+            // Also update temp so if modal is opened, it has the latest image
+            setTempWatermarkConfig(prev => ({ ...prev, imageUrl: reader.result as string, type: 'image'}));
+        };
+        reader.readAsDataURL(file);
+    }
+    if (watermarkImageUploadRef.current) watermarkImageUploadRef.current.value = '';
+  };
+
+  const confirmWatermarkPosition = () => {
+    setWatermarkConfig(tempWatermarkConfig); // Persist changes from modal
+    setIsWatermarkPreviewModalOpen(false);
+    setWatermarkPreviewPageCanvas(null);
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -1353,6 +1418,7 @@ export default function PdfEditorHomepage() {
         </div>
       )}
 
+      {/* Custom Zoom Modal */}
       {isCustomZoomModalOpen && zoomedPageData && (
          <div 
           role="dialog" 
@@ -1364,15 +1430,14 @@ export default function PdfEditorHomepage() {
           <div 
             className="fixed inset-0 bg-black/60 backdrop-blur-sm" 
             aria-hidden="true"
-            onClick={closeZoomModal} 
           ></div>
           <div 
-            className="relative bg-card text-card-foreground shadow-2xl rounded-lg w-[90vw] max-w-4xl h-[90vh] flex flex-col overflow-hidden"
+            className="relative bg-card text-card-foreground shadow-2xl rounded-lg w-[90vw] max-w-4xl h-[90vh] flex flex-col overflow-hidden p-0"
             onClick={(e) => e.stopPropagation()} 
             role="document"
           >
             <div className="flex items-center justify-between p-4 border-b border-border">
-              <h2 className="text-lg font-semibold text-foreground" id="zoom-dialog-title-custom">
+              <h2 className="text-lg font-semibold text-foreground" id="zoom-dialog-title">
                  {texts.previewOf} {texts.page} {zoomedPageData.index + 1}
                  <span className="text-sm text-muted-foreground ml-2">({(zoomLevel * 100).toFixed(0)}%)</span>
               </h2>
@@ -1382,13 +1447,13 @@ export default function PdfEditorHomepage() {
             </div>
             <div
               ref={zoomScrollContainerRef}
-              className="flex-grow bg-muted/40 overflow-auto p-4" // Removed flex items-center justify-center
-              onWheel={handleWheel} 
-              style={{ touchAction: 'none' }} // Might help with passive event listeners on some browsers
+              className="flex-grow bg-muted/40 overflow-auto p-4" 
+              onWheel={handleWheelZoom} 
+              style={{ touchAction: 'none' }} 
             >
               <canvas
                 ref={zoomCanvasRef}
-                className="shadow-lg" // Removed max-w-full, max-h-full, object-contain
+                className="shadow-lg" 
                 style={{ willReadFrequently: true } as any} 
               />
             </div>
@@ -1404,6 +1469,105 @@ export default function PdfEditorHomepage() {
                   <Button variant="outline" onClick={() => setCurrentModalRotation((r) => (r + 90) % 360)}><RotateCw className="mr-2 h-4 w-4" /> {texts.rotateRight}</Button>
                   <Button variant="outline" onClick={() => { setCurrentModalRotation(0); setZoomLevel(1); }}><X className="mr-2 h-4 w-4" /> {texts.resetRotation}</Button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Watermark Preview Modal */}
+      {isWatermarkPreviewModalOpen && watermarkPreviewPageCanvas && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="watermark-preview-title"
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          onClick={() => setIsWatermarkPreviewModalOpen(false)}
+        >
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" aria-hidden="true"></div>
+          <div
+            className="relative bg-card text-card-foreground shadow-2xl rounded-lg w-[90vw] max-w-2xl h-auto max-h-[80vh] flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+            role="document"
+          >
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 id="watermark-preview-title" className="text-lg font-semibold">{texts.watermarkPreviewModalTitle}</h2>
+              <Button variant="ghost" size="icon" onClick={() => setIsWatermarkPreviewModalOpen(false)} aria-label={texts.modalCloseButton}>
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+            <div className="p-4 text-sm text-muted-foreground">{texts.watermarkPreviewInfo}</div>
+            <div 
+                ref={watermarkPreviewCanvasContainerRef} // Ref for the container of the preview canvas
+                className="flex-grow p-4 overflow-auto bg-muted/20 flex justify-center items-center" 
+                style={{ position: 'relative', minHeight: '300px' }} // Ensure it has dimensions
+            >
+              {/* Background PDF Page Preview */}
+              <canvas 
+                ref={canvas => { // Draw first page onto this canvas
+                    if (canvas && watermarkPreviewPageCanvas) {
+                        const ctx = canvas.getContext('2d');
+                        if (ctx) {
+                            canvas.width = watermarkPreviewPageCanvas.width / 2; // Display at a reasonable size
+                            canvas.height = watermarkPreviewPageCanvas.height / 2;
+                            ctx.drawImage(watermarkPreviewPageCanvas, 0, 0, canvas.width, canvas.height);
+                        }
+                    }
+                }}
+                className="max-w-full max-h-[calc(80vh-200px)] object-contain shadow-md"
+              />
+              {/* Draggable Watermark Overlay */}
+              {watermarkPreviewCanvasContainerRef.current && ( // Only render if container has dimensions
+                <>
+                {tempWatermarkConfig.type === 'text' && tempWatermarkConfig.text && (
+                    <div
+                    onMouseDown={(e) => watermarkPreviewCanvasContainerRef.current && handleWatermarkModalMouseDown(e, watermarkPreviewCanvasContainerRef.current)}
+                    style={{
+                        position: 'absolute',
+                        top: `${tempWatermarkConfig.topRatio * 100}%`,
+                        left: `${tempWatermarkConfig.leftRatio * 100}%`,
+                        fontSize: `${tempWatermarkConfig.fontSize / 2}px`, // Scale font for preview consistency
+                        color: tempWatermarkConfig.color,
+                        opacity: tempWatermarkConfig.opacity,
+                        cursor: 'grab',
+                        padding: '2px 4px',
+                        backgroundColor: 'rgba(200,200,200,0.3)',
+                        border: '1px dashed grey',
+                        userSelect: 'none',
+                        whiteSpace: 'nowrap',
+                        zIndex: 10,
+                    }}
+                    className="draggable-watermark-modal"
+                    >
+                    {tempWatermarkConfig.text}
+                    </div>
+                )}
+                {tempWatermarkConfig.type === 'image' && tempWatermarkConfig.imageUrl && (
+                    <img
+                    src={tempWatermarkConfig.imageUrl}
+                    alt="Watermark"
+                    onMouseDown={(e) => watermarkPreviewCanvasContainerRef.current && handleWatermarkModalMouseDown(e, watermarkPreviewCanvasContainerRef.current)}
+                    style={{
+                        position: 'absolute',
+                        top: `${tempWatermarkConfig.topRatio * 100}%`,
+                        left: `${tempWatermarkConfig.leftRatio * 100}%`,
+                        opacity: tempWatermarkConfig.opacity,
+                        cursor: 'grab',
+                        maxWidth: '150px', // Max size for draggable image preview
+                        maxHeight: '150px',
+                        userSelect: 'none',
+                        zIndex: 10,
+                        objectFit: 'contain',
+                        border: '1px dashed grey',
+                    }}
+                    className="draggable-watermark-modal"
+                    />
+                )}
+                </>
+              )}
+            </div>
+            <div className="p-4 border-t flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsWatermarkPreviewModalOpen(false)}>{texts.cancel}</Button>
+              <Button onClick={confirmWatermarkPosition}>{texts.watermarkConfirmPosition}</Button>
             </div>
           </div>
         </div>
@@ -1640,8 +1804,7 @@ export default function PdfEditorHomepage() {
                                 setZoomLevel(1);
                                 setIsCustomZoomModalOpen(true);
                               }}
-                              watermarkConfig={watermarkConfig}
-                              onWatermarkMouseDown={handleWatermarkMouseDown}
+                              watermarkConfig={watermarkConfig} // Pass global confirmed config
                               texts={texts}
                             />
                           ))}
@@ -1757,62 +1920,88 @@ export default function PdfEditorHomepage() {
                                       </CardHeader>
                                       <CardContent className="space-y-4">
                                         <div>
-                                            <Label htmlFor="watermarkInput" className="mb-1 block text-sm font-medium">{texts.watermarkInputPlaceholder}</Label>
-                                            <Input
-                                                id="watermarkInput"
-                                                type="text"
-                                                placeholder={texts.watermarkInputPlaceholder}
-                                                value={watermarkConfig.text}
-                                                onChange={(e) => setWatermarkConfig(prev => ({...prev, text: e.target.value}))}
-                                            />
+                                            <Label className="mb-1 block text-sm font-medium">{texts.watermarkTypeLabel}</Label>
+                                            <RadioGroup 
+                                                value={watermarkConfig.type} 
+                                                onValueChange={(value: 'text' | 'image') => setWatermarkConfig(prev => ({...prev, type: value, imageUrl: value === 'text' ? null : prev.imageUrl, text: value === 'image' ? '' : prev.text}))}
+                                                className="flex space-x-4"
+                                            >
+                                                <div className="flex items-center space-x-2">
+                                                    <RadioGroupItem value="text" id="wm-text" />
+                                                    <Label htmlFor="wm-text" className="font-normal">{texts.watermarkTypeText}</Label>
+                                                </div>
+                                                <div className="flex items-center space-x-2">
+                                                    <RadioGroupItem value="image" id="wm-image" />
+                                                    <Label htmlFor="wm-image" className="font-normal">{texts.watermarkTypeImage}</Label>
+                                                </div>
+                                            </RadioGroup>
                                         </div>
+
+                                        {watermarkConfig.type === 'text' && (
+                                            <>
+                                                <div>
+                                                    <Label htmlFor="watermarkInput" className="mb-1 block text-sm font-medium">{texts.watermarkInputPlaceholder}</Label>
+                                                    <Input
+                                                        id="watermarkInput"
+                                                        type="text"
+                                                        placeholder={texts.watermarkInputPlaceholder}
+                                                        value={watermarkConfig.text}
+                                                        onChange={(e) => setWatermarkConfig(prev => ({...prev, text: e.target.value}))}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Label htmlFor="watermarkFontSize" className="mb-1 block text-sm font-medium">{texts.watermarkFontSizeLabel}</Label>
+                                                    <Input
+                                                        id="watermarkFontSize"
+                                                        type="number"
+                                                        value={watermarkConfig.fontSize}
+                                                        onChange={(e) => setWatermarkConfig(prev => ({...prev, fontSize: parseInt(e.target.value, 10) || 20}))}
+                                                        min="8"
+                                                        max="120"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Label htmlFor="watermarkColor" className="mb-1 block text-sm font-medium">{texts.watermarkColorLabel}</Label>
+                                                    <Input
+                                                        id="watermarkColor"
+                                                        type="color"
+                                                        value={watermarkConfig.color}
+                                                        onChange={(e) => setWatermarkConfig(prev => ({...prev, color: e.target.value}))}
+                                                        className="h-10"
+                                                    />
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {watermarkConfig.type === 'image' && (
+                                          <div>
+                                            <Label htmlFor="watermarkImageUpload" className="mb-1 block text-sm font-medium">{texts.watermarkImageLabel}</Label>
+                                            <Input
+                                                id="watermarkImageUpload"
+                                                type="file"
+                                                accept="image/png, image/jpeg"
+                                                ref={watermarkImageUploadRef}
+                                                onChange={handleWatermarkImageFileChange}
+                                                className="text-sm"
+                                            />
+                                            {watermarkConfig.imageUrl && (
+                                                <img src={watermarkConfig.imageUrl} alt="Selected watermark" className="mt-2 max-h-20 rounded-md border"/>
+                                            )}
+                                          </div>
+                                        )}
+                                        
                                         <div>
-                                            <Label htmlFor="watermarkFontSize" className="mb-1 block text-sm font-medium">{texts.watermarkFontSizeLabel}</Label>
-                                            <Input
-                                                id="watermarkFontSize"
-                                                type="number"
-                                                value={watermarkConfig.fontSize}
-                                                onChange={(e) => setWatermarkConfig(prev => ({...prev, fontSize: parseInt(e.target.value, 10) || 20}))}
-                                                min="8"
-                                                max="120"
+                                            <Label htmlFor="watermarkOpacity" className="mb-1 block text-sm font-medium">{texts.watermarkOpacityLabel} ({Math.round(watermarkConfig.opacity * 100)}%)</Label>
+                                            <Slider
+                                                id="watermarkOpacity"
+                                                min={0} max={1} step={0.05}
+                                                value={[watermarkConfig.opacity]}
+                                                onValueChange={(value) => setWatermarkConfig(prev => ({...prev, opacity: value[0]}))}
                                             />
                                         </div>
-                                        <div>
-                                            <Label htmlFor="watermarkColor" className="mb-1 block text-sm font-medium">{texts.watermarkColorLabel}</Label>
-                                            <Input
-                                                id="watermarkColor"
-                                                type="color" // Using type="color" for a color picker
-                                                value={(() => { // Convert rgba to hex for color input
-                                                    const parsed = parseRgbaColor(watermarkConfig.color);
-                                                    const toHex = (c: number) => Math.round(c * 255).toString(16).padStart(2, '0');
-                                                    return `#${toHex(parsed.r)}${toHex(parsed.g)}${toHex(parsed.b)}`;
-                                                })()}
-                                                onChange={(e) => {
-                                                    // Convert hex back to rgba for storage, keeping existing alpha
-                                                    const hex = e.target.value;
-                                                    const r = parseInt(hex.slice(1, 3), 16);
-                                                    const g = parseInt(hex.slice(3, 5), 16);
-                                                    const b = parseInt(hex.slice(5, 7), 16);
-                                                    const currentAlpha = parseRgbaColor(watermarkConfig.color).alpha;
-                                                    setWatermarkConfig(prev => ({...prev, color: `rgba(${r}, ${g}, ${b}, ${currentAlpha})`}));
-                                                }}
-                                                className="h-10" // Ensure color input is visible
-                                            />
-                                             <Input
-                                                type="range"
-                                                min="0"
-                                                max="1"
-                                                step="0.05"
-                                                title={`Opacity: ${parseRgbaColor(watermarkConfig.color).alpha.toFixed(2)}`}
-                                                value={parseRgbaColor(watermarkConfig.color).alpha}
-                                                onChange={(e) => {
-                                                    const newAlpha = parseFloat(e.target.value);
-                                                    const parsed = parseRgbaColor(watermarkConfig.color);
-                                                    setWatermarkConfig(prev => ({...prev, color: `rgba(${Math.round(parsed.r*255)}, ${Math.round(parsed.g*255)}, ${Math.round(parsed.b*255)}, ${newAlpha})`}));
-                                                }}
-                                                className="w-full mt-2 h-2"
-                                            />
-                                        </div>
+                                        <Button onClick={openWatermarkPreviewModal} className="w-full" disabled={pageObjects.length === 0 || (watermarkConfig.type === 'text' && !watermarkConfig.text) || (watermarkConfig.type === 'image' && !watermarkConfig.imageUrl)}>
+                                            <Eye className="mr-2 h-4 w-4" /> {texts.watermarkPreviewButton}
+                                        </Button>
                                       </CardContent>
                                     </Card>
                                     <Card>
@@ -1941,5 +2130,3 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
-
-    

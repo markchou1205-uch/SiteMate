@@ -27,6 +27,26 @@ if (typeof window !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 }
 
+const firebaseConfigKeys = [
+  'NEXT_PUBLIC_FIREBASE_API_KEY',
+  'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN',
+  'NEXT_PUBLIC_FIREBASE_PROJECT_ID',
+  'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET',
+  'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID',
+  'NEXT_PUBLIC_FIREBASE_APP_ID',
+];
+
+let missingFirebaseKeysText = '';
+if (typeof process !== 'undefined' && process.env) {
+    const missingKeys = firebaseConfigKeys.filter(key => !process.env[key]);
+    if (missingKeys.length > 0) {
+        missingFirebaseKeysText = missingKeys.join(', ');
+    }
+}
+
+const isFirebaseActuallyConfigured = missingFirebaseKeysText === '';
+
+
 const translations = {
     en: {
         pageTitle: 'DocuPilot',
@@ -86,7 +106,7 @@ const translations = {
         login: 'Login',
         logout: 'Logout',
         guest: 'Guest',
-        firebaseNotConfigured: 'Firebase is not configured. Conversion to Word is disabled. Please check your .env file.'
+        firebaseNotConfigured: `Firebase Frontend SDK is not fully configured. Please ensure all Firebase environment variables (NEXT_PUBLIC_FIREBASE_API_KEY, etc.) are set in your .env.local file. Missing: ${missingFirebaseKeysText || 'Please check configuration.'}`
     },
     zh: {
         pageTitle: 'DocuPilot 文件助手',
@@ -146,16 +166,12 @@ const translations = {
         login: '登入',
         logout: '登出',
         guest: '訪客',
-        firebaseNotConfigured: 'Firebase 尚未設定。無法使用轉換 Word 功能。請檢查您的 .env 檔案。'
+        firebaseNotConfigured: `Firebase 前端 SDK 設定不完整。請確保所有 Firebase 環境變數 (NEXT_PUBLIC_FIREBASE_API_KEY 等) 都已在您的 .env.local 檔案中設定。缺少：${missingFirebaseKeysText || '請檢查設定。'}`
     }
 };
 
 const DAILY_DOWNLOAD_LIMIT = 3;
 const DAILY_WORD_CONVERSION_LIMIT = 1;
-
-const isFirebaseConfigured =
-  process.env.NEXT_PUBLIC_FIREBASE_API_KEY &&
-  process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
 
 export default function PdfEditorHomepage() {
@@ -185,6 +201,25 @@ export default function PdfEditorHomepage() {
   const [wordFileUrl, setWordFileUrl] = useState<string | null>(null);
   const [wordConversionError, setWordConversionError] = useState<string | null>(null);
   const [showWordLimitModal, setShowWordLimitModal] = useState(false);
+  
+  // Use the refined check for Firebase configuration
+  const [isFirebaseConfigured, setIsFirebaseConfigured] = useState(false);
+
+  useEffect(() => {
+    // Check Firebase configuration on client side after mount
+    const missingKeys = firebaseConfigKeys.filter(key => !(process.env[key]));
+    const configured = missingKeys.length === 0;
+    setIsFirebaseConfigured(configured);
+    if (!configured) {
+        const currentMissingKeysText = missingKeys.join(', ');
+        setTexts(prev => ({
+            ...prev,
+            firebaseNotConfigured: currentLanguage === 'zh' ? 
+                `Firebase 前端 SDK 設定不完整。請確保所有 Firebase 環境變數 (NEXT_PUBLIC_FIREBASE_API_KEY 等) 都已在您的 .env.local 檔案中設定。缺少：${currentMissingKeysText || '請檢查設定。'}` :
+                `Firebase Frontend SDK is not fully configured. Please ensure all Firebase environment variables (NEXT_PUBLIC_FIREBASE_API_KEY, etc.) are set in your .env.local file. Missing: ${currentMissingKeysText || 'Please check configuration.'}`
+        }));
+    }
+  }, [currentLanguage]);
 
 
   const previewContainerRef = useRef<HTMLDivElement>(null);
@@ -217,8 +252,17 @@ export default function PdfEditorHomepage() {
   }, [router]); 
 
   useEffect(() => {
-    setTexts(translations[currentLanguage]);
+    // Update texts based on language, and re-evaluate firebaseNotConfigured message
+    const missingKeys = firebaseConfigKeys.filter(key => !(process.env[key]));
+    const currentMissingKeysText = missingKeys.join(', ');
+    setTexts(prev => ({
+        ...translations[currentLanguage],
+        firebaseNotConfigured: currentLanguage === 'zh' ? 
+            `Firebase 前端 SDK 設定不完整。請確保所有 Firebase 環境變數 (NEXT_PUBLIC_FIREBASE_API_KEY 等) 都已在您的 .env.local 檔案中設定。缺少：${currentMissingKeysText || '請檢查設定。'}` :
+            `Firebase Frontend SDK is not fully configured. Please ensure all Firebase environment variables (NEXT_PUBLIC_FIREBASE_API_KEY, etc.) are set in your .env.local file. Missing: ${currentMissingKeysText || 'Please check configuration.'}`
+    }));
   }, [currentLanguage]);
+
 
   const updateLanguage = (lang: 'en' | 'zh') => {
     setCurrentLanguage(lang);
@@ -662,31 +706,25 @@ export default function PdfEditorHomepage() {
       await uploadBytes(fileRef, uploadedPdfFile);
       const pdfStorageUrl = await getDownloadURL(fileRef);
 
-      // ！！重要：請確保此 URL 與您部署的 Firebase Function 的 HTTP 觸發 URL 一致 ！！
-      // 您可以在 Firebase 控制台的 Functions 頁面找到它，或者 Firebase CLI 部署後會顯示。
-      // 格式通常是：https://<REGION>-<PROJECT_ID>.cloudfunctions.net/<FUNCTION_NAME>
       const functionUrl = `https://us-central1-sitemate-otkpt.cloudfunctions.net/convertPdfToWord`; 
-      // ↑ 確保 'sitemate-otkpt' 是您的專案 ID，'convertPdfToWord' 是您的函式名稱。
 
       const response = await fetch(functionUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ fileUrl: pdfStorageUrl }), // 後端期望的是 fileUrl
+        body: JSON.stringify({ fileUrl: pdfStorageUrl }),
       });
 
       if (!response.ok) {
         let errorData;
         try {
-            errorData = await response.json(); // 嘗試解析 JSON 錯誤
+            errorData = await response.json(); 
         } catch (e) {
-            // 如果解析 JSON 失敗，則將回應本文作為純文字處理
             const errorText = await response.text();
             errorData = { detail: errorText || response.statusText };
         }
         console.error("Firebase Function HTTP Error Response:", errorData);
-        // 使用 errorData.detail 或 errorData.error (如果存在)，否則使用一般錯誤訊息
         const detailMessage = errorData.detail || errorData.error || `HTTP error! status: ${response.status}`;
         throw new Error(detailMessage);
       }
@@ -1033,7 +1071,5 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
-
-    
 
     

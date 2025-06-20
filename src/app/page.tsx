@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription as ShadDialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader as ShadAlertDialogHeader, AlertDialogTitle as ShadAlertDialogTitle, AlertDialogFooter } from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -273,6 +272,8 @@ export default function PdfEditorHomepage() {
     password: '',
   });
 
+  const [isZoomModalOpen, setIsZoomModalOpen] = useState(false);
+
 
   useEffect(() => {
     console.log("[Page.tsx useEffect] STARTING Firebase readiness check...");
@@ -399,6 +400,7 @@ export default function PdfEditorHomepage() {
       wrapper.addEventListener('dblclick', () => {
         setZoomedPageData({ canvas: pageCanvas, index });
         setCurrentRotation(0);
+        setIsZoomModalOpen(true);
       });
       previewContainerRef.current?.appendChild(wrapper);
     });
@@ -433,7 +435,7 @@ export default function PdfEditorHomepage() {
 
 
  useEffect(() => {
-    if (zoomedPageData && zoomCanvasRef.current) {
+    if (isZoomModalOpen && zoomedPageData && zoomCanvasRef.current) {
       const canvas = zoomCanvasRef.current;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
@@ -457,7 +459,7 @@ export default function PdfEditorHomepage() {
       ctx.drawImage(sourceCanvas, -baseWidth / 2, -baseHeight / 2, baseWidth, baseHeight);
       ctx.restore();
     }
-  }, [zoomedPageData, currentRotation]);
+  }, [isZoomModalOpen, zoomedPageData, currentRotation]);
 
   const processPdfFile = async (file: File): Promise<{ canvases: HTMLCanvasElement[], docProxy: PDFDocumentProxyType }> => {
     const arrayBuffer = await file.arrayBuffer();
@@ -913,6 +915,11 @@ export default function PdfEditorHomepage() {
     { icon: FileType, labelKey: 'featureConvert' },
   ];
 
+  const closeZoomModal = () => {
+    setIsZoomModalOpen(false);
+    setZoomedPageData(null);
+    setCurrentRotation(0);
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -928,35 +935,52 @@ export default function PdfEditorHomepage() {
         </div>
       )}
 
-      <Dialog open={!!zoomedPageData} onOpenChange={(isOpen) => { if (!isOpen) setZoomedPageData(null); }}>
-        <DialogContent 
-          className="max-w-3xl w-[90vw] h-[90vh] p-0 flex flex-col"
-          aria-label={zoomedPageData ? `${texts.previewOf} ${texts.page} ${zoomedPageData.index + 1}` : texts.previewOf}
+      {isZoomModalOpen && zoomedPageData && (
+        <div 
+          role="dialog" 
+          aria-modal="true" 
+          aria-label={`${texts.previewOf} ${texts.page} ${zoomedPageData.index + 1}`}
+          className="fixed inset-0 z-50 flex items-center justify-center"
         >
-          <DialogHeader className="p-4 border-b">
-            <DialogTitle id="zoom-dialog-title">
-                {texts.previewOf} {zoomedPageData ? `${texts.page} ${zoomedPageData.index + 1}` : ''}
-            </DialogTitle>
-            <ShadDialogDescription id="zoom-dialog-description">
-              {texts.zoomDialogDescription}
-            </ShadDialogDescription>
-          </DialogHeader>
-          <div className="flex-grow overflow-auto flex items-center justify-center p-4 bg-muted/40">
-            <canvas ref={zoomCanvasRef} style={{ willReadFrequently: true } as any} className="max-w-full max-h-full object-contain shadow-lg"></canvas>
-          </div>
-          <DialogFooter className="p-4 border-t flex-col sm:flex-col md:flex-row gap-2">
-            <Input type="text" placeholder={texts.noteInputPlaceholder} className="mb-2 md:mb-0 md:mr-2 flex-grow" />
-            <div className="flex flex-wrap gap-2 justify-center sm:justify-end">
-                <Button variant="outline" onClick={() => setCurrentRotation((r) => (r - 90 + 360) % 360)}><RotateCcw className="mr-2 h-4 w-4" /> {texts.rotateLeft}</Button>
-                <Button variant="outline" onClick={() => setCurrentRotation((r) => (r + 90) % 360)}><RotateCw className="mr-2 h-4 w-4" /> {texts.rotateRight}</Button>
-                <Button variant="outline" onClick={() => setCurrentRotation(0)}><X className="mr-2 h-4 w-4" /> {texts.resetRotation}</Button>
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={closeZoomModal}></div>
+          <div className="relative bg-card text-card-foreground shadow-2xl rounded-lg w-[90vw] max-w-3xl h-[90vh] flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <h2 className="text-lg font-semibold text-foreground" id="zoom-modal-title">
+                {texts.previewOf} {texts.page} {zoomedPageData.index + 1}
+              </h2>
+              <Button variant="ghost" size="icon" onClick={closeZoomModal} aria-label={texts.modalCloseButton}>
+                <X className="h-5 w-5" />
+              </Button>
             </div>
-            <DialogClose asChild>
-                <Button variant="outline" className="w-full md:w-auto mt-2 md:mt-0">{texts.modalCloseButton}</Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
+            {/* Content */}
+            <div className="flex-grow overflow-auto flex items-center justify-center p-4 bg-muted/40">
+              <canvas 
+                ref={zoomCanvasRef} 
+                className="max-w-full max-h-full object-contain shadow-lg"
+                style={{ willReadFrequently: true } as any} 
+              ></canvas>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-border flex flex-col md:flex-row items-center gap-2 justify-between">
+              <Input 
+                type="text" 
+                placeholder={texts.noteInputPlaceholder} 
+                className="flex-grow md:max-w-xs" 
+                aria-label={texts.noteInputPlaceholder}
+              />
+              <div className="flex flex-wrap gap-2 justify-center sm:justify-end">
+                  <Button variant="outline" onClick={() => setCurrentRotation((r) => (r - 90 + 360) % 360)}><RotateCcw className="mr-2 h-4 w-4" /> {texts.rotateLeft}</Button>
+                  <Button variant="outline" onClick={() => setCurrentRotation((r) => (r + 90) % 360)}><RotateCw className="mr-2 h-4 w-4" /> {texts.rotateRight}</Button>
+                  <Button variant="outline" onClick={() => setCurrentRotation(0)}><X className="mr-2 h-4 w-4" /> {texts.resetRotation}</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       <AlertDialog open={isInsertConfirmOpen} onOpenChange={setIsInsertConfirmOpen}>
         <AlertDialogContent>
@@ -1276,3 +1300,4 @@ export default function PdfEditorHomepage() {
   );
 }
 
+    

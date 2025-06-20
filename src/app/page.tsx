@@ -457,7 +457,7 @@ export default function PdfEditorHomepage() {
     initialMouseY: number;
     initialWatermarkTopInPx: number; // Watermark's initial top in pixels relative to preview wrapper
     initialWatermarkLeftInPx: number; // Watermark's initial left in pixels relative to preview wrapper
-    draggedWatermarkElement: HTMLElement; // The specific watermark div being dragged (e.target)
+    draggedElement: HTMLElement; // The specific watermark div being dragged (e.target)
     previewWrapperElement: HTMLElement; // The parent .page-preview-wrapper of the dragged watermark
   } | null>(null);
 
@@ -637,6 +637,7 @@ export default function PdfEditorHomepage() {
       ctx.translate(canvas.width / 2, canvas.height / 2);
       ctx.rotate(currentModalRotation * Math.PI / 180);
   
+      // Draw the sourceCanvas scaled to fill the target canvas (which is already scaled by zoomLevel)
       ctx.drawImage(
         sourceCanvas,
         -canvas.width / 2, 
@@ -1274,7 +1275,7 @@ export default function PdfEditorHomepage() {
       previewWrapperElement: previewWrapperElement,
     };
 
-    document.addEventListener('mousemove', handleWatermarkMouseMove);
+    document.addEventListener('mousemove', handleWatermarkMouseMove, { passive: false });
     document.addEventListener('mouseup', handleWatermarkMouseUp);
   };
 
@@ -1322,14 +1323,14 @@ export default function PdfEditorHomepage() {
     }
     // dragDataRef.current = null; // Keep data for potential immediate re-drag debugging
 
-    document.removeEventListener('mousemove', handleWatermarkMouseMove);
+    document.removeEventListener('mousemove', handleWatermarkMouseMove, { passive: false });
     document.removeEventListener('mouseup', handleWatermarkMouseUp);
   }, [isDraggingWatermark, handleWatermarkMouseMove]);
 
   useEffect(() => {
     // Cleanup listeners if component unmounts while dragging
     return () => {
-      document.removeEventListener('mousemove', handleWatermarkMouseMove);
+      document.removeEventListener('mousemove', handleWatermarkMouseMove, { passive: false });
       document.removeEventListener('mouseup', handleWatermarkMouseUp);
     };
   }, [handleWatermarkMouseMove, handleWatermarkMouseUp]);
@@ -1381,13 +1382,13 @@ export default function PdfEditorHomepage() {
             </div>
             <div
               ref={zoomScrollContainerRef}
-              className="flex-grow bg-muted/40 overflow-auto p-4 flex items-center justify-center" // Added flex centering for canvas
+              className="flex-grow bg-muted/40 overflow-auto p-4" // Removed flex items-center justify-center
               onWheel={handleWheel} 
               style={{ touchAction: 'none' }} // Might help with passive event listeners on some browsers
             >
               <canvas
                 ref={zoomCanvasRef}
-                className="shadow-lg" 
+                className="shadow-lg" // Removed max-w-full, max-h-full, object-contain
                 style={{ willReadFrequently: true } as any} 
               />
             </div>

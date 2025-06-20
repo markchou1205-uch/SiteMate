@@ -19,9 +19,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, FileType } from 'lucide-react';
 
-import { storage, functions as firebaseFunctions } from '@/lib/firebase'; // Firebase SDK
+import { storage } from '@/lib/firebase'; // Firebase SDK for storage
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { httpsCallable, type HttpsCallableResult } from 'firebase/functions';
 
 
 if (typeof window !== 'undefined') {
@@ -215,7 +214,7 @@ export default function PdfEditorHomepage() {
         }
       }
     }
-  }, []);
+  }, [router]); // Added router to dependency array for useEffect with redirection
 
   useEffect(() => {
     setTexts(translations[currentLanguage]);
@@ -290,7 +289,7 @@ export default function PdfEditorHomepage() {
       sortableInstanceRef.current = Sortable.create(previewContainerRef.current, {
         animation: 150,
         ghostClass: 'opacity-50',
-        chosenClass: 'shadow-2xl', // Changed from 'ring-2 ring-offset-2 ring-primary'
+        chosenClass: 'shadow-2xl', 
         dragClass: 'opacity-75',
         onEnd: (evt) => {
           if (evt.oldIndex === undefined || evt.newIndex === undefined) return;
@@ -663,20 +662,31 @@ export default function PdfEditorHomepage() {
       await uploadBytes(fileRef, uploadedPdfFile);
       const pdfStorageUrl = await getDownloadURL(fileRef);
 
-      // Call the actual Firebase Function
-      type ConvertFunctionInput = { pdfUrl: string };
-      type ConvertFunctionOutput = { wordUrl: string };
+      // ⚠️ 請將 YOUR_REGION 和 YOUR_PROJECT_ID 替換為您的 Firebase 專案實際的區域和專案 ID
+      // ⚠️ 並確認您的 Function 名稱是 convertPdfToWord
+      const functionUrl = `https://us-central1-sitemate-otkpt.cloudfunctions.net/convertPdfToWord`; 
+      // 您部署 Function 後，Firebase CLI 會顯示確切的 URL，或者您可以在 Firebase 控制台的 Functions 頁面找到它。
 
-      const convertPdfToWordFunction = httpsCallable<ConvertFunctionInput, ConvertFunctionOutput>(firebaseFunctions, 'convertPdfToWord');
-      const response: HttpsCallableResult<ConvertFunctionOutput> = await convertPdfToWordFunction({ pdfUrl: pdfStorageUrl });
+      const response = await fetch(functionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fileUrl: pdfStorageUrl }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: response.statusText }));
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
       
-      const wordDownloadLink = response.data.wordUrl;
-
-      if (!wordDownloadLink) {
+      if (!result.wordUrl) { // 根據您 Function 回傳的格式，之前是 downloadUrl，我改為 wordUrl 以匹配
         throw new Error("Firebase Function did not return a Word file URL.");
       }
 
-      setWordFileUrl(wordDownloadLink);
+      setWordFileUrl(result.wordUrl);
       toast({ title: texts.wordConvertSuccess, description: texts.downloadWordFile });
 
       if (!isLoggedIn && typeof window !== 'undefined') {
@@ -1011,4 +1021,3 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
-

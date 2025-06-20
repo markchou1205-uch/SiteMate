@@ -442,21 +442,18 @@ export default function PdfEditorHomepage() {
       const baseWidth = sourceCanvas.width;
       const baseHeight = sourceCanvas.height;
       
-      // Set canvas drawing surface size based on rotation
-      if (currentRotation % 180 !== 0) { // Rotated 90 or 270 degrees
+      if (currentRotation % 180 !== 0) {
         canvas.width = baseHeight; 
         canvas.height = baseWidth;  
-      } else { // Not rotated or rotated 180 degrees
+      } else {
         canvas.width = baseWidth; 
         canvas.height = baseHeight;
       }
       
       ctx.save();
-      ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear with new dimensions
-      // Translate to center of the drawing surface, then rotate
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.translate(canvas.width / 2, canvas.height / 2);
       ctx.rotate((currentRotation * Math.PI) / 180);
-      // Draw the image centered on the (now rotated) origin of the drawing surface
       ctx.drawImage(sourceCanvas, -baseWidth / 2, -baseHeight / 2, baseWidth, baseHeight);
       ctx.restore();
     }
@@ -931,12 +928,10 @@ export default function PdfEditorHomepage() {
         </div>
       )}
 
-      {/* Zoom Dialog */}
       <Dialog open={!!zoomedPageData} onOpenChange={(isOpen) => { if (!isOpen) setZoomedPageData(null); }}>
         <DialogContent 
           className="max-w-3xl w-[90vw] h-[90vh] p-0 flex flex-col"
-          aria-labelledby="zoom-dialog-title"
-          aria-describedby="zoom-dialog-description"
+          aria-label={zoomedPageData ? `${texts.previewOf} ${texts.page} ${zoomedPageData.index + 1}` : texts.previewOf}
         >
           <DialogHeader className="p-4 border-b">
             <DialogTitle id="zoom-dialog-title">
@@ -1082,7 +1077,7 @@ export default function PdfEditorHomepage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                <div className="md:col-span-8"> {/* Changed from 7 to 8 for ~7:3 ratio (8:4) */}
+                <div className="md:col-span-8">
                     <Card className="shadow-lg min-h-[calc(100vh-20rem)] md:min-h-[calc(100vh-18rem)]">
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
@@ -1114,7 +1109,7 @@ export default function PdfEditorHomepage() {
                     </Card>
                 </div>
 
-                <div className="md:col-span-4 space-y-6"> {/* Changed from 5 to 4 for ~7:3 ratio (8:4) */}
+                <div className="md:col-span-4 space-y-6">
                     <Card className="shadow-lg">
                       <CardHeader>
                         <CardTitle className="flex items-center text-lg"><FilePlus className="mr-2 h-5 w-5 text-primary" /> {texts.insertAreaTitle}</CardTitle>

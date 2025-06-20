@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -18,7 +19,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, FileType, FileDigit, Lock } from 'lucide-react';
+import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, FileType, FileDigit, Lock, MenuSquare } from 'lucide-react';
 
 import { storage, functions as firebaseFunctions, app as firebaseApp } from '@/lib/firebase'; // Firebase SDK
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -67,7 +68,7 @@ const translations = {
         cancel: 'Cancel',
         noteInputPlaceholder: 'Add a temporary note (not saved with PDF)',
         pageManagement: 'Page Management',
-        tools: 'Tools',
+        tools: 'Page Actions & Instructions',
         fileOperations: 'File Operations',
         watermarkSectionTitle: 'Watermark',
         watermarkInputPlaceholder: 'Enter watermark text',
@@ -84,7 +85,8 @@ const translations = {
         pdfPassword: 'Password',
         pdfPasswordPlaceholder: 'Enter password',
         page: 'Page',
-        uploadPdfFirst: 'Please upload a PDF first to enable this feature.',
+        uploadPdfFirstShort: 'Upload a PDF to start editing.',
+        uploadPdfFirst: 'Please upload a PDF first to enable editing features.',
         noPagesToDownload: 'No pages to download.',
         noPdfToExtractText: 'No PDF loaded to extract text from.',
         noPdfToConvert: 'No PDF loaded to convert.',
@@ -109,6 +111,11 @@ const translations = {
         topLeft: 'Top Left',
         topCenter: 'Top Center',
         topRight: 'Top Right',
+        pdfEditingTools: 'PDF Editing Tools',
+        downloadAndConvertTitle: 'Download & Convert',
+        startEditingYourPdf: 'Start Editing Your PDF',
+        pagesLoaded: 'pages loaded.',
+        pageSelected: 'page selected.',
     },
     zh: {
         pageTitle: 'DocuPilot 文件助手',
@@ -148,7 +155,7 @@ const translations = {
         cancel: '取消',
         noteInputPlaceholder: '新增臨時筆記（不會儲存於 PDF）',
         pageManagement: '頁面管理',
-        tools: '工具',
+        tools: '頁面操作與說明',
         fileOperations: '檔案操作',
         watermarkSectionTitle: '浮水印',
         watermarkInputPlaceholder: '輸入浮水印文字',
@@ -165,7 +172,8 @@ const translations = {
         pdfPassword: '密碼',
         pdfPasswordPlaceholder: '輸入密碼',
         page: '頁',
-        uploadPdfFirst: '請先上傳 PDF 檔案以使用此功能。',
+        uploadPdfFirstShort: '上傳 PDF 以開始編輯。',
+        uploadPdfFirst: '請先上傳 PDF 檔案以使用編輯功能。',
         noPagesToDownload: '沒有可下載的頁面。',
         noPdfToExtractText: '未載入 PDF 以提取文字。',
         noPdfToConvert: '未載入 PDF 以進行轉換。',
@@ -190,6 +198,11 @@ const translations = {
         topLeft: '左上',
         topCenter: '中上',
         topRight: '右上',
+        pdfEditingTools: 'PDF 編輯工具',
+        downloadAndConvertTitle: '下載與轉換',
+        startEditingYourPdf: '開始編輯您的 PDF',
+        pagesLoaded: '頁已載入。',
+        pageSelected: '頁已選取。',
     }
 };
 
@@ -603,7 +616,7 @@ export default function PdfEditorHomepage() {
             const { width: pageWidth, height: pageHeight } = page.getSize();
             page.drawText(watermarkText, {
                 x: pageWidth / 2 - textWidth / 2,
-                y: pageHeight / 2 - textHeight / 4, // Adjusted for better centering with rotation
+                y: pageHeight / 2 - textHeight / 4, 
                 font: helveticaFont,
                 size: 50,
                 color: rgb(0.75, 0.75, 0.75),
@@ -616,8 +629,8 @@ export default function PdfEditorHomepage() {
       if (pdfProtectionConfig.enabled && pdfProtectionConfig.password) {
         await pdfDocOut.encrypt({
           userPassword: pdfProtectionConfig.password,
-          ownerPassword: pdfProtectionConfig.password, // Using same for simplicity
-          permissions: {}, // Default permissions
+          ownerPassword: pdfProtectionConfig.password, 
+          permissions: {}, 
         });
       }
 
@@ -822,8 +835,8 @@ export default function PdfEditorHomepage() {
 
         const detailMessage = errorData?.detail || errorData?.error || `HTTP error! status: ${response.status}`;
         let toastDescription = detailMessage;
-        if (typeof detailMessage === 'string' && detailMessage.toLowerCase().includes("method not found")) {
-            toastDescription = texts.pdfCoMethodNotFoundError;
+        if (typeof detailMessage === 'string' && (detailMessage.toLowerCase().includes("method not found") || detailMessage.toLowerCase().includes("api key not configured")) ) {
+             toastDescription = texts.pdfCoMethodNotFoundError;
         }
         throw new Error(detailMessage);
       }
@@ -1010,152 +1023,25 @@ export default function PdfEditorHomepage() {
 
       <div className="container mx-auto p-4 md:p-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-1 space-y-6">
-
-            {pages.length > 0 && (
-              <Card className="shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-xl"><Edit3 className="mr-2 h-5 w-5 text-primary" /> {texts.insertAreaTitle}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="insertPdfInput" className="mb-2 block cursor-pointer text-sm font-medium">{texts.selectFileToInsert}</Label>
-                     <div
-                        className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer"
-                        onClick={() => insertPdfRef.current?.click()}
-                        onDragOver={commonDragEvents.onDragOver}
-                        onDragLeave={commonDragEvents.onDragLeave}
-                        onDrop={(e) => commonDragEvents.onDrop(e, (ev) => handleInsertPdfFileSelected(ev as any))}
-                      >
-                        <Upload className="h-10 w-10 text-muted-foreground mb-2" />
-                        <p className="text-sm text-muted-foreground text-center">{texts.dropInsertFileHere}</p>
-                      </div>
-                    <Input
-                        type="file"
-                        id="insertPdfInput"
-                        accept="application/pdf"
-                        onChange={handleInsertPdfFileSelected}
-                        ref={insertPdfRef}
-                        className="hidden"
-                    />
-                  </div>
-                  <RadioGroup value={insertPosition} onValueChange={(value: 'before' | 'after') => setInsertPosition(value)} disabled={selectedPages.size === 0}>
-                    <Label className="font-medium mb-1 block">{texts.insertOptionsTitle}</Label>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="before" id="r-before" />
-                      <Label htmlFor="r-before" className="font-normal">{texts.insertBeforeLabel}</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="after" id="r-after" />
-                      <Label htmlFor="r-after" className="font-normal">{texts.insertAfterLabel}</Label>
-                    </div>
-                  </RadioGroup>
-                   <p className="text-xs text-muted-foreground">{selectedPages.size === 0 && pages.length > 0 ? texts.insertConfirmDescription.split('.')[0] + '.' : ''}</p>
-                </CardContent>
-              </Card>
-            )}
-
-            {pages.length > 0 && (
-              <Card className="shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-xl"><FileDigit className="mr-2 h-5 w-5 text-primary" /> {texts.pageNumberingSectionTitle}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <Switch id="enablePageNumbering" checked={pageNumberingConfig.enabled} onCheckedChange={(checked) => setPageNumberingConfig(prev => ({...prev, enabled: checked}))} />
-                    <Label htmlFor="enablePageNumbering">{texts.enablePageNumbering}</Label>
-                  </div>
-                  {pageNumberingConfig.enabled && (
-                    <>
-                      <div>
-                        <Label htmlFor="pn-position">{texts.pageNumberPosition}</Label>
-                        <Select value={pageNumberingConfig.position} onValueChange={(value: PageNumberPosition) => setPageNumberingConfig(prev => ({...prev, position: value}))}>
-                          <SelectTrigger id="pn-position"><SelectValue placeholder={texts.pageNumberPosition} /></SelectTrigger>
-                          <SelectContent>
-                            {pageNumberPositions.map(pos => <SelectItem key={pos.value} value={pos.value}>{texts[pos.labelKey]}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div><Label htmlFor="pn-start">{texts.pageNumberStart}</Label><Input id="pn-start" type="number" value={pageNumberingConfig.start} onChange={(e) => setPageNumberingConfig(prev => ({...prev, start: parseInt(e.target.value,10) || 1}))} min="1" /></div>
-                      <div><Label htmlFor="pn-fontSize">{texts.pageNumberFontSize}</Label><Input id="pn-fontSize" type="number" value={pageNumberingConfig.fontSize} onChange={(e) => setPageNumberingConfig(prev => ({...prev, fontSize: parseInt(e.target.value,10) || 12}))} min="6" /></div>
-                      <div><Label htmlFor="pn-margin">{texts.pageNumberMargin}</Label><Input id="pn-margin" type="number" value={pageNumberingConfig.margin} onChange={(e) => setPageNumberingConfig(prev => ({...prev, margin: parseInt(e.target.value,10) || 20}))} min="0" /></div>
-                      <div><Label htmlFor="pn-format">{texts.pageNumberFormat}</Label><Input id="pn-format" type="text" value={pageNumberingConfig.format} placeholder={texts.pageNumberFormatPlaceholder} onChange={(e) => setPageNumberingConfig(prev => ({...prev, format: e.target.value}))} /></div>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-            
-            {pages.length > 0 && (
-              <Card className="shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-xl"><Lock className="mr-2 h-5 w-5 text-primary" /> {texts.protectPdfSectionTitle}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                   <div className="flex items-center space-x-2">
-                    <Switch id="enablePdfProtection" checked={pdfProtectionConfig.enabled} onCheckedChange={(checked) => setPdfProtectionConfig(prev => ({...prev, enabled: checked}))} />
-                    <Label htmlFor="enablePdfProtection">{texts.enablePdfProtection}</Label>
-                  </div>
-                  {pdfProtectionConfig.enabled && (
-                    <div>
-                      <Label htmlFor="pdf-password">{texts.pdfPassword}</Label>
-                      <Input id="pdf-password" type="password" placeholder={texts.pdfPasswordPlaceholder} value={pdfProtectionConfig.password} onChange={(e) => setPdfProtectionConfig(prev => ({...prev, password: e.target.value}))} />
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {pages.length > 0 && (
-              <Card className="shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-xl"><Droplet className="mr-2 h-5 w-5 text-primary" /> {texts.watermarkSectionTitle}</CardTitle>
+          {pages.length === 0 ? (
+            // Initial View: Prominent Upload Area
+            <div className="md:col-span-3 flex flex-col items-center justify-center min-h-[calc(100vh-20rem)]">
+              <Card className="w-full max-w-lg shadow-xl">
+                <CardHeader className="text-center">
+                  <Upload className="h-16 w-16 text-primary mx-auto mb-4" />
+                  <CardTitle className="text-2xl font-bold">{texts.startEditingYourPdf}</CardTitle>
+                  <CardDescription>{texts.uploadLabel}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Label htmlFor="watermarkInput" className="mb-2 block text-sm font-medium">{texts.watermarkInputPlaceholder}</Label>
-                  <Input
-                    id="watermarkInput"
-                    type="text"
-                    placeholder={texts.watermarkInputPlaceholder}
-                    value={watermarkText}
-                    onChange={(e) => setWatermarkText(e.target.value)}
-                  />
-                </CardContent>
-              </Card>
-            )}
-
-            <Card className="shadow-lg">
-                <CardHeader>
-                    <CardTitle className="flex items-center text-xl"><Info className="mr-2 h-5 w-5 text-primary" /> {texts.tools}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                    <p className="text-sm text-muted-foreground">{texts.instSelect}</p>
-                    <p className="text-sm text-muted-foreground">{texts.instDrag}</p>
-                    <p className="text-sm text-muted-foreground">{texts.instZoom}</p>
-                     <Button onClick={handleDeletePages} variant="destructive" disabled={selectedPages.size === 0 || pages.length === 0} className="w-full mt-2">
-                        <Trash2 className="mr-2 h-4 w-4" /> {texts.deletePages}
-                    </Button>
-                </CardContent>
-            </Card>
-          </div>
-
-          <div className="md:col-span-2 space-y-6">
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center text-xl"><Upload className="mr-2 h-5 w-5 text-primary" /> {texts.fileOperations}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="pdfUploadInput" className="mb-2 block cursor-pointer text-sm font-medium">{texts.uploadLabel}</Label>
                   <div
-                    className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer"
+                    className="flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20"
                     onClick={() => pdfUploadRef.current?.click()}
                     onDragOver={commonDragEvents.onDragOver}
                     onDragLeave={commonDragEvents.onDragLeave}
                     onDrop={(e) => commonDragEvents.onDrop(e, (ev) => handlePdfUpload(ev as any))}
                   >
-                    <Upload className="h-10 w-10 text-muted-foreground mb-2" />
-                    <p className="text-sm text-muted-foreground text-center">{texts.dropFileHere}</p>
+                    <Upload className="h-12 w-12 text-muted-foreground mb-3" />
+                    <p className="text-md text-muted-foreground text-center">{texts.dropFileHere}</p>
                   </div>
                   <Input
                     type="file"
@@ -1165,82 +1051,210 @@ export default function PdfEditorHomepage() {
                     ref={pdfUploadRef}
                     className="hidden"
                   />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    <Button onClick={handleDownloadPdf} disabled={pages.length === 0 || isDownloading} className="w-full">
-                      {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                      {texts.downloadPdf}
-                    </Button>
-                     <Button onClick={handleDownloadTxt} disabled={!pdfDocumentProxy || isExtractingText} className="w-full">
-                      {isExtractingText ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
-                      {texts.downloadTxt}
-                    </Button>
-                    <Button
-                        onClick={handleConvertToWord}
-                        disabled={!uploadedPdfFile || isConvertingToWord || !isFirebaseSystemReady}
-                        className="w-full"
-                        title={!isFirebaseSystemReady ? firebaseConfigWarning : ""}
-                    >
-                        {isConvertingToWord ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileType className="mr-2 h-4 w-4" />}
-                        {texts.convertToWord}
-                    </Button>
-                </div>
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            // View after PDF is uploaded
+            <>
+              {/* Left Column: PDF Editing Tools */}
+              <div className="md:col-span-1 space-y-6">
+                <Card className="shadow-lg">
+                   <CardHeader>
+                     <CardTitle className="flex items-center text-xl"><MenuSquare className="mr-2 h-5 w-5 text-primary" /> {texts.pdfEditingTools}</CardTitle>
+                   </CardHeader>
+                </Card>
 
-                 {wordFileUrl && (
-                    <div className="mt-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded text-sm">
-                        <p>
-                        {texts.wordConvertSuccess}{' '}
-                        <a href={wordFileUrl} download target="_blank" rel="noopener noreferrer" className="font-semibold underline hover:text-green-800">
-                            {texts.downloadWordFile}
-                        </a>
+                <Card className="shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center text-lg"><Edit3 className="mr-2 h-5 w-5 text-primary" /> {texts.insertAreaTitle}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label htmlFor="insertPdfInput" className="mb-2 block cursor-pointer text-sm font-medium">{texts.selectFileToInsert}</Label>
+                      <div
+                          className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer"
+                          onClick={() => insertPdfRef.current?.click()}
+                          onDragOver={commonDragEvents.onDragOver}
+                          onDragLeave={commonDragEvents.onDragLeave}
+                          onDrop={(e) => commonDragEvents.onDrop(e, (ev) => handleInsertPdfFileSelected(ev as any))}
+                        >
+                          <Upload className="h-10 w-10 text-muted-foreground mb-2" />
+                          <p className="text-sm text-muted-foreground text-center">{texts.dropInsertFileHere}</p>
+                        </div>
+                      <Input
+                          type="file"
+                          id="insertPdfInput"
+                          accept="application/pdf"
+                          onChange={handleInsertPdfFileSelected}
+                          ref={insertPdfRef}
+                          className="hidden"
+                      />
+                    </div>
+                    <RadioGroup value={insertPosition} onValueChange={(value: 'before' | 'after') => setInsertPosition(value)} disabled={selectedPages.size === 0}>
+                      <Label className="font-medium mb-1 block">{texts.insertOptionsTitle}</Label>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="before" id="r-before" />
+                        <Label htmlFor="r-before" className="font-normal">{texts.insertBeforeLabel}</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="after" id="r-after" />
+                        <Label htmlFor="r-after" className="font-normal">{texts.insertAfterLabel}</Label>
+                      </div>
+                    </RadioGroup>
+                    <p className="text-xs text-muted-foreground">{selectedPages.size === 0 && pages.length > 0 ? texts.insertConfirmDescription.split('.')[0] + '.' : ''}</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center text-lg"><FileDigit className="mr-2 h-5 w-5 text-primary" /> {texts.pageNumberingSectionTitle}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <Switch id="enablePageNumbering" checked={pageNumberingConfig.enabled} onCheckedChange={(checked) => setPageNumberingConfig(prev => ({...prev, enabled: checked}))} />
+                      <Label htmlFor="enablePageNumbering">{texts.enablePageNumbering}</Label>
+                    </div>
+                    {pageNumberingConfig.enabled && (
+                      <>
+                        <div>
+                          <Label htmlFor="pn-position">{texts.pageNumberPosition}</Label>
+                          <Select value={pageNumberingConfig.position} onValueChange={(value: PageNumberPosition) => setPageNumberingConfig(prev => ({...prev, position: value}))}>
+                            <SelectTrigger id="pn-position"><SelectValue placeholder={texts.pageNumberPosition} /></SelectTrigger>
+                            <SelectContent>
+                              {pageNumberPositions.map(pos => <SelectItem key={pos.value} value={pos.value}>{texts[pos.labelKey]}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div><Label htmlFor="pn-start">{texts.pageNumberStart}</Label><Input id="pn-start" type="number" value={pageNumberingConfig.start} onChange={(e) => setPageNumberingConfig(prev => ({...prev, start: parseInt(e.target.value,10) || 1}))} min="1" /></div>
+                        <div><Label htmlFor="pn-fontSize">{texts.pageNumberFontSize}</Label><Input id="pn-fontSize" type="number" value={pageNumberingConfig.fontSize} onChange={(e) => setPageNumberingConfig(prev => ({...prev, fontSize: parseInt(e.target.value,10) || 12}))} min="6" /></div>
+                        <div><Label htmlFor="pn-margin">{texts.pageNumberMargin}</Label><Input id="pn-margin" type="number" value={pageNumberingConfig.margin} onChange={(e) => setPageNumberingConfig(prev => ({...prev, margin: parseInt(e.target.value,10) || 20}))} min="0" /></div>
+                        <div><Label htmlFor="pn-format">{texts.pageNumberFormat}</Label><Input id="pn-format" type="text" value={pageNumberingConfig.format} placeholder={texts.pageNumberFormatPlaceholder} onChange={(e) => setPageNumberingConfig(prev => ({...prev, format: e.target.value}))} /></div>
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+                
+                <Card className="shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center text-lg"><Lock className="mr-2 h-5 w-5 text-primary" /> {texts.protectPdfSectionTitle}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <Switch id="enablePdfProtection" checked={pdfProtectionConfig.enabled} onCheckedChange={(checked) => setPdfProtectionConfig(prev => ({...prev, enabled: checked}))} />
+                      <Label htmlFor="enablePdfProtection">{texts.enablePdfProtection}</Label>
+                    </div>
+                    {pdfProtectionConfig.enabled && (
+                      <div>
+                        <Label htmlFor="pdf-password">{texts.pdfPassword}</Label>
+                        <Input id="pdf-password" type="password" placeholder={texts.pdfPasswordPlaceholder} value={pdfProtectionConfig.password} onChange={(e) => setPdfProtectionConfig(prev => ({...prev, password: e.target.value}))} />
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card className="shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center text-lg"><Droplet className="mr-2 h-5 w-5 text-primary" /> {texts.watermarkSectionTitle}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Label htmlFor="watermarkInput" className="mb-2 block text-sm font-medium">{texts.watermarkInputPlaceholder}</Label>
+                    <Input
+                      id="watermarkInput"
+                      type="text"
+                      placeholder={texts.watermarkInputPlaceholder}
+                      value={watermarkText}
+                      onChange={(e) => setWatermarkText(e.target.value)}
+                    />
+                  </CardContent>
+                </Card>
+
+                <Card className="shadow-lg">
+                    <CardHeader>
+                        <CardTitle className="flex items-center text-lg"><Info className="mr-2 h-5 w-5 text-primary" /> {texts.tools}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                        <p className="text-sm text-muted-foreground">{texts.instSelect}</p>
+                        <p className="text-sm text-muted-foreground">{texts.instDrag}</p>
+                        <p className="text-sm text-muted-foreground">{texts.instZoom}</p>
+                        <Button onClick={handleDeletePages} variant="destructive" disabled={selectedPages.size === 0 || pages.length === 0} className="w-full mt-2">
+                            <Trash2 className="mr-2 h-4 w-4" /> {texts.deletePages}
+                        </Button>
+                    </CardContent>
+                </Card>
+              </div>
+
+              {/* Right Column: Actions and Previews */}
+              <div className="md:col-span-2 space-y-6">
+                <Card className="shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center text-xl"><Download className="mr-2 h-5 w-5 text-primary" /> {texts.downloadAndConvertTitle}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <Button onClick={handleDownloadPdf} disabled={pages.length === 0 || isDownloading} className="w-full">
+                          {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                          {texts.downloadPdf}
+                        </Button>
+                        <Button onClick={handleDownloadTxt} disabled={!pdfDocumentProxy || isExtractingText} className="w-full">
+                          {isExtractingText ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+                          {texts.downloadTxt}
+                        </Button>
+                        <Button
+                            onClick={handleConvertToWord}
+                            disabled={!uploadedPdfFile || isConvertingToWord || !isFirebaseSystemReady}
+                            className="w-full"
+                            title={!isFirebaseSystemReady ? firebaseConfigWarning : ""}
+                        >
+                            {isConvertingToWord ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileType className="mr-2 h-4 w-4" />}
+                            {texts.convertToWord}
+                        </Button>
+                    </div>
+
+                    {wordFileUrl && (
+                        <div className="mt-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded text-sm">
+                            <p>
+                            {texts.wordConvertSuccess}{' '}
+                            <a href={wordFileUrl} download target="_blank" rel="noopener noreferrer" className="font-semibold underline hover:text-green-800">
+                                {texts.downloadWordFile}
+                            </a>
+                            </p>
+                        </div>
+                    )}
+                    {wordConversionError && (
+                        <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+                            <p>{wordConversionError}</p>
+                        </div>
+                    )}
+                    {!isFirebaseSystemReady && firebaseConfigWarning && (
+                        <p className="text-xs text-amber-600 mt-2">
+                          {firebaseConfigWarning}
                         </p>
-                    </div>
-                )}
-                {wordConversionError && (
-                    <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
-                        <p>{wordConversionError}</p>
-                    </div>
-                )}
+                    )}
+                  </CardContent>
+                </Card>
 
-                 {!isFirebaseSystemReady && firebaseConfigWarning && (
-                    <p className="text-xs text-amber-600 mt-2">
-                      {firebaseConfigWarning}
-                    </p>
-                 )}
-              </CardContent>
-            </Card>
-
-            {pages.length > 0 ? (
-              <Card className="shadow-lg min-h-[calc(100vh-20rem)] md:min-h-[calc(100vh-18rem)]">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-xl"><Shuffle className="mr-2 h-5 w-5 text-primary" /> {texts.pageManagement}</CardTitle>
-                  <CardDescription> {pages.length} {pages.length === 1 ? texts.page.toLowerCase() : (currentLanguage === 'zh' ? texts.page.toLowerCase() : texts.page.toLowerCase() + 's')} 加載完成。 {selectedPages.size > 0 ? `${texts.page} ${Array.from(selectedPages)[0]+1} 已選取。` : ''} </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div
-                    id="previewContainer"
-                    ref={previewContainerRef}
-                    className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-1 bg-muted/20 rounded-md min-h-[200px]"
-                  >
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="shadow-lg min-h-[calc(100vh-20rem)] md:min-h-[calc(100vh-18rem)] flex flex-col items-center justify-center bg-muted/30">
-                <CardContent className="text-center">
-                  <Search className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-xl font-semibold text-muted-foreground">{texts.pageTitle}</p>
-                  <p className="text-muted-foreground">{texts.uploadPdfFirst.replace('此功能', '編輯')}</p>
-                  <Button onClick={() => pdfUploadRef.current?.click()} className="mt-4">
-                    <Upload className="mr-2 h-4 w-4"/> {texts.uploadLabel.split('：')[0]}
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+                <Card className="shadow-lg min-h-[calc(100vh-20rem)] md:min-h-[calc(100vh-18rem)]">
+                  <CardHeader>
+                    <CardTitle className="flex items-center text-xl"><Shuffle className="mr-2 h-5 w-5 text-primary" /> {texts.pageManagement}</CardTitle>
+                    <CardDescription> {pages.length} {pages.length === 1 ? texts.page.toLowerCase() : (currentLanguage === 'zh' ? texts.pagesLoaded : texts.pagesLoaded.replace('pages', 'page'))} {selectedPages.size > 0 ? `${texts.page} ${Array.from(selectedPages)[0]+1} ${currentLanguage === 'zh' ? texts.pageSelected : texts.pageSelected.replace('page', '')}` : ''} </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div
+                      id="previewContainer"
+                      ref={previewContainerRef}
+                      className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-1 bg-muted/20 rounded-md min-h-[200px]"
+                    >
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
+    

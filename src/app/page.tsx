@@ -19,16 +19,18 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, FileType } from 'lucide-react';
 
-import { storage } from '@/lib/firebase'; // Firebase SDK for storage
+import { storage, functions as firebaseFunctions } from '@/lib/firebase'; // Firebase SDK for storage and functions
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { httpsCallable } from 'firebase/functions';
 
 
 if (typeof window !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 }
 
+// 確保這裡的鍵名與 .env 檔案中的完全一致
 const firebaseConfigKeys = [
-  'NEXT_PUBLIC_FIREBASE_API_KEY',
+  'NEXT_PUBLIC_FIREBASE_API_KEY', // 使用 I
   'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN',
   'NEXT_PUBLIC_FIREBASE_PROJECT_ID',
   'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET',
@@ -36,11 +38,12 @@ const firebaseConfigKeys = [
   'NEXT_PUBLIC_FIREBASE_APP_ID',
 ];
 
-// This text is generated at build time (or server-side for initial load)
-// For client-side updates, the useEffect will handle the dynamic message.
 let initialMissingFirebaseKeysText = '';
 if (typeof process !== 'undefined' && process.env) {
-    const missingKeys = firebaseConfigKeys.filter(key => !process.env[key]);
+    const missingKeys = firebaseConfigKeys.filter(key => {
+        const envVar = process.env[key];
+        return !envVar || envVar.trim() === '';
+    });
     if (missingKeys.length > 0) {
         initialMissingFirebaseKeysText = missingKeys.join(', ');
     }
@@ -202,15 +205,13 @@ export default function PdfEditorHomepage() {
   const [wordConversionError, setWordConversionError] = useState<string | null>(null);
   const [showWordLimitModal, setShowWordLimitModal] = useState(false);
   
-  const [isFirebaseConfigured, setIsFirebaseConfigured] = useState(true); // Assume configured, then check
-  const [firebaseMissingKeysMessage, setFirebaseMissingKeysMessage] = useState('');
+  const [isFirebaseConfigured, setIsFirebaseConfigured] = useState(true);
+  const [firebaseMissingKeysMessage, setFirebaseMissingKeysMessage] = useState(initialMissingFirebaseKeysText);
 
 
   useEffect(() => {
-    // Client-side check for Firebase config after component mounts
-    // This ensures process.env is accessed on the client where NEXT_PUBLIC_ vars are available
     let missingKeysFound: string[] = [];
-    if (typeof window !== 'undefined') { // Ensure this runs only on client
+    if (typeof window !== 'undefined') {
         missingKeysFound = firebaseConfigKeys.filter(key => {
             const envVar = process.env[key];
             return !envVar || envVar.trim() === '';
@@ -223,15 +224,21 @@ export default function PdfEditorHomepage() {
     const currentMissingKeysText = missingKeysFound.join(', ');
     setFirebaseMissingKeysMessage(currentMissingKeysText);
 
-    // Update general texts object with potentially dynamic firebaseNotConfigured message
+  }, []); // 初始檢查
+
+
+  useEffect(() => {
+    // 更新語言相關的文本，特別是 firebaseNotConfigured 訊息
+     const messageKey = isFirebaseConfigured ? '' : (firebaseMissingKeysMessage || 'Please check configuration.');
+     const missingText = isFirebaseConfigured ? '' : `缺少：${messageKey}`;
+
     setTexts(prev => ({
         ...translations[currentLanguage],
         firebaseNotConfigured: currentLanguage === 'zh' ? 
-            `Firebase 前端 SDK 設定不完整。請確保所有 Firebase 環境變數 (NEXT_PUBLIC_FIREBASE_API_KEY 等) 都已在您的 .env 檔案中設定。${configured ? '' : `缺少：${currentMissingKeysText || '請檢查設定。'}`}` :
-            `Firebase Frontend SDK is not fully configured. Please ensure all Firebase environment variables (NEXT_PUBLIC_FIREBASE_API_KEY, etc.) are set in your .env file. ${configured ? '' : `Missing: ${currentMissingKeysText || 'Please check configuration.'}`}`
+            `Firebase 前端 SDK 設定不完整。請確保所有 Firebase 環境變數 (NEXT_PUBLIC_FIREBASE_API_KEY 等) 都已在您的 .env 檔案中設定。${missingText}` :
+            `Firebase Frontend SDK is not fully configured. Please ensure all Firebase environment variables (NEXT_PUBLIC_FIREBASE_API_KEY, etc.) are set in your .env file. ${isFirebaseConfigured ? '' : `Missing: ${messageKey}`}`
     }));
-
-  }, [currentLanguage]); // Rerun if language changes to update the message text correctly
+  }, [currentLanguage, isFirebaseConfigured, firebaseMissingKeysMessage]);
 
 
   const previewContainerRef = useRef<HTMLDivElement>(null);
@@ -674,7 +681,7 @@ export default function PdfEditorHomepage() {
       toast({ title: texts.wordConvertError, description: texts.noPdfToConvert, variant: "destructive" });
       return;
     }
-    if (!isFirebaseConfigured) { // Check the state variable
+    if (!isFirebaseConfigured) {
         toast({ title: texts.wordConvertError, description: texts.firebaseNotConfigured, variant: "destructive" });
         return;
     }
@@ -706,7 +713,7 @@ export default function PdfEditorHomepage() {
       await uploadBytes(fileRef, uploadedPdfFile);
       const pdfStorageUrl = await getDownloadURL(fileRef);
 
-      // 🛑 重要：確保這個 URL 與您 Firebase Function 部署後的 URL 一致
+      // 您的 Firebase Function URL
       const functionUrl = `https://us-central1-sitemate-otkpt.cloudfunctions.net/convertPdfToWord`; 
 
       const response = await fetch(functionUrl, {
@@ -714,7 +721,7 @@ export default function PdfEditorHomepage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ fileUrl: pdfStorageUrl }), // 後端期望的是 fileUrl
+        body: JSON.stringify({ fileUrl: pdfStorageUrl }),
       });
 
       if (!response.ok) {
@@ -1012,7 +1019,7 @@ export default function PdfEditorHomepage() {
                         onClick={handleConvertToWord} 
                         disabled={!uploadedPdfFile || isConvertingToWord || !isFirebaseConfigured} 
                         className="w-full"
-                        title={!isFirebaseConfigured ? (texts.firebaseNotConfigured.includes("缺少") ? texts.firebaseNotConfigured : `${texts.firebaseNotConfigured} Missing: ${firebaseMissingKeysMessage || 'Please check configuration.'}`) : ""}
+                        title={!isFirebaseConfigured ? texts.firebaseNotConfigured : ""}
                     >
                         {isConvertingToWord ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileType className="mr-2 h-4 w-4" />}
                         {texts.convertToWord}
@@ -1035,7 +1042,7 @@ export default function PdfEditorHomepage() {
                 )}
                  {!isFirebaseConfigured && (
                     <p className="text-xs text-amber-600 mt-2">
-                      {texts.firebaseNotConfigured.includes("缺少") ? texts.firebaseNotConfigured : `${texts.firebaseNotConfigured} Missing: ${firebaseMissingKeysMessage || 'Please check configuration.'}`}
+                      {texts.firebaseNotConfigured}
                     </p>
                  )}
               </CardContent>
@@ -1074,6 +1081,8 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
+    
+
     
 
     

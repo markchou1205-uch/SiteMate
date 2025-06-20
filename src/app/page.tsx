@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription as ShadDialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription as ShadDialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter } from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -432,29 +432,35 @@ export default function PdfEditorHomepage() {
   }, [pages, selectedPages, renderPagePreviews]);
 
 
-  useEffect(() => {
+ useEffect(() => {
     if (zoomedPageData && zoomCanvasRef.current) {
       const canvas = zoomCanvasRef.current;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
       const sourceCanvas = zoomedPageData.canvas;
-      
       const baseWidth = sourceCanvas.width;
       const baseHeight = sourceCanvas.height;
 
+      // Determine canvas dimensions based on rotation
       if (currentRotation % 180 !== 0) {
-        canvas.width = baseHeight;
-        canvas.height = baseWidth;
+        canvas.width = baseHeight; // Rotated: width becomes height
+        canvas.height = baseWidth;  // Rotated: height becomes width
       } else {
-        canvas.width = baseWidth;
+        canvas.width = baseWidth;  // Not rotated or 180 deg: original dimensions
         canvas.height = baseHeight;
       }
       
       ctx.save();
+      // Clear with a transparent background (or any desired background)
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Translate to the center of the *new* canvas dimensions
       ctx.translate(canvas.width / 2, canvas.height / 2);
       ctx.rotate((currentRotation * Math.PI) / 180);
+      
+      // Draw the source image centered
+      // The source image's original dimensions are baseWidth, baseHeight
       ctx.drawImage(sourceCanvas, -baseWidth / 2, -baseHeight / 2, baseWidth, baseHeight);
       ctx.restore();
     }
@@ -677,7 +683,7 @@ export default function PdfEditorHomepage() {
     }
 
     setIsExtractingText(true);
-    setLoadingMessage(texts.extractingText)
+    setLoadingMessage(texts.extractingText);
     try {
       let fullText = '';
       for (let i = 1; i <= pdfDocumentProxy.numPages; i++) {
@@ -930,17 +936,15 @@ export default function PdfEditorHomepage() {
       )}
 
       <Dialog open={!!zoomedPageData} onOpenChange={(isOpen) => { if (!isOpen) setZoomedPageData(null); }}>
-        <DialogContent
-          className="max-w-3xl w-[90vw] h-[90vh] p-0 flex flex-col"
-          aria-labelledby="zoom-dialog-title"
-          aria-describedby="zoom-dialog-description"
-        >
-          <DialogHeader className="p-4 border-b">
-            <DialogTitle id="zoom-dialog-title">{texts.previewOf} {zoomedPageData ? `${texts.page} ${zoomedPageData.index + 1}` : ''}</DialogTitle>
+        <DialogContent className="max-w-3xl w-[90vw] h-[90vh] p-0 flex flex-col">
+          <div className="p-4 border-b flex flex-col space-y-1.5 text-center sm:text-left">
+            <DialogTitle id="zoom-dialog-title">
+                {texts.previewOf} {zoomedPageData ? `${texts.page} ${zoomedPageData.index + 1}` : ''}
+            </DialogTitle>
             <ShadDialogDescription id="zoom-dialog-description">
               {texts.zoomDialogDescription}
             </ShadDialogDescription>
-          </DialogHeader>
+          </div>
           <div className="flex-grow overflow-auto flex items-center justify-center p-4 bg-muted/40">
             <canvas ref={zoomCanvasRef} style={{ willReadFrequently: true } as any} className="max-w-full max-h-full object-contain shadow-lg"></canvas>
           </div>
@@ -1275,5 +1279,3 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
-
-    

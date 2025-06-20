@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, FileType, FileDigit, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare } from 'lucide-react';
+import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, FileType, FileDigit, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2 } from 'lucide-react';
 
 import { storage, functions as firebaseFunctions, app as firebaseApp } from '@/lib/firebase'; // Firebase SDK
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -39,6 +39,7 @@ interface PageObject {
 type WatermarkPosition =
   | 'center'
   | 'top-left' | 'top-center' | 'top-right'
+  | 'middle-left' | 'middle-right'
   | 'bottom-left' | 'bottom-center' | 'bottom-right'
   | 'diagonal-tl-br' | 'diagonal-bl-tr';
 
@@ -124,6 +125,8 @@ const translations = {
         bottomLeft: 'Bottom Left',
         bottomCenter: 'Bottom Center',
         bottomRight: 'Bottom Right',
+        middleLeft: 'Middle Left',
+        middleRight: 'Middle Right',
         topLeft: 'Top Left',
         topCenter: 'Top Center',
         topRight: 'Top Right',
@@ -138,6 +141,22 @@ const translations = {
         featureProtect: 'Protect',
         featureConvert: 'Convert',
         accordionDocEnhanceProtect: 'Document Enhancements & Protection',
+        imageToPdfTitle: 'Image to PDF',
+        selectImagesLabel: 'Select image(s):',
+        dropImagesHere: 'Drop image(s) here or click to upload',
+        convertToPdfButton: 'Convert to PDF',
+        generatingPdfFromImages: 'Generating PDF from images...',
+        imageToPdfSuccess: 'PDF generated from images successfully!',
+        imageToPdfError: 'Error generating PDF from images',
+        noImagesSelected: 'No images selected to convert.',
+        pdfCompressionTitle: 'PDF Compression',
+        selectPdfToCompressLabel: 'Select PDF to compress:',
+        dropPdfToCompressHere: 'Drop PDF here or click to select for compression',
+        compressPdfButton: 'Compress PDF',
+        compressingPdf: 'Compressing PDF...',
+        pdfCompressionSuccess: 'PDF processed successfully!',
+        pdfCompressionError: 'Error processing PDF',
+        pdfCompressionNote: 'Note: This uses pdf-lib to re-save the PDF. File size reduction varies. useObjectStreams:false is applied.',
     },
     zh: {
         pageTitle: 'DocuPilot 文件助手',
@@ -219,6 +238,8 @@ const translations = {
         bottomLeft: '左下',
         bottomCenter: '中下',
         bottomRight: '右下',
+        middleLeft: '中左',
+        middleRight: '中右',
         topLeft: '左上',
         topCenter: '中上',
         topRight: '右上',
@@ -232,7 +253,23 @@ const translations = {
         featurePageNum: '頁碼',
         featureProtect: '保護',
         featureConvert: '轉換',
-        accordionDocEnhanceProtect: '文件增強與保護',
+        accordionDocEnhanceProtect: '文件增強与保護',
+        imageToPdfTitle: '圖片轉 PDF',
+        selectImagesLabel: '選擇圖片檔案：',
+        dropImagesHere: '拖放圖片至此或點擊上傳',
+        convertToPdfButton: '轉換為 PDF',
+        generatingPdfFromImages: '正在從圖片產生 PDF...',
+        imageToPdfSuccess: '從圖片產生 PDF 成功！',
+        imageToPdfError: '從圖片產生 PDF 時發生錯誤',
+        noImagesSelected: '尚未選取要轉換的圖片。',
+        pdfCompressionTitle: 'PDF 壓縮',
+        selectPdfToCompressLabel: '選擇要壓縮的 PDF：',
+        dropPdfToCompressHere: '拖放 PDF 至此或點擊選擇以壓縮',
+        compressPdfButton: '壓縮 PDF',
+        compressingPdf: '正在壓縮 PDF...',
+        pdfCompressionSuccess: 'PDF 處理成功！',
+        pdfCompressionError: '處理 PDF 時發生錯誤',
+        pdfCompressionNote: '注意：此功能使用 pdf-lib 重新儲存 PDF。檔案大小縮減效果不一。已套用 useObjectStreams:false。',
     }
 };
 
@@ -252,14 +289,16 @@ const pageNumberPositions: {value: PageNumberPosition, labelKey: keyof typeof tr
 
 const watermarkPositions: { value: WatermarkPosition; labelKey: keyof typeof translations.en }[] = [
     { value: 'diagonal-tl-br', labelKey: 'watermarkDiagonalTopLeftBottomRight' },
+    { value: 'diagonal-bl-tr', labelKey: 'watermarkDiagonalBottomLeftTopRight' },
     { value: 'center', labelKey: 'watermarkCenter' },
     { value: 'top-left', labelKey: 'topLeft' },
     { value: 'top-center', labelKey: 'topCenter' },
     { value: 'top-right', labelKey: 'topRight' },
+    { value: 'middle-left', labelKey: 'middleLeft'},
+    { value: 'middle-right', labelKey: 'middleRight'},
     { value: 'bottom-left', labelKey: 'bottomLeft' },
     { value: 'bottom-center', labelKey: 'bottomCenter' },
     { value: 'bottom-right', labelKey: 'bottomRight' },
-    { value: 'diagonal-bl-tr', labelKey: 'watermarkDiagonalBottomLeftTopRight' },
 ];
 
 
@@ -271,7 +310,7 @@ export default function PdfEditorHomepage() {
   const [selectedPageIds, setSelectedPageIds] = useState<Set<string>>(new Set());
   
   const [zoomedPageData, setZoomedPageData] = useState<{ page: PageObject, index: number } | null>(null);
-  const [currentModalRotation, setCurrentModalRotation] = useState(0); // Rotation within the modal
+  const [currentModalRotation, setCurrentModalRotation] = useState(0); 
 
   const [currentLanguage, setCurrentLanguage] = useState<'en' | 'zh'>('zh');
   const [texts, setTexts] = useState(translations.zh);
@@ -323,6 +362,16 @@ export default function PdfEditorHomepage() {
   const pdfUploadRef = useRef<HTMLInputElement>(null);
   const insertPdfRef = useRef<HTMLInputElement>(null);
   const sortableInstanceRef = useRef<Sortable | null>(null);
+
+  // State for Image to PDF feature
+  const [imageFiles, setImageFiles] = useState<FileList | null>(null);
+  const imageToPdfUploadRef = useRef<HTMLInputElement>(null);
+  const [isConvertingImagesToPdf, setIsConvertingImagesToPdf] = useState(false);
+
+  // State for PDF Compression feature
+  const [pdfToCompress, setPdfToCompress] = useState<File | null>(null);
+  const pdfCompressUploadRef = useRef<HTMLInputElement>(null);
+  const [isCompressingPdf, setIsCompressingPdf] = useState(false);
 
 
   useEffect(() => {
@@ -403,12 +452,12 @@ export default function PdfEditorHomepage() {
       sortableInstanceRef.current = null;
     }
 
-    previewContainerRef.current.innerHTML = '';
+    previewContainerRef.current.innerHTML = ''; // Clear existing previews
 
     pageObjects.forEach((pageObj, index) => {
       const wrapper = document.createElement('div');
       wrapper.className = `page-preview-wrapper p-2 border-2 rounded-lg cursor-pointer transition-all bg-card hover:border-primary ${selectedPageIds.has(pageObj.id) ? 'border-primary ring-2 ring-primary' : 'border-transparent'}`;
-      wrapper.dataset.id = pageObj.id; // Use pageObj.id
+      wrapper.dataset.id = pageObj.id;
       wrapper.dataset.index = index.toString();
 
 
@@ -420,27 +469,27 @@ export default function PdfEditorHomepage() {
       const rotation = pageObj.rotation;
 
       const rad = rotation * Math.PI / 180;
-      const absCos = Math.abs(Math.cos(rad));
-      const absSin = Math.abs(Math.sin(rad));
       
-      const rotatedSourceWidth = sourceCanvas.width * absCos + sourceCanvas.height * absSin;
-      const rotatedSourceHeight = sourceCanvas.width * absSin + sourceCanvas.height * absCos;
+      let rotatedSourceWidth, rotatedSourceHeight;
+      if (rotation % 180 !== 0) { // 90 or 270 degrees
+        rotatedSourceWidth = sourceCanvas.height;
+        rotatedSourceHeight = sourceCanvas.width;
+      } else { // 0 or 180 degrees
+        rotatedSourceWidth = sourceCanvas.width;
+        rotatedSourceHeight = sourceCanvas.height;
+      }
       
       const aspectRatio = rotatedSourceWidth / rotatedSourceHeight;
-      const displayWidth = 120; // Target display width for thumbnail
+      const displayWidth = 120; 
       const displayHeight = displayWidth / aspectRatio;
 
-      previewDisplayCanvas.width = rotatedSourceWidth; // Buffer matches rotated source
+      previewDisplayCanvas.width = rotatedSourceWidth; 
       previewDisplayCanvas.height = rotatedSourceHeight;
 
       previewCtx.translate(previewDisplayCanvas.width / 2, previewDisplayCanvas.height / 2);
       previewCtx.rotate(rad);
       previewCtx.drawImage(sourceCanvas, -sourceCanvas.width / 2, -sourceCanvas.height / 2, sourceCanvas.width, sourceCanvas.height);
-      previewCtx.rotate(-rad); // Rotate back
-      previewCtx.translate(-previewDisplayCanvas.width / 2, -previewDisplayCanvas.height / 2); // Translate back
-
-
-      // Style the canvas for display
+      
       previewDisplayCanvas.style.width = `${displayWidth}px`;
       previewDisplayCanvas.style.height = `${displayHeight}px`;
       previewDisplayCanvas.className = "rounded-md shadow-md";
@@ -462,7 +511,7 @@ export default function PdfEditorHomepage() {
 
       wrapper.addEventListener('dblclick', () => {
         setZoomedPageData({ page: pageObj, index });
-        setCurrentModalRotation(pageObj.rotation); // Load saved rotation
+        setCurrentModalRotation(pageObj.rotation); 
         setZoomLevel(1);
         setIsZoomModalOpen(true);
       });
@@ -482,10 +531,6 @@ export default function PdfEditorHomepage() {
           const [movedItem] = reorderedPageObjects.splice(evt.oldIndex, 1);
           reorderedPageObjects.splice(evt.newIndex, 0, movedItem);
           setPageObjects(reorderedPageObjects);
-
-          // Update selected page ID if it was moved (its index changes, but ID remains)
-          // No need to update selectedPageIds if it stores IDs, only if it stored indices.
-          // If a single page is selected, its visual position changes, but its ID in selectedPageIds is still correct.
         }
       });
     }
@@ -494,49 +539,67 @@ export default function PdfEditorHomepage() {
 
   useEffect(() => {
     renderPagePreviews();
-  }, [pageObjects, selectedPageIds, renderPagePreviews]); // renderPagePreviews itself depends on pageObjects and selectedPageIds
+  }, [pageObjects, selectedPageIds, renderPagePreviews]);
 
-  // Effect for drawing on the zoom canvas
+
+  const ZOOM_SPEED = 0.1; 
+  const MIN_ZOOM = 0.1;   
+  const MAX_ZOOM = 5;   
+
+  const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+    if (!isZoomModalOpen || !zoomedPageData || !zoomScrollContainerRef.current?.contains(event.target as Node) ) return; 
+    event.preventDefault(); 
+    
+    const zoomAmount = -event.deltaY * ZOOM_SPEED * 0.01; 
+    
+    setZoomLevel(prevZoomLevel => {
+      let newZoomLevel = prevZoomLevel + zoomAmount;
+      newZoomLevel = Math.max(MIN_ZOOM, Math.min(newZoomLevel, MAX_ZOOM)); 
+      return newZoomLevel;
+    });
+  };
+
   useEffect(() => {
     if (isZoomModalOpen && zoomedPageData && zoomCanvasRef.current) {
-      const canvas = zoomCanvasRef.current;
+      const canvas = zoomCanvasRef.current; // This is the target canvas
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
   
-      const sourceCanvas = zoomedPageData.page.sourceCanvas; // Original unrotated canvas
+      const sourceCanvas = zoomedPageData.page.sourceCanvas; // This is the original, unzoomed page canvas
       const srcWidth = sourceCanvas.width;
       const srcHeight = sourceCanvas.height;
   
-      // Determine target buffer dimensions based on currentModalRotation and zoomLevel
-      let targetBufferWidth: number;
-      let targetBufferHeight: number;
-  
-      const rad = currentModalRotation * Math.PI / 180;
-      if (currentModalRotation % 180 !== 0) { // 90 or 270 degrees (swapped)
-        targetBufferWidth = srcHeight * zoomLevel;
-        targetBufferHeight = srcWidth * zoomLevel;
-      } else { // 0 or 180 degrees (normal)
-        targetBufferWidth = srcWidth * zoomLevel;
-        targetBufferHeight = srcHeight * zoomLevel;
+      // Calculate the dimensions of the drawing buffer based on original size, rotation, and zoom
+      let bufferWidth, bufferHeight;
+      if (currentModalRotation % 180 !== 0) { // 90 or 270 degrees
+        bufferWidth = srcHeight * zoomLevel;
+        bufferHeight = srcWidth * zoomLevel;
+      } else { // 0 or 180 degrees
+        bufferWidth = srcWidth * zoomLevel;
+        bufferHeight = srcHeight * zoomLevel;
       }
       
-      canvas.width = targetBufferWidth;
-      canvas.height = targetBufferHeight;
-  
+      canvas.width = bufferWidth;
+      canvas.height = bufferHeight;
+      
       ctx.save();
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-  
+      ctx.clearRect(0, 0, canvas.width, canvas.height); 
       ctx.translate(canvas.width / 2, canvas.height / 2);
-      ctx.rotate(rad);
+      ctx.rotate(currentModalRotation * Math.PI / 180);
   
-      // Draw the sourceCanvas, scaled to fill the target canvas's dimensions after rotation
-      // The source needs to be drawn as if its center is (0,0) in the rotated context
+      // Draw the sourceCanvas scaled to fill the entire buffer
+      // The source image itself needs to be considered as if it's scaled by zoomLevel
+      // then drawn into the center of the (already scaled) buffer.
+      // For centering, draw from - (scaled source width / 2)
+      const scaledSourceDrawWidth = srcWidth * zoomLevel;
+      const scaledSourceDrawHeight = srcHeight * zoomLevel;
+
       ctx.drawImage(
         sourceCanvas,
-        -srcWidth * zoomLevel / 2, 
-        -srcHeight * zoomLevel / 2,
-        srcWidth * zoomLevel,       
-        srcHeight * zoomLevel      
+        -scaledSourceDrawWidth / 2, 
+        -scaledSourceDrawHeight / 2,
+        scaledSourceDrawWidth,       
+        scaledSourceDrawHeight      
       );
       
       ctx.restore(); 
@@ -651,7 +714,7 @@ export default function PdfEditorHomepage() {
     try {
       await new Promise(resolve => setTimeout(resolve, 100)); 
       const pdfDocOut = await PDFLibDocument.create();
-      const helveticaFont = await pdfDocOut.embedFont(StandardFonts.Helvetica); // For watermark
+      const helveticaFont = await pdfDocOut.embedFont(StandardFonts.Helvetica);
 
       for (const pageObj of pageObjects) {
         const { sourceCanvas, rotation } = pageObj;
@@ -661,9 +724,7 @@ export default function PdfEditorHomepage() {
         if (!tempCtx) continue;
 
         const rad = rotation * Math.PI / 180;
-        const absCos = Math.abs(Math.cos(rad));
-        const absSin = Math.abs(Math.sin(rad));
-
+        
         if (rotation % 180 !== 0) { // Rotated 90 or 270
           tempRenderCanvas.width = sourceCanvas.height;
           tempRenderCanvas.height = sourceCanvas.width;
@@ -682,53 +743,73 @@ export default function PdfEditorHomepage() {
         const pdfLibPage = pdfDocOut.addPage([tempRenderCanvas.width, tempRenderCanvas.height]);
         pdfLibPage.drawImage(pngImage, { x: 0, y: 0, width: tempRenderCanvas.width, height: tempRenderCanvas.height });
         
-        // Add watermark if text is provided
         if (watermarkText.trim() !== '') {
             const { width: pageWidth, height: pageHeight } = pdfLibPage.getSize();
-            const watermarkFontSize = Math.min(pageWidth, pageHeight) / 10; // Dynamic font size
+            const watermarkFontSize = Math.min(pageWidth, pageHeight) / 15; 
             const textWidth = helveticaFont.widthOfTextAtSize(watermarkText, watermarkFontSize);
-            const textHeight = helveticaFont.heightAtSize(watermarkFontSize);
+            const textHeight = helveticaFont.heightAtSize(watermarkFontSize); 
+            const textAscent = helveticaFont.ascender / helveticaFont.unitsPerEm * watermarkFontSize;
             
             let wX, wY, wRotationDegrees = 0;
 
             switch (watermarkPosition) {
-                case 'top-left': wX = 20; wY = pageHeight - 20 - textHeight; break;
-                case 'top-center': wX = pageWidth / 2 - textWidth / 2; wY = pageHeight - 20 - textHeight; break;
-                case 'top-right': wX = pageWidth - 20 - textWidth; wY = pageHeight - 20 - textHeight; break;
-                case 'center': wX = pageWidth / 2 - textWidth / 2; wY = pageHeight / 2 - textHeight / 2 + (helveticaFont.ascender / helveticaFont.unitsPerEm * watermarkFontSize); break;
-                case 'bottom-left': wX = 20; wY = 20 + (helveticaFont.descender / helveticaFont.unitsPerEm * watermarkFontSize); break;
-                case 'bottom-center': wX = pageWidth / 2 - textWidth / 2; wY = 20 + (helveticaFont.descender / helveticaFont.unitsPerEm * watermarkFontSize); break;
-                case 'bottom-right': wX = pageWidth - 20 - textWidth; wY = 20 + (helveticaFont.descender / helveticaFont.unitsPerEm * watermarkFontSize); break;
+                case 'top-left': wX = 20; wY = pageHeight - 20 - textAscent; break;
+                case 'top-center': wX = pageWidth / 2 - textWidth / 2; wY = pageHeight - 20 - textAscent; break;
+                case 'top-right': wX = pageWidth - 20 - textWidth; wY = pageHeight - 20 - textAscent; break;
+                case 'middle-left': wX = 20; wY = pageHeight / 2 - textHeight / 2 + textAscent; break;
+                case 'center': wX = pageWidth / 2 - textWidth / 2; wY = pageHeight / 2 - textHeight/2 + textAscent; break;
+                case 'middle-right': wX = pageWidth - 20 - textWidth; wY = pageHeight / 2 - textHeight / 2 + textAscent; break;
+                case 'bottom-left': wX = 20; wY = 20; break; 
+                case 'bottom-center': wX = pageWidth / 2 - textWidth / 2; wY = 20; break;
+                case 'bottom-right': wX = pageWidth - 20 - textWidth; wY = 20; break;
                 case 'diagonal-tl-br':
-                    wX = pageWidth / 2 - textWidth / 2;
-                    wY = pageHeight / 2 - textHeight / 2 + (helveticaFont.ascender / helveticaFont.unitsPerEm * watermarkFontSize);
                     wRotationDegrees = Math.atan2(pageHeight, pageWidth) * 180 / Math.PI;
-                    break;
+                    pdfLibPage.translateContent(pageWidth/2, pageHeight/2);
+                    pdfLibPage.rotateDegrees(wRotationDegrees);
+                    pdfLibPage.drawText(watermarkText, {
+                        x: -textWidth/2,
+                        y: -textHeight/2 + textAscent, 
+                        font: helveticaFont,
+                        size: watermarkFontSize,
+                        color: rgb(0.7, 0.7, 0.7), 
+                        opacity: 0.35,
+                    });
+                    pdfLibPage.rotateDegrees(-wRotationDegrees); 
+                    pdfLibPage.translateContent(-pageWidth/2, -pageHeight/2); 
+                    continue; 
                 case 'diagonal-bl-tr':
-                    wX = pageWidth / 2 - textWidth / 2;
-                    wY = pageHeight / 2 - textHeight / 2 + (helveticaFont.ascender / helveticaFont.unitsPerEm * watermarkFontSize);
                     wRotationDegrees = -Math.atan2(pageHeight, pageWidth) * 180 / Math.PI;
-                    break;
-                default: // Center
-                    wX = pageWidth / 2 - textWidth / 2;
-                    wY = pageHeight / 2 - textHeight / 2 + (helveticaFont.ascender / helveticaFont.unitsPerEm * watermarkFontSize);
+                    pdfLibPage.translateContent(pageWidth/2, pageHeight/2);
+                    pdfLibPage.rotateDegrees(wRotationDegrees);
+                    pdfLibPage.drawText(watermarkText, {
+                        x: -textWidth/2,
+                        y: -textHeight/2 + textAscent,
+                        font: helveticaFont,
+                        size: watermarkFontSize,
+                        color: rgb(0.7, 0.7, 0.7), 
+                        opacity: 0.35,
+                    });
+                    pdfLibPage.rotateDegrees(-wRotationDegrees);
+                    pdfLibPage.translateContent(-pageWidth/2, -pageHeight/2);
+                    continue; 
+                default: 
+                    wX = pageWidth / 2 - textWidth / 2; wY = pageHeight / 2 - textHeight/2 + textAscent;
             }
-
-            pdfLibPage.drawText(watermarkText, {
-                x: wX,
-                y: wY,
-                font: helveticaFont,
-                size: watermarkFontSize,
-                color: rgb(0.7, 0.7, 0.7), 
-                opacity: 0.35, 
-                rotate: degrees(wRotationDegrees),
-            });
+             if (watermarkPosition !== 'diagonal-tl-br' && watermarkPosition !== 'diagonal-bl-tr') {
+                pdfLibPage.drawText(watermarkText, {
+                    x: wX,
+                    y: wY,
+                    font: helveticaFont,
+                    size: watermarkFontSize,
+                    color: rgb(0.7, 0.7, 0.7), 
+                    opacity: 0.35,
+                });
+            }
         }
 
-        // Add page numbering if enabled
         if (pageNumberingConfig.enabled) {
             const { width: pnPageWidth, height: pnPageHeight } = pdfLibPage.getSize();
-            const currentPageNum = pdfDocOut.getPageCount() -1 + pageNumberingConfig.start; // index based + start
+            const currentPageNum = pdfDocOut.getPageCount() -1 + pageNumberingConfig.start; 
             const totalNumPages = pageObjects.length;
             
             let text = pageNumberingConfig.format
@@ -738,24 +819,22 @@ export default function PdfEditorHomepage() {
             const textSize = pageNumberingConfig.fontSize;
             const pnFont = await pdfDocOut.embedFont(StandardFonts.Helvetica);
             const textWidth = pnFont.widthOfTextAtSize(text, textSize);
-            const textHeight = pnFont.heightAtSize(textSize); 
-            const margin = pageNumberingConfig.margin;
+            const pnAscent = pnFont.ascender / pnFont.unitsPerEm * textSize;
 
             let x, y;
             switch (pageNumberingConfig.position) {
-                case 'top-left': x = margin; y = pnPageHeight - margin - (pnFont.ascender/pnFont.unitsPerEm * textSize); break;
-                case 'top-center': x = pnPageWidth / 2 - textWidth / 2; y = pnPageHeight - margin - (pnFont.ascender/pnFont.unitsPerEm * textSize); break;
-                case 'top-right': x = pnPageWidth - margin - textWidth; y = pnPageHeight - margin - (pnFont.ascender/pnFont.unitsPerEm * textSize); break;
-                case 'bottom-left': x = margin; y = margin + (pnFont.descender/pnFont.unitsPerEm * textSize); break;
-                case 'bottom-center': x = pnPageWidth / 2 - textWidth / 2; y = margin + (pnFont.descender/pnFont.unitsPerEm * textSize); break;
-                case 'bottom-right': x = pnPageWidth - margin - textWidth; y = margin + (pnFont.descender/pnFont.unitsPerEm * textSize); break;
-                default: x = pnPageWidth / 2 - textWidth / 2; y = margin + (pnFont.descender/pnFont.unitsPerEm * textSize);
+                case 'top-left': x = pageNumberingConfig.margin; y = pnPageHeight - pageNumberingConfig.margin - pnAscent; break;
+                case 'top-center': x = pnPageWidth / 2 - textWidth / 2; y = pnPageHeight - pageNumberingConfig.margin - pnAscent; break;
+                case 'top-right': x = pnPageWidth - pageNumberingConfig.margin - textWidth; y = pnPageHeight - pageNumberingConfig.margin - pnAscent; break;
+                case 'bottom-left': x = pageNumberingConfig.margin; y = pageNumberingConfig.margin; break; 
+                case 'bottom-center': x = pnPageWidth / 2 - textWidth / 2; y = pageNumberingConfig.margin; break;
+                case 'bottom-right': x = pnPageWidth - pageNumberingConfig.margin - textWidth; y = pageNumberingConfig.margin; break;
+                default: x = pnPageWidth / 2 - textWidth / 2; y = pageNumberingConfig.margin;
             }
             pdfLibPage.drawText(text, { x, y, font: pnFont, size: textSize, color: grayscale(0) });
         }
       }
       
-      // Add PDF protection if enabled
       if (pdfProtectionConfig.enabled && pdfProtectionConfig.password) {
         await pdfDocOut.encrypt({
           userPassword: pdfProtectionConfig.password,
@@ -811,14 +890,13 @@ export default function PdfEditorHomepage() {
     setLoadingMessage(texts.extractingText);
     try {
       let fullText = '';
-      // Iterate through original page order if pdfDocumentProxy is available
-      for (let i = 0; i < pageObjects.length; i++) { // Use pageObjects to respect current order and rotation (though text extraction ignores rotation)
-        const pageNum = pageObjects[i] ? 
-          (await pdfDocumentProxy.getPage(i + 1)).pageNumber // This assumes pageObjects[i] maps to original page i+1 for text
-          : i + 1; // Fallback, should not happen if pdfDocumentProxy and pageObjects are in sync
-
-        const page = await pdfDocumentProxy.getPage(pageNum);
-        const textContent = await page.getTextContent();
+      for (let i = 0; i < pageObjects.length; i++) { 
+        const originalPageIndex = pageObjects[i] ? 
+            (await pdfDocumentProxy.getPage(i + 1)).pageNumber 
+            : i + 1;
+        
+        const pdfJsPage = await pdfDocumentProxy.getPage(originalPageIndex); 
+        const textContent = await pdfJsPage.getTextContent();
         const pageText = textContent.items.map((item: any) => item.str).join(' '); 
         fullText += pageText + '\n\n'; 
       }
@@ -876,9 +954,9 @@ export default function PdfEditorHomepage() {
     setIsLoading(true);
     setLoadingMessage(texts.insertingPdf);
     try {
-      const { newPageObjects: insertPageObjects } = await processPdfFile(file); // Re-use processPdfFile
+      const { newPageObjects: insertPageObjects } = await processPdfFile(file); 
 
-      let insertAtIndex = pageObjects.length; // Default to end
+      let insertAtIndex = pageObjects.length; 
       if (selectedPageIds.size > 0) {
         const firstSelectedId = Array.from(selectedPageIds)[0];
         const firstSelectedIndex = pageObjects.findIndex(p => p.id === firstSelectedId);
@@ -893,7 +971,7 @@ export default function PdfEditorHomepage() {
 
       const newSelectedIds = new Set<string>();
       if (insertPageObjects.length > 0) {
-        newSelectedIds.add(insertPageObjects[0].id); // Select the first of the newly inserted pages
+        newSelectedIds.add(insertPageObjects[0].id); 
       }
       setSelectedPageIds(newSelectedIds);
 
@@ -1061,33 +1139,103 @@ export default function PdfEditorHomepage() {
     setZoomLevel(1);         
   };
 
-  const ZOOM_SPEED = 0.1; 
-  const MIN_ZOOM = 0.1;   
-  const MAX_ZOOM = 5;     
-
-  const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => {
-    if (!isZoomModalOpen || !zoomedPageData) return; 
-    event.preventDefault(); 
-    
-    const zoomAmount = -event.deltaY * ZOOM_SPEED * 0.01; 
-    
-    setZoomLevel(prevZoomLevel => {
-      let newZoomLevel = prevZoomLevel + zoomAmount;
-      newZoomLevel = Math.max(MIN_ZOOM, Math.min(newZoomLevel, MAX_ZOOM)); 
-      return newZoomLevel;
-    });
+  const handleImageToPdf = async () => {
+    if (!imageFiles || imageFiles.length === 0) {
+      toast({ title: texts.imageToPdfError, description: texts.noImagesSelected, variant: "destructive" });
+      return;
+    }
+    setIsConvertingImagesToPdf(true);
+    setLoadingMessage(texts.generatingPdfFromImages);
+    try {
+      const pdfDoc = await PDFLibDocument.create();
+      for (let i = 0; i < imageFiles.length; i++) {
+        const file = imageFiles[i];
+        const imageBytes = await file.arrayBuffer();
+        let image;
+        if (file.type === 'image/jpeg') {
+          image = await pdfDoc.embedJpg(imageBytes);
+        } else if (file.type === 'image/png') {
+          image = await pdfDoc.embedPng(imageBytes);
+        } else {
+          console.warn(`Skipping unsupported image type: ${file.type}`);
+          continue;
+        }
+        const page = pdfDoc.addPage([image.width, image.height]);
+        page.drawImage(image, {
+          x: 0,
+          y: 0,
+          width: image.width,
+          height: image.height,
+        });
+      }
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'DocuPilot_Images.pdf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({ title: texts.imageToPdfTitle, description: texts.imageToPdfSuccess });
+    } catch (err: any) {
+      console.error("Image to PDF error:", err);
+      toast({ title: texts.imageToPdfError, description: err.message, variant: "destructive" });
+    } finally {
+      setIsConvertingImagesToPdf(false);
+      setLoadingMessage('');
+      setImageFiles(null);
+      if(imageToPdfUploadRef.current) imageToPdfUploadRef.current.value = '';
+    }
   };
+
+  const handlePdfCompression = async () => {
+    if (!pdfToCompress) {
+      toast({ title: texts.pdfCompressionError, description: texts.noPdfToCompress, variant: "destructive" });
+      return;
+    }
+    setIsCompressingPdf(true);
+    setLoadingMessage(texts.compressingPdf);
+    try {
+      const arrayBuffer = await pdfToCompress.arrayBuffer();
+      const pdfDoc = await PDFLibDocument.load(arrayBuffer);
+      const pdfBytes = await pdfDoc.save({ useObjectStreams: false }); 
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${pdfToCompress.name.replace(/\.pdf$/i, '')}_compressed.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({ title: texts.pdfCompressionTitle, description: texts.pdfCompressionSuccess });
+    } catch (err: any) {
+      console.error("PDF Compression error:", err);
+      toast({ title: texts.pdfCompressionError, description: err.message, variant: "destructive" });
+    } finally {
+      setIsCompressingPdf(false);
+      setLoadingMessage('');
+      setPdfToCompress(null);
+      if(pdfCompressUploadRef.current) pdfCompressUploadRef.current.value = '';
+    }
+  };
+
 
   return (
     <div className="min-h-screen bg-background text-foreground">
 
-      {(isLoading || isDownloading || isExtractingText || isConvertingToWord) && (
+      {(isLoading || isDownloading || isExtractingText || isConvertingToWord || isConvertingImagesToPdf || isCompressingPdf) && (
         <div className="fixed inset-0 bg-black/50 z-[100] flex flex-col items-center justify-center">
           <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
           <p className="text-white text-lg">
             {isLoading ? loadingMessage :
              isConvertingToWord ? texts.convertingToWord :
-             isDownloading ? texts.generatingFile : texts.extractingText}
+             isDownloading ? texts.generatingFile : 
+             isExtractingText ? texts.extractingText : 
+             isConvertingImagesToPdf ? texts.generatingPdfFromImages :
+             isCompressingPdf ? texts.compressingPdf : ''}
           </p>
         </div>
       )}
@@ -1110,7 +1258,7 @@ export default function PdfEditorHomepage() {
             role="document"
           >
             <div className="flex items-center justify-between p-4 border-b border-border">
-              <h2 className="text-lg font-semibold text-foreground" id="zoom-modal-title">
+              <h2 className="text-lg font-semibold text-foreground" id="zoom-dialog-title">
                  {texts.previewOf} {texts.page} {zoomedPageData.index + 1}
                  <span className="text-sm text-muted-foreground ml-2">({(zoomLevel * 100).toFixed(0)}%)</span>
               </h2>
@@ -1120,12 +1268,12 @@ export default function PdfEditorHomepage() {
             </div>
             <div
               ref={zoomScrollContainerRef}
-              className="flex-grow p-4 bg-muted/40 overflow-auto" 
+              className="flex-grow bg-muted/40 overflow-auto p-4" 
               onWheel={handleWheel} 
             >
               <canvas
                 ref={zoomCanvasRef}
-                className="shadow-lg mx-auto" 
+                className="shadow-lg" 
                 style={{ willReadFrequently: true } as any} 
               />
             </div>
@@ -1235,7 +1383,7 @@ export default function PdfEditorHomepage() {
 
       <div className="container mx-auto p-4 md:p-6">
         {pageObjects.length === 0 ? (
-            <div className="flex flex-col items-center justify-center min-h-[calc(100vh-20rem)]">
+            <div className="flex flex-col items-center justify-center min-h-[calc(100vh-20rem)] space-y-8">
               <Card className="w-full max-w-lg shadow-xl">
                 <CardHeader className="text-center">
                   <Upload className="h-16 w-16 text-primary mx-auto mb-4" />
@@ -1263,10 +1411,76 @@ export default function PdfEditorHomepage() {
                   />
                 </CardContent>
               </Card>
+              
+              <div className="w-full max-w-lg grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center text-lg"><ImageIcon className="mr-2 h-5 w-5 text-primary" /> {texts.imageToPdfTitle}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div
+                        className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20"
+                        onClick={() => imageToPdfUploadRef.current?.click()}
+                        onDragOver={commonDragEvents.onDragOver}
+                        onDragLeave={commonDragEvents.onDragLeave}
+                        onDrop={(e) => {
+                            commonDragEvents.onDrop(e, (ev) => {
+                                if (ev.dataTransfer.files) setImageFiles(ev.dataTransfer.files);
+                            });
+                        }}
+                    >
+                        <Upload className="h-10 w-10 text-muted-foreground mb-2" />
+                        <p className="text-sm text-muted-foreground text-center">{texts.dropImagesHere}</p>
+                        <Input type="file" id="imageToPdfInput" accept="image/*" multiple
+                            ref={imageToPdfUploadRef}
+                            onChange={(e) => setImageFiles(e.target.files)}
+                            className="hidden" />
+                    </div>
+                    {imageFiles && imageFiles.length > 0 && <p className="text-xs text-muted-foreground">{imageFiles.length} image(s) selected.</p>}
+                    <Button onClick={handleImageToPdf} disabled={!imageFiles || imageFiles.length === 0 || isConvertingImagesToPdf} className="w-full">
+                        {isConvertingImagesToPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                        {texts.convertToPdfButton}
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center text-lg"><Minimize2 className="mr-2 h-5 w-5 text-primary" /> {texts.pdfCompressionTitle}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                     <div
+                        className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20"
+                        onClick={() => pdfCompressUploadRef.current?.click()}
+                        onDragOver={commonDragEvents.onDragOver}
+                        onDragLeave={commonDragEvents.onDragLeave}
+                        onDrop={(e) => {
+                            commonDragEvents.onDrop(e, (ev) => {
+                                if (ev.dataTransfer.files && ev.dataTransfer.files.length > 0) setPdfToCompress(ev.dataTransfer.files[0]);
+                            });
+                        }}
+                    >
+                        <Upload className="h-10 w-10 text-muted-foreground mb-2" />
+                        <p className="text-sm text-muted-foreground text-center">{texts.dropPdfToCompressHere}</p>
+                        <Input type="file" id="pdfCompressInput" accept="application/pdf"
+                            ref={pdfCompressUploadRef}
+                            onChange={(e) => setPdfToCompress(e.target.files ? e.target.files[0] : null)}
+                            className="hidden" />
+                    </div>
+                     {pdfToCompress && <p className="text-xs text-muted-foreground">{pdfToCompress.name} selected.</p>}
+                    <Button onClick={handlePdfCompression} disabled={!pdfToCompress || isCompressingPdf} className="w-full">
+                        {isCompressingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                        {texts.compressPdfButton}
+                    </Button>
+                    <p className="text-xs text-muted-foreground">{texts.pdfCompressionNote}</p>
+                  </CardContent>
+                </Card>
+              </div>
+
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                {/* Left Column: Page Management & Previews (70% width on md) */}
+                
                 <div className="md:col-span-8"> 
                     <Card className="shadow-lg min-h-[calc(100vh-20rem)] md:min-h-[calc(100vh-18rem)]">
                         <CardHeader className="flex flex-row items-center justify-between">
@@ -1302,7 +1516,7 @@ export default function PdfEditorHomepage() {
                     </Card>
                 </div>
 
-                {/* Right Column: Tools (30% width on md) */}
+                
                 <div className="md:col-span-4 space-y-6">
                      <Card className="shadow-lg">
                       <CardHeader>
@@ -1479,6 +1693,76 @@ export default function PdfEditorHomepage() {
                             </AccordionItem>
                         </Card>
                     </Accordion>
+
+                    
+                    <Card className="shadow-lg">
+                        <CardHeader>
+                        <CardTitle className="flex items-center text-lg"><ImageIcon className="mr-2 h-5 w-5 text-primary" /> {texts.imageToPdfTitle}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                        <div>
+                            <div
+                                className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20"
+                                onClick={() => imageToPdfUploadRef.current?.click()}
+                                onDragOver={commonDragEvents.onDragOver}
+                                onDragLeave={commonDragEvents.onDragLeave}
+                                onDrop={(e) => {
+                                    commonDragEvents.onDrop(e, (ev) => {
+                                        if (ev.dataTransfer.files) setImageFiles(ev.dataTransfer.files);
+                                    });
+                                }}
+                            >
+                                <Upload className="h-10 w-10 text-muted-foreground mb-2" />
+                                <p className="text-sm text-muted-foreground text-center">{texts.dropImagesHere}</p>
+                            </div>
+                            <Input type="file" id="imageToPdfInputLoaded" accept="image/*" multiple
+                                ref={imageToPdfUploadRef}
+                                onChange={(e) => setImageFiles(e.target.files)}
+                                className="hidden" />
+                        </div>
+                        {imageFiles && imageFiles.length > 0 && <p className="text-xs text-muted-foreground">{imageFiles.length} image(s) selected.</p>}
+                        <Button onClick={handleImageToPdf} disabled={!imageFiles || imageFiles.length === 0 || isConvertingImagesToPdf} className="w-full">
+                            {isConvertingImagesToPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                            {texts.convertToPdfButton}
+                        </Button>
+                        </CardContent>
+                    </Card>
+
+                    
+                    <Card className="shadow-lg">
+                        <CardHeader>
+                        <CardTitle className="flex items-center text-lg"><Minimize2 className="mr-2 h-5 w-5 text-primary" /> {texts.pdfCompressionTitle}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                        <div>
+                            <div
+                                className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20"
+                                onClick={() => pdfCompressUploadRef.current?.click()}
+                                onDragOver={commonDragEvents.onDragOver}
+                                onDragLeave={commonDragEvents.onDragLeave}
+                                onDrop={(e) => {
+                                    commonDragEvents.onDrop(e, (ev) => {
+                                        if (ev.dataTransfer.files && ev.dataTransfer.files.length > 0) setPdfToCompress(ev.dataTransfer.files[0]);
+                                    });
+                                }}
+                            >
+                                <Upload className="h-10 w-10 text-muted-foreground mb-2" />
+                                <p className="text-sm text-muted-foreground text-center">{texts.dropPdfToCompressHere}</p>
+                            </div>
+                            <Input type="file" id="pdfCompressInputLoaded" accept="application/pdf"
+                                ref={pdfCompressUploadRef}
+                                onChange={(e) => setPdfToCompress(e.target.files ? e.target.files[0] : null)}
+                                className="hidden" />
+                        </div>
+                        {pdfToCompress && <p className="text-xs text-muted-foreground">{pdfToCompress.name} selected.</p>}
+                        <Button onClick={handlePdfCompression} disabled={!pdfToCompress || isCompressingPdf} className="w-full">
+                            {isCompressingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                            {texts.compressPdfButton}
+                        </Button>
+                        <p className="text-xs text-muted-foreground">{texts.pdfCompressionNote}</p>
+                        </CardContent>
+                    </Card>
+
                 </div>
             </div>
           )}
@@ -1486,5 +1770,3 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
-
-    

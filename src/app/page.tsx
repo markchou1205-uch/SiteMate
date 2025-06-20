@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -6,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import * as pdfjsLib from 'pdfjs-dist';
 import type { PDFDocumentProxy as PDFDocumentProxyType } from 'pdfjs-dist';
-import { PDFDocument as PDFLibDocument, StandardFonts, rgb, degrees } from 'pdf-lib';
+import { PDFDocument as PDFLibDocument, StandardFonts, rgb, degrees, grayscale } from 'pdf-lib';
 import Sortable from 'sortablejs';
 
 import { Button } from "@/components/ui/button";
@@ -16,8 +15,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription as ShadDialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter } from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, FileType } from 'lucide-react';
+import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, FileType, FileDigit, Lock } from 'lucide-react';
 
 import { storage, functions as firebaseFunctions, app as firebaseApp } from '@/lib/firebase'; // Firebase SDK
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -54,7 +55,7 @@ const translations = {
         downloadError: 'Failed to download PDF',
         txtDownloadError: 'Failed to download TXT',
         wordConvertError: 'Failed to convert to Word',
-        pdfCoMethodNotFoundError: 'PDF.co Error: "Method Not Found". Please verify your PDF.co API Key is correct and the API endpoint in the Cloud Function is valid. Check PDF.co documentation.',
+        pdfCoMethodNotFoundError: 'PDF.co Error: "Method Not Found" or API key issue. Please verify your PDF.co API Key is correct and the API endpoint in the Cloud Function is valid. Check PDF.co documentation.',
         wordConvertLimitTitle: 'Conversion Limit Reached',
         wordConvertLimitDescription: 'Guests can convert one PDF to Word per day. Please log in for unlimited conversions.',
         wordConvertSuccess: 'Conversion successful!',
@@ -70,6 +71,18 @@ const translations = {
         fileOperations: 'File Operations',
         watermarkSectionTitle: 'Watermark',
         watermarkInputPlaceholder: 'Enter watermark text',
+        pageNumberingSectionTitle: 'Page Numbering',
+        enablePageNumbering: 'Enable Page Numbering',
+        pageNumberPosition: 'Position',
+        pageNumberStart: 'Start Number',
+        pageNumberFontSize: 'Font Size',
+        pageNumberMargin: 'Margin (pt)',
+        pageNumberFormat: 'Format ({page}, {total})',
+        pageNumberFormatPlaceholder: '{page} / {total}',
+        protectPdfSectionTitle: 'Protect PDF',
+        enablePdfProtection: 'Enable PDF Protection',
+        pdfPassword: 'Password',
+        pdfPasswordPlaceholder: 'Enter password',
         page: 'Page',
         uploadPdfFirst: 'Please upload a PDF first to enable this feature.',
         noPagesToDownload: 'No pages to download.',
@@ -90,6 +103,12 @@ const translations = {
         firebaseNotConfigured: `Firebase Frontend SDK is not fully configured. Please ensure all Firebase environment variables (%MISSING_KEYS%) are correctly set and propagated to the client. This might require checking build logs or App Hosting settings.`,
         firebaseSdkInitError: "Firebase SDK could not be initialized properly (services like Storage or Functions might be unavailable). 'Convert to Word' and other Firebase features might be disabled. Check browser console for details from firebase.ts.",
         zoomDialogDescription: 'View a larger preview of the selected page. You can rotate the page or add temporary notes here.',
+        bottomLeft: 'Bottom Left',
+        bottomCenter: 'Bottom Center',
+        bottomRight: 'Bottom Right',
+        topLeft: 'Top Left',
+        topCenter: 'Top Center',
+        topRight: 'Top Right',
     },
     zh: {
         pageTitle: 'DocuPilot 文件助手',
@@ -117,7 +136,7 @@ const translations = {
         downloadError: '下載 PDF 失敗',
         txtDownloadError: '下載 TXT 失敗',
         wordConvertError: '轉換 Word 失敗',
-        pdfCoMethodNotFoundError: 'PDF.co 錯誤：「方法未找到」。請確認您的 PDF.co API 金鑰是否正確，以及 Cloud Function 中的 API 端點是否有效。請查閱 PDF.co 文件。',
+        pdfCoMethodNotFoundError: 'PDF.co 錯誤：「方法未找到」或 API 金鑰問題。請確認您的 PDF.co API 金鑰是否正確，以及 Cloud Function 中的 API 端點是否有效。請查閱 PDF.co 文件。',
         wordConvertLimitTitle: '已達轉換上限',
         wordConvertLimitDescription: '訪客每日僅可轉換一份 PDF 至 Word。請登入以享受無限轉換次數。',
         wordConvertSuccess: '轉換成功！',
@@ -133,6 +152,18 @@ const translations = {
         fileOperations: '檔案操作',
         watermarkSectionTitle: '浮水印',
         watermarkInputPlaceholder: '輸入浮水印文字',
+        pageNumberingSectionTitle: '頁碼',
+        enablePageNumbering: '啟用頁碼',
+        pageNumberPosition: '位置',
+        pageNumberStart: '起始號碼',
+        pageNumberFontSize: '字體大小',
+        pageNumberMargin: '邊距 (pt)',
+        pageNumberFormat: '格式 ({page}, {total})',
+        pageNumberFormatPlaceholder: '{page} / {total}',
+        protectPdfSectionTitle: '保護 PDF',
+        enablePdfProtection: '啟用 PDF 保護',
+        pdfPassword: '密碼',
+        pdfPasswordPlaceholder: '輸入密碼',
         page: '頁',
         uploadPdfFirst: '請先上傳 PDF 檔案以使用此功能。',
         noPagesToDownload: '沒有可下載的頁面。',
@@ -153,12 +184,19 @@ const translations = {
         firebaseNotConfigured: `Firebase 前端 SDK 設定不完整。請確保所有 Firebase 環境變數 (NEXT_PUBLIC_FIREBASE_API_KEY 等) 都已在您的 .env 檔案中設定。缺少：%MISSING_KEYS%`,
         firebaseSdkInitError: "Firebase SDK 未能正確初始化 (Storage 或 Functions 等服務可能無法使用)。'轉換為 Word' 及其他 Firebase 功能可能被禁用。請檢查瀏覽器控制台來自 firebase.ts 的詳細資訊。",
         zoomDialogDescription: '查看所選頁面的放大預覽。您可以在此旋轉頁面或新增臨時筆記。',
+        bottomLeft: '左下',
+        bottomCenter: '中下',
+        bottomRight: '右下',
+        topLeft: '左上',
+        topCenter: '中上',
+        topRight: '右上',
     }
 };
 
 const DAILY_DOWNLOAD_LIMIT = 3;
 const DAILY_WORD_CONVERSION_LIMIT = 1;
 
+type PageNumberPosition = 'bottom-left' | 'bottom-center' | 'bottom-right' | 'top-left' | 'top-center' | 'top-right';
 
 export default function PdfEditorHomepage() {
   const router = useRouter();
@@ -190,6 +228,20 @@ export default function PdfEditorHomepage() {
 
   const [isFirebaseSystemReady, setIsFirebaseSystemReady] = useState(false);
   const [firebaseConfigWarning, setFirebaseConfigWarning] = useState('');
+
+  const [pageNumberingConfig, setPageNumberingConfig] = useState({
+    enabled: false,
+    position: 'bottom-center' as PageNumberPosition,
+    start: 1,
+    fontSize: 12,
+    margin: 20,
+    format: '{page} / {total}',
+  });
+
+  const [pdfProtectionConfig, setPdfProtectionConfig] = useState({
+    enabled: false,
+    password: '',
+  });
 
 
   useEffect(() => {
@@ -480,7 +532,6 @@ export default function PdfEditorHomepage() {
       return;
     }
 
-
     if (!isLoggedIn && typeof window !== 'undefined') {
       const today = new Date().toISOString().split('T')[0];
       let downloadInfoString = localStorage.getItem('DocuPilotDownloadInfo');
@@ -510,24 +561,66 @@ export default function PdfEditorHomepage() {
         const pngImage = await pdfDocOut.embedPng(imgDataUrl);
         const page = pdfDocOut.addPage([canvas.width, canvas.height]);
         page.drawImage(pngImage, { x: 0, y: 0, width: canvas.width, height: canvas.height });
+      }
 
+      const pdfLibPages = pdfDocOut.getPages();
 
-        if (watermarkText.trim() !== '') {
-            const textWidth = helveticaFont.widthOfTextAtSize(watermarkText, 50);
-            const textHeight = helveticaFont.heightAtSize(50);
+      if (pageNumberingConfig.enabled) {
+        const font = await pdfDocOut.embedFont(StandardFonts.Helvetica);
+        for (let i = 0; i < pdfLibPages.length; i++) {
+          const pdfLibPage = pdfLibPages[i];
+          const { width, height } = pdfLibPage.getSize();
+          const currentPageNum = i + pageNumberingConfig.start;
+          const totalNumPages = pdfLibPages.length;
+          
+          let text = pageNumberingConfig.format
+            .replace('{page}', currentPageNum.toString())
+            .replace('{total}', totalNumPages.toString());
+
+          const textSize = pageNumberingConfig.fontSize;
+          const textWidth = font.widthOfTextAtSize(text, textSize);
+          const textHeight = font.heightAtSize(textSize);
+          const margin = pageNumberingConfig.margin;
+
+          let x, y;
+          switch (pageNumberingConfig.position) {
+            case 'top-left': x = margin; y = height - margin - textHeight; break;
+            case 'top-center': x = width / 2 - textWidth / 2; y = height - margin - textHeight; break;
+            case 'top-right': x = width - margin - textWidth; y = height - margin - textHeight; break;
+            case 'bottom-left': x = margin; y = margin; break;
+            case 'bottom-center': x = width / 2 - textWidth / 2; y = margin; break;
+            case 'bottom-right': x = width - margin - textWidth; y = margin; break;
+            default: x = width / 2 - textWidth / 2; y = margin; 
+          }
+          pdfLibPage.drawText(text, { x, y, font, size: textSize, color: grayscale(0) });
+        }
+      }
+      
+      if (watermarkText.trim() !== '') {
+          const textWidth = helveticaFont.widthOfTextAtSize(watermarkText, 50);
+          const textHeight = helveticaFont.heightAtSize(50);
+          pdfLibPages.forEach(page => {
             const { width: pageWidth, height: pageHeight } = page.getSize();
-
             page.drawText(watermarkText, {
                 x: pageWidth / 2 - textWidth / 2,
-                y: pageHeight / 2 - textHeight / 4,
+                y: pageHeight / 2 - textHeight / 4, // Adjusted for better centering with rotation
                 font: helveticaFont,
                 size: 50,
                 color: rgb(0.75, 0.75, 0.75),
                 opacity: 0.3,
                 rotate: degrees(45),
             });
-        }
+          });
       }
+
+      if (pdfProtectionConfig.enabled && pdfProtectionConfig.password) {
+        await pdfDocOut.encrypt({
+          userPassword: pdfProtectionConfig.password,
+          ownerPassword: pdfProtectionConfig.password, // Using same for simplicity
+          permissions: {}, // Default permissions
+        });
+      }
+
       const pdfBytes = await pdfDocOut.save();
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
@@ -540,6 +633,7 @@ export default function PdfEditorHomepage() {
       URL.revokeObjectURL(url);
       toast({ title: texts.downloadPdf, description: "PDF 下載成功！" });
     } catch (err: any) {
+      console.error("Download PDF error:", err);
       toast({ title: texts.downloadError, description: err.message, variant: "destructive" });
     } finally {
       setIsDownloading(false);
@@ -552,7 +646,6 @@ export default function PdfEditorHomepage() {
       toast({ title: texts.txtDownloadError, description: texts.noPdfToExtractText, variant: "destructive" });
       return;
     }
-
 
      if (!isLoggedIn && typeof window !== 'undefined') {
       const today = new Date().toISOString().split('T')[0];
@@ -646,7 +739,6 @@ export default function PdfEditorHomepage() {
       newPages.splice(insertIdx, 0, ...insertCanvases);
       setPages(newPages);
 
-
       const newSelected = new Set<number>();
       if (insertCanvases.length > 0) {
         newSelected.add(insertIdx);
@@ -678,7 +770,6 @@ export default function PdfEditorHomepage() {
 
     setWordFileUrl(null);
     setWordConversionError(null);
-
 
     if (!isLoggedIn && typeof window !== 'undefined') {
       const today = new Date().toISOString().split('T')[0];
@@ -730,6 +821,10 @@ export default function PdfEditorHomepage() {
         console.error("Firebase Function HTTP Error Response:", displayErrorDataForLog, `(Status: ${response.status})`);
 
         const detailMessage = errorData?.detail || errorData?.error || `HTTP error! status: ${response.status}`;
+        let toastDescription = detailMessage;
+        if (typeof detailMessage === 'string' && detailMessage.toLowerCase().includes("method not found")) {
+            toastDescription = texts.pdfCoMethodNotFoundError;
+        }
         throw new Error(detailMessage);
       }
 
@@ -743,7 +838,6 @@ export default function PdfEditorHomepage() {
       setWordFileUrl(result.wordUrl);
       toast({ title: texts.wordConvertSuccess, description: texts.downloadWordFile });
 
-
       if (!isLoggedIn && typeof window !== 'undefined') {
         const today = new Date().toISOString().split('T')[0];
         let wordConversionInfoString = localStorage.getItem('DocuPilotWordConversionInfo');
@@ -755,21 +849,19 @@ export default function PdfEditorHomepage() {
 
     } catch (error: any) {
       console.error("Word conversion error in frontend:", error);
-      const errMsg = error.message || (currentLanguage === 'zh' ? "未知錯誤" : "Unknown error");
+      let errMsg = error.message || (currentLanguage === 'zh' ? "未知錯誤" : "Unknown error");
       
-      let toastDescription = errMsg;
-      if (errMsg && typeof errMsg === 'string' && errMsg.toLowerCase().includes("method not found") && errMsg.toLowerCase().includes("pdf.co")) {
-        toastDescription = texts.pdfCoMethodNotFoundError;
+      if (typeof errMsg === 'string' && (errMsg.toLowerCase().includes("method not found") || errMsg.toLowerCase().includes("api key"))) {
+        errMsg = texts.pdfCoMethodNotFoundError;
       }
 
-      setWordConversionError(`${texts.wordConvertError}: ${toastDescription}`);
-      toast({ title: texts.wordConvertError, description: toastDescription, variant: "destructive" });
+      setWordConversionError(`${texts.wordConvertError}: ${errMsg}`);
+      toast({ title: texts.wordConvertError, description: errMsg, variant: "destructive" });
     } finally {
       setIsConvertingToWord(false);
       setLoadingMessage('');
     }
   };
-
 
   const commonDragEvents = {
     onDragOver: (e: React.DragEvent<HTMLDivElement>) => {
@@ -782,7 +874,6 @@ export default function PdfEditorHomepage() {
         e.stopPropagation();
         e.currentTarget.classList.remove('border-primary', 'bg-primary/10');
     },
-
     onDrop: (e: React.DragEvent<HTMLDivElement>, handler: (event: React.DragEvent<HTMLDivElement>) => void) => {
         e.preventDefault();
         e.stopPropagation();
@@ -790,6 +881,15 @@ export default function PdfEditorHomepage() {
         handler(e);
     }
   };
+
+  const pageNumberPositions: {value: PageNumberPosition, labelKey: keyof typeof texts}[] = [
+    { value: 'bottom-center', labelKey: 'bottomCenter'},
+    { value: 'bottom-left', labelKey: 'bottomLeft'},
+    { value: 'bottom-right', labelKey: 'bottomRight'},
+    { value: 'top-center', labelKey: 'topCenter'},
+    { value: 'top-left', labelKey: 'topLeft'},
+    { value: 'top-right', labelKey: 'topRight'},
+  ];
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -805,12 +905,11 @@ export default function PdfEditorHomepage() {
         </div>
       )}
 
-
-      <Dialog open={!!zoomedPageData} onOpenChange={(isOpen) => !isOpen && setZoomedPageData(null)}>
+      <Dialog open={!!zoomedPageData} onOpenChange={(isOpen) => { if (!isOpen) setZoomedPageData(null); }} aria-labelledby="zoom-dialog-title" aria-describedby="zoom-dialog-description">
         <DialogContent className="max-w-3xl w-[90vw] h-[90vh] p-0 flex flex-col">
           <DialogHeader className="p-4 border-b">
-            <DialogTitle>{texts.previewOf} {zoomedPageData ? `${texts.page} ${zoomedPageData.index + 1}` : ''}</DialogTitle>
-            <ShadDialogDescription>
+            <DialogTitle id="zoom-dialog-title">{texts.previewOf} {zoomedPageData ? `${texts.page} ${zoomedPageData.index + 1}` : ''}</DialogTitle>
+            <ShadDialogDescription id="zoom-dialog-description">
               {texts.zoomDialogDescription}
             </ShadDialogDescription>
           </DialogHeader>
@@ -831,7 +930,6 @@ export default function PdfEditorHomepage() {
         </DialogContent>
       </Dialog>
 
-
       <AlertDialog open={isInsertConfirmOpen} onOpenChange={setIsInsertConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -846,7 +944,6 @@ export default function PdfEditorHomepage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
 
       <AlertDialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
         <AlertDialogContent>
@@ -863,7 +960,6 @@ export default function PdfEditorHomepage() {
         </AlertDialogContent>
       </AlertDialog>
 
-
       <AlertDialog open={showWordLimitModal} onOpenChange={setShowWordLimitModal}>
         <AlertDialogContent>
             <AlertDialogHeader>
@@ -879,19 +975,16 @@ export default function PdfEditorHomepage() {
         </AlertDialogContent>
       </AlertDialog>
 
-
       <header className="p-4 border-b bg-card sticky top-0 z-40">
         <div className="container mx-auto flex justify-between items-center">
             <h1 className="text-xl font-bold text-primary flex items-center">
               <Edit3 className="mr-2 h-6 w-6"/> {texts.pageTitle}
             </h1>
             <div className="flex items-center gap-4">
-
                 <div className="flex gap-2">
                     <Button variant={currentLanguage === 'en' ? "secondary" : "outline"} size="sm" onClick={() => updateLanguage('en')}>English</Button>
                     <Button variant={currentLanguage === 'zh' ? "secondary" : "outline"} size="sm" onClick={() => updateLanguage('zh')}>中文</Button>
                 </div>
-
                 {isLoggedIn ? (
                     <div className="flex items-center gap-2">
                         <UserCircle className="h-5 w-5 text-muted-foreground" />
@@ -915,10 +1008,8 @@ export default function PdfEditorHomepage() {
         </div>
       </header>
 
-
       <div className="container mx-auto p-4 md:p-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
           <div className="md:col-span-1 space-y-6">
 
             {pages.length > 0 && (
@@ -964,6 +1055,56 @@ export default function PdfEditorHomepage() {
               </Card>
             )}
 
+            {pages.length > 0 && (
+              <Card className="shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-xl"><FileDigit className="mr-2 h-5 w-5 text-primary" /> {texts.pageNumberingSectionTitle}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <Switch id="enablePageNumbering" checked={pageNumberingConfig.enabled} onCheckedChange={(checked) => setPageNumberingConfig(prev => ({...prev, enabled: checked}))} />
+                    <Label htmlFor="enablePageNumbering">{texts.enablePageNumbering}</Label>
+                  </div>
+                  {pageNumberingConfig.enabled && (
+                    <>
+                      <div>
+                        <Label htmlFor="pn-position">{texts.pageNumberPosition}</Label>
+                        <Select value={pageNumberingConfig.position} onValueChange={(value: PageNumberPosition) => setPageNumberingConfig(prev => ({...prev, position: value}))}>
+                          <SelectTrigger id="pn-position"><SelectValue placeholder={texts.pageNumberPosition} /></SelectTrigger>
+                          <SelectContent>
+                            {pageNumberPositions.map(pos => <SelectItem key={pos.value} value={pos.value}>{texts[pos.labelKey]}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div><Label htmlFor="pn-start">{texts.pageNumberStart}</Label><Input id="pn-start" type="number" value={pageNumberingConfig.start} onChange={(e) => setPageNumberingConfig(prev => ({...prev, start: parseInt(e.target.value,10) || 1}))} min="1" /></div>
+                      <div><Label htmlFor="pn-fontSize">{texts.pageNumberFontSize}</Label><Input id="pn-fontSize" type="number" value={pageNumberingConfig.fontSize} onChange={(e) => setPageNumberingConfig(prev => ({...prev, fontSize: parseInt(e.target.value,10) || 12}))} min="6" /></div>
+                      <div><Label htmlFor="pn-margin">{texts.pageNumberMargin}</Label><Input id="pn-margin" type="number" value={pageNumberingConfig.margin} onChange={(e) => setPageNumberingConfig(prev => ({...prev, margin: parseInt(e.target.value,10) || 20}))} min="0" /></div>
+                      <div><Label htmlFor="pn-format">{texts.pageNumberFormat}</Label><Input id="pn-format" type="text" value={pageNumberingConfig.format} placeholder={texts.pageNumberFormatPlaceholder} onChange={(e) => setPageNumberingConfig(prev => ({...prev, format: e.target.value}))} /></div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+            
+            {pages.length > 0 && (
+              <Card className="shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-xl"><Lock className="mr-2 h-5 w-5 text-primary" /> {texts.protectPdfSectionTitle}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                   <div className="flex items-center space-x-2">
+                    <Switch id="enablePdfProtection" checked={pdfProtectionConfig.enabled} onCheckedChange={(checked) => setPdfProtectionConfig(prev => ({...prev, enabled: checked}))} />
+                    <Label htmlFor="enablePdfProtection">{texts.enablePdfProtection}</Label>
+                  </div>
+                  {pdfProtectionConfig.enabled && (
+                    <div>
+                      <Label htmlFor="pdf-password">{texts.pdfPassword}</Label>
+                      <Input id="pdf-password" type="password" placeholder={texts.pdfPasswordPlaceholder} value={pdfProtectionConfig.password} onChange={(e) => setPdfProtectionConfig(prev => ({...prev, password: e.target.value}))} />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {pages.length > 0 && (
               <Card className="shadow-lg">
@@ -983,7 +1124,6 @@ export default function PdfEditorHomepage() {
               </Card>
             )}
 
-
             <Card className="shadow-lg">
                 <CardHeader>
                     <CardTitle className="flex items-center text-xl"><Info className="mr-2 h-5 w-5 text-primary" /> {texts.tools}</CardTitle>
@@ -999,9 +1139,7 @@ export default function PdfEditorHomepage() {
             </Card>
           </div>
 
-
           <div className="md:col-span-2 space-y-6">
-
             <Card className="shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center text-xl"><Upload className="mr-2 h-5 w-5 text-primary" /> {texts.fileOperations}</CardTitle>
@@ -1072,7 +1210,6 @@ export default function PdfEditorHomepage() {
               </CardContent>
             </Card>
 
-
             {pages.length > 0 ? (
               <Card className="shadow-lg min-h-[calc(100vh-20rem)] md:min-h-[calc(100vh-18rem)]">
                 <CardHeader>
@@ -1085,7 +1222,6 @@ export default function PdfEditorHomepage() {
                     ref={previewContainerRef}
                     className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-1 bg-muted/20 rounded-md min-h-[200px]"
                   >
-
                   </div>
                 </CardContent>
               </Card>
@@ -1107,3 +1243,4 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
+

@@ -88,7 +88,7 @@ const translations = {
         guest: 'Guest',
         firebaseNotConfigured: `Firebase Frontend SDK is not fully configured. Please ensure all Firebase environment variables (%MISSING_KEYS%) are correctly set and propagated to the client. This might require checking build logs or App Hosting settings.`,
         firebaseSdkInitError: "Firebase SDK could not be initialized properly (services like Storage or Functions might be unavailable). 'Convert to Word' and other Firebase features might be disabled. Check browser console for details from firebase.ts.",
-        zoomDialogDescription: 'View a larger preview of the selected page. You can rotate the page or add temporary notes.',
+        zoomDialogDescription: 'View a larger preview of the selected page. You can rotate the page or add temporary notes here.',
     },
     zh: {
         pageTitle: 'DocuPilot 文件助手',
@@ -150,7 +150,7 @@ const translations = {
         guest: '訪客',
         firebaseNotConfigured: `Firebase 前端 SDK 設定不完整。請確保所有 Firebase 環境變數 (NEXT_PUBLIC_FIREBASE_API_KEY 等) 都已在您的 .env 檔案中設定。缺少：%MISSING_KEYS%`,
         firebaseSdkInitError: "Firebase SDK 未能正確初始化 (Storage 或 Functions 等服務可能無法使用)。'轉換為 Word' 及其他 Firebase 功能可能被禁用。請檢查瀏覽器控制台來自 firebase.ts 的詳細資訊。",
-        zoomDialogDescription: '查看所選頁面的放大預覽。您可以旋轉頁面或新增臨時筆記。',
+        zoomDialogDescription: '查看所選頁面的放大預覽。您可以在此旋轉頁面或新增臨時筆記。',
     }
 };
 
@@ -1102,4 +1102,5 @@ export default function PdfEditorHomepage() {
     
 
     
+
 

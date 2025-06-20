@@ -625,7 +625,7 @@ export default function PdfEditorHomepage() {
     }
   };
 
-  const handleConvertToWord = async () => {
+ const handleConvertToWord = async () => {
     if (!uploadedPdfFile) {
       toast({ title: texts.wordConvertError, description: texts.noPdfToConvert, variant: "destructive" });
       return;
@@ -662,11 +662,11 @@ export default function PdfEditorHomepage() {
       await uploadBytes(fileRef, uploadedPdfFile);
       const pdfStorageUrl = await getDownloadURL(fileRef);
 
-      // ！！！重要：請將下面的 URL 替換為您 Firebase Function 部署後的實際 URL ！！！
+      // ！！重要：請確保此 URL 與您部署的 Firebase Function 的 HTTP 觸發 URL 一致 ！！
       // 您可以在 Firebase 控制台的 Functions 頁面找到它，或者 Firebase CLI 部署後會顯示。
-      // 它看起來會像：https://<REGION>-<PROJECT_ID>.cloudfunctions.net/<FUNCTION_NAME>
+      // 格式通常是：https://<REGION>-<PROJECT_ID>.cloudfunctions.net/<FUNCTION_NAME>
       const functionUrl = `https://us-central1-sitemate-otkpt.cloudfunctions.net/convertPdfToWord`; 
-      // 上面的 URL 是基於您之前的截圖，請再次確認是否正確。
+      // ↑ 確保 'sitemate-otkpt' 是您的專案 ID，'convertPdfToWord' 是您的函式名稱。
 
       const response = await fetch(functionUrl, {
         method: 'POST',
@@ -679,12 +679,16 @@ export default function PdfEditorHomepage() {
       if (!response.ok) {
         let errorData;
         try {
-            errorData = await response.json();
+            errorData = await response.json(); // 嘗試解析 JSON 錯誤
         } catch (e) {
-            errorData = { detail: await response.text() || response.statusText };
+            // 如果解析 JSON 失敗，則將回應本文作為純文字處理
+            const errorText = await response.text();
+            errorData = { detail: errorText || response.statusText };
         }
         console.error("Firebase Function HTTP Error Response:", errorData);
-        throw new Error(errorData.detail || errorData.error || `HTTP error! status: ${response.status}`);
+        // 使用 errorData.detail 或 errorData.error (如果存在)，否則使用一般錯誤訊息
+        const detailMessage = errorData.detail || errorData.error || `HTTP error! status: ${response.status}`;
+        throw new Error(detailMessage);
       }
 
       const result = await response.json();
@@ -1029,5 +1033,7 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
+
+    
 
     

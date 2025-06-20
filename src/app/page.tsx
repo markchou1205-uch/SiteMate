@@ -39,11 +39,11 @@ const translations = {
         downloadTxt: 'Download as TXT',
         convertToWord: 'Convert to Word',
         convertingToWord: 'Converting to Word...',
-        insertAreaTitle: 'Insert PDF',
+        insertAreaTitle: 'Select PDF to Insert',
         insertOptionsTitle: 'Insertion Options',
         insertBeforeLabel: 'Insert before selected page',
         insertAfterLabel: 'Insert after selected page',
-        selectFileToInsert: 'Select PDF to insert:',
+        // selectFileToInsert: 'Select PDF to insert:', // Label removed from UI
         instSelect: 'Click page to select/deselect.',
         instDrag: 'Drag pages to reorder.',
         instZoom: 'Double click page to zoom.',
@@ -123,7 +123,7 @@ const translations = {
         featureProtect: 'Protect',
         featureConvert: 'Convert',
         uploadNewPdf: 'Upload New PDF',
-        accordionPageOrg: 'Page Organization',
+        // accordionPageOrg: 'Page Organization', // Removed
         accordionDocEnhanceProtect: 'Document Enhancements & Protection',
         pageActions: 'Page Actions',
     },
@@ -135,11 +135,11 @@ const translations = {
         downloadTxt: '下載為 TXT 檔案',
         convertToWord: '轉換為 Word',
         convertingToWord: '正在轉換為 Word...',
-        insertAreaTitle: '插入 PDF',
+        insertAreaTitle: '選擇要插入的 PDF',
         insertOptionsTitle: '插入選項',
         insertBeforeLabel: '插入此頁之前',
         insertAfterLabel: '插入此頁之後',
-        selectFileToInsert: '選擇要插入的 PDF：',
+        // selectFileToInsert: '選擇要插入的 PDF：', // Label removed from UI
         instSelect: '點選頁面以選取/取消。',
         instDrag: '拖曳頁面以調整順序。',
         instZoom: '雙擊頁面以放大預覽。',
@@ -219,7 +219,7 @@ const translations = {
         featureProtect: '保護',
         featureConvert: '轉換',
         uploadNewPdf: '上傳新 PDF',
-        accordionPageOrg: '頁面組織',
+        // accordionPageOrg: '頁面組織', // Removed
         accordionDocEnhanceProtect: '文件增強與保護',
         pageActions: '頁面操作',
     }
@@ -854,7 +854,7 @@ export default function PdfEditorHomepage() {
 
         const detailMessage = errorData?.detail || errorData?.error || `HTTP error! status: ${response.status}`;
         let toastDescription = detailMessage;
-        if (typeof detailMessage === 'string' && (detailMessage.toLowerCase().includes("method not found") || detailMessage.toLowerCase().includes("api key not configured") || detailMessage.toLowerCase().includes("please provide your api key")) ) { // Added check for "please provide your api key"
+        if (typeof detailMessage === 'string' && (detailMessage.toLowerCase().includes("method not found") || detailMessage.toLowerCase().includes("api key not configured") || detailMessage.toLowerCase().includes("please provide your api key")) ) { 
              toastDescription = texts.pdfCoMethodNotFoundError;
         }
         throw new Error(detailMessage);
@@ -1062,7 +1062,6 @@ export default function PdfEditorHomepage() {
 
       <div className="container mx-auto p-4 md:p-6">
         {pages.length === 0 ? (
-            // Initial View: Prominent Upload Area
             <div className="flex flex-col items-center justify-center min-h-[calc(100vh-20rem)]">
               <Card className="w-full max-w-lg shadow-xl">
                 <CardHeader className="text-center">
@@ -1093,14 +1092,13 @@ export default function PdfEditorHomepage() {
               </Card>
             </div>
           ) : (
-             // View after PDF is uploaded: Two-column layout
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
                 {/* Left Column: Page Previews */}
-                <div className="md:col-span-7 lg:col-span-8">
+                <div className="md:col-span-7 lg:col-span-7">
                     <Card className="shadow-lg min-h-[calc(100vh-20rem)] md:min-h-[calc(100vh-18rem)]">
                       <CardHeader>
                         <CardTitle className="flex items-center text-xl"><Shuffle className="mr-2 h-5 w-5 text-primary" /> {texts.pageManagement}</CardTitle>
-                        <CardDescription> {pages.length} {pages.length === 1 ? texts.page.toLowerCase() : (currentLanguage === 'zh' ? texts.pagesLoaded : texts.pagesLoaded.replace('pages', 'page'))} {selectedPages.size > 0 ? `${texts.page} ${Array.from(selectedPages)[0]+1} ${currentLanguage === 'zh' ? texts.pageSelected : texts.pageSelected.replace('page', '')}` : ''} </CardDescription>
+                        <CardDescription> {pages.length} {pages.length === 1 ? texts.page.toLowerCase() : (currentLanguage === 'zh' ? texts.pagesLoaded.replace('頁已載入。', '頁') : texts.pagesLoaded.replace('pages loaded.', 'page(s)'))} {currentLanguage === 'zh' ? '已載入' : 'loaded'}. {selectedPages.size > 0 ? `${texts.page} ${Array.from(selectedPages)[0]+1} ${currentLanguage === 'zh' ? texts.pageSelected.replace('頁已選取。','') : texts.pageSelected.replace('page selected.','')}` : ''} </CardDescription>
                       </CardHeader>
                       <CardContent>
                         <div
@@ -1114,27 +1112,69 @@ export default function PdfEditorHomepage() {
                 </div>
 
                 {/* Right Column: Tools/Operations */}
-                <div className="md:col-span-5 lg:col-span-4 space-y-6">
-                    <div className="flex justify-end">
-                        <Button variant="outline" onClick={() => pdfUploadRef.current?.click()}>
-                            <FilePlus className="mr-2 h-4 w-4" /> {texts.uploadNewPdf}
-                        </Button>
-                         <Input
-                            type="file"
-                            id="pdfUploadInputHidden" 
-                            accept="application/pdf"
-                            onChange={handlePdfUpload}
-                            ref={pdfUploadRef}
-                            className="hidden"
+                <div className="md:col-span-5 lg:col-span-5 space-y-6">
+                    
+                    <Card className="shadow-lg">
+                      <CardHeader>
+                        <CardTitle className="flex items-center text-lg"><FilePlus className="mr-2 h-5 w-5 text-primary" /> {texts.insertAreaTitle}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          {/* Removed Label: <Label htmlFor="insertPdfInput" className="mb-2 block cursor-pointer text-sm font-medium">{texts.selectFileToInsert}</Label> */}
+                          <div
+                              className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer"
+                              onClick={() => insertPdfRef.current?.click()}
+                              onDragOver={commonDragEvents.onDragOver}
+                              onDragLeave={commonDragEvents.onDragLeave}
+                              onDrop={(e) => commonDragEvents.onDrop(e, (ev) => handleInsertPdfFileSelected(ev as any))}
+                            >
+                              <Upload className="h-10 w-10 text-muted-foreground mb-2" />
+                              <p className="text-sm text-muted-foreground text-center">{texts.dropInsertFileHere}</p>
+                            </div>
+                          <Input
+                              type="file"
+                              id="insertPdfInput"
+                              accept="application/pdf"
+                              onChange={handleInsertPdfFileSelected}
+                              ref={insertPdfRef}
+                              className="hidden"
                           />
-                    </div>
+                        </div>
+                        <RadioGroup value={insertPosition} onValueChange={(value: 'before' | 'after') => setInsertPosition(value)} disabled={selectedPages.size === 0}>
+                          <Label className="font-medium mb-1 block">{texts.insertOptionsTitle}</Label>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="before" id="r-before" />
+                            <Label htmlFor="r-before" className="font-normal">{texts.insertBeforeLabel}</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="after" id="r-after" />
+                            <Label htmlFor="r-after" className="font-normal">{texts.insertAfterLabel}</Label>
+                          </div>
+                        </RadioGroup>
+                        <p className="text-xs text-muted-foreground">{selectedPages.size === 0 && pages.length > 0 ? texts.insertConfirmDescription.split('.')[0] + '.' : ''}</p>
+                      </CardContent>
+                    </Card>
 
+                    <Card className="shadow-lg">
+                        <CardHeader>
+                            <CardTitle className="flex items-center text-lg"><Edit3 className="mr-2 h-5 w-5 text-primary" /> {texts.pageActions}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                            <p className="text-sm text-muted-foreground">{texts.instSelect}</p>
+                            <p className="text-sm text-muted-foreground">{texts.instDrag}</p>
+                            <p className="text-sm text-muted-foreground">{texts.instZoom}</p>
+                            <Button onClick={handleDeletePages} variant="destructive" disabled={selectedPages.size === 0 || pages.length === 0} className="w-full mt-2">
+                                <Trash2 className="mr-2 h-4 w-4" /> {texts.deletePages}
+                            </Button>
+                        </CardContent>
+                    </Card>
+                    
                     <Card className="shadow-lg">
                       <CardHeader>
                         <CardTitle className="flex items-center text-xl"><Download className="mr-2 h-5 w-5 text-primary" /> {texts.downloadAndConvertTitle}</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <Button onClick={handleDownloadPdf} disabled={pages.length === 0 || isDownloading} className="w-full">
                               {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                               {texts.downloadPdf}
@@ -1146,7 +1186,7 @@ export default function PdfEditorHomepage() {
                             <Button
                                 onClick={handleConvertToWord}
                                 disabled={!uploadedPdfFile || isConvertingToWord || !isFirebaseSystemReady}
-                                className="w-full sm:col-span-2 md:col-span-1 lg:col-span-2"
+                                className="w-full sm:col-span-2"
                                 title={!isFirebaseSystemReady ? firebaseConfigWarning : ""}
                             >
                                 {isConvertingToWord ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileType className="mr-2 h-4 w-4" />}
@@ -1177,70 +1217,7 @@ export default function PdfEditorHomepage() {
                       </CardContent>
                     </Card>
 
-                    <Accordion type="multiple" defaultValue={['page-org']} className="w-full space-y-4">
-                        <Card className="shadow-lg">
-                            <AccordionItem value="page-org" className="border-b-0">
-                                <AccordionTrigger className="p-6 hover:no-underline">
-                                    <CardTitle className="flex items-center text-xl"><Columns className="mr-2 h-5 w-5 text-primary" /> {texts.accordionPageOrg}</CardTitle>
-                                </AccordionTrigger>
-                                <AccordionContent className="px-6 pb-6 space-y-6">
-                                    <Card>
-                                      <CardHeader>
-                                        <CardTitle className="flex items-center text-lg"><FilePlus className="mr-2 h-5 w-5 text-primary" /> {texts.insertAreaTitle}</CardTitle>
-                                      </CardHeader>
-                                      <CardContent className="space-y-4">
-                                        <div>
-                                          <Label htmlFor="insertPdfInput" className="mb-2 block cursor-pointer text-sm font-medium">{texts.selectFileToInsert}</Label>
-                                          <div
-                                              className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer"
-                                              onClick={() => insertPdfRef.current?.click()}
-                                              onDragOver={commonDragEvents.onDragOver}
-                                              onDragLeave={commonDragEvents.onDragLeave}
-                                              onDrop={(e) => commonDragEvents.onDrop(e, (ev) => handleInsertPdfFileSelected(ev as any))}
-                                            >
-                                              <Upload className="h-10 w-10 text-muted-foreground mb-2" />
-                                              <p className="text-sm text-muted-foreground text-center">{texts.dropInsertFileHere}</p>
-                                            </div>
-                                          <Input
-                                              type="file"
-                                              id="insertPdfInput"
-                                              accept="application/pdf"
-                                              onChange={handleInsertPdfFileSelected}
-                                              ref={insertPdfRef}
-                                              className="hidden"
-                                          />
-                                        </div>
-                                        <RadioGroup value={insertPosition} onValueChange={(value: 'before' | 'after') => setInsertPosition(value)} disabled={selectedPages.size === 0}>
-                                          <Label className="font-medium mb-1 block">{texts.insertOptionsTitle}</Label>
-                                          <div className="flex items-center space-x-2">
-                                            <RadioGroupItem value="before" id="r-before" />
-                                            <Label htmlFor="r-before" className="font-normal">{texts.insertBeforeLabel}</Label>
-                                          </div>
-                                          <div className="flex items-center space-x-2">
-                                            <RadioGroupItem value="after" id="r-after" />
-                                            <Label htmlFor="r-after" className="font-normal">{texts.insertAfterLabel}</Label>
-                                          </div>
-                                        </RadioGroup>
-                                        <p className="text-xs text-muted-foreground">{selectedPages.size === 0 && pages.length > 0 ? texts.insertConfirmDescription.split('.')[0] + '.' : ''}</p>
-                                      </CardContent>
-                                    </Card>
-                                    <Card>
-                                        <CardHeader>
-                                            <CardTitle className="flex items-center text-lg"><Edit3 className="mr-2 h-5 w-5 text-primary" /> {texts.pageActions}</CardTitle>
-                                        </CardHeader>
-                                        <CardContent className="space-y-2">
-                                            <p className="text-sm text-muted-foreground">{texts.instSelect}</p>
-                                            <p className="text-sm text-muted-foreground">{texts.instDrag}</p>
-                                            <p className="text-sm text-muted-foreground">{texts.instZoom}</p>
-                                            <Button onClick={handleDeletePages} variant="destructive" disabled={selectedPages.size === 0 || pages.length === 0} className="w-full mt-2">
-                                                <Trash2 className="mr-2 h-4 w-4" /> {texts.deletePages}
-                                            </Button>
-                                        </CardContent>
-                                    </Card>
-                                </AccordionContent>
-                            </AccordionItem>
-                        </Card>
-
+                    <Accordion type="multiple" defaultValue={[]} className="w-full space-y-4">
                         <Card className="shadow-lg">
                             <AccordionItem value="doc-enhance" className="border-b-0">
                                 <AccordionTrigger className="p-6 hover:no-underline">
@@ -1318,4 +1295,6 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
+    
+
     

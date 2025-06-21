@@ -732,12 +732,6 @@ export default function PdfEditorHomepage() {
       setMainCanvasZoom(newZoom);
   }, [activePageIndex, pageObjects]);
 
-  useEffect(() => {
-    if (pageObjects.length > 0 && activePageIndex !== null) {
-        handleFitPage();
-    }
-  }, [pageObjects.length, handleFitPage]);
-
 
   const updateLanguage = (lang: 'en' | 'zh') => {
     setCurrentLanguage(lang);
@@ -806,6 +800,10 @@ export default function PdfEditorHomepage() {
       setSelectedPageIds(new Set());
       setActivePageIndex(newPageObjects.length > 0 ? 0 : null);
       setViewMode('editor');
+      
+      // Set initial zoom after a short delay to ensure layout is stable
+      setTimeout(() => handleFitPage(), 100);
+
     } catch (err: any) {
       toast({ title: texts.loadError, description: err.message, variant: "destructive" });
       setPdfDocumentProxy(null);
@@ -1582,8 +1580,17 @@ export default function PdfEditorHomepage() {
 
     const handleAddBlankPage = () => {
         const blankCanvas = document.createElement('canvas');
-        blankCanvas.width = 595;
-        blankCanvas.height = 842;
+        
+        // Use dimensions from the first existing page to ensure consistency.
+        if (pageObjects.length > 0 && pageObjects[0].sourceCanvas) {
+            blankCanvas.width = pageObjects[0].sourceCanvas.width;
+            blankCanvas.height = pageObjects[0].sourceCanvas.height;
+        } else {
+            // Default to a standard A4 size at 144 DPI (like pdf.js scale: 2.0) if no pages exist.
+            blankCanvas.width = 595 * 2;
+            blankCanvas.height = 842 * 2;
+        }
+
         const ctx = blankCanvas.getContext('2d');
         if (ctx) {
             ctx.fillStyle = 'white';
@@ -1591,15 +1598,26 @@ export default function PdfEditorHomepage() {
         }
         const newPageObject: PageObject = { id: uuidv4(), sourceCanvas: blankCanvas, rotation: 0 };
 
-        let insertAt = (activePageIndex ?? -1) + 1;
+        // Insert after the current page, or at the end if no page is active.
+        const insertAt = (activePageIndex === null ? pageObjects.length - 1 : activePageIndex) + 1;
 
         setPageObjects(prev => {
             const newPages = [...prev];
             newPages.splice(insertAt, 0, newPageObject);
             return newPages;
         });
+
+        // Set the new page as active.
         setActivePageIndex(insertAt);
         setSelectedPageIds(new Set([newPageObject.id]));
+        
+        // Automatically scroll the new page into view in the main panel.
+        setTimeout(() => {
+            const newPageElement = pageRefs.current[insertAt];
+            if (newPageElement) {
+                newPageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 100);
     };
 
     const handlePlaceholderClick = (featureName: string) => {
@@ -2195,5 +2213,7 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
+
+    
 
     

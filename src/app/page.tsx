@@ -140,20 +140,6 @@ const translations = {
         noteInputPlaceholder: 'Add a temporary note (not saved in PDF)',
         pageManagement: 'Page Management',
         fileOperations: 'File Operations',
-        watermarkSectionTitle: 'Watermark',
-        watermarkInputPlaceholder: 'Enter watermark text',
-        watermarkFontSizeLabel: 'Font Size',
-        watermarkColorLabel: 'Color',
-        watermarkOpacityLabel: 'Opacity',
-        watermarkTypeLabel: 'Watermark Type',
-        watermarkTypeText: 'Text',
-        watermarkTypeImage: 'Image',
-        watermarkImageLabel: 'Select Image',
-        watermarkPreviewButton: 'Preview &amp; Position Watermark',
-        watermarkPreviewModalTitle: 'Preview &amp; Position Watermark',
-        watermarkPreviewInfo: 'Drag watermark to desired position. Adjust style below. This position will be applied to all pages.',
-        watermarkConfirmPosition: 'Confirm Position &amp; Style',
-        noPdfForWatermarkPreview: 'Upload a PDF to preview watermark.',
         pageNumberingSectionTitle: 'Page Numbering',
         enablePageNumbering: 'Enable Page Numbering',
         pageNumberPosition: 'Position',
@@ -242,7 +228,7 @@ const translations = {
         zoomOut: 'Zoom Out',
         fitToWidth: 'Fit to Width',
         fitToPage: 'Fit to Page',
-        textAnnotationSample: 'Sample Text',
+        textAnnotationSample: '範例文本',
         noImageForInsertion: 'No image selected for insertion.',
         imageInsertSuccess: 'Image inserted successfully.',
         imageInsertError: 'Error inserting image.',
@@ -298,20 +284,6 @@ const translations = {
         noteInputPlaceholder: '新增臨時筆記（不會儲存於 PDF）',
         pageManagement: '頁面管理',
         fileOperations: '檔案操作',
-        watermarkSectionTitle: '浮水印',
-        watermarkInputPlaceholder: '輸入浮水印文字',
-        watermarkFontSizeLabel: '字體大小',
-        watermarkColorLabel: '顏色',
-        watermarkOpacityLabel: '透明度',
-        watermarkTypeLabel: '浮水印類型',
-        watermarkTypeText: '文字',
-        watermarkTypeImage: '圖片',
-        watermarkImageLabel: '選擇圖片',
-        watermarkPreviewButton: '預覽並定位浮水印',
-        watermarkPreviewModalTitle: '預覽與定位浮水印',
-        watermarkPreviewInfo: '將浮水印拖曳到目標位置。在下方調整樣式。此設定將套用於所有頁面。',
-        watermarkConfirmPosition: '確認位置與樣式',
-        noPdfForWatermarkPreview: '請先上傳 PDF 以預覽浮水印。',
         pageNumberingSectionTitle: '頁碼',
         enablePageNumbering: '啟用頁碼',
         pageNumberPosition: '位置',
@@ -430,17 +402,6 @@ const pageNumberPositions: {value: PageNumberPosition, labelKey: keyof typeof tr
   { value: 'top-left', labelKey: 'topLeft'},
   { value: 'top-right', labelKey: 'topRight'},
 ];
-
-interface WatermarkConfig {
-  text: string;
-  type: 'text' | 'image';
-  imageUrl: string | null;
-  topRatio: number;
-  leftRatio: number;
-  fontSize: number;
-  color: string;
-  opacity: number;
-}
 
 interface PagePreviewItemProps {
   pageObj: PageObject;
@@ -639,14 +600,10 @@ const TextAnnotationComponent = ({
             onMouseDown={(e) => {
                 if (!isEditing) onDragStart(e, annotation.id)
             }}
-            onClick={(e) => {
-                 onClick(annotation.id, e);
-            }}
-            onDoubleClick={(e) => {
-                onDoubleClick(annotation.id, e);
-            }}
+            onClick={(e) => onClick(annotation.id, e)}
+            onDoubleClick={(e) => onDoubleClick(annotation.id, e)}
             className={cn(
-                "absolute",
+                "absolute group/text-annotation",
                 !isEditing && "cursor-grab",
                 isSelected && !isEditing && "border-2 border-dashed border-primary",
                 annotation.link && !isEditing && "border-2 border-dashed border-blue-500"
@@ -664,13 +621,11 @@ const TextAnnotationComponent = ({
                 value={annotation.text}
                 onChange={(e) => onAnnotationChange({ ...annotation, text: e.target.value })}
                 onClick={(e) => {
-                    if (isEditing) {
-                        e.stopPropagation();
-                    }
+                    if (isEditing) e.stopPropagation();
                 }}
                 disabled={!isEditing}
                 className={cn(
-                    "w-full p-0 bg-transparent border-0 resize-none focus:ring-0 overflow-y-hidden",
+                    "w-full p-0 bg-transparent border-0 resize-none focus:ring-0 overflow-hidden",
                     isEditing ? "cursor-text pointer-events-auto" : "pointer-events-none"
                 )}
                 style={{
@@ -738,13 +693,6 @@ export default function PdfEditorHomepage() {
 
   const dragStartRef = useRef({ x: 0, y: 0, initialLeft: 0, initialTop: 0, initialWidth: 0, initialHeight: 0 });
   const isDraggingRef = useRef(false);
-
-  const [tempWatermarkConfig, setTempWatermarkConfig] = useState<WatermarkConfig>(null!);
-  const [isWatermarkPreviewModalOpen, setIsWatermarkPreviewModalOpen] = useState(false);
-  const watermarkImageUploadRef = useRef<HTMLInputElement>(null);
-  const watermarkPreviewModalCanvasRef = useRef<HTMLCanvasElement>(null);
-  
-  const watermarkPreviewCanvasContainerRef = useRef<HTMLDivElement>(null);
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -1716,7 +1664,6 @@ export default function PdfEditorHomepage() {
         
         let initialItemState: any;
         switch (itemType) {
-            case 'watermark': initialItemState = tempWatermarkConfig; break;
             case 'annotation': initialItemState = textAnnotations.find(a => a.id === id); break;
             case 'image': initialItemState = imageAnnotations.find(a => a.id === id); break;
             case 'highlight': initialItemState = highlightAnnotations.find(a => a.id === id); break;
@@ -1778,7 +1725,6 @@ export default function PdfEditorHomepage() {
                 const updater = (prev: any) => ({ ...prev, topRatio: newTopRatio, leftRatio: newLeftRatio });
 
                 switch (itemType) {
-                    case 'watermark': setTempWatermarkConfig(prev => ({ ...prev, topRatio: parseFloat(newTopRatio.toFixed(4)), leftRatio: parseFloat(newLeftRatio.toFixed(4)) })); break;
                     case 'annotation': 
                         if (editingAnnotationId === id) return;
                         setTextAnnotations(prev => prev.map(ann => ann.id === id ? updater(ann) : ann)); 
@@ -1801,57 +1747,6 @@ export default function PdfEditorHomepage() {
         document.addEventListener('mouseup', handleMouseUp);
     };
 
-
-  const openWatermarkPreviewModal = () => {
-    if (pageObjects.length === 0) {
-        toast({ title: texts.watermarkSectionTitle, description: texts.noPdfForWatermarkPreview, variant: "destructive"});
-        return;
-    }
-    // setTempWatermarkConfig(watermarkConfig);
-    setIsWatermarkPreviewModalOpen(true);
-  };
-
-   useEffect(() => {
-    if (isWatermarkPreviewModalOpen && pageObjects.length > 0) {
-      const canvas = watermarkPreviewModalCanvasRef.current;
-      const ctx = canvas?.getContext('2d');
-      const sourceCanvas = pageObjects[0].sourceCanvas;
-      if (canvas && ctx && sourceCanvas) {
-        const container = watermarkPreviewCanvasContainerRef.current;
-        if (container) {
-          const scaleFactor = Math.min(
-            (container.clientWidth * 0.95) / sourceCanvas.width,
-            (container.clientHeight * 0.95) / sourceCanvas.height
-          );
-          canvas.width = sourceCanvas.width * scaleFactor;
-          canvas.height = sourceCanvas.height * scaleFactor;
-          ctx.drawImage(sourceCanvas, 0, 0, canvas.width, canvas.height);
-        }
-      }
-    }
-  }, [isWatermarkPreviewModalOpen, pageObjects, tempWatermarkConfig?.imageUrl]);
-
-  const handleWatermarkImageFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setTempWatermarkConfig(prev => ({
-          ...prev,
-          imageUrl: reader.result as string,
-          type: 'image'
-        }));
-      };
-      reader.readAsDataURL(file);
-    }
-    if (watermarkImageUploadRef.current) watermarkImageUploadRef.current.value = '';
-  };
-
-
-  const confirmWatermarkSettings = () => {
-    // setWatermarkConfig(tempWatermarkConfig);
-    setIsWatermarkPreviewModalOpen(false);
-  };
 
   const handleThumbnailClick = (index: number, event: React.MouseEvent) => {
       if (viewMode === 'editor') {
@@ -2063,7 +1958,8 @@ export default function PdfEditorHomepage() {
     const handleAnnotationClick = (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
         if (isDraggingRef.current) return;
-        
+        if (editingAnnotationId === id) return;
+
         setSelectedAnnotationId(id);
         setEditingAnnotationId(null);
         setSelectedImageId(null);
@@ -2072,6 +1968,7 @@ export default function PdfEditorHomepage() {
 
     const handleAnnotationDoubleClick = (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
+        setSelectedAnnotationId(id);
         setEditingAnnotationId(id);
     };
     
@@ -2204,7 +2101,7 @@ export default function PdfEditorHomepage() {
       </div>
     );
 
-    const editingAnnotation = textAnnotations.find(ann => ann.id === editingAnnotationId);
+    const editingAnnotation = editingAnnotationId ? textAnnotations.find(ann => ann.id === editingAnnotationId) : null;
 
 
     const handlePlaceholderClick = (featureName: string) => {
@@ -2305,36 +2202,35 @@ export default function PdfEditorHomepage() {
                 </h1>
                 <Menubar className="border-none shadow-none bg-transparent">
                     <MenubarMenu>
-                        <MenubarTrigger><Edit className="mr-2 h-4 w-4" />PDF編輯</MenubarTrigger>
+                        <MenubarTrigger><Edit className="mr-2 h-4 w-4" />{currentLanguage === 'zh' ? 'PDF編輯' : 'PDF Edit'}</MenubarTrigger>
                         <MenubarContent>
-                            <MenubarItem onClick={() => router.push('/merge-pdf')}><Combine className="mr-2 h-4 w-4" />合併PDF</MenubarItem>
-                            <MenubarItem onClick={handleSplitPdf} disabled={selectedPageIds.size === 0}><Scissors className="mr-2 h-4 w-4" />拆分PDF</MenubarItem>
-                            <MenubarItem onClick={() => setIsDeleteConfirmOpen(true)} disabled={selectedPageIds.size === 0}><Trash2 className="mr-2 h-4 w-4" />刪除頁面</MenubarItem>
-                            <MenubarItem onClick={handleSplitPdf} disabled={selectedPageIds.size === 0}><FileUp className="mr-2 h-4 w-4" />擷取頁面</MenubarItem>
-                            <MenubarItem onClick={() => toast({ title: '變換順序', description: '請在縮圖模式中直接拖曳頁面來變換順序。' })} disabled={pageObjects.length < 2}><ListOrdered className="mr-2 h-4 w-4" />變換順序</MenubarItem>
-                            <MenubarItem onClick={openWatermarkPreviewModal} disabled={pageObjects.length === 0}><Droplet className="mr-2 h-4 w-4" />添加浮水印</MenubarItem>
+                            <MenubarItem onClick={() => router.push('/merge-pdf')}><Combine className="mr-2 h-4 w-4" />{currentLanguage === 'zh' ? '合併PDF' : 'Merge PDF'}</MenubarItem>
+                            <MenubarItem onClick={handleSplitPdf} disabled={selectedPageIds.size === 0}><Scissors className="mr-2 h-4 w-4" />{currentLanguage === 'zh' ? '拆分PDF' : 'Split PDF'}</MenubarItem>
+                            <MenubarItem onClick={() => setIsDeleteConfirmOpen(true)} disabled={selectedPageIds.size === 0}><Trash2 className="mr-2 h-4 w-4" />{currentLanguage === 'zh' ? '刪除頁面' : 'Delete Pages'}</MenubarItem>
+                            <MenubarItem onClick={handleSplitPdf} disabled={selectedPageIds.size === 0}><FileUp className="mr-2 h-4 w-4" />{currentLanguage === 'zh' ? '擷取頁面' : 'Extract Pages'}</MenubarItem>
+                            <MenubarItem onClick={() => toast({ title: '變換順序', description: '請在縮圖模式中直接拖曳頁面來變換順序。' })} disabled={pageObjects.length < 2}><ListOrdered className="mr-2 h-4 w-4" />{currentLanguage === 'zh' ? '變換順序' : 'Reorder Pages'}</MenubarItem>
                         </MenubarContent>
                     </MenubarMenu>
                     <MenubarMenu>
-                        <MenubarTrigger><ArrowRightLeft className="mr-2 h-4 w-4" />PDF轉換</MenubarTrigger>
+                        <MenubarTrigger><ArrowRightLeft className="mr-2 h-4 w-4" />{currentLanguage === 'zh' ? 'PDF轉換' : 'PDF Convert'}</MenubarTrigger>
                         <MenubarContent>
                             <MenubarSub>
-                                <MenubarSubTrigger><FilePlus className="mr-2 h-4 w-4" />轉換為PDF</MenubarSubTrigger>
+                                <MenubarSubTrigger><FilePlus className="mr-2 h-4 w-4" />{currentLanguage === 'zh' ? '轉換為PDF' : 'Convert to PDF'}</MenubarSubTrigger>
                                 <MenubarSubContent>
-                                    <MenubarItem onClick={() => handlePlaceholderClick('WORD轉PDF')}><FileText className="mr-2 h-4 w-4" />WORD轉PDF</MenubarItem>
-                                    <MenubarItem onClick={() => handlePlaceholderClick('EXCEL轉PDF')}><FileSpreadsheet className="mr-2 h-4 w-4" />EXCEL轉PDF</MenubarItem>
-                                    <MenubarItem onClick={() => handlePlaceholderClick('PPT轉PDF')}><LucidePresentation className="mr-2 h-4 w-4" />PPT轉PDF</MenubarItem>
-                                    <MenubarItem onClick={() => handlePlaceholderClick('HTML轉PDF')}><Code className="mr-2 h-4 w-4" />HTML轉PDF</MenubarItem>
-                                    <MenubarItem onClick={() => imageToPdfUploadRef.current?.click()}><FileImage className="mr-2 h-4 w-4" />JPG轉PDF</MenubarItem>
+                                    <MenubarItem onClick={() => handlePlaceholderClick('WORD轉PDF')}><FileText className="mr-2 h-4 w-4" />WORD &rarr; PDF</MenubarItem>
+                                    <MenubarItem onClick={() => handlePlaceholderClick('EXCEL轉PDF')}><FileSpreadsheet className="mr-2 h-4 w-4" />EXCEL &rarr; PDF</MenubarItem>
+                                    <MenubarItem onClick={() => handlePlaceholderClick('PPT轉PDF')}><LucidePresentation className="mr-2 h-4 w-4" />PPT &rarr; PDF</MenubarItem>
+                                    <MenubarItem onClick={() => handlePlaceholderClick('HTML轉PDF')}><Code className="mr-2 h-4 w-4" />HTML &rarr; PDF</MenubarItem>
+                                    <MenubarItem onClick={() => imageToPdfUploadRef.current?.click()}><FileImage className="mr-2 h-4 w-4" />JPG &rarr; PDF</MenubarItem>
                                 </MenubarSubContent>
                             </MenubarSub>
                             <MenubarSub>
-                                <MenubarSubTrigger><FileMinus className="mr-2 h-4 w-4" />從PDF轉換</MenubarSubTrigger>
+                                <MenubarSubTrigger><FileMinus className="mr-2 h-4 w-4" />{currentLanguage === 'zh' ? '從PDF轉換' : 'Convert from PDF'}</MenubarSubTrigger>
                                 <MenubarSubContent>
-                                    <MenubarItem onClick={handleConvertToWord} disabled={!uploadedPdfFile}><FileText className="mr-2 h-4 w-4" />PDF轉WORD</MenubarItem>
-                                    <MenubarItem onClick={() => handlePlaceholderClick('PDF轉EXCEL')} disabled={!uploadedPdfFile}><FileSpreadsheet className="mr-2 h-4 w-4" />PDF轉EXCEL</MenubarItem>
-                                    <MenubarItem onClick={() => handlePlaceholderClick('PDF轉PPT')} disabled={!uploadedPdfFile}><LucidePresentation className="mr-2 h-4 w-4" />PDF轉PPT</MenubarItem>
-                                    <MenubarItem onClick={() => handlePlaceholderClick('PDF轉HTML')} disabled={!uploadedPdfFile}><Code className="mr-2 h-4 w-4" />PDF轉HTML</MenubarItem>
+                                    <MenubarItem onClick={handleConvertToWord} disabled={!uploadedPdfFile}><FileText className="mr-2 h-4 w-4" />PDF &rarr; WORD</MenubarItem>
+                                    <MenubarItem onClick={() => handlePlaceholderClick('PDF轉EXCEL')} disabled={!uploadedPdfFile}><FileSpreadsheet className="mr-2 h-4 w-4" />PDF &rarr; EXCEL</MenubarItem>
+                                    <MenubarItem onClick={() => handlePlaceholderClick('PDF轉PPT')} disabled={!uploadedPdfFile}><LucidePresentation className="mr-2 h-4 w-4" />PDF &rarr; PPT</MenubarItem>
+                                    <MenubarItem onClick={() => handlePlaceholderClick('PDF轉HTML')} disabled={!uploadedPdfFile}><Code className="mr-2 h-4 w-4" />PDF &rarr; HTML</MenubarItem>
                                 </MenubarSubContent>
                             </MenubarSub>
                         </MenubarContent>
@@ -2377,14 +2273,14 @@ export default function PdfEditorHomepage() {
       </header>
 
       <main className="flex-grow flex overflow-hidden relative" onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          setSelectedAnnotationId(null); 
-          setEditingAnnotationId(null); 
-          setSelectedImageId(null); 
-          setSelectedHighlightId(null);
+        if (e.currentTarget === e.target) {
+            setSelectedAnnotationId(null);
+            setEditingAnnotationId(null);
+            setSelectedImageId(null);
+            setSelectedHighlightId(null);
         }
       }}>
-        {editingAnnotationId && editingAnnotation && (
+        {editingAnnotation && (
             <TextAnnotationToolbar
                 annotation={editingAnnotation}
                 onAnnotationChange={handleAnnotationChange}

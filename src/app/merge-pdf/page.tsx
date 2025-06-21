@@ -3,6 +3,7 @@
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import * as pdfjsLib from 'pdfjs-dist';
 import { PDFDocument as PDFLibDocument } from 'pdf-lib';
 import Sortable from 'sortablejs';
@@ -15,7 +16,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader as ShadAlertDialogHeader, AlertDialogTitle as ShadAlertDialogTitle } from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload, Combine, Download, ArrowLeft, FilePlus } from 'lucide-react';
+import { Loader2, Upload, Combine, Download, FilePlus, LogIn, LogOut, UserCircle, MenuSquare, ArrowRightLeft, Edit, FileUp, ListOrdered, Trash2, Scissors, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus } from 'lucide-react';
+import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarSub, MenubarSubContent, MenubarSubTrigger, MenubarTrigger } from "@/components/ui/menubar";
+
 
 if (typeof window !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
@@ -54,6 +57,13 @@ const translations = {
     cancel: 'Cancel',
     confirm: 'Confirm',
     page: 'Page',
+    appTitle: 'DocuPilot',
+    loggedInAs: 'Logged in as User',
+    login: 'Login',
+    logout: 'Logout',
+    guest: 'Guest',
+    comingSoon: 'Coming Soon!',
+    featureNotImplemented: 'feature is not yet implemented.',
   },
   zh: {
     pageTitle: '合併 PDF 檔案',
@@ -87,6 +97,13 @@ const translations = {
     cancel: '取消',
     confirm: '確認',
     page: '頁',
+    appTitle: 'DocuPilot 文件助手',
+    loggedInAs: '已登入為使用者',
+    login: '登入',
+    logout: '登出',
+    guest: '訪客',
+    comingSoon: '即將推出！',
+    featureNotImplemented: '功能尚未實現。',
   },
 };
 
@@ -137,6 +154,7 @@ export default function MergePdfPage() {
 
   const [currentLanguage, setCurrentLanguage] = useState<'en' | 'zh'>('zh');
   const [texts, setTexts] = useState(translations.zh);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const [pageObjects, setPageObjects] = useState<PageObject[]>([]);
   const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
@@ -158,8 +176,30 @@ export default function MergePdfPage() {
     setTexts(translations[currentLanguage] || translations.en);
   }, [currentLanguage]);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const loggedInStatus = localStorage.getItem('isLoggedIn') === 'true';
+      setIsLoggedIn(loggedInStatus);
+    }
+  }, []);
+
   const updateLanguage = (lang: 'en' | 'zh') => {
     setCurrentLanguage(lang);
+  };
+  
+  const handleLogout = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('isLoggedIn');
+    }
+    setIsLoggedIn(false);
+    toast({ title: texts.logout, description: currentLanguage === 'zh' ? "您已成功登出。" : "You have been logged out successfully." });
+  };
+
+  const handlePlaceholderClick = (featureName: string) => {
+    toast({
+        title: texts.comingSoon,
+        description: `${featureName} ${texts.featureNotImplemented}`
+    });
   };
 
   const processPdfFile = async (file: File): Promise<PageObject[]> => {
@@ -349,31 +389,88 @@ export default function MergePdfPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <header className="p-4 border-b bg-card flex-shrink-0 flex justify-between items-center">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={() => router.push('/')}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-xl font-bold text-primary">{texts.pageTitle}</h1>
-            <p className="text-sm text-muted-foreground">{texts.pageDescription}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-4">
-            <div className="flex gap-2">
-                <Button variant={currentLanguage === 'en' ? "secondary" : "outline"} size="sm" onClick={() => updateLanguage('en')}>English</Button>
-                <Button variant={currentLanguage === 'zh' ? "secondary" : "outline"} size="sm" onClick={() => updateLanguage('zh')}>中文</Button>
+      <header className="p-0 border-b bg-card sticky top-0 z-40 flex-shrink-0">
+        <div className="container mx-auto flex justify-between items-center h-16">
+            <div className="flex items-center gap-6">
+                <h1 className="text-xl font-bold text-primary flex items-center cursor-pointer" onClick={() => router.push('/')}>
+                    <MenuSquare className="mr-2 h-6 w-6"/> {texts.appTitle}
+                </h1>
+                <Menubar className="border-none shadow-none bg-transparent">
+                    <MenubarMenu>
+                        <MenubarTrigger><Edit className="mr-2 h-4 w-4" />{currentLanguage === 'zh' ? 'PDF編輯' : 'PDF Edit'}</MenubarTrigger>
+                        <MenubarContent>
+                            <MenubarItem onClick={() => router.push('/merge-pdf')} disabled><Combine className="mr-2 h-4 w-4" />{currentLanguage === 'zh' ? '合併PDF' : 'Merge PDF'}</MenubarItem>
+                            <MenubarItem disabled><Scissors className="mr-2 h-4 w-4" />{currentLanguage === 'zh' ? '拆分PDF' : 'Split PDF'}</MenubarItem>
+                            <MenubarItem disabled><Trash2 className="mr-2 h-4 w-4" />{currentLanguage === 'zh' ? '刪除頁面' : 'Delete Pages'}</MenubarItem>
+                            <MenubarItem disabled><FileUp className="mr-2 h-4 w-4" />{currentLanguage === 'zh' ? '擷取頁面' : 'Extract Pages'}</MenubarItem>
+                            <MenubarItem disabled><ListOrdered className="mr-2 h-4 w-4" />{currentLanguage === 'zh' ? '變換順序' : 'Reorder Pages'}</MenubarItem>
+                        </MenubarContent>
+                    </MenubarMenu>
+                    <MenubarMenu>
+                        <MenubarTrigger><ArrowRightLeft className="mr-2 h-4 w-4" />{currentLanguage === 'zh' ? 'PDF轉換' : 'PDF Convert'}</MenubarTrigger>
+                        <MenubarContent>
+                            <MenubarSub>
+                                <MenubarSubTrigger><FilePlus className="mr-2 h-4 w-4" />{currentLanguage === 'zh' ? '轉換為PDF' : 'Convert to PDF'}</MenubarSubTrigger>
+                                <MenubarSubContent>
+                                    <MenubarItem onClick={() => handlePlaceholderClick('WORD轉PDF')}><FileText className="mr-2 h-4 w-4" />WORD &rarr; PDF</MenubarItem>
+                                    <MenubarItem onClick={() => handlePlaceholderClick('EXCEL轉PDF')}><FileSpreadsheet className="mr-2 h-4 w-4" />EXCEL &rarr; PDF</MenubarItem>
+                                    <MenubarItem onClick={() => handlePlaceholderClick('PPT轉PDF')}><LucidePresentation className="mr-2 h-4 w-4" />PPT &rarr; PDF</MenubarItem>
+                                    <MenubarItem onClick={() => handlePlaceholderClick('HTML轉PDF')}><Code className="mr-2 h-4 w-4" />HTML &rarr; PDF</MenubarItem>
+                                    <MenubarItem onClick={() => handlePlaceholderClick('JPG轉PDF')}><FileImage className="mr-2 h-4 w-4" />JPG &rarr; PDF</MenubarItem>
+                                </MenubarSubContent>
+                            </MenubarSub>
+                            <MenubarSub>
+                                <MenubarSubTrigger><FileMinus className="mr-2 h-4 w-4" />{currentLanguage === 'zh' ? '從PDF轉換' : 'Convert from PDF'}</MenubarSubTrigger>
+                                <MenubarSubContent>
+                                    <MenubarItem disabled><FileText className="mr-2 h-4 w-4" />PDF &rarr; WORD</MenubarItem>
+                                    <MenubarItem disabled><FileSpreadsheet className="mr-2 h-4 w-4" />PDF &rarr; EXCEL</MenubarItem>
+                                    <MenubarItem disabled><LucidePresentation className="mr-2 h-4 w-4" />PDF &rarr; PPT</MenubarItem>
+                                    <MenubarItem disabled><Code className="mr-2 h-4 w-4" />PDF &rarr; HTML</MenubarItem>
+                                </MenubarSubContent>
+                            </MenubarSub>
+                        </MenubarContent>
+                    </MenubarMenu>
+                </Menubar>
             </div>
-            {pageObjects.length > 0 && (
-                <Button onClick={handleDownload} disabled={isDownloading}>
-                    <Download className="mr-2 h-4 w-4" />
-                    {texts.downloadButton}
-                </Button>
-            )}
+            <div className="flex items-center gap-4">
+                 {pageObjects.length > 0 && (
+                    <Button onClick={handleDownload} disabled={isDownloading}>
+                        <Download className="mr-2 h-4 w-4" />
+                        {texts.downloadButton}
+                    </Button>
+                )}
+                <div className="flex gap-2">
+                    <Button variant={currentLanguage === 'en' ? "secondary" : "outline"} size="sm" onClick={() => updateLanguage('en')}>English</Button>
+                    <Button variant={currentLanguage === 'zh' ? "secondary" : "outline"} size="sm" onClick={() => updateLanguage('zh')}>中文</Button>
+                </div>
+                 {isLoggedIn ? (
+                    <div className="flex items-center gap-2">
+                        <UserCircle className="h-5 w-5 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">{texts.loggedInAs}</span>
+                        <Button variant="outline" size="sm" onClick={handleLogout}>
+                            <LogOut className="mr-2 h-4 w-4"/> {texts.logout}
+                        </Button>
+                    </div>
+                ) : (
+                   <div className="flex items-center gap-2">
+                        <UserCircle className="h-5 w-5 text-muted-foreground" />
+                         <span className="text-sm text-muted-foreground">{texts.guest}</span>
+                        <Link href="/login" passHref>
+                            <Button variant="ghost" size="sm">
+                                <LogIn className="mr-2 h-4 w-4"/> {texts.login}
+                            </Button>
+                        </Link>
+                    </div>
+                )}
+            </div>
         </div>
       </header>
 
       <main className="flex-grow p-6 overflow-y-auto">
+        <div className='mb-6'>
+            <h1 className="text-2xl font-bold text-foreground">{texts.pageTitle}</h1>
+            <p className="text-sm text-muted-foreground">{texts.pageDescription}</p>
+        </div>
         {pageObjects.length === 0 ? (
           <Card 
             className="max-w-2xl mx-auto"

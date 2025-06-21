@@ -1992,10 +1992,10 @@ export default function PdfEditorHomepage() {
                           index={index}
                           isSelected={selectedPageIds.has(pageObj.id)}
                           onClick={() => handleThumbnailClick(index, {} as React.MouseEvent)}
-                          onDoubleClick={()={() => {
+                          onDoubleClick={() => {
                             setActivePageIndex(index);
                             setViewMode('editor');
-                          }}}
+                          }}
                           watermarkConfig={watermarkConfig}
                           texts={texts}
                         />
@@ -2078,3 +2078,4 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
+

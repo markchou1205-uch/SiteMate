@@ -2040,7 +2040,7 @@ export default function PdfEditorHomepage() {
               </div>
           ) : (
             <>
-                <div ref={thumbnailContainerRef} className="w-1/5 border-r bg-card flex-shrink-0 overflow-y-auto p-2 space-y-2">
+                <div ref={thumbnailContainerRef} className="w-40 border-r bg-card flex-shrink-0 overflow-y-auto p-2 space-y-2">
                     {pageObjects.map((page, index) => {
                         const isActive = activePageIndex === index;
                         return (
@@ -2087,7 +2087,7 @@ export default function PdfEditorHomepage() {
                     })}
                 </div>
 
-                <div ref={mainViewContainerRef} className="w-3/5 flex-grow bg-muted/30 overflow-y-auto flex flex-col items-center p-4 space-y-4 relative">
+                <div ref={mainViewContainerRef} className="flex-grow bg-muted/30 overflow-y-auto flex flex-col items-center p-4 space-y-4 relative">
                     {pageObjects.map((page, index) => {
                         const {sourceCanvas, rotation} = page;
                         const srcWidth = sourceCanvas.width;
@@ -2146,7 +2146,7 @@ export default function PdfEditorHomepage() {
                     </div>
                 </div>
 
-                <div className="w-1/5 border-l bg-card flex-shrink-0 p-2">
+                <div className="w-72 border-l bg-card flex-shrink-0 p-4 space-y-4 overflow-y-auto">
                     <div className="grid grid-cols-2 gap-2">
                         <ToolbarButton icon={RotateCw} label={texts.toolRotate} onClick={() => handleRotatePage('cw')} disabled={activePageIndex === null}/>
                         <ToolbarButton icon={Trash2} label={texts.toolDelete} onClick={() => { if(activePageIndex !== null) { setPageToDelete(activePageIndex); setIsDeleteConfirmOpen(true); } }} disabled={activePageIndex === null}/>
@@ -2167,7 +2167,7 @@ export default function PdfEditorHomepage() {
                         ref={insertPdfRef}
                         className="hidden"
                      />
-                     <Accordion type="single" collapsible className="w-full mt-4">
+                     <Accordion type="single" collapsible className="w-full">
                         <AccordionItem value="item-1">
                             <AccordionTrigger>{texts.watermarkSectionTitle}</AccordionTrigger>
                             <AccordionContent className="space-y-4 pt-4">

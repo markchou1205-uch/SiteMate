@@ -22,6 +22,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, FileType, FileDigit, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, FontSize, Eye, Scissors, LayoutGrid, PanelLeft, FilePlus2, Combine, Type, ImagePlus, Link as LinkIcon, MessageSquarePlus, ZoomIn, ZoomOut, Expand } from 'lucide-react';
 import { Slider } from "@/components/ui/slider";
+import { Separator } from "@/components/ui/separator";
 
 import { storage, functions as firebaseFunctions, app as firebaseApp } from '@/lib/firebase'; // Firebase SDK
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -181,7 +182,8 @@ const translations = {
         toolInsertComment: 'Comment',
         zoomIn: 'Zoom In',
         zoomOut: 'Zoom Out',
-        fitToWidth: 'Fit to Width'
+        fitToWidth: 'Fit to Width',
+        fitToPage: 'Fit to Page'
     },
     zh: {
         pageTitle: 'DocuPilot 文件助手',
@@ -325,7 +327,8 @@ const translations = {
         toolInsertComment: '註解',
         zoomIn: '放大',
         zoomOut: '縮小',
-        fitToWidth: '符合頁寬'
+        fitToWidth: '符合頁寬',
+        fitToPage: '符合頁面'
     }
 };
 
@@ -346,21 +349,21 @@ const pageNumberPositions: {value: PageNumberPosition, labelKey: keyof typeof tr
 interface WatermarkConfig {
   text: string;
   type: 'text' | 'image';
-  imageUrl: string | null; 
-  topRatio: number; 
-  leftRatio: number; 
-  fontSize: number; 
-  color: string; 
-  opacity: number; 
+  imageUrl: string | null;
+  topRatio: number;
+  leftRatio: number;
+  fontSize: number;
+  color: string;
+  opacity: number;
 }
 
 interface PagePreviewItemProps {
   pageObj: PageObject;
   index: number;
   isSelected: boolean;
-  onClick: () => void;
+  onClick: (event: React.MouseEvent) => void;
   onDoubleClick: () => void;
-  watermarkConfig: WatermarkConfig; 
+  watermarkConfig: WatermarkConfig;
   texts: typeof translations.en;
 }
 
@@ -388,12 +391,12 @@ const PagePreviewItem = React.memo(({
         rotatedSourceWidth = sourceCanvas.width;
         rotatedSourceHeight = sourceCanvas.height;
       }
-      
+
       const targetAspectRatio = rotatedSourceWidth / rotatedSourceHeight;
-      const cssDisplayWidth = 120; 
+      const cssDisplayWidth = 120;
       const cssDisplayHeight = cssDisplayWidth / targetAspectRatio;
 
-      previewDisplayCanvas.width = rotatedSourceWidth; 
+      previewDisplayCanvas.width = rotatedSourceWidth;
       previewDisplayCanvas.height = rotatedSourceHeight;
 
       previewCtx.save();
@@ -401,14 +404,14 @@ const PagePreviewItem = React.memo(({
       previewCtx.rotate(rad);
       previewCtx.drawImage(sourceCanvas, -sourceCanvas.width / 2, -sourceCanvas.height / 2, sourceCanvas.width, sourceCanvas.height);
       previewCtx.restore();
-      
+
       previewDisplayCanvas.style.width = `${cssDisplayWidth}px`;
       previewDisplayCanvas.style.height = `${cssDisplayHeight}px`;
     }
   }, [pageObj.sourceCanvas, pageObj.rotation]);
 
-  
-  const previewWatermarkFontSize = Math.max(6, watermarkConfig.fontSize / (150/15)); // 150 is approx PDF pt height for a page, 15 is approx thumbnail CSS pixel height
+
+  const previewWatermarkFontSize = Math.max(6, watermarkConfig.fontSize / (150/15));
 
   return (
     <div
@@ -418,13 +421,13 @@ const PagePreviewItem = React.memo(({
       data-index={index}
       onClick={onClick}
       onDoubleClick={onDoubleClick}
-      style={{ position: 'relative' }} 
+      style={{ position: 'relative' }}
     >
       <canvas ref={canvasRef} className="rounded-md shadow-md" style={{ willReadFrequently: true } as any}></canvas>
       <div className="text-xs text-muted-foreground mt-1 text-center">
         {texts.page} {index + 1}
       </div>
-      
+
       {watermarkConfig.type === 'text' && watermarkConfig.text && (
         <div
           style={{
@@ -432,17 +435,17 @@ const PagePreviewItem = React.memo(({
             top: `${watermarkConfig.topRatio * 100}%`,
             left: `${watermarkConfig.leftRatio * 100}%`,
             padding: '1px 3px',
-            backgroundColor: 'rgba(220,220,220,0.1)', 
+            backgroundColor: 'rgba(220,220,220,0.1)',
             border: '1px dashed rgba(150,150,150,0.3)',
             borderRadius: '2px',
             whiteSpace: 'nowrap',
             userSelect: 'none',
-            fontSize: `${previewWatermarkFontSize}px`, 
+            fontSize: `${previewWatermarkFontSize}px`,
             color: watermarkConfig.color,
             opacity: watermarkConfig.opacity,
-            zIndex: 5, 
-            pointerEvents: 'none', 
-            transform: 'translate(-50%, -50%)', // Center the watermark text on its coordinates
+            zIndex: 5,
+            pointerEvents: 'none',
+            transform: 'translate(-50%, -50%)',
           }}
         >
           {watermarkConfig.text}
@@ -459,10 +462,10 @@ const PagePreviewItem = React.memo(({
             opacity: watermarkConfig.opacity,
             zIndex: 5,
             pointerEvents: 'none',
-            maxWidth: '30px', 
+            maxWidth: '30px',
             maxHeight: '30px',
             objectFit: 'contain',
-            transform: 'translate(-50%, -50%)', // Center the image on its coordinates
+            transform: 'translate(-50%, -50%)',
           }}
         />
       )}
@@ -490,7 +493,7 @@ export default function PdfEditorHomepage() {
 
   const [pageObjects, setPageObjects] = useState<PageObject[]>([]);
   const [selectedPageIds, setSelectedPageIds] = useState<Set<string>>(new Set());
-  
+
   const [activePageIndex, setActivePageIndex] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<'editor' | 'grid'>('editor');
 
@@ -501,25 +504,24 @@ export default function PdfEditorHomepage() {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [pageToDelete, setPageToDelete] = useState<number | null>(null);
 
-
   const [currentLanguage, setCurrentLanguage] = useState<'en' | 'zh'>('zh');
   const [texts, setTexts] = useState(translations.zh);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
-  
+
   const [insertPosition, setInsertPosition] = useState<'before' | 'after'>('before');
   const [isInsertConfirmOpen, setIsInsertConfirmOpen] = useState(false);
   const [pendingInsertFile, setPendingInsertFile] = useState<File | null>(null);
-  
+
   const [watermarkConfig, setWatermarkConfig] = useState<WatermarkConfig>({
     text: '',
     type: 'text',
     imageUrl: null,
-    topRatio: 0.5, 
+    topRatio: 0.5,
     leftRatio: 0.5,
-    fontSize: 48, 
-    color: '#808080', 
+    fontSize: 48,
+    color: '#808080',
     opacity: 0.5,
   });
 
@@ -535,10 +537,9 @@ export default function PdfEditorHomepage() {
     initialWatermarkTopInPx: number;
     initialWatermarkLeftInPx: number;
     draggedElement: HTMLElement;
-    previewWrapperElement: HTMLElement; 
+    previewWrapperElement: HTMLElement;
   } | null>(null);
   const watermarkPreviewCanvasContainerRef = useRef<HTMLDivElement>(null);
-
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -583,11 +584,9 @@ export default function PdfEditorHomepage() {
 
   const observerRef = useRef<IntersectionObserver | null>(null);
 
-
   useEffect(() => {
     setTexts(translations[currentLanguage] || translations.en);
   }, [currentLanguage]);
-
 
   useEffect(() => {
     const sdkServicesInitialized = !!firebaseApp && !!storage && !!firebaseFunctions;
@@ -600,7 +599,6 @@ export default function PdfEditorHomepage() {
         setFirebaseConfigWarning(warningMsg);
     }
   }, [currentLanguage, texts]);
-
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -634,7 +632,7 @@ export default function PdfEditorHomepage() {
             dragClass: 'opacity-75',
             onEnd: (evt) => {
                 if (evt.oldIndex === undefined || evt.newIndex === undefined || evt.oldIndex === evt.newIndex) return;
-                
+
                 setPageObjects(prevPageObjects => {
                     const reorderedPageObjects = Array.from(prevPageObjects);
                     const [movedItem] = reorderedPageObjects.splice(evt.oldIndex!, 1);
@@ -655,7 +653,7 @@ export default function PdfEditorHomepage() {
         sortableInstanceRef.current.destroy();
         sortableInstanceRef.current = null;
     }
-    
+
     return () => {
         if (sortableInstanceRef.current) {
             sortableInstanceRef.current.destroy();
@@ -664,14 +662,13 @@ export default function PdfEditorHomepage() {
     };
   }, [pageObjects.length, viewMode, createSortableInstance]);
 
-  // Intersection Observer for main view scrolling
   useEffect(() => {
     if (observerRef.current) observerRef.current.disconnect();
 
     const options = {
         root: mainViewContainerRef.current,
         rootMargin: '0px',
-        threshold: 0.5 // Trigger when 50% of the page is visible
+        threshold: 0.5
     };
 
     observerRef.current = new IntersectionObserver((entries) => {
@@ -697,11 +694,33 @@ export default function PdfEditorHomepage() {
             });
         }
     };
-  }, [pageObjects, mainCanvasZoom]); // Re-observe when pages or zoom changes
+  }, [pageObjects, mainCanvasZoom]);
+
+  const handleFitPage = useCallback(() => {
+      if (!mainViewContainerRef.current || pageObjects.length === 0 || activePageIndex === null) return;
+      const container = mainViewContainerRef.current;
+      const containerWidth = container.clientWidth - 40;
+      const containerHeight = container.clientHeight - 40;
+
+      const activePage = pageObjects[activePageIndex];
+      if (!activePage) return;
+
+      const pageCanvas = activePage.sourceCanvas;
+      const rotation = activePage.rotation;
+
+      let pageRenderWidth = (rotation % 180 !== 0) ? pageCanvas.height : pageCanvas.width;
+      let pageRenderHeight = (rotation % 180 !== 0) ? pageCanvas.width : pageCanvas.height;
+
+      const widthRatio = containerWidth / pageRenderWidth;
+      const heightRatio = containerHeight / pageRenderHeight;
+
+      const newZoom = Math.min(widthRatio, heightRatio);
+      setMainCanvasZoom(newZoom);
+  }, [activePageIndex, pageObjects]);
 
   const handleFitToWidth = useCallback(() => {
       if (!mainViewContainerRef.current || pageObjects.length === 0 || activePageIndex === null) return;
-      const containerWidth = mainViewContainerRef.current.clientWidth - 40; // a little padding
+      const containerWidth = mainViewContainerRef.current.clientWidth - 40;
       const activePage = pageObjects[activePageIndex];
       if (!activePage) return;
 
@@ -713,12 +732,11 @@ export default function PdfEditorHomepage() {
       setMainCanvasZoom(newZoom);
   }, [activePageIndex, pageObjects]);
 
-  // Initial fit-to-width zoom
   useEffect(() => {
     if (pageObjects.length > 0 && activePageIndex !== null) {
-        handleFitToWidth();
+        handleFitPage();
     }
-  }, [pageObjects, activePageIndex, handleFitToWidth]);
+  }, [pageObjects.length, handleFitPage]);
 
 
   const updateLanguage = (lang: 'en' | 'zh') => {
@@ -732,26 +750,26 @@ export default function PdfEditorHomepage() {
     setIsLoggedIn(false);
     toast({ title: texts.logout, description: currentLanguage === 'zh' ? "您已成功登出。" : "You have been logged out successfully." });
   };
-  
+
 
   const processPdfFile = async (file: File): Promise<{ newPageObjects: PageObject[], docProxy: PDFDocumentProxyType }> => {
     const arrayBuffer = await file.arrayBuffer();
     const pdfDocProxy = await pdfjsLib.getDocument({
       data: arrayBuffer,
-      cMapUrl: `//cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/cmaps/`, 
-      cMapPacked: true, 
+      cMapUrl: `//cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
+      cMapPacked: true,
     }).promise;
 
     const numPages = pdfDocProxy.numPages;
     const loadedPageObjects: PageObject[] = [];
     for (let i = 1; i <= numPages; i++) {
       const page = await pdfDocProxy.getPage(i);
-      const viewport = page.getViewport({ scale: 2.0 }); 
+      const viewport = page.getViewport({ scale: 2.0 });
       const canvas = document.createElement('canvas');
       canvas.width = viewport.width;
       canvas.height = viewport.height;
       const ctx = canvas.getContext('2d');
-      if (!ctx) continue; 
+      if (!ctx) continue;
       await page.render({ canvasContext: ctx, viewport }).promise;
       loadedPageObjects.push({ id: uuidv4(), sourceCanvas: canvas, rotation: 0 });
     }
@@ -760,14 +778,14 @@ export default function PdfEditorHomepage() {
 
   const handlePdfUpload = async (event: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLDivElement>) => {
     let file: File | null = null;
-    if ('dataTransfer' in event) { 
+    if ('dataTransfer' in event) {
         event.preventDefault();
         event.stopPropagation();
         if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
             file = event.dataTransfer.files[0];
-            event.dataTransfer.clearData(); 
+            event.dataTransfer.clearData();
         }
-    } else { 
+    } else {
         file = event.target.files?.[0] || null;
     }
 
@@ -775,16 +793,16 @@ export default function PdfEditorHomepage() {
         if (file) toast({ title: texts.loadError, description: currentLanguage === 'zh' ? "無效的檔案類型。請上傳 PDF。" : "Invalid file type. Please upload a PDF.", variant: "destructive" });
         return;
     }
-    setUploadedPdfFile(file); 
-    setWordFileUrl(null); 
-    setWordConversionError(null); 
+    setUploadedPdfFile(file);
+    setWordFileUrl(null);
+    setWordConversionError(null);
 
     setIsLoading(true);
     setLoadingMessage(texts.loadingPdf);
     try {
       const { newPageObjects, docProxy } = await processPdfFile(file);
       setPageObjects(newPageObjects);
-      setPdfDocumentProxy(docProxy); 
+      setPdfDocumentProxy(docProxy);
       setSelectedPageIds(new Set());
       setActivePageIndex(newPageObjects.length > 0 ? 0 : null);
       setViewMode('editor');
@@ -797,40 +815,40 @@ export default function PdfEditorHomepage() {
     } finally {
       setIsLoading(false);
       setLoadingMessage('');
-      if (pdfUploadRef.current) pdfUploadRef.current.value = ''; 
+      if (pdfUploadRef.current) pdfUploadRef.current.value = '';
     }
   };
 
   const handleDeletePages = () => {
-    if (pageToDelete !== null) { // Single page delete from editor
+    if (pageToDelete !== null) {
         const newPages = pageObjects.filter((p, index) => index !== pageToDelete);
         const newActiveIndex = pageToDelete >= newPages.length ? newPages.length - 1 : pageToDelete;
-        
+
         setPageObjects(newPages);
         setActivePageIndex(newActiveIndex);
-        setSelectedPageIds(new Set()); // Clear selection
-    } else { // Multi page delete from grid
+        setSelectedPageIds(new Set());
+    } else {
         if (selectedPageIds.size === 0) {
             toast({ title: texts.pageManagement, description: texts.noPageSelected, variant: "destructive" });
             return;
         }
         const newPages = pageObjects.filter(p => !selectedPageIds.has(p.id));
-        
+
         setPageObjects(newPages);
         setActivePageIndex(null);
         setSelectedPageIds(new Set());
     }
-    
+
     if (pageObjects.length - (pageToDelete !== null ? 1 : selectedPageIds.size) === 0) {
       setPdfDocumentProxy(null);
       setUploadedPdfFile(null);
     }
-    
+
     toast({ title: texts.pageManagement, description: currentLanguage === 'zh' ? "選取的頁面已刪除。" : "Selected pages have been deleted." });
     setPageToDelete(null);
     setIsDeleteConfirmOpen(false);
   };
-  
+
 
   const hexToRgb = (hex: string): { r: number; g: number; b: number } => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -838,7 +856,7 @@ export default function PdfEditorHomepage() {
       r: parseInt(result[1], 16) / 255,
       g: parseInt(result[2], 16) / 255,
       b: parseInt(result[3], 16) / 255
-    } : { r: 0.5, g: 0.5, b: 0.5 }; // Default to grey if parse fails
+    } : { r: 0.5, g: 0.5, b: 0.5 };
   };
 
 
@@ -853,7 +871,7 @@ export default function PdfEditorHomepage() {
       let downloadInfoString = localStorage.getItem('DocuPilotDownloadInfo');
       let downloadInfo = downloadInfoString ? JSON.parse(downloadInfoString) : { count: 0, date: today };
 
-      if (downloadInfo.date !== today) { 
+      if (downloadInfo.date !== today) {
         downloadInfo = { count: 0, date: today };
       }
 
@@ -868,7 +886,7 @@ export default function PdfEditorHomepage() {
     setIsDownloading(true);
     setLoadingMessage(texts.generatingFile);
     try {
-      await new Promise(resolve => setTimeout(resolve, 100)); 
+      await new Promise(resolve => setTimeout(resolve, 100));
       const pdfDocOut = await PDFLibDocument.create();
       const helveticaFont = await pdfDocOut.embedFont(StandardFonts.Helvetica);
 
@@ -880,7 +898,7 @@ export default function PdfEditorHomepage() {
         if (!tempCtx) continue;
 
         const rad = rotation * Math.PI / 180;
-        
+
         if (rotation % 180 !== 0) {
           tempRenderCanvas.width = sourceCanvas.height;
           tempRenderCanvas.height = sourceCanvas.width;
@@ -892,15 +910,15 @@ export default function PdfEditorHomepage() {
         tempCtx.translate(tempRenderCanvas.width / 2, tempRenderCanvas.height / 2);
         tempCtx.rotate(rad);
         tempCtx.drawImage(sourceCanvas, -sourceCanvas.width / 2, -sourceCanvas.height / 2, sourceCanvas.width, sourceCanvas.height);
-       
+
         const imgDataUrl = tempRenderCanvas.toDataURL('image/png');
         const pngImage = await pdfDocOut.embedPng(imgDataUrl);
-        
+
         const pdfLibPage = pdfDocOut.addPage([tempRenderCanvas.width, tempRenderCanvas.height]);
         pdfLibPage.drawImage(pngImage, { x: 0, y: 0, width: tempRenderCanvas.width, height: tempRenderCanvas.height });
-        
+
         const { width: pageWidth, height: pageHeight } = pdfLibPage.getSize();
-        
+
         if ((watermarkConfig.type === 'text' && watermarkConfig.text) || (watermarkConfig.type === 'image' && watermarkConfig.imageUrl)) {
             pdfLibPage.pushGraphicsState();
             pdfLibPage.setOpacity(watermarkConfig.opacity);
@@ -910,7 +928,7 @@ export default function PdfEditorHomepage() {
                 const textColor = hexToRgb(watermarkConfig.color);
                 const textWidth = helveticaFont.widthOfTextAtSize(watermarkConfig.text, pdfWatermarkFontSize);
                 const textHeight = helveticaFont.heightAtSize(pdfWatermarkFontSize);
-                
+
                 const wmX_pdf_text = watermarkConfig.leftRatio * pageWidth - textWidth / 2;
                 const wmY_pdf_text = pageHeight - (watermarkConfig.topRatio * pageHeight) - textHeight / 2;
 
@@ -931,7 +949,7 @@ export default function PdfEditorHomepage() {
                     } else if (watermarkConfig.imageUrl.startsWith('data:image/jpeg') || watermarkConfig.imageUrl.startsWith('data:image/jpg')) {
                         wmEmbedImage = await pdfDocOut.embedJpg(imageBytes);
                     }
-                    
+
                     if (wmEmbedImage) {
                         const { width: imgOriginalWidth, height: imgOriginalHeight } = wmEmbedImage.scale(1);
                         const wmX_pdf_img = watermarkConfig.leftRatio * pageWidth - imgOriginalWidth / 2;
@@ -955,9 +973,9 @@ export default function PdfEditorHomepage() {
 
         if (pageNumberingConfig.enabled) {
             const { width: pnPageWidth, height: pnPageHeight } = pdfLibPage.getSize();
-            const currentPageNum = index + pageNumberingConfig.start; 
+            const currentPageNum = index + pageNumberingConfig.start;
             const totalNumPages = pageObjects.length;
-            
+
             let text = pageNumberingConfig.format
                 .replace('{page}', currentPageNum.toString())
                 .replace('{total}', totalNumPages.toString());
@@ -972,7 +990,7 @@ export default function PdfEditorHomepage() {
                 case 'top-left': x = pageNumberingConfig.margin; y = pnPageHeight - pageNumberingConfig.margin - pnAscent; break;
                 case 'top-center': x = pnPageWidth / 2 - textWidthNum / 2; y = pnPageHeight - pageNumberingConfig.margin - pnAscent; break;
                 case 'top-right': x = pnPageWidth - pageNumberingConfig.margin - textWidthNum; y = pnPageHeight - pageNumberingConfig.margin - pnAscent; break;
-                case 'bottom-left': x = pageNumberingConfig.margin; y = pageNumberingConfig.margin; break; 
+                case 'bottom-left': x = pageNumberingConfig.margin; y = pageNumberingConfig.margin; break;
                 case 'bottom-center': x = pnPageWidth / 2 - textWidthNum / 2; y = pageNumberingConfig.margin; break;
                 case 'bottom-right': x = pnPageWidth - pageNumberingConfig.margin - textWidthNum; y = pageNumberingConfig.margin; break;
                 default: x = pnPageWidth / 2 - textWidthNum / 2; y = pageNumberingConfig.margin;
@@ -980,12 +998,12 @@ export default function PdfEditorHomepage() {
             pdfLibPage.drawText(text, { x, y, font: pnFont, size: textSize, color: grayscale(0) });
         }
       }
-      
+
       if (pdfProtectionConfig.enabled && pdfProtectionConfig.password) {
         await pdfDocOut.encrypt({
           userPassword: pdfProtectionConfig.password,
-          ownerPassword: pdfProtectionConfig.password, 
-          permissions: {}, 
+          ownerPassword: pdfProtectionConfig.password,
+          permissions: {},
         });
       }
 
@@ -1145,14 +1163,14 @@ export default function PdfEditorHomepage() {
 
   const handleInsertPdfFileSelected = (event: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLDivElement>) => {
     let file: File | null = null;
-    if ('dataTransfer' in event) { 
+    if ('dataTransfer' in event) {
         event.preventDefault();
         event.stopPropagation();
         if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
             file = event.dataTransfer.files[0];
             event.dataTransfer.clearData();
         }
-    } else { 
+    } else {
         file = event.target.files?.[0] || null;
     }
 
@@ -1161,29 +1179,29 @@ export default function PdfEditorHomepage() {
         return;
     }
 
-    setPendingInsertFile(file); 
-    if (pageObjects.length > 0 && selectedPageIds.size === 0) { 
-        setIsInsertConfirmOpen(true); 
+    setPendingInsertFile(file);
+    if (pageObjects.length > 0 && selectedPageIds.size === 0) {
+        setIsInsertConfirmOpen(true);
     } else {
-        proceedWithInsert(file); 
+        proceedWithInsert(file);
     }
   };
 
   const proceedWithInsert = async (fileToInsert?: File) => {
-    const file = fileToInsert || pendingInsertFile; 
+    const file = fileToInsert || pendingInsertFile;
     if (!file) return;
 
     setIsLoading(true);
     setLoadingMessage(texts.insertingPdf);
     try {
-      const { newPageObjects: insertPageObjects } = await processPdfFile(file); 
+      const { newPageObjects: insertPageObjects } = await processPdfFile(file);
 
       let insertAtIndex = activePageIndex !== null ? activePageIndex + 1 : pageObjects.length;
 
       const newCombinedPageObjects = [...pageObjects];
-      newCombinedPageObjects.splice(insertAtIndex, 0, ...insertPageObjects); 
+      newCombinedPageObjects.splice(insertAtIndex, 0, ...insertPageObjects);
       setPageObjects(newCombinedPageObjects);
-      
+
       const newActivePageId = insertPageObjects[0]?.id;
       if (newActivePageId) {
         setSelectedPageIds(new Set([newActivePageId]));
@@ -1197,8 +1215,8 @@ export default function PdfEditorHomepage() {
     } finally {
       setIsLoading(false);
       setLoadingMessage('');
-      setPendingInsertFile(null); 
-      if (insertPdfRef.current) insertPdfRef.current.value = ''; 
+      setPendingInsertFile(null);
+      if (insertPdfRef.current) insertPdfRef.current.value = '';
     }
   };
 
@@ -1213,15 +1231,15 @@ export default function PdfEditorHomepage() {
         return;
     }
 
-    setWordFileUrl(null); 
-    setWordConversionError(null); 
+    setWordFileUrl(null);
+    setWordConversionError(null);
 
     if (!isLoggedIn && typeof window !== 'undefined') {
       const today = new Date().toISOString().split('T')[0];
       let wordConversionInfoString = localStorage.getItem('DocuPilotWordConversionInfo');
       let wordConversionInfo = wordConversionInfoString ? JSON.parse(wordConversionInfoString) : { count: 0, date: today };
 
-      if (wordConversionInfo.date !== today) { 
+      if (wordConversionInfo.date !== today) {
         wordConversionInfo = { count: 0, date: today };
       }
 
@@ -1239,8 +1257,8 @@ export default function PdfEditorHomepage() {
       const fileStorageRef = storageRef(storage, fileName);
       await uploadBytes(fileStorageRef, uploadedPdfFile);
       const pdfStorageUrl = await getDownloadURL(fileStorageRef);
-      
-      const functionUrl = `https://us-central1-sitemate-otkpt.cloudfunctions.net/convertPdfToWord`; 
+
+      const functionUrl = `https://us-central1-sitemate-otkpt.cloudfunctions.net/convertPdfToWord`;
 
       const response = await fetch(functionUrl, {
         method: 'POST',
@@ -1253,18 +1271,18 @@ export default function PdfEditorHomepage() {
       if (!response.ok) {
         let errorData;
         try {
-            errorData = await response.json(); 
+            errorData = await response.json();
         } catch (e) {
             const errorText = await response.text();
-            errorData = { detail: errorText || response.statusText }; 
+            errorData = { detail: errorText || response.statusText };
         }
-        
+
         const detailMessage = errorData?.detail || errorData?.error || `HTTP error! status: ${response.status}`;
         let toastDescription = detailMessage;
-        if (typeof detailMessage === 'string' && (detailMessage.toLowerCase().includes("method not found") || detailMessage.toLowerCase().includes("api key not configured") || detailMessage.toLowerCase().includes("please provide your api key")) ) { 
+        if (typeof detailMessage === 'string' && (detailMessage.toLowerCase().includes("method not found") || detailMessage.toLowerCase().includes("api key not configured") || detailMessage.toLowerCase().includes("please provide your api key")) ) {
              toastDescription = texts.pdfCoMethodNotFoundError;
         }
-        throw new Error(detailMessage); 
+        throw new Error(detailMessage);
       }
 
       const result = await response.json();
@@ -1287,7 +1305,7 @@ export default function PdfEditorHomepage() {
 
     } catch (error: any) {
       let errMsg = error.message || (currentLanguage === 'zh' ? "未知錯誤" : "Unknown error");
-      
+
       if (typeof errMsg === 'string' && (errMsg.toLowerCase().includes("method not found") || errMsg.toLowerCase().includes("api key") || errMsg.toLowerCase().includes("please provide your api key") )) {
         errMsg = texts.pdfCoMethodNotFoundError;
       } else if (errMsg.toLowerCase().includes("pdf.co api key is not correctly hardcoded")) {
@@ -1304,20 +1322,20 @@ export default function PdfEditorHomepage() {
 
   const commonDragEvents = {
     onDragOver: (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault(); 
+        e.preventDefault();
         e.stopPropagation();
-        e.currentTarget.classList.add('border-primary', 'bg-primary/10'); 
+        e.currentTarget.classList.add('border-primary', 'bg-primary/10');
     },
     onDragLeave: (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
         e.stopPropagation();
-        e.currentTarget.classList.remove('border-primary', 'bg-primary/10'); 
+        e.currentTarget.classList.remove('border-primary', 'bg-primary/10');
     },
     onDrop: (e: React.DragEvent<HTMLDivElement>, handler: (event: React.DragEvent<HTMLDivElement>) => void) => {
         e.preventDefault();
         e.stopPropagation();
-        e.currentTarget.classList.remove('border-primary', 'bg-primary/10'); 
-        handler(e); 
+        e.currentTarget.classList.remove('border-primary', 'bg-primary/10');
+        handler(e);
     }
   };
 
@@ -1389,7 +1407,7 @@ export default function PdfEditorHomepage() {
     try {
       const arrayBuffer = await pdfToCompress.arrayBuffer();
       const pdfDoc = await PDFLibDocument.load(arrayBuffer);
-      const pdfBytes = await pdfDoc.save({ useObjectStreams: false }); 
+      const pdfBytes = await pdfDoc.save({ useObjectStreams: false });
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -1417,21 +1435,21 @@ export default function PdfEditorHomepage() {
   ) => {
     event.preventDefault();
     const draggedWatermarkElement = event.currentTarget as HTMLElement;
-    
+
     setIsDraggingWatermarkInModal(true);
     draggedWatermarkElement.style.cursor = 'grabbing';
 
     const wrapperRect = previewWrapperElement.getBoundingClientRect();
-    
+
     const watermarkRect = draggedWatermarkElement.getBoundingClientRect();
     const initialWatermarkCenterX = watermarkRect.left + watermarkRect.width / 2 - wrapperRect.left;
     const initialWatermarkCenterY = watermarkRect.top + watermarkRect.height / 2 - wrapperRect.top;
-    
+
     dragDataModalRef.current = {
       initialMouseX: event.clientX,
       initialMouseY: event.clientY,
-      initialWatermarkTopInPx: initialWatermarkCenterY, // Store center
-      initialWatermarkLeftInPx: initialWatermarkCenterX, // Store center
+      initialWatermarkTopInPx: initialWatermarkCenterY,
+      initialWatermarkLeftInPx: initialWatermarkCenterX,
       draggedElement: draggedWatermarkElement,
       previewWrapperElement: previewWrapperElement,
     };
@@ -1444,10 +1462,10 @@ export default function PdfEditorHomepage() {
     if (!isDraggingWatermarkInModal || !dragDataModalRef.current) return;
     event.preventDefault();
 
-    const { 
-        initialMouseX, initialMouseY, 
-        initialWatermarkTopInPx, initialWatermarkLeftInPx, 
-        draggedElement, previewWrapperElement 
+    const {
+        initialMouseX, initialMouseY,
+        initialWatermarkTopInPx, initialWatermarkLeftInPx,
+        draggedElement, previewWrapperElement
     } = dragDataModalRef.current;
 
     const deltaX = event.clientX - initialMouseX;
@@ -1455,22 +1473,22 @@ export default function PdfEditorHomepage() {
 
     let newPixelCenterX = initialWatermarkLeftInPx + deltaX;
     let newPixelCenterY = initialWatermarkTopInPx + deltaY;
-    
+
     const wrapperRect = previewWrapperElement.getBoundingClientRect();
-    
+
     newPixelCenterX = Math.max(0, Math.min(newPixelCenterX, wrapperRect.width));
     newPixelCenterY = Math.max(0, Math.min(newPixelCenterY, wrapperRect.height));
 
     const newTopRatio = wrapperRect.height > 0 ? newPixelCenterY / wrapperRect.height : 0;
     const newLeftRatio = wrapperRect.width > 0 ? newPixelCenterX / wrapperRect.width : 0;
-    
-    setTempWatermarkConfig(prev => ({ 
-        ...prev, 
-        topRatio: parseFloat(newTopRatio.toFixed(4)), 
-        leftRatio: parseFloat(newLeftRatio.toFixed(4)) 
+
+    setTempWatermarkConfig(prev => ({
+        ...prev,
+        topRatio: parseFloat(newTopRatio.toFixed(4)),
+        leftRatio: parseFloat(newLeftRatio.toFixed(4))
     }));
 
-  }, [isDraggingWatermarkInModal]); 
+  }, [isDraggingWatermarkInModal]);
 
   const handleWatermarkModalMouseUp = useCallback((event: MouseEvent) => {
     if (!isDraggingWatermarkInModal) return;
@@ -1480,14 +1498,14 @@ export default function PdfEditorHomepage() {
     if (dragDataModalRef.current && dragDataModalRef.current.draggedElement) {
       dragDataModalRef.current.draggedElement.style.cursor = 'grab';
     }
-    
-    document.removeEventListener('mousemove', handleWatermarkModalMouseMove, { passive: false });
+
+    document.removeEventListener('mousemove', handleWatermarkModalMouseMove);
     document.removeEventListener('mouseup', handleWatermarkModalMouseUp);
   }, [isDraggingWatermarkInModal, handleWatermarkModalMouseMove]);
 
   useEffect(() => {
     return () => {
-      document.removeEventListener('mousemove', handleWatermarkModalMouseMove, { passive: false });
+      document.removeEventListener('mousemove', handleWatermarkModalMouseMove);
       document.removeEventListener('mouseup', handleWatermarkModalMouseUp);
     };
   }, [handleWatermarkModalMouseMove, handleWatermarkModalMouseUp]);
@@ -1499,28 +1517,29 @@ export default function PdfEditorHomepage() {
         return;
     }
     setWatermarkPreviewPageCanvas(pageObjects[0].sourceCanvas);
-    setTempWatermarkConfig(prevTemp => ({
-        ...watermarkConfig, 
-        topRatio: prevTemp.topRatio !== undefined && isWatermarkPreviewModalOpen ? prevTemp.topRatio : watermarkConfig.topRatio,
-        leftRatio: prevTemp.leftRatio !== undefined && isWatermarkPreviewModalOpen ? prevTemp.leftRatio : watermarkConfig.leftRatio,
-    }));
+    setTempWatermarkConfig(watermarkConfig);
     setIsWatermarkPreviewModalOpen(true);
   };
 
   const handleWatermarkImageFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            setTempWatermarkConfig(prev => ({ ...prev, imageUrl: reader.result as string, type: 'image' }));
-        };
-        reader.readAsDataURL(file);
+      const reader = new FileReader();
+      reader.onload = () => {
+        setTempWatermarkConfig(prev => ({
+          ...prev,
+          imageUrl: reader.result as string,
+          type: 'image'
+        }));
+      };
+      reader.readAsDataURL(file);
     }
     if (watermarkImageUploadRef.current) watermarkImageUploadRef.current.value = '';
   };
 
+
   const confirmWatermarkSettings = () => {
-    setWatermarkConfig(tempWatermarkConfig); 
+    setWatermarkConfig(tempWatermarkConfig);
     setIsWatermarkPreviewModalOpen(false);
     setWatermarkPreviewPageCanvas(null);
   };
@@ -1532,7 +1551,7 @@ export default function PdfEditorHomepage() {
           if (targetPage) {
               targetPage.scrollIntoView({ behavior: 'smooth', block: 'start' });
           }
-      } else { // Grid mode logic
+      } else {
           const clickedId = pageObjects[index].id;
           if (event.metaKey || event.ctrlKey) {
               setSelectedPageIds(prev => {
@@ -1563,7 +1582,7 @@ export default function PdfEditorHomepage() {
 
     const handleAddBlankPage = () => {
         const blankCanvas = document.createElement('canvas');
-        blankCanvas.width = 595; // A4-ish
+        blankCanvas.width = 595;
         blankCanvas.height = 842;
         const ctx = blankCanvas.getContext('2d');
         if (ctx) {
@@ -1571,7 +1590,7 @@ export default function PdfEditorHomepage() {
             ctx.fillRect(0, 0, blankCanvas.width, blankCanvas.height);
         }
         const newPageObject: PageObject = { id: uuidv4(), sourceCanvas: blankCanvas, rotation: 0 };
-        
+
         let insertAt = (activePageIndex ?? -1) + 1;
 
         setPageObjects(prev => {
@@ -1589,12 +1608,12 @@ export default function PdfEditorHomepage() {
             description: `${featureName} ${texts.featureNotImplemented}`
         });
     };
-    
+
     const handleZoom = (direction: 'in' | 'out') => {
       const ZOOM_STEP = 0.1;
       setMainCanvasZoom(prev => {
         let newZoom = direction === 'in' ? prev + ZOOM_STEP : prev - ZOOM_STEP;
-        return Math.max(0.1, Math.min(newZoom, 5)); // Clamp zoom between 10% and 500%
+        return Math.max(0.1, Math.min(newZoom, 5));
       });
     };
 
@@ -1606,13 +1625,13 @@ export default function PdfEditorHomepage() {
           <p className="text-white text-lg">
             {isLoading ? loadingMessage :
              isConvertingToWord ? texts.convertingToWord :
-             isDownloading ? texts.generatingFile : 
+             isDownloading ? texts.generatingFile :
              isConvertingImagesToPdf ? texts.generatingPdfFromImages :
              isCompressingPdf ? texts.compressingPdf : ''}
           </p>
         </div>
       )}
-      
+
       {isWatermarkPreviewModalOpen && watermarkPreviewPageCanvas && (
         <div
           role="dialog"
@@ -1633,22 +1652,23 @@ export default function PdfEditorHomepage() {
                 <X className="h-5 w-5" />
               </Button>
             </div>
-            
+
             <div className="flex flex-col md:flex-row flex-grow overflow-hidden">
-                <div 
-                    ref={watermarkPreviewCanvasContainerRef} 
-                    className="flex-grow p-4 overflow-auto bg-muted/20 flex justify-center items-center md:w-3/4 relative" 
-                    style={{ minHeight: '400px' }} 
+                <div
+                    ref={watermarkPreviewCanvasContainerRef}
+                    className="flex-grow p-4 overflow-auto bg-muted/20 flex justify-center items-center md:w-3/4 relative"
+                    style={{ minHeight: '400px' }}
                 >
-                  <canvas 
-                    ref={canvas => { 
+                  <canvas
+                    ref={canvas => {
                         if (canvas && watermarkPreviewPageCanvas) {
                             const ctx = canvas.getContext('2d');
-                            if (ctx) {
+                            const container = watermarkPreviewCanvasContainerRef.current;
+                            if (ctx && container) {
                                 const scaleFactor = Math.min(
-                                    (watermarkPreviewCanvasContainerRef.current?.clientWidth || watermarkPreviewPageCanvas.width * 0.75) / watermarkPreviewPageCanvas.width,
-                                    (watermarkPreviewCanvasContainerRef.current?.clientHeight || watermarkPreviewPageCanvas.height * 0.75) / watermarkPreviewPageCanvas.height,
-                                    1 
+                                    (container.clientWidth * 0.9) / watermarkPreviewPageCanvas.width,
+                                    (container.clientHeight * 0.9) / watermarkPreviewPageCanvas.height,
+                                    1
                                 );
                                 canvas.width = watermarkPreviewPageCanvas.width * scaleFactor;
                                 canvas.height = watermarkPreviewPageCanvas.height * scaleFactor;
@@ -1658,7 +1678,7 @@ export default function PdfEditorHomepage() {
                     }}
                     className="max-w-full max-h-full object-contain shadow-md"
                   />
-                  
+
                   {watermarkPreviewCanvasContainerRef.current && (
                     <>
                     {tempWatermarkConfig.type === 'text' && tempWatermarkConfig.text && (
@@ -1669,7 +1689,7 @@ export default function PdfEditorHomepage() {
                             top: `${tempWatermarkConfig.topRatio * 100}%`,
                             left: `${tempWatermarkConfig.leftRatio * 100}%`,
                             transform: 'translate(-50%, -50%)',
-                            fontSize: `${Math.max(8, tempWatermarkConfig.fontSize / 2.5)}px`, 
+                            fontSize: `${Math.max(8, tempWatermarkConfig.fontSize / 2.5)}px`,
                             color: tempWatermarkConfig.color,
                             opacity: tempWatermarkConfig.opacity,
                             cursor: 'grab',
@@ -1697,7 +1717,7 @@ export default function PdfEditorHomepage() {
                             transform: 'translate(-50%, -50%)',
                             opacity: tempWatermarkConfig.opacity,
                             cursor: 'grab',
-                            maxWidth: '200px', 
+                            maxWidth: '200px',
                             maxHeight: '200px',
                             userSelect: 'none',
                             zIndex: 10,
@@ -1715,7 +1735,7 @@ export default function PdfEditorHomepage() {
                     {tempWatermarkConfig.type === 'text' && (
                         <>
                             <div>
-                                <Label htmlFor="modalWatermarkFontSize" className="text-sm font-medium">{texts.watermarkFontSizeLabel} (px for PDF)</Label>
+                                <Label htmlFor="modalWatermarkFontSize" className="text-sm font-medium">{texts.watermarkFontSizeLabel} (pt for PDF)</Label>
                                 <Input
                                     id="modalWatermarkFontSize"
                                     type="number"
@@ -1789,7 +1809,7 @@ export default function PdfEditorHomepage() {
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      
+
       <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
         <AlertDialogContent>
             <ShadAlertDialogHeader>
@@ -1825,7 +1845,7 @@ export default function PdfEditorHomepage() {
             <h1 className="text-xl font-bold text-primary flex items-center">
               <MenuSquare className="mr-2 h-6 w-6"/> {texts.pageTitle}
             </h1>
-            
+
             {pageObjects.length > 0 && (
                 <div className='flex items-center gap-2'>
                     <Button
@@ -1843,7 +1863,7 @@ export default function PdfEditorHomepage() {
                     </Button>
                 </div>
             )}
-            
+
             <div className="flex items-center gap-4">
                 <div className="flex gap-2">
                     <Button variant={currentLanguage === 'en' ? "secondary" : "outline"} size="sm" onClick={() => updateLanguage('en')}>English</Button>
@@ -1872,7 +1892,7 @@ export default function PdfEditorHomepage() {
         </div>
       </header>
 
-      <main className="flex-grow flex flex-col">
+      <main className="flex-grow flex overflow-hidden">
         {pageObjects.length === 0 ? (
             <div className="flex-grow flex flex-col items-center justify-center p-4 space-y-8">
               <Card className="w-full max-w-lg shadow-xl">
@@ -1902,7 +1922,7 @@ export default function PdfEditorHomepage() {
                   />
                 </CardContent>
               </Card>
-              
+
               <div className="w-full max-w-lg grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Card className="shadow-lg">
                   <CardHeader>
@@ -2019,8 +2039,7 @@ export default function PdfEditorHomepage() {
                 </Card>
               </div>
           ) : (
-            <div className="flex-grow flex overflow-hidden">
-                {/* Left Panel: Thumbnails */}
+            <>
                 <div ref={thumbnailContainerRef} className="w-1/5 border-r bg-card flex-shrink-0 overflow-y-auto p-2 space-y-2">
                     {pageObjects.map((page, index) => {
                         const isActive = activePageIndex === index;
@@ -2047,7 +2066,7 @@ export default function PdfEditorHomepage() {
                                             let drawHeight = canvas.height;
                                             let x = 0;
                                             let y = 0;
-                                            
+
                                             if(sourceAspectRatio > thumbAspectRatio){
                                                 drawHeight = drawWidth / sourceAspectRatio;
                                                 y = (canvas.height - drawHeight) / 2;
@@ -2055,7 +2074,7 @@ export default function PdfEditorHomepage() {
                                                 drawWidth = drawHeight * sourceAspectRatio;
                                                 x = (canvas.width - drawWidth) / 2;
                                             }
-                                            
+
                                             ctx.clearRect(0,0,canvas.width, canvas.height);
                                             ctx.drawImage(source, x, y, drawWidth, drawHeight);
                                         }
@@ -2068,13 +2087,12 @@ export default function PdfEditorHomepage() {
                     })}
                 </div>
 
-                {/* Center Panel: Main View */}
-                <div ref={mainViewContainerRef} className="w-4/5 md:w-3/5 flex-grow bg-muted/30 overflow-y-auto flex flex-col items-center p-4 space-y-4 relative">
+                <div ref={mainViewContainerRef} className="w-3/5 flex-grow bg-muted/30 overflow-y-auto flex flex-col items-center p-4 space-y-4 relative">
                     {pageObjects.map((page, index) => {
                         const {sourceCanvas, rotation} = page;
                         const srcWidth = sourceCanvas.width;
                         const srcHeight = sourceCanvas.height;
-                        
+
                         let bufferWidth, bufferHeight;
                         if (rotation % 180 !== 0) {
                             bufferWidth = srcHeight * mainCanvasZoom;
@@ -2085,7 +2103,7 @@ export default function PdfEditorHomepage() {
                         }
 
                         return (
-                            <div key={page.id} ref={el => pageRefs.current[index] = el} data-page-index={index} className="shadow-lg">
+                            <div key={page.id} ref={el => pageRefs.current[index] = el} data-page-index={index} className="shadow-lg bg-white">
                                 <canvas
                                   ref={canvas => {
                                       if (canvas) {
@@ -2098,10 +2116,18 @@ export default function PdfEditorHomepage() {
                                           ctx.fillRect(0,0,canvas.width, canvas.height);
                                           ctx.translate(canvas.width / 2, canvas.height / 2);
                                           ctx.rotate(rotation * Math.PI / 180);
+                                          
+                                          const rotatedSrcWidth = rotation % 180 !== 0 ? srcHeight : srcWidth;
+                                          const rotatedSrcHeight = rotation % 180 !== 0 ? srcWidth : srcHeight;
+
+                                          const scale = Math.min(bufferWidth / rotatedSrcWidth, bufferHeight / rotatedSrcHeight);
+                                          const drawWidth = srcWidth * scale;
+                                          const drawHeight = srcHeight * scale;
+
                                           ctx.drawImage(
                                               sourceCanvas,
-                                              -bufferWidth / (mainCanvasZoom * 2), -bufferHeight / (mainCanvasZoom * 2),
-                                              srcWidth, srcHeight
+                                              -drawWidth/2, -drawHeight/2,
+                                              drawWidth, drawHeight
                                           );
                                           ctx.restore();
                                       }
@@ -2110,15 +2136,17 @@ export default function PdfEditorHomepage() {
                             </div>
                         )
                     })}
-                    <div className="sticky bottom-4 mx-auto bg-card p-2 rounded-full shadow-lg flex items-center gap-2 border">
-                        <Button variant="ghost" size="icon" onClick={() => handleZoom('out')}><ZoomOut className="h-5 w-5" /></Button>
-                        <Button variant="ghost" size="sm" onClick={handleFitToWidth} className="w-20 text-sm">{`${Math.round(mainCanvasZoom * 100)}%`}</Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleZoom('in')}><ZoomIn className="h-5 w-5" /></Button>
+                    <div className="sticky bottom-4 mx-auto bg-card p-2 rounded-full shadow-lg flex items-center gap-1 border">
+                        <Button variant="ghost" size="icon" onClick={() => handleZoom('out')} title={texts.zoomOut}><ZoomOut className="h-5 w-5" /></Button>
+                        <div className="w-20 text-center text-sm font-medium tabular-nums text-foreground" title="Current zoom">{`${Math.round(mainCanvasZoom * 100)}%`}</div>
+                        <Button variant="ghost" size="icon" onClick={() => handleZoom('in')} title={texts.zoomIn}><ZoomIn className="h-5 w-5" /></Button>
+                        <Separator orientation="vertical" className="h-6 mx-1" />
+                        <Button variant="ghost" size="icon" onClick={handleFitPage} title={texts.fitToPage}><Expand className="h-5 w-5" /></Button>
+                        <Button variant="ghost" size="icon" onClick={handleFitToWidth} title={texts.fitToWidth}><Columns className="h-5 w-5" /></Button>
                     </div>
                 </div>
-                
-                {/* Right Panel: Tools */}
-                <div className="w-1/5 md:w-1/5 border-l bg-card flex-shrink-0 overflow-y-auto p-2">
+
+                <div className="w-1/5 border-l bg-card flex-shrink-0 p-2">
                     <div className="grid grid-cols-2 gap-2">
                         <ToolbarButton icon={RotateCw} label={texts.toolRotate} onClick={() => handleRotatePage('cw')} disabled={activePageIndex === null}/>
                         <ToolbarButton icon={Trash2} label={texts.toolDelete} onClick={() => { if(activePageIndex !== null) { setPageToDelete(activePageIndex); setIsDeleteConfirmOpen(true); } }} disabled={activePageIndex === null}/>
@@ -2139,11 +2167,33 @@ export default function PdfEditorHomepage() {
                         ref={insertPdfRef}
                         className="hidden"
                      />
+                     <Accordion type="single" collapsible className="w-full mt-4">
+                        <AccordionItem value="item-1">
+                            <AccordionTrigger>{texts.watermarkSectionTitle}</AccordionTrigger>
+                            <AccordionContent className="space-y-4 pt-4">
+                                <RadioGroup value={tempWatermarkConfig.type} onValueChange={(value) => setTempWatermarkConfig(p => ({...p, type: value as 'text' | 'image'}))} className="flex space-x-2">
+                                    <div className="flex items-center space-x-2"><RadioGroupItem value="text" id="r1" /><Label htmlFor="r1">{texts.watermarkTypeText}</Label></div>
+                                    <div className="flex items-center space-x-2"><RadioGroupItem value="image" id="r2" /><Label htmlFor="r2">{texts.watermarkTypeImage}</Label></div>
+                                </RadioGroup>
+                                {tempWatermarkConfig.type === 'text' ? (
+                                    <Input placeholder={texts.watermarkInputPlaceholder} value={tempWatermarkConfig.text} onChange={(e) => setTempWatermarkConfig(p => ({...p, text: e.target.value}))}/>
+                                ) : (
+                                    <>
+                                    <Button variant="outline" onClick={() => watermarkImageUploadRef.current?.click()} className="w-full">{texts.watermarkImageLabel}</Button>
+                                    <Input type="file" accept="image/png,image/jpeg" ref={watermarkImageUploadRef} onChange={handleWatermarkImageFileChange} className="hidden"/>
+                                    {tempWatermarkConfig.imageUrl && <img src={tempWatermarkConfig.imageUrl} alt="watermark" className="max-w-full h-auto rounded-md border p-1"/>}
+                                    </>
+                                )}
+                                <Button onClick={openWatermarkPreviewModal} disabled={pageObjects.length === 0} className="w-full">{texts.watermarkPreviewButton}</Button>
+                            </AccordionContent>
+                        </AccordionItem>
+                     </Accordion>
                 </div>
-            </div>
+            </>
           )}
       </main>
     </div>
   );
 }
 
+    

@@ -27,6 +27,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Toggle } from "@/components/ui/toggle";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Menubar,
+  MenubarContent,
+  MenubarItem,
+  MenubarMenu,
+  MenubarSeparator,
+  MenubarSub,
+  MenubarSubContent,
+  MenubarSubTrigger,
+  MenubarTrigger,
+} from "@/components/ui/menubar"
 
 import { storage, functions as firebaseFunctions, app as firebaseApp } from '@/lib/firebase'; // Firebase SDK
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -668,7 +679,7 @@ const TextAnnotationComponent = ({
             textarea.style.height = 'auto';
             textarea.style.height = `${textarea.scrollHeight}px`;
         }
-    }, [annotation.text, annotation.fontSize, annotation.widthRatio, mainCanvasZoom]);
+    }, [annotation.text, annotation.fontSize, annotation.widthRatio, mainCanvasZoom, annotation.fontFamily, annotation.bold, annotation.italic, annotation.textAlign]);
 
 
     return (
@@ -677,10 +688,14 @@ const TextAnnotationComponent = ({
                 if (!isEditing) onDragStart(e, annotation.id)
             }}
             onClick={(e) => {
-                e.stopPropagation();
-                if (!isEditing) onSelect(annotation.id, e);
+                 e.stopPropagation();
+                 if (isEditing) return;
+                 onSelect(annotation.id, e);
             }}
-            onDoubleClick={(e) => onDoubleClick(annotation.id, e)}
+            onDoubleClick={(e) => {
+                e.stopPropagation();
+                onDoubleClick(annotation.id, e);
+            }}
             className={cn(
                 "absolute",
                 !isEditing && "cursor-grab",
@@ -1089,26 +1104,17 @@ export default function PdfEditorHomepage() {
   };
 
   const handleDeletePages = () => {
-    if (pageToDelete !== null) {
-        const newPages = pageObjects.filter((p, index) => index !== pageToDelete);
-        const newActiveIndex = pageToDelete >= newPages.length ? newPages.length - 1 : pageToDelete;
-
-        setPageObjects(newPages);
-        setActivePageIndex(newActiveIndex);
-        setSelectedPageIds(new Set());
-    } else {
-        if (selectedPageIds.size === 0) {
-            toast({ title: texts.pageManagement, description: texts.noPageSelected, variant: "destructive" });
-            return;
-        }
-        const newPages = pageObjects.filter(p => !selectedPageIds.has(p.id));
-
-        setPageObjects(newPages);
-        setActivePageIndex(null);
-        setSelectedPageIds(new Set());
+    if (selectedPageIds.size === 0) {
+        toast({ title: texts.pageManagement, description: texts.noPageSelected, variant: "destructive" });
+        return;
     }
+    const newPages = pageObjects.filter(p => !selectedPageIds.has(p.id));
 
-    if (pageObjects.length - (pageToDelete !== null ? 1 : selectedPageIds.size) === 0) {
+    setPageObjects(newPages);
+    setActivePageIndex(null);
+    setSelectedPageIds(new Set());
+
+    if (newPages.length === 0) {
       setPdfDocumentProxy(null);
       setUploadedPdfFile(null);
     }
@@ -2198,16 +2204,13 @@ export default function PdfEditorHomepage() {
     }
 
     const handleAnnotationSelect = (id: string, e: React.MouseEvent) => {
-        if (editingAnnotationId) return;
-
         setSelectedAnnotationId(id);
-        setEditingAnnotationId(null); 
+        setEditingAnnotationId(null);
         setSelectedImageId(null);
         setSelectedHighlightId(null);
     };
 
     const handleAnnotationDoubleClick = (id: string, e: React.MouseEvent) => {
-        e.stopPropagation();
         setSelectedAnnotationId(id);
         setEditingAnnotationId(id);
     };
@@ -2555,12 +2558,12 @@ export default function PdfEditorHomepage() {
             <ShadAlertDialogHeader>
             <ShadAlertDialogTitle>{texts.deletePageConfirmTitle}</ShadAlertDialogTitle>
             <AlertDialogDescription>
-                {texts.deletePageConfirmDescription}
+                {pageToDelete !== null ? texts.deletePageConfirmDescription : `${currentLanguage === 'zh' ? `您確定要刪除選取的 ${selectedPageIds.size} 個頁面嗎?` : `Are you sure you want to delete the ${selectedPageIds.size} selected pages?` }`}
             </AlertDialogDescription>
             </ShadAlertDialogHeader>
             <AlertDialogFooter>
-            <AlertDialogCancel>{texts.cancel}</AlertDialogCancel>
-            <AlertDialogAction onClick={() => handleDeletePages()}>{texts.confirm}</AlertDialogAction>
+            <AlertDialogCancel onClick={() => setPageToDelete(null)}>{texts.cancel}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeletePages}>{texts.confirm}</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -2580,31 +2583,58 @@ export default function PdfEditorHomepage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <header className="p-4 border-b bg-card sticky top-0 z-40 flex-shrink-0">
-        <div className="container mx-auto flex justify-between items-center">
-            <h1 className="text-xl font-bold text-primary flex items-center">
-              <MenuSquare className="mr-2 h-6 w-6"/> {texts.pageTitle}
-            </h1>
+      <header className="p-0 border-b bg-card sticky top-0 z-40 flex-shrink-0">
+        <div className="container mx-auto flex justify-between items-center h-16">
+            <div className="flex items-center gap-6">
+                <h1 className="text-xl font-bold text-primary flex items-center">
+                    <MenuSquare className="mr-2 h-6 w-6"/> {texts.pageTitle}
+                </h1>
+                <Menubar className="border-none shadow-none bg-transparent">
+                    <MenubarMenu>
+                        <MenubarTrigger>PDF編輯</MenubarTrigger>
+                        <MenubarContent>
+                            <MenubarItem onClick={() => insertPdfRef.current?.click()} disabled={pageObjects.length === 0}>合併PDF</MenubarItem>
+                            <MenubarItem onClick={handleSplitPdf} disabled={selectedPageIds.size === 0}>拆分PDF</MenubarItem>
+                            <MenubarItem onClick={() => setIsDeleteConfirmOpen(true)} disabled={selectedPageIds.size === 0}>刪除頁面</MenubarItem>
+                            <MenubarItem onClick={handleSplitPdf} disabled={selectedPageIds.size === 0}>擷取頁面</MenubarItem>
+                             <MenubarItem onClick={() => toast({ title: '變換順序', description: '請在縮圖模式中直接拖曳頁面來變換順序。' })} disabled={pageObjects.length < 2}>變換順序</MenubarItem>
+                            <MenubarItem onClick={openWatermarkPreviewModal} disabled={pageObjects.length === 0}>添加浮水印</MenubarItem>
+                        </MenubarContent>
+                    </MenubarMenu>
+                    <MenubarMenu>
+                        <MenubarTrigger>PDF轉換</MenubarTrigger>
+                        <MenubarContent>
+                            <MenubarSub>
+                                <MenubarSubTrigger>轉換為PDF</MenubarSubTrigger>
+                                <MenubarSubContent>
+                                    <MenubarItem onClick={() => handlePlaceholderClick('WORD轉PDF')}>WORD轉PDF</MenubarItem>
+                                    <MenubarItem onClick={() => handlePlaceholderClick('EXCEL轉PDF')}>EXCEL轉PDF</MenubarItem>
+                                    <MenubarItem onClick={() => handlePlaceholderClick('PPT轉PDF')}>PPT轉PDF</MenubarItem>
+                                    <MenubarItem onClick={() => handlePlaceholderClick('HTML轉PDF')}>HTML轉PDF</MenubarItem>
+                                    <MenubarItem onClick={() => imageToPdfUploadRef.current?.click()}>JPG轉PDF</MenubarItem>
+                                </MenubarSubContent>
+                            </MenubarSub>
+                            <MenubarSub>
+                                <MenubarSubTrigger>從PDF轉換</MenubarSubTrigger>
+                                <MenubarSubContent>
+                                    <MenubarItem onClick={handleConvertToWord} disabled={!uploadedPdfFile}>PDF轉WORD</MenubarItem>
+                                    <MenubarItem onClick={() => handlePlaceholderClick('PDF轉EXCEL')} disabled={!uploadedPdfFile}>PDF轉EXCEL</MenubarItem>
+                                    <MenubarItem onClick={() => handlePlaceholderClick('PDF轉PPT')} disabled={!uploadedPdfFile}>PDF轉PPT</MenubarItem>
+                                    <MenubarItem onClick={() => handlePlaceholderClick('PDF轉HTML')} disabled={!uploadedPdfFile}>PDF轉HTML</MenubarItem>
+                                </MenubarSubContent>
+                            </MenubarSub>
+                        </MenubarContent>
+                    </MenubarMenu>
+                </Menubar>
+            </div>
 
-            {pageObjects.length > 0 && (
-                <div className='flex items-center gap-2'>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setViewMode(viewMode === 'editor' ? 'grid' : 'editor')}
-                        title={viewMode === 'editor' ? texts.gridMode : texts.editorMode}
-                    >
-                        {viewMode === 'editor' ? <LayoutGrid className='h-4 w-4 mr-2' /> : <PanelLeft className='h-4 w-4 mr-2' />}
-                        {viewMode === 'editor' ? texts.gridMode : texts.editorMode}
-                    </Button>
-                    <Button onClick={handleDownloadPdf} disabled={isDownloading}>
+            <div className="flex items-center gap-4">
+                {pageObjects.length > 0 && (
+                     <Button onClick={handleDownloadPdf} disabled={isDownloading}>
                         <Download className="mr-2 h-4 w-4" />
                         {texts.downloadPdf}
                     </Button>
-                </div>
-            )}
-
-            <div className="flex items-center gap-4">
+                )}
                 <div className="flex gap-2">
                     <Button variant={currentLanguage === 'en' ? "secondary" : "outline"} size="sm" onClick={() => updateLanguage('en')}>English</Button>
                     <Button variant={currentLanguage === 'zh' ? "secondary" : "outline"} size="sm" onClick={() => updateLanguage('zh')}>中文</Button>
@@ -2633,11 +2663,11 @@ export default function PdfEditorHomepage() {
       </header>
 
       <main className="flex-grow flex overflow-hidden relative">
-        {editingAnnotation && (
+        {editingAnnotationId && editingAnnotation && (
             <TextAnnotationToolbar
                 annotation={editingAnnotation}
                 onAnnotationChange={handleAnnotationChange}
-                onDelete={() => handleDeleteAnnotation(editingAnnotation.id)}
+                onDelete={() => handleDeleteAnnotation(editingAnnotationId)}
             />
         )}
         {pageObjects.length === 0 ? (
@@ -2667,74 +2697,12 @@ export default function PdfEditorHomepage() {
                     ref={pdfUploadRef}
                     className="hidden"
                   />
-                </CardContent>
-              </Card>
-
-              <div className="w-full max-w-lg grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card className="shadow-lg">
-                  <CardHeader>
-                    <CardTitle className="flex items-center text-lg"><ImageIcon className="mr-2 h-5 w-5 text-primary" /> {texts.imageToPdfTitle}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div
-                        className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20"
-                        onClick={() => imageToPdfUploadRef.current?.click()}
-                        onDragOver={commonDragEvents.onDragOver}
-                        onDragLeave={commonDragEvents.onDragLeave}
-                        onDrop={(e) => {
-                            commonDragEvents.onDrop(e, (ev) => {
-                                if (ev.dataTransfer.files) setImageFiles(ev.dataTransfer.files);
-                            });
-                        }}
-                    >
-                        <Upload className="h-10 w-10 text-muted-foreground mb-2" />
-                        <p className="text-sm text-muted-foreground text-center">{texts.dropImagesHere}</p>
-                        <Input type="file" id="imageToPdfInput" accept="image/*" multiple
+                  <Input type="file" id="imageToPdfInput" accept="image/*" multiple
                             ref={imageToPdfUploadRef}
                             onChange={(e) => setImageFiles(e.target.files)}
                             className="hidden" />
-                    </div>
-                    {imageFiles && imageFiles.length > 0 && <p className="text-xs text-muted-foreground">{imageFiles.length} image(s) selected.</p>}
-                    <Button onClick={handleImageToPdf} disabled={!imageFiles || imageFiles.length === 0 || isConvertingImagesToPdf} className="w-full">
-                        {isConvertingImagesToPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                        {texts.convertToPdfButton}
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                <Card className="shadow-lg">
-                  <CardHeader>
-                    <CardTitle className="flex items-center text-lg"><Minimize2 className="mr-2 h-5 w-5 text-primary" /> {texts.pdfCompressionTitle}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                     <div
-                        className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20"
-                        onClick={() => pdfCompressUploadRef.current?.click()}
-                        onDragOver={commonDragEvents.onDragOver}
-                        onDragLeave={commonDragEvents.onDragLeave}
-                        onDrop={(e) => {
-                            commonDragEvents.onDrop(e, (ev) => {
-                                if (ev.dataTransfer.files && ev.dataTransfer.files.length > 0) setPdfToCompress(ev.dataTransfer.files[0]);
-                            });
-                        }}
-                    >
-                        <Upload className="h-10 w-10 text-muted-foreground mb-2" />
-                        <p className="text-sm text-muted-foreground text-center">{texts.dropPdfToCompressHere}</p>
-                        <Input type="file" id="pdfCompressInput" accept="application/pdf"
-                            ref={pdfCompressUploadRef}
-                            onChange={(e) => setPdfToCompress(e.target.files ? e.target.files[0] : null)}
-                            className="hidden" />
-                    </div>
-                     {pdfToCompress && <p className="text-xs text-muted-foreground">{pdfToCompress.name} selected.</p>}
-                    <Button onClick={handlePdfCompression} disabled={!pdfToCompress || isCompressingPdf} className="w-full">
-                        {isCompressingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                        {texts.compressPdfButton}
-                    </Button>
-                    <p className="text-xs text-muted-foreground">{texts.pdfCompressionNote}</p>
-                  </CardContent>
-                </Card>
-              </div>
-
+                </CardContent>
+              </Card>
             </div>
           ) : viewMode === 'grid' ? (
               <div ref={mainViewContainerRef} className="flex-grow p-6 overflow-y-auto">
@@ -2748,6 +2716,9 @@ export default function PdfEditorHomepage() {
                       </CardDescription>
                     </div>
                     <div className="flex gap-2">
+                      <Button onClick={() => setViewMode('editor')} variant="outline" size="sm">
+                        <PanelLeft className='h-4 w-4 mr-2' /> {texts.editorMode}
+                      </Button>
                       <Button onClick={handleSplitPdf} variant="outline" size="sm" disabled={selectedPageIds.size === 0}>
                         <Scissors className="mr-2 h-4 w-4" /> {texts.splitPages}
                       </Button>
@@ -2943,7 +2914,7 @@ export default function PdfEditorHomepage() {
                                             setSelectedHighlightId(null);
                                             handleDragMouseDown(e, 'image', ann.id);
                                         }}
-                                        onClick={(e) => e.stopPropagation()}
+                                        onClick={(e) => { e.stopPropagation(); setSelectedImageId(ann.id); }}
                                         className={cn(
                                             "absolute cursor-grab",
                                             selectedImageId === ann.id && "border-2 border-dashed border-primary"
@@ -2999,6 +2970,8 @@ export default function PdfEditorHomepage() {
                         <Separator orientation="vertical" className="h-6 mx-1" />
                         <Button variant="ghost" size="icon" onClick={handleFitPage} title={texts.fitToPage}><Expand className="h-5 w-5" /></Button>
                         <Button variant="ghost" size="icon" onClick={handleFitToWidth} title={texts.fitToWidth}><Columns className="h-5 w-5" /></Button>
+                         <Separator orientation="vertical" className="h-6 mx-1" />
+                        <Button variant="ghost" size="icon" onClick={() => setViewMode('grid')} title={texts.gridMode}><LayoutGrid className="h-5 w-5" /></Button>
                     </div>
                 </div>
 
@@ -3007,9 +2980,7 @@ export default function PdfEditorHomepage() {
                         <ToolbarButton icon={RotateCw} label={texts.toolRotate} onClick={() => handleRotatePage('cw')} disabled={activePageIndex === null}/>
                         <ToolbarButton icon={Trash2} label={texts.toolDelete} onClick={() => { if(activePageIndex !== null) { setPageToDelete(activePageIndex); setIsDeleteConfirmOpen(true); } }} disabled={activePageIndex === null}/>
                         <ToolbarButton icon={FilePlus2} label={texts.toolAddBlank} onClick={handleAddBlankPage} />
-                        <ToolbarButton icon={Combine} label={texts.toolMerge} onClick={() => insertPdfRef.current?.click()} />
-                        <ToolbarButton icon={Scissors} label={texts.toolSplit} onClick={handleSplitPdf} disabled={selectedPageIds.size === 0}/>
-                        <ToolbarButton icon={Droplet} label={texts.toolWatermark} onClick={openWatermarkPreviewModal} disabled={pageObjects.length === 0} />
+                        <ToolbarButton icon={Combine} label={texts.toolMerge} onClick={() => insertPdfRef.current?.click()} disabled={pageObjects.length === 0} />
                         <ToolbarButton icon={Type} label={texts.toolInsertText} onClick={handleAddTextAnnotation} disabled={activePageIndex === null}/>
                         <ToolbarButton icon={ImagePlus} label={texts.toolInsertImage} onClick={() => imageUploadRef.current?.click()} disabled={activePageIndex === null}/>
                         <ToolbarButton icon={Highlighter} label={texts.toolHighlight} onClick={handleAddHighlightAnnotation} disabled={activePageIndex === null} />
@@ -3093,22 +3064,6 @@ export default function PdfEditorHomepage() {
                                           <Input id="pdf-password" type="password" value={pdfProtectionConfig.password} onChange={e => setPdfProtectionConfig(p => ({...p, password: e.target.value}))} placeholder={texts.pdfPasswordPlaceholder} />
                                       </div>
                                   )}
-                              </AccordionContent>
-                          </AccordionItem>
-                          <AccordionItem value="convert-word">
-                              <AccordionTrigger>{texts.convertToWord}</AccordionTrigger>
-                              <AccordionContent className="space-y-4">
-                                 <Button onClick={handleConvertToWord} disabled={!uploadedPdfFile || isConvertingToWord || !isFirebaseSystemReady} className="w-full">
-                                    {isConvertingToWord ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileType className="mr-2 h-4 w-4" />}
-                                    {texts.convertToWord}
-                                 </Button>
-                                 {wordFileUrl && (
-                                     <a href={wordFileUrl} target="_blank" rel="noopener noreferrer">
-                                         <Button variant="outline" className="w-full">{texts.downloadWordFile}</Button>
-                                     </a>
-                                 )}
-                                 {wordConversionError && <p className="text-sm text-destructive">{wordConversionError}</p>}
-                                 {!isFirebaseSystemReady && <p className="text-xs text-destructive">{firebaseConfigWarning}</p>}
                               </AccordionContent>
                           </AccordionItem>
                       </Accordion>

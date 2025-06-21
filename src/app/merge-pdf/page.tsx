@@ -190,7 +190,7 @@ export default function MergePdfPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const [currentLanguage, setCurrentLanguage] = useState<'en' | 'zh'>>('zh');
+  const [currentLanguage, setCurrentLanguage] = useState<'en' | 'zh'>('zh');
   const [texts, setTexts] = useState(translations.zh);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -203,7 +203,7 @@ export default function MergePdfPage() {
   
   const [isInsertConfirmOpen, setIsInsertConfirmOpen] = useState(false);
   const [pendingInsertFile, setPendingInsertFile] = useState<File | null>(null);
-  const [insertPosition, setInsertPosition] = useState<'before' | 'after'>>('after');
+  const [insertPosition, setInsertPosition] = useState<'before' | 'after'>('after');
   
   const pdfUploadRef = useRef<HTMLInputElement>(null);
   const insertPdfRef = useRef<HTMLInputElement>(null);

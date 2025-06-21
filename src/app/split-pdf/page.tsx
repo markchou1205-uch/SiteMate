@@ -174,7 +174,7 @@ export default function SplitPdfPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const [currentLanguage, setCurrentLanguage] = useState<'en' | 'zh'>>('zh');
+  const [currentLanguage, setCurrentLanguage] = useState<'en' | 'zh'>('zh');
   const [texts, setTexts] = useState(translations.zh);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 

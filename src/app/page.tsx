@@ -706,7 +706,7 @@ export default function PdfEditorHomepage() {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [pageToDelete, setPageToDelete] = useState<number | null>(null);
 
-  const [currentLanguage, setCurrentLanguage] = useState<'en' | 'zh'>>('zh');
+  const [currentLanguage, setCurrentLanguage] = useState<'en' | 'zh'>('zh');
   const [texts, setTexts] = useState(translations.zh);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
@@ -1733,12 +1733,9 @@ export default function PdfEditorHomepage() {
         e.stopPropagation();
         if (isDraggingRef.current) return;
         
-        if (editingAnnotationId !== id) {
-            setEditingAnnotationId(null);
-            setSelectedAnnotationId(id);
-            setSelectedImageId(null);
-            setSelectedHighlightId(null);
-        }
+        setSelectedAnnotationId(id);
+        setSelectedImageId(null);
+        setSelectedHighlightId(null);
     };
 
     const handleAnnotationDoubleClick = (id: string, e: React.MouseEvent) => {
@@ -2044,7 +2041,7 @@ export default function PdfEditorHomepage() {
 
       <main className="flex-grow flex overflow-hidden relative" onClick={(e) => {
         const target = e.target as HTMLElement;
-        if (!target.closest('.main-page-container, .absolute.top-2, .popover-content')) {
+        if (!target.closest('.main-page-container, .absolute.top-2, .popover-content, [data-radix-popper-content-wrapper]')) {
             setSelectedAnnotationId(null);
             setEditingAnnotationId(null);
             setSelectedImageId(null);

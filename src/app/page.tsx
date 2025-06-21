@@ -837,9 +837,13 @@ export default function PdfEditorHomepage() {
       setActivePageIndex(0);
       setViewMode('editor');
       
-      setTimeout(() => handleFitPage(), 100);
+      // Use a timeout to ensure the DOM has updated before fitting the page
+      setTimeout(() => {
+        handleFitPage();
+      }, 100);
 
-    } catch (err: any) {
+    } catch (err: any)
+    {
       toast({ title: texts.loadError, description: err.message, variant: "destructive" });
       setPdfDocumentProxy(null);
       setUploadedPdfFile(null);
@@ -1483,7 +1487,15 @@ export default function PdfEditorHomepage() {
     type: 'watermark' | 'annotation',
     id: string | null = null
   ) => {
-    event.preventDefault();
+    // This now also handles selection for annotations
+    if (type === 'annotation' && id) {
+        setSelectedAnnotationId(id);
+    }
+    
+    // We only prevent default for watermark to avoid interfering with text selection
+    if(type === 'watermark') {
+        event.preventDefault();
+    }
     event.stopPropagation();
     const draggedElement = event.currentTarget as HTMLElement;
     const containerElement = (type === 'watermark' ? watermarkPreviewCanvasContainerRef.current : draggedElement.closest('.main-page-container')) as HTMLElement;
@@ -2242,11 +2254,41 @@ export default function PdfEditorHomepage() {
                                         }
                                     }}
                                 />
+                                {((watermarkConfig.type === 'text' && watermarkConfig.text) || (watermarkConfig.type === 'image' && watermarkConfig.imageUrl)) && (
+                                    <div
+                                        style={{
+                                            position: 'absolute',
+                                            top: `${watermarkConfig.topRatio * 100}%`,
+                                            left: `${watermarkConfig.leftRatio * 100}%`,
+                                            transform: 'translate(-50%, -50%)',
+                                            opacity: watermarkConfig.opacity,
+                                            pointerEvents: 'none',
+                                            color: watermarkConfig.color,
+                                            fontSize: `${watermarkConfig.fontSize * mainCanvasZoom}px`,
+                                            whiteSpace: 'nowrap',
+                                            zIndex: 10,
+                                        }}
+                                    >
+                                        {watermarkConfig.type === 'text' ? (
+                                            <span>{watermarkConfig.text}</span>
+                                        ) : (
+                                            <img
+                                                src={watermarkConfig.imageUrl!}
+                                                alt="watermark"
+                                                style={{
+                                                    maxWidth: '200px', // Adjust as needed
+                                                    maxHeight: '200px',
+                                                    width: 'auto',
+                                                    height: 'auto'
+                                                }}
+                                            />
+                                        )}
+                                    </div>
+                                )}
                                 {textAnnotations.filter(ann => ann.pageIndex === index).map(ann => (
                                     <div
                                         key={ann.id}
                                         onMouseDown={(e) => handleDragMouseDown(e, 'annotation', ann.id)}
-                                        onClick={() => setSelectedAnnotationId(ann.id)}
                                         style={{
                                             position: 'absolute',
                                             left: `${ann.leftRatio * 100}%`,
@@ -2339,5 +2381,3 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
-
-    

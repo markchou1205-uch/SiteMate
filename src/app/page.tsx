@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import * as pdfjsLib from 'pdfjs-dist';
 import type { PDFDocumentProxy as PDFDocumentProxyType } from 'pdfjs-dist';
-import { PDFDocument as PDFLibDocument, StandardFonts, rgb, degrees, grayscale, pushGraphicsState, popGraphicsState, setOpacity } from 'pdf-lib';
+import { PDFDocument as PDFLibDocument, StandardFonts, rgb, degrees, grayscale, pushGraphicsState, popGraphicsState, setOpacity, layoutMultilineText } from 'pdf-lib';
 import Sortable from 'sortablejs';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -20,10 +20,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, FileType, FileDigit, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, FontSize, Eye, Scissors, LayoutGrid, PanelLeft, FilePlus2, Combine, Type, ImagePlus, Link as LinkIcon, MessageSquarePlus, ZoomIn, ZoomOut, Expand } from 'lucide-react';
+import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, FileType, FileDigit, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, FontSize, Eye, Scissors, LayoutGrid, PanelLeft, FilePlus2, Combine, Type, ImagePlus, Link as LinkIcon, MessageSquarePlus, ZoomIn, ZoomOut, Expand, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Toggle } from "@/components/ui/toggle";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 import { storage, functions as firebaseFunctions, app as firebaseApp } from '@/lib/firebase'; // Firebase SDK
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -46,9 +49,16 @@ interface TextAnnotation {
   text: string;
   topRatio: number;
   leftRatio: number;
+  widthRatio: number;
   fontSize: number;
+  fontFamily: string;
+  bold: boolean;
+  italic: boolean;
+  underline: boolean;
   color: string;
+  textAlign: 'left' | 'center' | 'right';
 }
+
 
 const translations = {
     en: {
@@ -110,7 +120,6 @@ const translations = {
         enablePageNumbering: 'Enable Page Numbering',
         pageNumberPosition: 'Position',
         pageNumberStart: 'Start Number',
-        pageNumberFontSize: 'Font Size',
         pageNumberMargin: 'Margin (pt)',
         pageNumberFormat: 'Format ({page}, {total})',
         pageNumberFormatPlaceholder: '{page} / {total}',
@@ -195,8 +204,6 @@ const translations = {
         zoomOut: 'Zoom Out',
         fitToWidth: 'Fit to Width',
         fitToPage: 'Fit to Page',
-        textProperties: 'Text Properties',
-        textAnnotationContent: 'Text Content',
         textAnnotationSample: 'Sample Text',
     },
     zh: {
@@ -218,7 +225,7 @@ const translations = {
         modalCloseButton: '關閉',
         rotateLeft: '向左旋轉90°',
         rotateRight: '向右旋轉90°',
-        resetRotation: '重置旋轉與縮放',
+        resetRotation: '重置旋轉与縮放',
         generatingFile: '正在產生檔案，請稍候…',
         extractingText: '正在提取文字，請稍候...',
         loadError: '載入 PDF 失敗',
@@ -258,7 +265,6 @@ const translations = {
         enablePageNumbering: '啟用頁碼',
         pageNumberPosition: '位置',
         pageNumberStart: '起始號碼',
-        pageNumberFontSize: '字體大小',
         pageNumberMargin: '邊距 (pt)',
         pageNumberFormat: '格式 ({page}, {total})',
         pageNumberFormatPlaceholder: '{page} / {total}',
@@ -343,8 +349,6 @@ const translations = {
         zoomOut: '縮小',
         fitToWidth: '符合頁寬',
         fitToPage: '符合頁面',
-        textProperties: '文字屬性',
-        textAnnotationContent: '文字内容',
         textAnnotationSample: '範例文本',
     }
 };
@@ -503,6 +507,68 @@ const ToolbarButton = ({ icon: Icon, label, onClick, disabled = false }: { icon:
     </Button>
 );
 
+const fonts = [
+  { name: 'Arial', value: 'Helvetica' },
+  { name: 'Times New Roman', value: 'Times-Roman' },
+  { name: 'Courier', value: 'Courier' },
+];
+
+const fontSizes = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72];
+
+const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete }: { annotation: TextAnnotation; onAnnotationChange: (annotation: TextAnnotation) => void; onDelete: (id: string) => void; }) => {
+    return (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 bg-card p-2 rounded-lg shadow-lg border flex items-center gap-2 animate-in slide-in-from-top-4 duration-300">
+            <Select value={annotation.fontFamily} onValueChange={(value) => onAnnotationChange({ ...annotation, fontFamily: value })}>
+                <SelectTrigger className="w-[120px] h-8 text-xs">
+                    <SelectValue placeholder="Font" />
+                </SelectTrigger>
+                <SelectContent>
+                    {fonts.map(font => <SelectItem key={font.value} value={font.value} className="text-xs">{font.name}</SelectItem>)}
+                </SelectContent>
+            </Select>
+            <Select value={String(annotation.fontSize)} onValueChange={(value) => onAnnotationChange({ ...annotation, fontSize: Number(value) })}>
+                <SelectTrigger className="w-[60px] h-8 text-xs">
+                    <SelectValue placeholder="Size" />
+                </SelectTrigger>
+                <SelectContent>
+                    {fontSizes.map(size => <SelectItem key={size} value={String(size)} className="text-xs">{size}</SelectItem>)}
+                </SelectContent>
+            </Select>
+            <Separator orientation="vertical" className="h-6" />
+            <Toggle pressed={annotation.bold} onPressedChange={(pressed) => onAnnotationChange({ ...annotation, bold: pressed })}>
+                <Bold className="h-4 w-4" />
+            </Toggle>
+            <Toggle pressed={annotation.italic} onPressedChange={(pressed) => onAnnotationChange({ ...annotation, italic: pressed })}>
+                <Italic className="h-4 w-4" />
+            </Toggle>
+            <Toggle pressed={annotation.underline} onPressedChange={(pressed) => onAnnotationChange({ ...annotation, underline: pressed })}>
+                <Underline className="h-4 w-4" />
+            </Toggle>
+            <Separator orientation="vertical" className="h-6" />
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button variant="outline" size="icon" className="h-8 w-8">
+                        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: annotation.color }} />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                    <Input type="color" value={annotation.color} onChange={(e) => onAnnotationChange({ ...annotation, color: e.target.value })} className="w-full h-10 p-1 border-0" />
+                </PopoverContent>
+            </Popover>
+            <Separator orientation="vertical" className="h-6" />
+            <ToggleGroup type="single" value={annotation.textAlign} onValueChange={(value: TextAnnotation['textAlign']) => value && onAnnotationChange({ ...annotation, textAlign: value })}>
+                <ToggleGroupItem value="left"><AlignLeft className="h-4 w-4" /></ToggleGroupItem>
+                <ToggleGroupItem value="center"><AlignCenter className="h-4 w-4" /></ToggleGroupItem>
+                <ToggleGroupItem value="right"><AlignRight className="h-4 w-4" /></ToggleGroupItem>
+            </ToggleGroup>
+            <Separator orientation="vertical" className="h-6" />
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => onDelete(annotation.id)}>
+                <Trash2 className="h-4 w-4" />
+            </Button>
+        </div>
+    );
+};
+
 
 export default function PdfEditorHomepage() {
   const router = useRouter();
@@ -534,6 +600,9 @@ export default function PdfEditorHomepage() {
   const [textAnnotations, setTextAnnotations] = useState<TextAnnotation[]>([]);
   const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
 
+  const dragStartRef = useRef({ x: 0, y: 0, initialLeft: 0, initialTop: 0 });
+  const isDraggingRef = useRef(false);
+
   const [watermarkConfig, setWatermarkConfig] = useState<WatermarkConfig>({
     text: '',
     type: 'text',
@@ -550,8 +619,6 @@ export default function PdfEditorHomepage() {
   const watermarkImageUploadRef = useRef<HTMLInputElement>(null);
   const watermarkPreviewModalCanvasRef = useRef<HTMLCanvasElement>(null);
   
-  const isDraggingRef = useRef(false);
-
   const watermarkPreviewCanvasContainerRef = useRef<HTMLDivElement>(null);
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -827,26 +894,7 @@ export default function PdfEditorHomepage() {
       setActivePageIndex(0);
       setViewMode('editor');
       
-      setTimeout(() => {
-        if (mainViewContainerRef.current && newPageObjects.length > 0 && activePageIndex !== null) {
-          const container = mainViewContainerRef.current;
-          const containerWidth = container.clientWidth - 40;
-          const containerHeight = container.clientHeight - 40;
-      
-          const activePage = newPageObjects[0];
-          const pageCanvas = activePage.sourceCanvas;
-          const rotation = activePage.rotation;
-      
-          let pageRenderWidth = (rotation % 180 !== 0) ? pageCanvas.height : pageCanvas.width;
-          let pageRenderHeight = (rotation % 180 !== 0) ? pageCanvas.width : pageCanvas.height;
-      
-          const widthRatio = containerWidth / pageRenderWidth;
-          const heightRatio = containerHeight / pageRenderHeight;
-      
-          const newZoom = Math.min(widthRatio, heightRatio);
-          setMainCanvasZoom(newZoom);
-        }
-      }, 100);
+      setTimeout(() => handleFitPage(), 100);
 
     } catch (err: any)
     {
@@ -899,7 +947,30 @@ export default function PdfEditorHomepage() {
       r: parseInt(result[1], 16) / 255,
       g: parseInt(result[2], 16) / 255,
       b: parseInt(result[3], 16) / 255
-    } : { r: 0.5, g: 0.5, b: 0.5 };
+    } : { r: 0, g: 0, b: 0 };
+  };
+
+  const getPdfFont = async (pdfDoc: PDFLibDocument, annotation: TextAnnotation) => {
+    const { fontFamily, bold, italic } = annotation;
+    let font = StandardFonts.Helvetica;
+
+    if (fontFamily === 'Helvetica') {
+        if (bold && italic) font = StandardFonts.HelveticaBoldOblique;
+        else if (bold) font = StandardFonts.HelveticaBold;
+        else if (italic) font = StandardFonts.HelveticaOblique;
+        else font = StandardFonts.Helvetica;
+    } else if (fontFamily === 'Times-Roman') {
+        if (bold && italic) font = StandardFonts.TimesRomanBoldItalic;
+        else if (bold) font = StandardFonts.TimesRomanBold;
+        else if (italic) font = StandardFonts.TimesRomanItalic;
+        else font = StandardFonts.TimesRoman;
+    } else if (fontFamily === 'Courier') {
+        if (bold && italic) font = StandardFonts.CourierBoldOblique;
+        else if (bold) font = StandardFonts.CourierBold;
+        else if (italic) font = StandardFonts.CourierOblique;
+        else font = StandardFonts.Courier;
+    }
+    return await pdfDoc.embedFont(font);
   };
 
 
@@ -931,7 +1002,6 @@ export default function PdfEditorHomepage() {
     try {
       await new Promise(resolve => setTimeout(resolve, 100));
       const pdfDocOut = await PDFLibDocument.create();
-      const helveticaFont = await pdfDocOut.embedFont(StandardFonts.Helvetica);
 
       for (const [index, pageObj] of pageObjects.entries()) {
         const { sourceCanvas, rotation } = pageObj;
@@ -963,25 +1033,50 @@ export default function PdfEditorHomepage() {
         const { width: pageWidth, height: pageHeight } = pdfLibPage.getSize();
 
         // Apply Text Annotations
-        for (const annotation of textAnnotations) {
-            if (annotation.pageIndex === index) {
-                const { r, g, b } = hexToRgb(annotation.color);
-                pdfLibPage.drawText(annotation.text, {
-                    x: annotation.leftRatio * pageWidth,
-                    y: pageHeight - (annotation.topRatio * pageHeight) - (annotation.fontSize / 2),
-                    font: helveticaFont,
-                    size: annotation.fontSize,
-                    color: rgb(r, g, b),
-                    lineHeight: annotation.fontSize * 1.2,
-                });
-            }
-        }
+        for (const annotation of textAnnotations.filter(a => a.pageIndex === index)) {
+            const font = await getPdfFont(pdfDocOut, annotation);
+            const { r, g, b } = hexToRgb(annotation.color);
+            const boxWidth = annotation.widthRatio * pageWidth;
 
+            const textLayout = layoutMultilineText(annotation.text, {
+                font,
+                bounds: { width: boxWidth, height: Infinity },
+                fontSize: annotation.fontSize,
+                lineHeight: annotation.fontSize * 1.2,
+                alignment: annotation.textAlign === 'left' ? 0 : annotation.textAlign === 'center' ? 1 : 2,
+            });
+
+            const textHeight = textLayout.lines.length * annotation.fontSize * 1.2;
+            const x = annotation.leftRatio * pageWidth;
+            const y = pageHeight - (annotation.topRatio * pageHeight);
+
+            pdfLibPage.pushGraphicsState();
+            pdfLibPage.drawText(textLayout.lines.map(l => l.text).join('\n'), {
+                x,
+                y: y - font.ascent * (annotation.fontSize / font.unitsPerEm), // Adjust for baseline
+                font,
+                size: annotation.fontSize,
+                color: rgb(r, g, b),
+                lineHeight: annotation.fontSize * 1.2,
+                maxWidth: boxWidth
+            });
+
+            if (annotation.underline) {
+              const lineY = y - textHeight;
+              pdfLibPage.drawLine({
+                  start: { x: x, y: lineY },
+                  end: { x: x + boxWidth, y: lineY },
+                  thickness: 1,
+                  color: rgb(r, g, b)
+              });
+            }
+            pdfLibPage.popGraphicsState();
+        }
 
         if ((watermarkConfig.type === 'text' && watermarkConfig.text) || (watermarkConfig.type === 'image' && watermarkConfig.imageUrl)) {
             pdfLibPage.pushGraphicsState();
             pdfLibPage.setOpacity(watermarkConfig.opacity);
-
+            const helveticaFont = await pdfDocOut.embedFont(StandardFonts.Helvetica);
             if (watermarkConfig.type === 'text' && watermarkConfig.text) {
                 const pdfWatermarkFontSize = watermarkConfig.fontSize;
                 const textColor = hexToRgb(watermarkConfig.color);
@@ -1491,32 +1586,36 @@ export default function PdfEditorHomepage() {
     const handleDragMouseDown = (
         event: React.MouseEvent<HTMLElement>,
         type: 'watermark' | 'annotation',
-        id: string,
-        initialTopRatio: number,
-        initialLeftRatio: number
+        id: string
     ) => {
         event.stopPropagation();
-        isDraggingRef.current = false;
+        isDraggingRef.current = false; // Reset dragging state on new mousedown
 
         const draggedElement = event.currentTarget as HTMLElement;
         const containerElement = (type === 'watermark' ? watermarkPreviewCanvasContainerRef.current : draggedElement.closest('.main-page-container')) as HTMLElement;
-
         if (!containerElement) return;
 
         const containerRect = containerElement.getBoundingClientRect();
-        const initialMouseX = event.clientX;
-        const initialMouseY = event.clientY;
+        const initialItemState = type === 'watermark' ? tempWatermarkConfig : textAnnotations.find(a => a.id === id);
+        if (!initialItemState) return;
+
+        dragStartRef.current = {
+            x: event.clientX,
+            y: event.clientY,
+            initialLeft: initialItemState.leftRatio * containerRect.width,
+            initialTop: initialItemState.topRatio * containerRect.height,
+        };
 
         const handleMouseMove = (moveEvent: MouseEvent) => {
             moveEvent.preventDefault();
             isDraggingRef.current = true;
             draggedElement.style.cursor = 'grabbing';
 
-            const deltaX = moveEvent.clientX - initialMouseX;
-            const deltaY = moveEvent.clientY - initialMouseY;
-
-            const newLeftPx = (initialLeftRatio * containerRect.width) + deltaX;
-            const newTopPx = (initialTopRatio * containerRect.height) + deltaY;
+            const deltaX = moveEvent.clientX - dragStartRef.current.x;
+            const deltaY = moveEvent.clientY - dragStartRef.current.y;
+            
+            const newLeftPx = dragStartRef.current.initialLeft + deltaX;
+            const newTopPx = dragStartRef.current.initialTop + deltaY;
 
             const newLeftRatio = Math.max(0, Math.min(1, newLeftPx / containerRect.width));
             const newTopRatio = Math.max(0, Math.min(1, newTopPx / containerRect.height));
@@ -1534,14 +1633,20 @@ export default function PdfEditorHomepage() {
             }
         };
 
-        const handleMouseUp = () => {
+        const handleMouseUp = (upEvent: MouseEvent) => {
             document.removeEventListener('mousemove', handleMouseMove);
             document.removeEventListener('mouseup', handleMouseUp);
             draggedElement.style.cursor = 'grab';
 
-            if (!isDraggingRef.current && type === 'annotation') {
-                setSelectedAnnotationId(id);
-            }
+            // Use a short delay to distinguish click from drag
+            setTimeout(() => {
+              if (!isDraggingRef.current) {
+                if (type === 'annotation') {
+                  setSelectedAnnotationId(id);
+                }
+              }
+              isDraggingRef.current = false;
+            }, 50);
         };
 
         document.addEventListener('mousemove', handleMouseMove);
@@ -1678,20 +1783,30 @@ export default function PdfEditorHomepage() {
           text: texts.textAnnotationSample,
           topRatio: 0.5,
           leftRatio: 0.5,
+          widthRatio: 0.3,
           fontSize: 24,
+          fontFamily: 'Helvetica',
+          bold: false,
+          italic: false,
+          underline: false,
           color: '#000000',
+          textAlign: 'left',
       };
       setTextAnnotations(prev => [...prev, newAnnotation]);
       setSelectedAnnotationId(newAnnotation.id);
     };
     
-    const updateSelectedAnnotation = (prop: keyof TextAnnotation, value: any) => {
-        if (!selectedAnnotationId) return;
-        setTextAnnotations(prev => prev.map(ann => 
-            ann.id === selectedAnnotationId ? { ...ann, [prop]: value } : ann
-        ));
+    const handleAnnotationChange = (updatedAnnotation: TextAnnotation) => {
+      setTextAnnotations(prev => prev.map(ann => 
+          ann.id === updatedAnnotation.id ? updatedAnnotation : ann
+      ));
     };
 
+    const handleDeleteAnnotation = (id: string) => {
+        setTextAnnotations(prev => prev.filter(ann => ann.id !== id));
+        setSelectedAnnotationId(null);
+    }
+    
     const selectedAnnotation = textAnnotations.find(ann => ann.id === selectedAnnotationId);
 
 
@@ -1751,7 +1866,7 @@ export default function PdfEditorHomepage() {
                 <>
                 {tempWatermarkConfig.type === 'text' && tempWatermarkConfig.text && (
                     <div
-                    onMouseDown={(e) => handleDragMouseDown(e, 'watermark', 'watermark-drag-handle', tempWatermarkConfig.topRatio, tempWatermarkConfig.leftRatio)}
+                    onMouseDown={(e) => handleDragMouseDown(e, 'watermark', 'watermark-drag-handle')}
                     style={{
                         position: 'absolute',
                         top: `${tempWatermarkConfig.topRatio * 100}%`,
@@ -1777,7 +1892,7 @@ export default function PdfEditorHomepage() {
                     <img
                     src={tempWatermarkConfig.imageUrl}
                     alt="Watermark"
-                    onMouseDown={(e) => handleDragMouseDown(e, 'watermark', 'watermark-drag-handle', tempWatermarkConfig.topRatio, tempWatermarkConfig.leftRatio)}
+                    onMouseDown={(e) => handleDragMouseDown(e, 'watermark', 'watermark-drag-handle')}
                     style={{
                         position: 'absolute',
                         top: `${tempWatermarkConfig.topRatio * 100}%`,
@@ -1983,7 +2098,14 @@ export default function PdfEditorHomepage() {
         </div>
       </header>
 
-      <main className="flex-grow flex overflow-hidden">
+      <main className="flex-grow flex overflow-hidden relative">
+        {selectedAnnotation && (
+            <TextAnnotationToolbar
+                annotation={selectedAnnotation}
+                onAnnotationChange={handleAnnotationChange}
+                onDelete={handleDeleteAnnotation}
+            />
+        )}
         {pageObjects.length === 0 ? (
             <div className="flex-grow flex flex-col items-center justify-center p-4 space-y-8">
               <Card className="w-full max-w-lg shadow-xl">
@@ -2163,7 +2285,7 @@ export default function PdfEditorHomepage() {
                     })}
                 </div>
 
-                <div ref={mainViewContainerRef} className="flex-grow bg-muted/30 overflow-y-auto flex flex-col items-center p-4 space-y-4 relative">
+                <div ref={mainViewContainerRef} className="flex-grow bg-muted/30 overflow-y-auto flex flex-col items-center p-4 space-y-4 relative" onClick={() => setSelectedAnnotationId(null)}>
                     {pageObjects.map((page, index) => {
                         const {sourceCanvas, rotation} = page;
                         
@@ -2182,27 +2304,29 @@ export default function PdfEditorHomepage() {
                                     ref={canvas => {
                                         if (canvas) {
                                             const isRotated = rotation % 180 !== 0;
-                                            const canvasWidth = (isRotated ? sourceCanvas.height : sourceCanvas.width) * mainCanvasZoom;
-                                            const canvasHeight = (isRotated ? sourceCanvas.width : sourceCanvas.height) * mainCanvasZoom;
+                                            const canvasWidth = isRotated ? sourceCanvas.height : sourceCanvas.width;
+                                            const canvasHeight = isRotated ? sourceCanvas.width : sourceCanvas.height;
                                             
-                                            canvas.width = canvasWidth;
+                                            canvas.width = canvasWidth; // Render at full resolution
                                             canvas.height = canvasHeight;
 
                                             const ctx = canvas.getContext('2d');
                                             if (!ctx) return;
-
+                                            
+                                            ctx.save();
                                             ctx.fillStyle = 'white';
                                             ctx.fillRect(0, 0, canvas.width, canvas.height);
+                                            ctx.restore();
 
                                             ctx.save();
                                             ctx.translate(canvas.width / 2, canvas.height / 2);
                                             ctx.rotate(rotation * Math.PI / 180);
-                                            
-                                            const imgWidth = isRotated ? canvasHeight : canvasWidth;
-                                            const imgHeight = isRotated ? canvasWidth : canvasHeight;
-
-                                            ctx.drawImage(sourceCanvas, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight);
+                                            ctx.drawImage(sourceCanvas, -sourceCanvas.width / 2, -sourceCanvas.height / 2);
                                             ctx.restore();
+                                            
+                                            // Scale using CSS for display
+                                            canvas.style.width = `${canvasWidth * mainCanvasZoom}px`;
+                                            canvas.style.height = `${canvasHeight * mainCanvasZoom}px`;
                                         }
                                     }}
                                 />
@@ -2243,24 +2367,33 @@ export default function PdfEditorHomepage() {
                                 {textAnnotations.filter(ann => ann.pageIndex === index).map(ann => (
                                     <div
                                         key={ann.id}
-                                        onMouseDown={(e) => handleDragMouseDown(e, 'annotation', ann.id, ann.topRatio, ann.leftRatio)}
+                                        onMouseDown={(e) => handleDragMouseDown(e, 'annotation', ann.id)}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                        }}
+                                        className="absolute cursor-grab"
                                         style={{
-                                            position: 'absolute',
                                             left: `${ann.leftRatio * 100}%`,
                                             top: `${ann.topRatio * 100}%`,
-                                            transform: `translate(-50%, -50%)`,
-                                            fontSize: `${ann.fontSize * mainCanvasZoom}px`,
-                                            color: ann.color,
+                                            width: `${ann.widthRatio * 100}%`,
                                             border: selectedAnnotationId === ann.id ? '1px dashed blue' : '1px solid transparent',
-                                            cursor: 'grab',
-                                            userSelect: 'none',
-                                            padding: '2px',
-                                            whiteSpace: 'pre-wrap',
-                                            lineHeight: 1,
-                                            minWidth: '10px'
+                                            zIndex: 20
                                         }}
                                     >
-                                        {ann.text}
+                                       <Textarea
+                                            value={ann.text}
+                                            onChange={(e) => handleAnnotationChange({ ...ann, text: e.target.value })}
+                                            className="w-full h-full p-0 bg-transparent border-0 resize-none focus:ring-0"
+                                            style={{
+                                                fontFamily: ann.fontFamily.includes('Times') ? '"Times New Roman", Times, serif' : ann.fontFamily,
+                                                fontSize: `${ann.fontSize * mainCanvasZoom}px`,
+                                                fontWeight: ann.bold ? 'bold' : 'normal',
+                                                fontStyle: ann.italic ? 'italic' : 'normal',
+                                                textDecoration: ann.underline ? 'underline' : 'none',
+                                                color: ann.color,
+                                                textAlign: ann.textAlign,
+                                            }}
+                                        />
                                     </div>
                                 ))}
                             </div>
@@ -2305,29 +2438,6 @@ export default function PdfEditorHomepage() {
                                 <Button onClick={openWatermarkPreviewModal} disabled={pageObjects.length === 0} className="w-full">{texts.watermarkPreviewButton}</Button>
                             </AccordionContent>
                         </AccordionItem>
-                        <AccordionItem value="item-2" disabled={!selectedAnnotation}>
-                            <AccordionTrigger>{texts.textProperties}</AccordionTrigger>
-                            <AccordionContent className="space-y-4 pt-4">
-                                {selectedAnnotation ? (
-                                    <>
-                                        <div>
-                                            <Label htmlFor="textAnnotationContent">{texts.textAnnotationContent}</Label>
-                                            <Textarea id="textAnnotationContent" value={selectedAnnotation.text} onChange={(e) => updateSelectedAnnotation('text', e.target.value)} />
-                                        </div>
-                                        <div>
-                                            <Label htmlFor="textAnnotationFontSize">{texts.watermarkFontSizeLabel}</Label>
-                                            <Input id="textAnnotationFontSize" type="number" value={selectedAnnotation.fontSize} onChange={(e) => updateSelectedAnnotation('fontSize', parseInt(e.target.value, 10))} />
-                                        </div>
-                                        <div>
-                                            <Label htmlFor="textAnnotationColor">{texts.watermarkColorLabel}</Label>
-                                            <Input id="textAnnotationColor" type="color" value={selectedAnnotation.color} onChange={(e) => updateSelectedAnnotation('color', e.target.value)} className="h-10 w-full" />
-                                        </div>
-                                    </>
-                                ) : (
-                                    <p className="text-sm text-muted-foreground">{currentLanguage === 'zh' ? '請先在頁面上選擇一個文字方塊以編輯屬性。' : 'Select a text box on the page to edit its properties.'}</p>
-                                )}
-                            </AccordionContent>
-                        </AccordionItem>
                      </Accordion>
                 </div>
             </>
@@ -2336,3 +2446,5 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
+
+    

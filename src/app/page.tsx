@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import * as pdfjsLib from 'pdfjs-dist';
 import type { PDFDocumentProxy as PDFDocumentProxyType } from 'pdfjs-dist';
-import { PDFDocument as PDFLibDocument, StandardFonts, rgb, degrees, grayscale, pushGraphicsState, popGraphicsState, setOpacity, layoutMultilineText } from 'pdf-lib';
+import { PDFDocument as PDFLibDocument, StandardFonts, rgb, degrees, grayscale, pushGraphicsState, popGraphicsState, setOpacity, layoutMultilineText, PDFFont } from 'pdf-lib';
 import Sortable from 'sortablejs';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -597,6 +597,7 @@ export default function PdfEditorHomepage() {
   
   const [textAnnotations, setTextAnnotations] = useState<TextAnnotation[]>([]);
   const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
+  const [editingAnnotationId, setEditingAnnotationId] = useState<string | null>(null);
 
   const dragStartRef = useRef({ x: 0, y: 0, initialLeft: 0, initialTop: 0 });
   const isDraggingRef = useRef(false);
@@ -948,7 +949,7 @@ export default function PdfEditorHomepage() {
     } : { r: 0, g: 0, b: 0 };
   };
 
-  const getPdfFont = async (pdfDoc: PDFLibDocument, annotation: TextAnnotation) => {
+  const getPdfFont = async (pdfDoc: PDFLibDocument, annotation: TextAnnotation): Promise<PDFFont> => {
     const { fontFamily, bold, italic } = annotation;
     let font = StandardFonts.Helvetica;
 
@@ -1638,9 +1639,9 @@ export default function PdfEditorHomepage() {
 
             // Use a short delay to distinguish click from drag
             setTimeout(() => {
-                if (!isDraggingRef.current) {
+                 if (!isDraggingRef.current) {
                     if (type === 'annotation') {
-                        setSelectedAnnotationId(id);
+                        // This logic is now handled by onClick/onDoubleClick
                     }
                 }
                 isDraggingRef.current = false;
@@ -1802,9 +1803,28 @@ export default function PdfEditorHomepage() {
 
     const handleDeleteAnnotation = (id: string) => {
         setTextAnnotations(prev => prev.filter(ann => ann.id !== id));
-        setSelectedAnnotationId(null);
+        if (selectedAnnotationId === id) {
+            setSelectedAnnotationId(null);
+        }
+        if (editingAnnotationId === id) {
+            setEditingAnnotationId(null);
+        }
     }
     
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Delete' && selectedAnnotationId && !editingAnnotationId) {
+                handleDeleteAnnotation(selectedAnnotationId);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [selectedAnnotationId, editingAnnotationId, handleDeleteAnnotation]);
+
+
     const selectedAnnotation = textAnnotations.find(ann => ann.id === selectedAnnotationId);
 
 
@@ -2283,7 +2303,7 @@ export default function PdfEditorHomepage() {
                     })}
                 </div>
 
-                <div ref={mainViewContainerRef} className="flex-grow bg-muted/30 overflow-y-auto flex flex-col items-center p-4 space-y-4 relative" onClick={() => setSelectedAnnotationId(null)}>
+                <div ref={mainViewContainerRef} className="flex-grow bg-muted/30 overflow-y-auto flex flex-col items-center p-4 space-y-4 relative" onClick={() => {setSelectedAnnotationId(null); setEditingAnnotationId(null);}}>
                     {pageObjects.map((page, index) => {
                         const {sourceCanvas, rotation} = page;
                         
@@ -2305,7 +2325,7 @@ export default function PdfEditorHomepage() {
                                             const canvasWidth = isRotated ? sourceCanvas.height : sourceCanvas.width;
                                             const canvasHeight = isRotated ? sourceCanvas.width : sourceCanvas.height;
                                             
-                                            canvas.width = canvasWidth; // Render at full resolution
+                                            canvas.width = canvasWidth;
                                             canvas.height = canvasHeight;
 
                                             const ctx = canvas.getContext('2d');
@@ -2322,7 +2342,6 @@ export default function PdfEditorHomepage() {
                                             ctx.drawImage(sourceCanvas, -sourceCanvas.width / 2, -sourceCanvas.height / 2);
                                             ctx.restore();
                                             
-                                            // Scale using CSS for display
                                             canvas.style.width = `${canvasWidth * mainCanvasZoom}px`;
                                             canvas.style.height = `${canvasHeight * mainCanvasZoom}px`;
                                         }
@@ -2365,15 +2384,26 @@ export default function PdfEditorHomepage() {
                                 {textAnnotations.filter(ann => ann.pageIndex === index).map(ann => (
                                     <div
                                         key={ann.id}
-                                        onMouseDown={(e) => handleDragMouseDown(e, 'annotation', ann.id)}
+                                        onMouseDown={(e) => {
+                                            if (editingAnnotationId !== ann.id) {
+                                                handleDragMouseDown(e, 'annotation', ann.id);
+                                            }
+                                        }}
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             if (!isDraggingRef.current) {
                                                 setSelectedAnnotationId(ann.id);
+                                                setEditingAnnotationId(null);
                                             }
                                         }}
+                                        onDoubleClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedAnnotationId(ann.id);
+                                            setEditingAnnotationId(ann.id);
+                                        }}
                                         className={cn(
-                                            "absolute cursor-grab",
+                                            "absolute",
+                                            editingAnnotationId === ann.id ? "cursor-text" : "cursor-grab",
                                             selectedAnnotationId === ann.id && "border-2 border-dashed border-primary"
                                         )}
                                         style={{
@@ -2386,11 +2416,12 @@ export default function PdfEditorHomepage() {
                                        <Textarea
                                             value={ann.text}
                                             onChange={(e) => handleAnnotationChange({ ...ann, text: e.target.value })}
-                                            onMouseDown={(e) => {
-                                                e.stopPropagation();
-                                                setSelectedAnnotationId(ann.id);
-                                            }}
-                                            className="w-full h-full p-0 bg-transparent border-0 resize-none focus:ring-0"
+                                            onMouseDown={(e) => e.stopPropagation()} // Prevent parent drag when clicking textarea
+                                            disabled={editingAnnotationId !== ann.id}
+                                            className={cn(
+                                                "w-full h-full p-0 bg-transparent border-0 resize-none focus:ring-0",
+                                                editingAnnotationId === ann.id ? "cursor-text" : "pointer-events-none"
+                                            )}
                                             style={{
                                                 fontFamily: ann.fontFamily.includes('Times') ? '"Times New Roman", Times, serif' : ann.fontFamily,
                                                 fontSize: `${ann.fontSize * mainCanvasZoom}px`,
@@ -2399,7 +2430,6 @@ export default function PdfEditorHomepage() {
                                                 textDecoration: ann.underline ? 'underline' : 'none',
                                                 color: ann.color,
                                                 textAlign: ann.textAlign,
-                                                cursor: 'text',
                                             }}
                                         />
                                     </div>

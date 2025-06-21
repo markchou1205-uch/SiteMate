@@ -673,8 +673,13 @@ const TextAnnotationComponent = ({
 
     return (
         <div
-            onMouseDown={(e) => onDragStart(e, annotation.id)}
-            onClick={(e) => onSelect(annotation.id, e)}
+            onMouseDown={(e) => {
+                if (!isEditing) onDragStart(e, annotation.id)
+            }}
+            onClick={(e) => {
+                e.stopPropagation();
+                if (!isEditing) onSelect(annotation.id, e);
+            }}
             onDoubleClick={(e) => onDoubleClick(annotation.id, e)}
             className={cn(
                 "absolute",
@@ -2193,7 +2198,8 @@ export default function PdfEditorHomepage() {
     }
 
     const handleAnnotationSelect = (id: string, e: React.MouseEvent) => {
-        e.stopPropagation();
+        if (editingAnnotationId) return;
+
         setSelectedAnnotationId(id);
         setEditingAnnotationId(null); 
         setSelectedImageId(null);
@@ -2202,7 +2208,7 @@ export default function PdfEditorHomepage() {
 
     const handleAnnotationDoubleClick = (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
-        setSelectedAnnotationId(id); 
+        setSelectedAnnotationId(id);
         setEditingAnnotationId(id);
     };
     

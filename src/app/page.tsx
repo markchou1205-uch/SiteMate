@@ -2215,24 +2215,27 @@ export default function PdfEditorHomepage() {
                                         if (canvas) {
                                             const ctx = canvas.getContext('2d');
                                             if (!ctx) return;
-                                            
+
                                             canvas.width = displayWidth;
                                             canvas.height = displayHeight;
 
-                                            ctx.save();
                                             ctx.fillStyle = 'white';
                                             ctx.fillRect(0, 0, canvas.width, canvas.height);
-                                            
+
+                                            ctx.save();
+
                                             ctx.translate(canvas.width / 2, canvas.height / 2);
                                             ctx.rotate(rotation * Math.PI / 180);
-                                            
-                                            const sourceWidthForDrawing = isRotated ? sourceCanvas.height : sourceCanvas.width;
-                                            const sourceHeightForDrawing = isRotated ? sourceCanvas.width : sourceCanvas.height;
-                                            
+
+                                            const targetDrawWidth = isRotated ? displayHeight : displayWidth;
+                                            const targetDrawHeight = isRotated ? displayWidth : displayHeight;
+
                                             ctx.drawImage(
                                                 sourceCanvas,
-                                                -sourceCanvas.width / 2, -sourceCanvas.height / 2,
-                                                sourceCanvas.width, sourceCanvas.height
+                                                -targetDrawWidth / 2,
+                                                -targetDrawHeight / 2,
+                                                targetDrawWidth,
+                                                targetDrawHeight
                                             );
                                             
                                             ctx.restore();
@@ -2336,3 +2339,5 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
+
+    

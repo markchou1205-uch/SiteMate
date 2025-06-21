@@ -834,7 +834,7 @@ export default function PdfEditorHomepage() {
       setPageObjects(newPageObjects);
       setPdfDocumentProxy(docProxy);
       setSelectedPageIds(new Set());
-      setActivePageIndex(newPageObjects.length > 0 ? 0 : null);
+      setActivePageIndex(0);
       setViewMode('editor');
       
       setTimeout(() => handleFitPage(), 100);
@@ -1664,6 +1664,7 @@ export default function PdfEditorHomepage() {
             blankCanvas.width = pageObjects[0].sourceCanvas.width;
             blankCanvas.height = pageObjects[0].sourceCanvas.height;
         } else {
+            // Default to A4 size at high resolution if no other pages exist
             blankCanvas.width = 2480; 
             blankCanvas.height = 3508;
         }
@@ -2193,43 +2194,50 @@ export default function PdfEditorHomepage() {
                 <div ref={mainViewContainerRef} className="flex-grow bg-muted/30 overflow-y-auto flex flex-col items-center p-4 space-y-4 relative">
                     {pageObjects.map((page, index) => {
                         const {sourceCanvas, rotation} = page;
+
+                        const isRotated = rotation % 180 !== 0;
+                        const pageRenderWidth = isRotated ? sourceCanvas.height : sourceCanvas.width;
+                        const pageRenderHeight = isRotated ? sourceCanvas.width : sourceCanvas.height;
                         
-                        let bufferWidth, bufferHeight;
-                        if (rotation % 180 !== 0) {
-                            bufferWidth = sourceCanvas.height * mainCanvasZoom;
-                            bufferHeight = sourceCanvas.width * mainCanvasZoom;
-                        } else {
-                            bufferWidth = sourceCanvas.width * mainCanvasZoom;
-                            bufferHeight = sourceCanvas.height * mainCanvasZoom;
-                        }
-
+                        const displayWidth = pageRenderWidth * mainCanvasZoom;
+                        const displayHeight = pageRenderHeight * mainCanvasZoom;
+                        
                         return (
-                            <div key={page.id} ref={el => pageRefs.current[index] = el} data-page-index={index} className="shadow-lg bg-white relative my-2 main-page-container">
+                            <div 
+                                key={page.id} 
+                                ref={el => pageRefs.current[index] = el} 
+                                data-page-index={index} 
+                                className="shadow-lg bg-white relative my-2 main-page-container" 
+                                style={{ width: displayWidth, height: displayHeight }}
+                            >
                                 <canvas
-                                  ref={canvas => {
-                                      if (canvas) {
-                                          const ctx = canvas.getContext('2d');
-                                          if (!ctx) return;
-                                          canvas.width = bufferWidth;
-                                          canvas.height = bufferHeight;
-                                          ctx.save();
-                                          ctx.fillStyle = 'white';
-                                          ctx.fillRect(0,0,canvas.width, canvas.height);
-                                          ctx.translate(canvas.width / 2, canvas.height / 2);
-                                          ctx.rotate(rotation * Math.PI / 180);
-                                          
-                                          const scale = mainCanvasZoom;
-                                          const sourceWidthForRotation = rotation % 180 !== 0 ? sourceCanvas.height : sourceCanvas.width;
-                                          const sourceHeightForRotation = rotation % 180 !== 0 ? sourceCanvas.width : sourceCanvas.height;
+                                    ref={canvas => {
+                                        if (canvas) {
+                                            const ctx = canvas.getContext('2d');
+                                            if (!ctx) return;
+                                            
+                                            canvas.width = displayWidth;
+                                            canvas.height = displayHeight;
 
-                                          ctx.drawImage(
-                                              sourceCanvas,
-                                              -sourceCanvas.width/2, -sourceCanvas.height/2,
-                                              sourceCanvas.width, sourceCanvas.height
-                                          );
-                                          ctx.restore();
-                                      }
-                                  }}
+                                            ctx.save();
+                                            ctx.fillStyle = 'white';
+                                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                                            
+                                            ctx.translate(canvas.width / 2, canvas.height / 2);
+                                            ctx.rotate(rotation * Math.PI / 180);
+                                            
+                                            const sourceWidthForDrawing = isRotated ? sourceCanvas.height : sourceCanvas.width;
+                                            const sourceHeightForDrawing = isRotated ? sourceCanvas.width : sourceCanvas.height;
+                                            
+                                            ctx.drawImage(
+                                                sourceCanvas,
+                                                -sourceCanvas.width / 2, -sourceCanvas.height / 2,
+                                                sourceCanvas.width, sourceCanvas.height
+                                            );
+                                            
+                                            ctx.restore();
+                                        }
+                                    }}
                                 />
                                 {textAnnotations.filter(ann => ann.pageIndex === index).map(ann => (
                                     <div

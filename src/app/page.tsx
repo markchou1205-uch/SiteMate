@@ -551,14 +551,16 @@ export default function PdfEditorHomepage() {
   const watermarkPreviewModalCanvasRef = useRef<HTMLCanvasElement>(null);
 
   const dragDataRef = useRef<{
-    type: 'watermark' | 'annotation',
-    id: string | null,
+    type: 'watermark' | 'annotation';
+    id: string | null;
+    element: HTMLElement;
     initialMouseX: number;
     initialMouseY: number;
     initialElementLeft: number;
     initialElementTop: number;
-    containerRect: DOMRect;
   } | null>(null);
+
+
   const watermarkPreviewCanvasContainerRef = useRef<HTMLDivElement>(null);
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -763,6 +765,12 @@ export default function PdfEditorHomepage() {
       setMainCanvasZoom(newZoom);
   }, [activePageIndex, pageObjects]);
 
+  useEffect(() => {
+    if (pageObjects.length > 0) {
+        handleFitPage();
+    }
+  }, [pageObjects.length, handleFitPage]);
+
 
   const updateLanguage = (lang: 'en' | 'zh') => {
     setCurrentLanguage(lang);
@@ -789,7 +797,7 @@ export default function PdfEditorHomepage() {
     const loadedPageObjects: PageObject[] = [];
     for (let i = 1; i <= numPages; i++) {
       const page = await pdfDocProxy.getPage(i);
-      const viewport = page.getViewport({ scale: 2.0 });
+      const viewport = page.getViewport({ scale: 3.0 });
       const canvas = document.createElement('canvas');
       canvas.width = viewport.width;
       canvas.height = viewport.height;
@@ -955,7 +963,7 @@ export default function PdfEditorHomepage() {
                 const { r, g, b } = hexToRgb(annotation.color);
                 pdfLibPage.drawText(annotation.text, {
                     x: annotation.leftRatio * pageWidth,
-                    y: pageHeight - (annotation.topRatio * pageHeight) - annotation.fontSize,
+                    y: pageHeight - (annotation.topRatio * pageHeight), // Adjusted y-coordinate origin
                     font: helveticaFont,
                     size: annotation.fontSize,
                     color: rgb(r, g, b),
@@ -1481,8 +1489,10 @@ export default function PdfEditorHomepage() {
     id: string | null = null
   ) => {
     event.preventDefault();
+    event.stopPropagation();
     const draggedElement = event.currentTarget as HTMLElement;
-    const containerElement = (type === 'watermark' ? watermarkPreviewCanvasContainerRef.current : draggedElement.closest('[data-page-index]')) as HTMLElement;
+    const containerElement = (type === 'watermark' ? watermarkPreviewCanvasContainerRef.current : draggedElement.closest('.main-page-container')) as HTMLElement;
+
     if (!containerElement) return;
 
     draggedElement.style.cursor = 'grabbing';
@@ -1490,11 +1500,11 @@ export default function PdfEditorHomepage() {
     dragDataRef.current = {
       type: type,
       id: id,
+      element: draggedElement,
       initialMouseX: event.clientX,
       initialMouseY: event.clientY,
       initialElementLeft: draggedElement.offsetLeft,
       initialElementTop: draggedElement.offsetTop,
-      containerRect: containerElement.getBoundingClientRect(),
     };
 
     document.addEventListener('mousemove', handleDragMouseMove);
@@ -1507,19 +1517,22 @@ export default function PdfEditorHomepage() {
 
     const {
         type, id, initialMouseX, initialMouseY,
-        initialElementLeft, initialElementTop,
-        containerRect
+        initialElementLeft, initialElementTop, element
     } = dragDataRef.current;
+    
+    const containerElement = (type === 'watermark' ? watermarkPreviewCanvasContainerRef.current : element.closest('.main-page-container')) as HTMLElement;
+    if (!containerElement) return;
 
+    const containerRect = containerElement.getBoundingClientRect();
+    
     const deltaX = event.clientX - initialMouseX;
     const deltaY = event.clientY - initialMouseY;
 
     let newLeftPx = initialElementLeft + deltaX;
     let newTopPx = initialElementTop + deltaY;
     
-    const draggedEl = event.target as HTMLElement;
-    const elRect = draggedEl.getBoundingClientRect();
-    
+    const elRect = element.getBoundingClientRect();
+
     newLeftPx = Math.max(0, Math.min(newLeftPx, containerRect.width - elRect.width));
     newTopPx = Math.max(0, Math.min(newTopPx, containerRect.height - elRect.height));
 
@@ -1545,10 +1558,7 @@ export default function PdfEditorHomepage() {
     if (!dragDataRef.current) return;
     event.preventDefault();
 
-    const draggedElement = event.target as HTMLElement;
-    if (draggedElement) {
-        draggedElement.style.cursor = 'grab';
-    }
+    dragDataRef.current.element.style.cursor = 'grab';
 
     document.removeEventListener('mousemove', handleDragMouseMove);
     document.removeEventListener('mouseup', handleDragMouseUp);
@@ -1590,7 +1600,7 @@ export default function PdfEditorHomepage() {
         }
       }
     }
-  }, [isWatermarkPreviewModalOpen, pageObjects]);
+  }, [isWatermarkPreviewModalOpen, pageObjects, tempWatermarkConfig]);
 
   const handleWatermarkImageFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -1619,23 +1629,17 @@ export default function PdfEditorHomepage() {
           setActivePageIndex(index);
           const targetPage = pageRefs.current[index];
           if (targetPage) {
-              targetPage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              targetPage.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
       } else {
           const clickedId = pageObjects[index].id;
-          if (event.metaKey || event.ctrlKey) {
-              setSelectedPageIds(prev => {
-                  const newSet = new Set(prev);
-                  if (newSet.has(clickedId)) {
-                      newSet.delete(clickedId);
-                  } else {
-                      newSet.add(clickedId);
-                  }
-                  return newSet;
-              });
+          const newSelectedPageIds = new Set(selectedPageIds);
+          if (newSelectedPageIds.has(clickedId)) {
+              newSelectedPageIds.delete(clickedId);
           } else {
-              setSelectedPageIds(new Set([clickedId]));
+              newSelectedPageIds.add(clickedId);
           }
+          setSelectedPageIds(newSelectedPageIds);
       }
   };
 
@@ -1657,8 +1661,8 @@ export default function PdfEditorHomepage() {
             blankCanvas.width = pageObjects[0].sourceCanvas.width;
             blankCanvas.height = pageObjects[0].sourceCanvas.height;
         } else {
-            blankCanvas.width = 595 * 2;
-            blankCanvas.height = 842 * 2;
+            blankCanvas.width = 2480; 
+            blankCanvas.height = 3508;
         }
 
         const ctx = blankCanvas.getContext('2d');
@@ -1777,7 +1781,7 @@ export default function PdfEditorHomepage() {
                         top: `${tempWatermarkConfig.topRatio * 100}%`,
                         left: `${tempWatermarkConfig.leftRatio * 100}%`,
                         transform: `translate(-50%, -50%)`,
-                        fontSize: `${Math.max(8, tempWatermarkConfig.fontSize * (watermarkPreviewModalCanvasRef.current?.height || 600) / 842 / 2 )}px`,
+                        fontSize: `${Math.max(8, tempWatermarkConfig.fontSize * ((watermarkPreviewModalCanvasRef.current?.height || 600) / 842 / 2) )}px`,
                         color: tempWatermarkConfig.color,
                         opacity: tempWatermarkConfig.opacity,
                         cursor: 'grab',
@@ -2170,25 +2174,9 @@ export default function PdfEditorHomepage() {
                                             if (!ctx) return;
                                             const source = page.sourceCanvas;
                                             const aspectRatio = source.width / source.height;
-                                            canvas.width = 100;
-                                            canvas.height = 100 / aspectRatio;
-                                            const sourceAspectRatio = source.width / source.height;
-                                            const thumbAspectRatio = canvas.width / canvas.height;
-                                            let drawWidth = canvas.width;
-                                            let drawHeight = canvas.height;
-                                            let x = 0;
-                                            let y = 0;
-
-                                            if(sourceAspectRatio > thumbAspectRatio){
-                                                drawHeight = drawWidth / sourceAspectRatio;
-                                                y = (canvas.height - drawHeight) / 2;
-                                            } else {
-                                                drawWidth = drawHeight * sourceAspectRatio;
-                                                x = (canvas.width - drawWidth) / 2;
-                                            }
-
-                                            ctx.clearRect(0,0,canvas.width, canvas.height);
-                                            ctx.drawImage(source, x, y, drawWidth, drawHeight);
+                                            canvas.width = 240;
+                                            canvas.height = 240 / aspectRatio;
+                                            ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
                                         }
                                     }}
                                     className="w-full h-auto rounded-sm shadow-md bg-white"
@@ -2202,20 +2190,18 @@ export default function PdfEditorHomepage() {
                 <div ref={mainViewContainerRef} className="flex-grow bg-muted/30 overflow-y-auto flex flex-col items-center p-4 space-y-4 relative">
                     {pageObjects.map((page, index) => {
                         const {sourceCanvas, rotation} = page;
-                        const srcWidth = sourceCanvas.width;
-                        const srcHeight = sourceCanvas.height;
-
+                        
                         let bufferWidth, bufferHeight;
                         if (rotation % 180 !== 0) {
-                            bufferWidth = srcHeight * mainCanvasZoom;
-                            bufferHeight = srcWidth * mainCanvasZoom;
+                            bufferWidth = sourceCanvas.height * mainCanvasZoom;
+                            bufferHeight = sourceCanvas.width * mainCanvasZoom;
                         } else {
-                            bufferWidth = srcWidth * mainCanvasZoom;
-                            bufferHeight = srcHeight * mainCanvasZoom;
+                            bufferWidth = sourceCanvas.width * mainCanvasZoom;
+                            bufferHeight = sourceCanvas.height * mainCanvasZoom;
                         }
 
                         return (
-                            <div key={page.id} ref={el => pageRefs.current[index] = el} data-page-index={index} className="shadow-lg bg-white relative">
+                            <div key={page.id} ref={el => pageRefs.current[index] = el} data-page-index={index} className="shadow-lg bg-white relative my-2 main-page-container">
                                 <canvas
                                   ref={canvas => {
                                       if (canvas) {
@@ -2229,17 +2215,14 @@ export default function PdfEditorHomepage() {
                                           ctx.translate(canvas.width / 2, canvas.height / 2);
                                           ctx.rotate(rotation * Math.PI / 180);
                                           
-                                          const rotatedSrcWidth = rotation % 180 !== 0 ? srcHeight : srcWidth;
-                                          const rotatedSrcHeight = rotation % 180 !== 0 ? srcWidth : srcHeight;
-
                                           const scale = mainCanvasZoom;
-                                          const drawWidth = srcWidth * scale;
-                                          const drawHeight = srcHeight * scale;
+                                          const sourceWidthForRotation = rotation % 180 !== 0 ? sourceCanvas.height : sourceCanvas.width;
+                                          const sourceHeightForRotation = rotation % 180 !== 0 ? sourceCanvas.width : sourceCanvas.height;
 
                                           ctx.drawImage(
                                               sourceCanvas,
-                                              -drawWidth/2, -drawHeight/2,
-                                              drawWidth, drawHeight
+                                              -sourceCanvas.width/2, -sourceCanvas.height/2,
+                                              sourceCanvas.width, sourceCanvas.height
                                           );
                                           ctx.restore();
                                       }
@@ -2254,7 +2237,6 @@ export default function PdfEditorHomepage() {
                                             position: 'absolute',
                                             left: `${ann.leftRatio * 100}%`,
                                             top: `${ann.topRatio * 100}%`,
-                                            transform: 'translate(-50%, -50%)',
                                             fontSize: `${ann.fontSize * mainCanvasZoom}px`,
                                             color: ann.color,
                                             border: selectedAnnotationId === ann.id ? '1px dashed blue' : '1px solid transparent',
@@ -2263,6 +2245,7 @@ export default function PdfEditorHomepage() {
                                             padding: '2px',
                                             whiteSpace: 'pre-wrap',
                                             lineHeight: 1,
+                                            minWidth: '10px'
                                         }}
                                     >
                                         {ann.text}
@@ -2302,7 +2285,7 @@ export default function PdfEditorHomepage() {
                         ref={insertPdfRef}
                         className="hidden"
                      />
-                     <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
+                     <Accordion type="multiple" className="w-full">
                         <AccordionItem value="item-1">
                             <AccordionTrigger>{texts.watermarkSectionTitle}</AccordionTrigger>
                             <AccordionContent className="space-y-4 pt-4">

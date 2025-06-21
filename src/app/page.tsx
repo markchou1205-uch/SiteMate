@@ -554,10 +554,11 @@ export default function PdfEditorHomepage() {
     type: 'watermark' | 'annotation';
     id: string | null;
     element: HTMLElement;
+    containerRect: DOMRect;
     initialMouseX: number;
     initialMouseY: number;
-    initialElementLeft: number;
-    initialElementTop: number;
+    initialElementLeftPercent: number;
+    initialElementTopPercent: number;
   } | null>(null);
 
 
@@ -764,12 +765,6 @@ export default function PdfEditorHomepage() {
       const newZoom = containerWidth / pageRenderWidth;
       setMainCanvasZoom(newZoom);
   }, [activePageIndex, pageObjects]);
-
-  useEffect(() => {
-    if (pageObjects.length > 0) {
-        handleFitPage();
-    }
-  }, [pageObjects.length, handleFitPage]);
 
 
   const updateLanguage = (lang: 'en' | 'zh') => {
@@ -1496,15 +1491,31 @@ export default function PdfEditorHomepage() {
     if (!containerElement) return;
 
     draggedElement.style.cursor = 'grabbing';
+    const containerRect = containerElement.getBoundingClientRect();
     
+    let initialLeftPercent = 0;
+    let initialTopPercent = 0;
+
+    if(type === 'annotation' && id) {
+        const ann = textAnnotations.find(a => a.id === id);
+        if (ann) {
+            initialLeftPercent = ann.leftRatio;
+            initialTopPercent = ann.topRatio;
+        }
+    } else if (type === 'watermark') {
+        initialLeftPercent = tempWatermarkConfig.leftRatio;
+        initialTopPercent = tempWatermarkConfig.topRatio;
+    }
+
     dragDataRef.current = {
       type: type,
       id: id,
       element: draggedElement,
+      containerRect: containerRect,
       initialMouseX: event.clientX,
       initialMouseY: event.clientY,
-      initialElementLeft: draggedElement.offsetLeft,
-      initialElementTop: draggedElement.offsetTop,
+      initialElementLeftPercent: initialLeftPercent,
+      initialElementTopPercent: initialTopPercent,
     };
 
     document.addEventListener('mousemove', handleDragMouseMove);
@@ -1517,27 +1528,19 @@ export default function PdfEditorHomepage() {
 
     const {
         type, id, initialMouseX, initialMouseY,
-        initialElementLeft, initialElementTop, element
+        initialElementLeftPercent, initialElementTopPercent, containerRect
     } = dragDataRef.current;
     
-    const containerElement = (type === 'watermark' ? watermarkPreviewCanvasContainerRef.current : element.closest('.main-page-container')) as HTMLElement;
-    if (!containerElement) return;
-
-    const containerRect = containerElement.getBoundingClientRect();
+    if (!containerRect.width || !containerRect.height) return;
     
     const deltaX = event.clientX - initialMouseX;
     const deltaY = event.clientY - initialMouseY;
 
-    let newLeftPx = initialElementLeft + deltaX;
-    let newTopPx = initialElementTop + deltaY;
-    
-    const elRect = element.getBoundingClientRect();
+    const newLeftPx = (initialElementLeftPercent * containerRect.width) + deltaX;
+    const newTopPx = (initialElementTopPercent * containerRect.height) + deltaY;
 
-    newLeftPx = Math.max(0, Math.min(newLeftPx, containerRect.width - elRect.width));
-    newTopPx = Math.max(0, Math.min(newTopPx, containerRect.height - elRect.height));
-
-    const newLeftRatio = containerRect.width > 0 ? newLeftPx / containerRect.width : 0;
-    const newTopRatio = containerRect.height > 0 ? newTopPx / containerRect.height : 0;
+    const newLeftRatio = Math.max(0, Math.min(1, newLeftPx / containerRect.width));
+    const newTopRatio = Math.max(0, Math.min(1, newTopPx / containerRect.height));
 
     if (type === 'watermark') {
         setTempWatermarkConfig(prev => ({
@@ -1600,7 +1603,7 @@ export default function PdfEditorHomepage() {
         }
       }
     }
-  }, [isWatermarkPreviewModalOpen, pageObjects, tempWatermarkConfig]);
+  }, [isWatermarkPreviewModalOpen, pageObjects, tempWatermarkConfig.imageUrl]); // Re-run when image changes too
 
   const handleWatermarkImageFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -2237,6 +2240,7 @@ export default function PdfEditorHomepage() {
                                             position: 'absolute',
                                             left: `${ann.leftRatio * 100}%`,
                                             top: `${ann.topRatio * 100}%`,
+                                            transform: `translate(-50%, -50%)`,
                                             fontSize: `${ann.fontSize * mainCanvasZoom}px`,
                                             color: ann.color,
                                             border: selectedAnnotationId === ann.id ? '1px dashed blue' : '1px solid transparent',

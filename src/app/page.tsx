@@ -549,18 +549,8 @@ export default function PdfEditorHomepage() {
   const [isWatermarkPreviewModalOpen, setIsWatermarkPreviewModalOpen] = useState(false);
   const watermarkImageUploadRef = useRef<HTMLInputElement>(null);
   const watermarkPreviewModalCanvasRef = useRef<HTMLCanvasElement>(null);
-
-  const dragDataRef = useRef<{
-    type: 'watermark' | 'annotation';
-    id: string | null;
-    element: HTMLElement;
-    containerRect: DOMRect;
-    initialMouseX: number;
-    initialMouseY: number;
-    initialElementLeftPercent: number;
-    initialElementTopPercent: number;
-  } | null>(null);
-
+  
+  const isDraggingRef = useRef(false);
 
   const watermarkPreviewCanvasContainerRef = useRef<HTMLDivElement>(null);
 
@@ -688,44 +678,44 @@ export default function PdfEditorHomepage() {
 
   useEffect(() => {
     if (observerRef.current) observerRef.current.disconnect();
-
+  
     const options = {
-        root: mainViewContainerRef.current,
-        rootMargin: '0px',
-        threshold: 0.5
+      root: mainViewContainerRef.current,
+      rootMargin: '0px',
+      threshold: 0.5
     };
-
+  
     observerRef.current = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const index = parseInt(entry.target.getAttribute('data-page-index') || '0', 10);
-                setActivePageIndex(index);
-            }
-        });
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const index = parseInt(entry.target.getAttribute('data-page-index') || '0', 10);
+          setActivePageIndex(index);
+        }
+      });
     }, options);
-
+  
     const { current: observer } = observerRef;
     const { current: pageElements } = pageRefs;
-
+  
     pageElements.forEach(el => {
-        if (el) observer.observe(el);
+      if (el) observer.observe(el);
     });
-
+  
     return () => {
-        if (observer) {
-            pageElements.forEach(el => {
-                if (el) observer.unobserve(el);
-            });
-        }
+      if (observer) {
+        pageElements.forEach(el => {
+          if (el) observer.unobserve(el);
+        });
+      }
     };
   }, [pageObjects, mainCanvasZoom]);
   
   useEffect(() => {
     if (activePageIndex !== null && thumbnailRefs.current[activePageIndex]) {
-        thumbnailRefs.current[activePageIndex]?.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start',
-        });
+      thumbnailRefs.current[activePageIndex]?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
     }
   }, [activePageIndex]);
 
@@ -837,9 +827,25 @@ export default function PdfEditorHomepage() {
       setActivePageIndex(0);
       setViewMode('editor');
       
-      // Use a timeout to ensure the DOM has updated before fitting the page
       setTimeout(() => {
-        handleFitPage();
+        if (mainViewContainerRef.current && newPageObjects.length > 0 && activePageIndex !== null) {
+          const container = mainViewContainerRef.current;
+          const containerWidth = container.clientWidth - 40;
+          const containerHeight = container.clientHeight - 40;
+      
+          const activePage = newPageObjects[0];
+          const pageCanvas = activePage.sourceCanvas;
+          const rotation = activePage.rotation;
+      
+          let pageRenderWidth = (rotation % 180 !== 0) ? pageCanvas.height : pageCanvas.width;
+          let pageRenderHeight = (rotation % 180 !== 0) ? pageCanvas.width : pageCanvas.height;
+      
+          const widthRatio = containerWidth / pageRenderWidth;
+          const heightRatio = containerHeight / pageRenderHeight;
+      
+          const newZoom = Math.min(widthRatio, heightRatio);
+          setMainCanvasZoom(newZoom);
+        }
       }, 100);
 
     } catch (err: any)
@@ -962,7 +968,7 @@ export default function PdfEditorHomepage() {
                 const { r, g, b } = hexToRgb(annotation.color);
                 pdfLibPage.drawText(annotation.text, {
                     x: annotation.leftRatio * pageWidth,
-                    y: pageHeight - (annotation.topRatio * pageHeight), // Adjusted y-coordinate origin
+                    y: pageHeight - (annotation.topRatio * pageHeight) - (annotation.fontSize / 2),
                     font: helveticaFont,
                     size: annotation.fontSize,
                     color: rgb(r, g, b),
@@ -1482,110 +1488,65 @@ export default function PdfEditorHomepage() {
     }
   };
 
-  const handleDragMouseDown = (
-    event: React.MouseEvent<HTMLElement>,
-    type: 'watermark' | 'annotation',
-    id: string | null = null
-  ) => {
-    // This now also handles selection for annotations
-    if (type === 'annotation' && id) {
-        setSelectedAnnotationId(id);
-    }
-    
-    // We only prevent default for watermark to avoid interfering with text selection
-    if(type === 'watermark') {
-        event.preventDefault();
-    }
-    event.stopPropagation();
-    const draggedElement = event.currentTarget as HTMLElement;
-    const containerElement = (type === 'watermark' ? watermarkPreviewCanvasContainerRef.current : draggedElement.closest('.main-page-container')) as HTMLElement;
+    const handleDragMouseDown = (
+        event: React.MouseEvent<HTMLElement>,
+        type: 'watermark' | 'annotation',
+        id: string,
+        initialTopRatio: number,
+        initialLeftRatio: number
+    ) => {
+        event.stopPropagation();
+        isDraggingRef.current = false;
 
-    if (!containerElement) return;
+        const draggedElement = event.currentTarget as HTMLElement;
+        const containerElement = (type === 'watermark' ? watermarkPreviewCanvasContainerRef.current : draggedElement.closest('.main-page-container')) as HTMLElement;
 
-    draggedElement.style.cursor = 'grabbing';
-    const containerRect = containerElement.getBoundingClientRect();
-    
-    let initialLeftPercent = 0;
-    let initialTopPercent = 0;
+        if (!containerElement) return;
 
-    if(type === 'annotation' && id) {
-        const ann = textAnnotations.find(a => a.id === id);
-        if (ann) {
-            initialLeftPercent = ann.leftRatio;
-            initialTopPercent = ann.topRatio;
-        }
-    } else if (type === 'watermark') {
-        initialLeftPercent = tempWatermarkConfig.leftRatio;
-        initialTopPercent = tempWatermarkConfig.topRatio;
-    }
+        const containerRect = containerElement.getBoundingClientRect();
+        const initialMouseX = event.clientX;
+        const initialMouseY = event.clientY;
 
-    dragDataRef.current = {
-      type: type,
-      id: id,
-      element: draggedElement,
-      containerRect: containerRect,
-      initialMouseX: event.clientX,
-      initialMouseY: event.clientY,
-      initialElementLeftPercent: initialLeftPercent,
-      initialElementTopPercent: initialTopPercent,
+        const handleMouseMove = (moveEvent: MouseEvent) => {
+            moveEvent.preventDefault();
+            isDraggingRef.current = true;
+            draggedElement.style.cursor = 'grabbing';
+
+            const deltaX = moveEvent.clientX - initialMouseX;
+            const deltaY = moveEvent.clientY - initialMouseY;
+
+            const newLeftPx = (initialLeftRatio * containerRect.width) + deltaX;
+            const newTopPx = (initialTopRatio * containerRect.height) + deltaY;
+
+            const newLeftRatio = Math.max(0, Math.min(1, newLeftPx / containerRect.width));
+            const newTopRatio = Math.max(0, Math.min(1, newTopPx / containerRect.height));
+
+            if (type === 'watermark') {
+                setTempWatermarkConfig(prev => ({
+                    ...prev,
+                    topRatio: parseFloat(newTopRatio.toFixed(4)),
+                    leftRatio: parseFloat(newLeftRatio.toFixed(4))
+                }));
+            } else if (type === 'annotation') {
+                setTextAnnotations(prev => prev.map(ann =>
+                    ann.id === id ? { ...ann, topRatio: newTopRatio, leftRatio: newLeftRatio } : ann
+                ));
+            }
+        };
+
+        const handleMouseUp = () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+            draggedElement.style.cursor = 'grab';
+
+            if (!isDraggingRef.current && type === 'annotation') {
+                setSelectedAnnotationId(id);
+            }
+        };
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
     };
-
-    document.addEventListener('mousemove', handleDragMouseMove);
-    document.addEventListener('mouseup', handleDragMouseUp);
-  };
-
-  const handleDragMouseMove = useCallback((event: MouseEvent) => {
-    if (!dragDataRef.current) return;
-    event.preventDefault();
-
-    const {
-        type, id, initialMouseX, initialMouseY,
-        initialElementLeftPercent, initialElementTopPercent, containerRect
-    } = dragDataRef.current;
-    
-    if (!containerRect.width || !containerRect.height) return;
-    
-    const deltaX = event.clientX - initialMouseX;
-    const deltaY = event.clientY - initialMouseY;
-
-    const newLeftPx = (initialElementLeftPercent * containerRect.width) + deltaX;
-    const newTopPx = (initialElementTopPercent * containerRect.height) + deltaY;
-
-    const newLeftRatio = Math.max(0, Math.min(1, newLeftPx / containerRect.width));
-    const newTopRatio = Math.max(0, Math.min(1, newTopPx / containerRect.height));
-
-    if (type === 'watermark') {
-        setTempWatermarkConfig(prev => ({
-            ...prev,
-            topRatio: parseFloat(newTopRatio.toFixed(4)),
-            leftRatio: parseFloat(newLeftRatio.toFixed(4))
-        }));
-    } else if (type === 'annotation' && id) {
-        setTextAnnotations(prev => prev.map(ann => 
-            ann.id === id 
-            ? { ...ann, topRatio: newTopRatio, leftRatio: newLeftRatio } 
-            : ann
-        ));
-    }
-  }, []);
-
-  const handleDragMouseUp = useCallback((event: MouseEvent) => {
-    if (!dragDataRef.current) return;
-    event.preventDefault();
-
-    dragDataRef.current.element.style.cursor = 'grab';
-
-    document.removeEventListener('mousemove', handleDragMouseMove);
-    document.removeEventListener('mouseup', handleDragMouseUp);
-    dragDataRef.current = null;
-  }, [handleDragMouseMove]);
-
-  useEffect(() => {
-    return () => {
-      document.removeEventListener('mousemove', handleDragMouseMove);
-      document.removeEventListener('mouseup', handleDragMouseUp);
-    };
-  }, [handleDragMouseMove, handleDragMouseUp]);
 
 
   const openWatermarkPreviewModal = () => {
@@ -1676,7 +1637,6 @@ export default function PdfEditorHomepage() {
             blankCanvas.width = pageObjects[0].sourceCanvas.width;
             blankCanvas.height = pageObjects[0].sourceCanvas.height;
         } else {
-            // Default to A4 size at high resolution if no other pages exist
             blankCanvas.width = 2480; 
             blankCanvas.height = 3508;
         }
@@ -1791,7 +1751,7 @@ export default function PdfEditorHomepage() {
                 <>
                 {tempWatermarkConfig.type === 'text' && tempWatermarkConfig.text && (
                     <div
-                    onMouseDown={(e) => handleDragMouseDown(e, 'watermark')}
+                    onMouseDown={(e) => handleDragMouseDown(e, 'watermark', 'watermark-drag-handle', tempWatermarkConfig.topRatio, tempWatermarkConfig.leftRatio)}
                     style={{
                         position: 'absolute',
                         top: `${tempWatermarkConfig.topRatio * 100}%`,
@@ -1817,7 +1777,7 @@ export default function PdfEditorHomepage() {
                     <img
                     src={tempWatermarkConfig.imageUrl}
                     alt="Watermark"
-                    onMouseDown={(e) => handleDragMouseDown(e, 'watermark')}
+                    onMouseDown={(e) => handleDragMouseDown(e, 'watermark', 'watermark-drag-handle', tempWatermarkConfig.topRatio, tempWatermarkConfig.leftRatio)}
                     style={{
                         position: 'absolute',
                         top: `${tempWatermarkConfig.topRatio * 100}%`,
@@ -2206,13 +2166,6 @@ export default function PdfEditorHomepage() {
                 <div ref={mainViewContainerRef} className="flex-grow bg-muted/30 overflow-y-auto flex flex-col items-center p-4 space-y-4 relative">
                     {pageObjects.map((page, index) => {
                         const {sourceCanvas, rotation} = page;
-
-                        const isRotated = rotation % 180 !== 0;
-                        const pageRenderWidth = isRotated ? sourceCanvas.height : sourceCanvas.width;
-                        const pageRenderHeight = isRotated ? sourceCanvas.width : sourceCanvas.height;
-                        
-                        const displayWidth = pageRenderWidth * mainCanvasZoom;
-                        const displayHeight = pageRenderHeight * mainCanvasZoom;
                         
                         return (
                             <div 
@@ -2220,36 +2173,35 @@ export default function PdfEditorHomepage() {
                                 ref={el => pageRefs.current[index] = el} 
                                 data-page-index={index} 
                                 className="shadow-lg bg-white relative my-2 main-page-container" 
-                                style={{ width: displayWidth, height: displayHeight }}
+                                style={{
+                                    width: (rotation % 180 !== 0 ? sourceCanvas.height : sourceCanvas.width) * mainCanvasZoom,
+                                    height: (rotation % 180 !== 0 ? sourceCanvas.width : sourceCanvas.height) * mainCanvasZoom
+                                }}
                             >
                                 <canvas
                                     ref={canvas => {
                                         if (canvas) {
+                                            const isRotated = rotation % 180 !== 0;
+                                            const canvasWidth = (isRotated ? sourceCanvas.height : sourceCanvas.width) * mainCanvasZoom;
+                                            const canvasHeight = (isRotated ? sourceCanvas.width : sourceCanvas.height) * mainCanvasZoom;
+                                            
+                                            canvas.width = canvasWidth;
+                                            canvas.height = canvasHeight;
+
                                             const ctx = canvas.getContext('2d');
                                             if (!ctx) return;
-
-                                            canvas.width = displayWidth;
-                                            canvas.height = displayHeight;
 
                                             ctx.fillStyle = 'white';
                                             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
                                             ctx.save();
-
                                             ctx.translate(canvas.width / 2, canvas.height / 2);
                                             ctx.rotate(rotation * Math.PI / 180);
-
-                                            const targetDrawWidth = isRotated ? displayHeight : displayWidth;
-                                            const targetDrawHeight = isRotated ? displayWidth : displayHeight;
-
-                                            ctx.drawImage(
-                                                sourceCanvas,
-                                                -targetDrawWidth / 2,
-                                                -targetDrawHeight / 2,
-                                                targetDrawWidth,
-                                                targetDrawHeight
-                                            );
                                             
+                                            const imgWidth = isRotated ? canvasHeight : canvasWidth;
+                                            const imgHeight = isRotated ? canvasWidth : canvasHeight;
+
+                                            ctx.drawImage(sourceCanvas, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight);
                                             ctx.restore();
                                         }
                                     }}
@@ -2263,14 +2215,17 @@ export default function PdfEditorHomepage() {
                                             transform: 'translate(-50%, -50%)',
                                             opacity: watermarkConfig.opacity,
                                             pointerEvents: 'none',
-                                            color: watermarkConfig.color,
-                                            fontSize: `${watermarkConfig.fontSize * mainCanvasZoom}px`,
-                                            whiteSpace: 'nowrap',
                                             zIndex: 10,
                                         }}
                                     >
                                         {watermarkConfig.type === 'text' ? (
-                                            <span>{watermarkConfig.text}</span>
+                                            <span style={{
+                                              color: watermarkConfig.color,
+                                              fontSize: `${watermarkConfig.fontSize * mainCanvasZoom}px`,
+                                              whiteSpace: 'nowrap',
+                                            }}>
+                                              {watermarkConfig.text}
+                                            </span>
                                         ) : (
                                             <img
                                                 src={watermarkConfig.imageUrl!}
@@ -2288,7 +2243,7 @@ export default function PdfEditorHomepage() {
                                 {textAnnotations.filter(ann => ann.pageIndex === index).map(ann => (
                                     <div
                                         key={ann.id}
-                                        onMouseDown={(e) => handleDragMouseDown(e, 'annotation', ann.id)}
+                                        onMouseDown={(e) => handleDragMouseDown(e, 'annotation', ann.id, ann.topRatio, ann.leftRatio)}
                                         style={{
                                             position: 'absolute',
                                             left: `${ann.leftRatio * 100}%`,

@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -287,7 +287,7 @@ const translations = {
         noteInputPlaceholder: '新增臨時筆記（不會儲存於 PDF）',
         pageManagement: '頁面管理',
         fileOperations: '檔案操作',
-        watermarkSectionTitle: '浮水印',
+        watermarkSectionTitle: 'Watermark',
         watermarkInputPlaceholder: '輸入浮水印文字',
         watermarkFontSizeLabel: '字體大小',
         watermarkColorLabel: '顏色',
@@ -636,6 +636,95 @@ const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete }: { a
         </div>
     );
 };
+
+const TextAnnotationComponent = ({
+    annotation,
+    mainCanvasZoom,
+    isSelected,
+    isEditing,
+    onAnnotationChange,
+    onSelect,
+    onDoubleClick,
+    onDelete,
+    onDragStart,
+    onResizeStart,
+}: {
+    annotation: TextAnnotation,
+    mainCanvasZoom: number,
+    isSelected: boolean,
+    isEditing: boolean,
+    onAnnotationChange: (annotation: TextAnnotation) => void,
+    onSelect: (id: string, e: React.MouseEvent) => void,
+    onDoubleClick: (id: string, e: React.MouseEvent) => void,
+    onDelete: (id: string) => void,
+    onDragStart: (e: React.MouseEvent, id: string) => void,
+    onResizeStart: (e: React.MouseEvent, id: string) => void,
+}) => {
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    useLayoutEffect(() => {
+        const textarea = textareaRef.current;
+        if (textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = `${textarea.scrollHeight}px`;
+        }
+    }, [annotation.text, annotation.fontSize, annotation.widthRatio, mainCanvasZoom]);
+
+
+    return (
+        <div
+            onMouseDown={(e) => onDragStart(e, annotation.id)}
+            onClick={(e) => onSelect(annotation.id, e)}
+            onDoubleClick={(e) => onDoubleClick(annotation.id, e)}
+            className={cn(
+                "absolute",
+                !isEditing && "cursor-grab",
+                isSelected && !isEditing && "border-2 border-dashed border-primary",
+                annotation.link && !isEditing && "border-2 border-dashed border-blue-500"
+            )}
+            style={{
+                left: `${annotation.leftRatio * 100}%`,
+                top: `${annotation.topRatio * 100}%`,
+                width: `${annotation.widthRatio * 100}%`,
+                height: 'auto',
+                zIndex: 20,
+            }}
+        >
+           <Textarea
+                ref={textareaRef}
+                value={annotation.text}
+                onChange={(e) => onAnnotationChange({ ...annotation, text: e.target.value })}
+                onMouseDown={(e) => {
+                    if (isEditing) {
+                        e.stopPropagation();
+                    }
+                }}
+                disabled={!isEditing}
+                className={cn(
+                    "w-full p-0 bg-transparent border-0 resize-none focus:ring-0 overflow-hidden",
+                    isEditing ? "cursor-text pointer-events-auto" : "pointer-events-none"
+                )}
+                style={{
+                    fontFamily: annotation.fontFamily.includes('Times') ? '"Times New Roman", Times, serif' : annotation.fontFamily,
+                    fontSize: `${annotation.fontSize * mainCanvasZoom}px`,
+                    fontWeight: annotation.bold ? 'bold' : 'normal',
+                    fontStyle: annotation.italic ? 'italic' : 'normal',
+                    textDecoration: annotation.underline ? 'underline' : 'none',
+                    color: annotation.color,
+                    textAlign: annotation.textAlign,
+                    lineHeight: 1.3,
+                }}
+            />
+            {annotation.link && !isEditing && <LinkIcon className="absolute -top-1.5 -right-1.5 h-4 w-4 text-white bg-blue-500 p-0.5 rounded-full" />}
+            {isSelected && !isEditing && (
+                <div
+                    className="absolute -right-1 -bottom-1 w-4 h-4 bg-primary rounded-full border-2 border-white cursor-se-resize"
+                    onMouseDown={(e) => onResizeStart(e, annotation.id)}
+                />
+            )}
+        </div>
+    );
+}
 
 
 export default function PdfEditorHomepage() {
@@ -1743,7 +1832,7 @@ export default function PdfEditorHomepage() {
 
     const handleDragMouseDown = (
         event: React.MouseEvent<HTMLElement>,
-        type: 'watermark' | 'annotation' | 'image' | 'highlight' | 'image-resize' | 'highlight-resize',
+        type: 'watermark' | 'annotation' | 'image' | 'highlight' | 'image-resize' | 'highlight-resize' | 'annotation-resize',
         id: string
     ) => {
         event.stopPropagation();
@@ -1804,7 +1893,14 @@ export default function PdfEditorHomepage() {
                         heightRatio: Math.max(0.01, newHeightPx / containerRect.height)
                     } : ann
                 ));
-            } else { // It's a drag operation
+            } else if (isResize && itemType === 'annotation') {
+                const newWidthPx = dragStartRef.current.initialWidth + deltaX;
+                const newWidthRatio = Math.max(0.1, newWidthPx / containerRect.width);
+                 setTextAnnotations(prev => prev.map(ann =>
+                    ann.id === id ? { ...ann, widthRatio: newWidthRatio } : ann
+                ));
+            }
+            else { // It's a drag operation
                 const newLeftPx = dragStartRef.current.initialLeft + deltaX;
                 const newTopPx = dragStartRef.current.initialTop + deltaY;
 
@@ -1815,7 +1911,10 @@ export default function PdfEditorHomepage() {
 
                 switch (itemType) {
                     case 'watermark': setTempWatermarkConfig(prev => ({ ...prev, topRatio: parseFloat(newTopRatio.toFixed(4)), leftRatio: parseFloat(newLeftRatio.toFixed(4)) })); break;
-                    case 'annotation': setTextAnnotations(prev => prev.map(ann => ann.id === id ? updater(ann) : ann)); break;
+                    case 'annotation': 
+                        if (editingAnnotationId === id) return;
+                        setTextAnnotations(prev => prev.map(ann => ann.id === id ? updater(ann) : ann)); 
+                        break;
                     case 'image': setImageAnnotations(prev => prev.map(ann => ann.id === id ? updater(ann) : ann)); break;
                     case 'highlight': setHighlightAnnotations(prev => prev.map(ann => ann.id === id ? updater(ann) : ann)); break;
                 }
@@ -2093,28 +2192,17 @@ export default function PdfEditorHomepage() {
         if (selectedHighlightId === id) setSelectedHighlightId(null);
     }
 
-    const handleAnnotationMouseDown = (id: string, e: React.MouseEvent) => {
-        // This is the single-click action: select for moving.
+    const handleAnnotationSelect = (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
-
-        if (editingAnnotationId === id) {
-            // If we're already editing, a single click should not change state.
-            // This allows the user to click inside to place the cursor.
-            return;
-        }
-
         setSelectedAnnotationId(id);
-        setEditingAnnotationId(null); // Ensure we are not in edit mode.
+        setEditingAnnotationId(null); 
         setSelectedImageId(null);
         setSelectedHighlightId(null);
-
-        // This initiates the drag.
-        handleDragMouseDown(e, 'annotation', id);
     };
 
     const handleAnnotationDoubleClick = (id: string, e: React.MouseEvent) => {
-        // This is the double-click action: enter edit mode.
         e.stopPropagation();
+        setSelectedAnnotationId(id); 
         setEditingAnnotationId(id);
     };
     
@@ -2875,52 +2963,25 @@ export default function PdfEditorHomepage() {
                                     </div>
                                 ))}
                                 {textAnnotations.filter(ann => ann.pageIndex === index).map(ann => (
-                                    <div
+                                    <TextAnnotationComponent
                                         key={ann.id}
-                                        onMouseDown={(e) => handleAnnotationMouseDown(ann.id, e)}
-                                        onDoubleClick={(e) => handleAnnotationDoubleClick(ann.id, e)}
-                                        onClick={(e) => e.stopPropagation()}
-                                        className={cn(
-                                            "absolute",
-                                            editingAnnotationId !== ann.id && "cursor-grab",
-                                            selectedAnnotationId === ann.id && editingAnnotationId !== ann.id && "border-2 border-dashed border-primary",
-                                            ann.link && editingAnnotationId !== ann.id && "border-2 border-dashed border-blue-500"
-                                        )}
-                                        style={{
-                                            left: `${ann.leftRatio * 100}%`,
-                                            top: `${ann.topRatio * 100}%`,
-                                            width: `${ann.widthRatio * 100}%`,
-                                            height: 'auto',
-                                            zIndex: 20,
+                                        annotation={ann}
+                                        mainCanvasZoom={mainCanvasZoom}
+                                        isSelected={selectedAnnotationId === ann.id}
+                                        isEditing={editingAnnotationId === ann.id}
+                                        onAnnotationChange={handleAnnotationChange}
+                                        onSelect={handleAnnotationSelect}
+                                        onDoubleClick={handleAnnotationDoubleClick}
+                                        onDelete={handleDeleteAnnotation}
+                                        onDragStart={(e, id) => {
+                                            if (editingAnnotationId !== id) {
+                                                handleDragMouseDown(e, 'annotation', id);
+                                            }
                                         }}
-                                    >
-                                       <Textarea
-                                            value={ann.text}
-                                            onChange={(e) => handleAnnotationChange({ ...ann, text: e.target.value })}
-                                            onMouseDown={(e) => {
-                                                if (editingAnnotationId === ann.id) {
-                                                    e.stopPropagation();
-                                                }
-                                            }}
-                                            disabled={editingAnnotationId !== ann.id}
-                                            className={cn(
-                                                "w-full p-0 bg-transparent border-0 resize-none focus:ring-0",
-                                                editingAnnotationId === ann.id ? "cursor-text" : "pointer-events-none"
-                                            )}
-                                            style={{
-                                                fontFamily: ann.fontFamily.includes('Times') ? '"Times New Roman", Times, serif' : ann.fontFamily,
-                                                fontSize: `${ann.fontSize * mainCanvasZoom}px`,
-                                                fontWeight: ann.bold ? 'bold' : 'normal',
-                                                fontStyle: ann.italic ? 'italic' : 'normal',
-                                                textDecoration: ann.underline ? 'underline' : 'none',
-                                                color: ann.color,
-                                                textAlign: ann.textAlign,
-                                                lineHeight: 1.3,
-                                                minHeight: `${ann.fontSize * mainCanvasZoom * 1.3}px`,
-                                            }}
-                                        />
-                                        {ann.link && editingAnnotationId !== ann.id && <LinkIcon className="absolute -top-1.5 -right-1.5 h-4 w-4 text-white bg-blue-500 p-0.5 rounded-full" />}
-                                    </div>
+                                        onResizeStart={(e, id) => {
+                                            handleDragMouseDown(e, 'annotation-resize', id)
+                                        }}
+                                    />
                                 ))}
                             </div>
                         )

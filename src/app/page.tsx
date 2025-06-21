@@ -569,6 +569,7 @@ export default function PdfEditorHomepage() {
   });
 
   const thumbnailContainerRef = useRef<HTMLDivElement>(null);
+  const thumbnailRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const pdfUploadRef = useRef<HTMLInputElement>(null);
   const insertPdfRef = useRef<HTMLInputElement>(null);
@@ -695,6 +696,16 @@ export default function PdfEditorHomepage() {
         }
     };
   }, [pageObjects, mainCanvasZoom]);
+  
+  useEffect(() => {
+    if (activePageIndex !== null && thumbnailRefs.current[activePageIndex]) {
+        thumbnailRefs.current[activePageIndex]?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+        });
+    }
+  }, [activePageIndex]);
+
 
   const handleFitPage = useCallback(() => {
       if (!mainViewContainerRef.current || pageObjects.length === 0 || activePageIndex === null) return;
@@ -801,7 +812,6 @@ export default function PdfEditorHomepage() {
       setActivePageIndex(newPageObjects.length > 0 ? 0 : null);
       setViewMode('editor');
       
-      // Set initial zoom after a short delay to ensure layout is stable
       setTimeout(() => handleFitPage(), 100);
 
     } catch (err: any) {
@@ -1581,12 +1591,10 @@ export default function PdfEditorHomepage() {
     const handleAddBlankPage = () => {
         const blankCanvas = document.createElement('canvas');
         
-        // Use dimensions from the first existing page to ensure consistency.
         if (pageObjects.length > 0 && pageObjects[0].sourceCanvas) {
             blankCanvas.width = pageObjects[0].sourceCanvas.width;
             blankCanvas.height = pageObjects[0].sourceCanvas.height;
         } else {
-            // Default to a standard A4 size at 144 DPI (like pdf.js scale: 2.0) if no pages exist.
             blankCanvas.width = 595 * 2;
             blankCanvas.height = 842 * 2;
         }
@@ -1598,7 +1606,6 @@ export default function PdfEditorHomepage() {
         }
         const newPageObject: PageObject = { id: uuidv4(), sourceCanvas: blankCanvas, rotation: 0 };
 
-        // Insert after the current page, or at the end if no page is active.
         const insertAt = (activePageIndex === null ? pageObjects.length - 1 : activePageIndex) + 1;
 
         setPageObjects(prev => {
@@ -1607,11 +1614,9 @@ export default function PdfEditorHomepage() {
             return newPages;
         });
 
-        // Set the new page as active.
         setActivePageIndex(insertAt);
         setSelectedPageIds(new Set([newPageObject.id]));
         
-        // Automatically scroll the new page into view in the main panel.
         setTimeout(() => {
             const newPageElement = pageRefs.current[insertAt];
             if (newPageElement) {
@@ -2058,11 +2063,12 @@ export default function PdfEditorHomepage() {
               </div>
           ) : (
             <>
-                <div ref={thumbnailContainerRef} className="w-40 border-r bg-card flex-shrink-0 overflow-y-auto p-2 space-y-2">
+                <div ref={thumbnailContainerRef} className="w-[13%] border-r bg-card flex-shrink-0 overflow-y-auto p-2 space-y-2">
                     {pageObjects.map((page, index) => {
                         const isActive = activePageIndex === index;
                         return (
                            <div key={page.id}
+                                ref={el => thumbnailRefs.current[index] = el}
                                 data-id={page.id}
                                 onClick={(e) => handleThumbnailClick(index, e)}
                                 className={cn(
@@ -2097,7 +2103,7 @@ export default function PdfEditorHomepage() {
                                             ctx.drawImage(source, x, y, drawWidth, drawHeight);
                                         }
                                     }}
-                                    className="w-full h-auto rounded-sm shadow-sm bg-white"
+                                    className="w-full h-auto rounded-sm shadow-md bg-white"
                                 />
                                <p className='text-center text-xs mt-1 text-muted-foreground'>{texts.page} {index + 1}</p>
                            </div>
@@ -2164,7 +2170,7 @@ export default function PdfEditorHomepage() {
                     </div>
                 </div>
 
-                <div className="w-72 border-l bg-card flex-shrink-0 p-4 space-y-4 overflow-y-auto">
+                <div className="w-[17%] border-l bg-card flex-shrink-0 p-4 space-y-4 overflow-y-auto">
                     <div className="grid grid-cols-2 gap-2">
                         <ToolbarButton icon={RotateCw} label={texts.toolRotate} onClick={() => handleRotatePage('cw')} disabled={activePageIndex === null}/>
                         <ToolbarButton icon={Trash2} label={texts.toolDelete} onClick={() => { if(activePageIndex !== null) { setPageToDelete(activePageIndex); setIsDeleteConfirmOpen(true); } }} disabled={activePageIndex === null}/>
@@ -2213,7 +2219,3 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
-
-    
-
-    

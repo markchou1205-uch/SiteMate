@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, FileType, FileDigit, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, FontSize, Eye, Scissors, LayoutGrid, PanelLeft, FilePlus2, Combine, Type, ImagePlus, Link as LinkIcon, MessageSquarePlus } from 'lucide-react';
+import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, FileType, FileDigit, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, FontSize, Eye, Scissors, LayoutGrid, PanelLeft, FilePlus2, Combine, Type, ImagePlus, Link as LinkIcon, MessageSquarePlus, ZoomIn, ZoomOut, Expand } from 'lucide-react';
 import { Slider } from "@/components/ui/slider";
 
 import { storage, functions as firebaseFunctions, app as firebaseApp } from '@/lib/firebase'; // Firebase SDK
@@ -179,6 +179,9 @@ const translations = {
         toolInsertImage: 'Insert Image',
         toolInsertLink: 'Insert Link',
         toolInsertComment: 'Comment',
+        zoomIn: 'Zoom In',
+        zoomOut: 'Zoom Out',
+        fitToWidth: 'Fit to Width'
     },
     zh: {
         pageTitle: 'DocuPilot 文件助手',
@@ -320,6 +323,9 @@ const translations = {
         toolInsertImage: '插入圖片',
         toolInsertLink: '插入連結',
         toolInsertComment: '註解',
+        zoomIn: '放大',
+        zoomOut: '縮小',
+        fitToWidth: '符合頁寬'
     }
 };
 
@@ -488,8 +494,8 @@ export default function PdfEditorHomepage() {
   const [activePageIndex, setActivePageIndex] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<'editor' | 'grid'>('editor');
 
-  const mainCanvasRef = useRef<HTMLCanvasElement>(null);
-  const mainCanvasContainerRef = useRef<HTMLDivElement>(null);
+  const mainViewContainerRef = useRef<HTMLDivElement>(null);
+  const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [mainCanvasZoom, setMainCanvasZoom] = useState(1);
 
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
@@ -561,7 +567,7 @@ export default function PdfEditorHomepage() {
     password: '',
   });
 
-  const previewContainerRef = useRef<HTMLDivElement>(null);
+  const thumbnailContainerRef = useRef<HTMLDivElement>(null);
 
   const pdfUploadRef = useRef<HTMLInputElement>(null);
   const insertPdfRef = useRef<HTMLInputElement>(null);
@@ -574,6 +580,8 @@ export default function PdfEditorHomepage() {
   const [pdfToCompress, setPdfToCompress] = useState<File | null>(null);
   const pdfCompressUploadRef = useRef<HTMLInputElement>(null);
   const [isCompressingPdf, setIsCompressingPdf] = useState(false);
+
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
 
   useEffect(() => {
@@ -617,9 +625,9 @@ export default function PdfEditorHomepage() {
     }
   }, []);
 
-  useEffect(() => {
-    if (viewMode === 'grid' && pageObjects.length > 0 && previewContainerRef.current && !sortableInstanceRef.current) {
-        sortableInstanceRef.current = Sortable.create(previewContainerRef.current, {
+  const createSortableInstance = useCallback((containerRef: React.RefObject<HTMLDivElement>) => {
+    if (containerRef.current && !sortableInstanceRef.current) {
+        sortableInstanceRef.current = Sortable.create(containerRef.current, {
             animation: 150,
             ghostClass: 'opacity-50',
             chosenClass: 'shadow-2xl',
@@ -635,17 +643,82 @@ export default function PdfEditorHomepage() {
                 });
             }
         });
-    } else if ((viewMode !== 'grid' || pageObjects.length === 0) && sortableInstanceRef.current) {
+    }
+  }, []);
+
+  useEffect(() => {
+    if (pageObjects.length > 0 && viewMode === 'editor' && thumbnailContainerRef.current) {
+        createSortableInstance(thumbnailContainerRef);
+    } else if (pageObjects.length > 0 && viewMode === 'grid' && mainViewContainerRef.current) {
+        createSortableInstance(mainViewContainerRef);
+    } else if (sortableInstanceRef.current) {
         sortableInstanceRef.current.destroy();
         sortableInstanceRef.current = null;
     }
+    
     return () => {
         if (sortableInstanceRef.current) {
             sortableInstanceRef.current.destroy();
             sortableInstanceRef.current = null;
         }
     };
-  }, [pageObjects.length, viewMode]); 
+  }, [pageObjects.length, viewMode, createSortableInstance]);
+
+  // Intersection Observer for main view scrolling
+  useEffect(() => {
+    if (observerRef.current) observerRef.current.disconnect();
+
+    const options = {
+        root: mainViewContainerRef.current,
+        rootMargin: '0px',
+        threshold: 0.5 // Trigger when 50% of the page is visible
+    };
+
+    observerRef.current = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const index = parseInt(entry.target.getAttribute('data-page-index') || '0', 10);
+                setActivePageIndex(index);
+            }
+        });
+    }, options);
+
+    const { current: observer } = observerRef;
+    const { current: pageElements } = pageRefs;
+
+    pageElements.forEach(el => {
+        if (el) observer.observe(el);
+    });
+
+    return () => {
+        if (observer) {
+            pageElements.forEach(el => {
+                if (el) observer.unobserve(el);
+            });
+        }
+    };
+  }, [pageObjects, mainCanvasZoom]); // Re-observe when pages or zoom changes
+
+  const handleFitToWidth = useCallback(() => {
+      if (!mainViewContainerRef.current || pageObjects.length === 0 || activePageIndex === null) return;
+      const containerWidth = mainViewContainerRef.current.clientWidth - 40; // a little padding
+      const activePage = pageObjects[activePageIndex];
+      if (!activePage) return;
+
+      const pageCanvas = activePage.sourceCanvas;
+      const rotation = activePage.rotation;
+      let pageRenderWidth = (rotation % 180 !== 0) ? pageCanvas.height : pageCanvas.width;
+
+      const newZoom = containerWidth / pageRenderWidth;
+      setMainCanvasZoom(newZoom);
+  }, [activePageIndex, pageObjects]);
+
+  // Initial fit-to-width zoom
+  useEffect(() => {
+    if (pageObjects.length > 0 && activePageIndex !== null) {
+        handleFitToWidth();
+    }
+  }, [pageObjects, activePageIndex, handleFitToWidth]);
 
 
   const updateLanguage = (lang: 'en' | 'zh') => {
@@ -660,59 +733,6 @@ export default function PdfEditorHomepage() {
     toast({ title: texts.logout, description: currentLanguage === 'zh' ? "您已成功登出。" : "You have been logged out successfully." });
   };
   
-  const handleWheelZoom = (event: React.WheelEvent<HTMLDivElement>) => {
-      if (!mainCanvasContainerRef.current?.contains(event.target as Node)) return;
-      event.preventDefault();
-      const ZOOM_SPEED = 0.1;
-      const MIN_ZOOM = 0.1;
-      const MAX_ZOOM = 5;
-      const zoomAmount = -event.deltaY * ZOOM_SPEED * 0.01;
-
-      setMainCanvasZoom(prevZoomLevel => {
-          let newZoomLevel = prevZoomLevel + zoomAmount;
-          return Math.max(MIN_ZOOM, Math.min(newZoomLevel, MAX_ZOOM));
-      });
-  };
-
-  useEffect(() => {
-    if (viewMode === 'editor' && activePageIndex !== null && pageObjects[activePageIndex] && mainCanvasRef.current) {
-        const canvas = mainCanvasRef.current;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        const page = pageObjects[activePageIndex];
-        const sourceCanvas = page.sourceCanvas;
-        const rotation = page.rotation;
-        const srcWidth = sourceCanvas.width;
-        const srcHeight = sourceCanvas.height;
-
-        let bufferWidth, bufferHeight;
-        if (rotation % 180 !== 0) {
-            bufferWidth = srcHeight * mainCanvasZoom;
-            bufferHeight = srcWidth * mainCanvasZoom;
-        } else {
-            bufferWidth = srcWidth * mainCanvasZoom;
-            bufferHeight = srcHeight * mainCanvasZoom;
-        }
-
-        canvas.width = bufferWidth;
-        canvas.height = bufferHeight;
-
-        ctx.save();
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.translate(canvas.width / 2, canvas.height / 2);
-        ctx.rotate(rotation * Math.PI / 180);
-        ctx.drawImage(
-            sourceCanvas,
-            -canvas.width / 2,
-            -canvas.height / 2,
-            canvas.width,
-            canvas.height
-        );
-        ctx.restore();
-    }
-  }, [activePageIndex, pageObjects, mainCanvasZoom, viewMode]);
-
 
   const processPdfFile = async (file: File): Promise<{ newPageObjects: PageObject[], docProxy: PDFDocumentProxyType }> => {
     const arrayBuffer = await file.arrayBuffer();
@@ -765,7 +785,7 @@ export default function PdfEditorHomepage() {
       const { newPageObjects, docProxy } = await processPdfFile(file);
       setPageObjects(newPageObjects);
       setPdfDocumentProxy(docProxy); 
-      setSelectedPageIds(new Set([newPageObjects[0]?.id].filter(Boolean) as string[]));
+      setSelectedPageIds(new Set());
       setActivePageIndex(newPageObjects.length > 0 ? 0 : null);
       setViewMode('editor');
     } catch (err: any) {
@@ -788,13 +808,7 @@ export default function PdfEditorHomepage() {
         
         setPageObjects(newPages);
         setActivePageIndex(newActiveIndex);
-        if (newPages.length > 0) {
-            setSelectedPageIds(new Set([newPages[newActiveIndex].id]));
-        } else {
-            setSelectedPageIds(new Set());
-            setPdfDocumentProxy(null);
-            setUploadedPdfFile(null);
-        }
+        setSelectedPageIds(new Set()); // Clear selection
     } else { // Multi page delete from grid
         if (selectedPageIds.size === 0) {
             toast({ title: texts.pageManagement, description: texts.noPageSelected, variant: "destructive" });
@@ -805,11 +819,11 @@ export default function PdfEditorHomepage() {
         setPageObjects(newPages);
         setActivePageIndex(null);
         setSelectedPageIds(new Set());
-        
-        if (newPages.length === 0) {
-            setPdfDocumentProxy(null);
-            setUploadedPdfFile(null);
-        }
+    }
+    
+    if (pageObjects.length - (pageToDelete !== null ? 1 : selectedPageIds.size) === 0) {
+      setPdfDocumentProxy(null);
+      setUploadedPdfFile(null);
     }
     
     toast({ title: texts.pageManagement, description: currentLanguage === 'zh' ? "選取的頁面已刪除。" : "Selected pages have been deleted." });
@@ -895,7 +909,7 @@ export default function PdfEditorHomepage() {
                 const pdfWatermarkFontSize = watermarkConfig.fontSize;
                 const textColor = hexToRgb(watermarkConfig.color);
                 const textWidth = helveticaFont.widthOfTextAtSize(watermarkConfig.text, pdfWatermarkFontSize);
-                const textHeight = helveticaFont.heightAtSize(pdfWatermarkFontSize); // More general height
+                const textHeight = helveticaFont.heightAtSize(pdfWatermarkFontSize);
                 
                 const wmX_pdf_text = watermarkConfig.leftRatio * pageWidth - textWidth / 2;
                 const wmY_pdf_text = pageHeight - (watermarkConfig.topRatio * pageHeight) - textHeight / 2;
@@ -1169,12 +1183,11 @@ export default function PdfEditorHomepage() {
       const newCombinedPageObjects = [...pageObjects];
       newCombinedPageObjects.splice(insertAtIndex, 0, ...insertPageObjects); 
       setPageObjects(newCombinedPageObjects);
-
-      const newSelectedIds = new Set<string>();
-      if (insertPageObjects.length > 0) {
-        newSelectedIds.add(insertPageObjects[0].id); 
+      
+      const newActivePageId = insertPageObjects[0]?.id;
+      if (newActivePageId) {
+        setSelectedPageIds(new Set([newActivePageId]));
       }
-      setSelectedPageIds(newSelectedIds);
       setActivePageIndex(insertAtIndex);
 
       toast({ title: texts.insertAreaTitle, description: currentLanguage === 'zh' ? "PDF 插入成功。" : "PDF inserted successfully." });
@@ -1424,7 +1437,7 @@ export default function PdfEditorHomepage() {
     };
 
     document.addEventListener('mousemove', handleWatermarkModalMouseMove, { passive: false });
-    document.addEventListener('mouseup', handleWatermarkModalMouseUp, { passive: false });
+    document.addEventListener('mouseup', handleWatermarkModalMouseUp);
   };
 
   const handleWatermarkModalMouseMove = useCallback((event: MouseEvent) => {
@@ -1469,13 +1482,13 @@ export default function PdfEditorHomepage() {
     }
     
     document.removeEventListener('mousemove', handleWatermarkModalMouseMove, { passive: false });
-    document.removeEventListener('mouseup', handleWatermarkModalMouseUp, { passive: false });
+    document.removeEventListener('mouseup', handleWatermarkModalMouseUp);
   }, [isDraggingWatermarkInModal, handleWatermarkModalMouseMove]);
 
   useEffect(() => {
     return () => {
       document.removeEventListener('mousemove', handleWatermarkModalMouseMove, { passive: false });
-      document.removeEventListener('mouseup', handleWatermarkModalMouseUp, { passive: false });
+      document.removeEventListener('mouseup', handleWatermarkModalMouseUp);
     };
   }, [handleWatermarkModalMouseMove, handleWatermarkModalMouseUp]);
 
@@ -1513,21 +1526,27 @@ export default function PdfEditorHomepage() {
   };
 
   const handleThumbnailClick = (index: number, event: React.MouseEvent) => {
-      setActivePageIndex(index);
-      const clickedId = pageObjects[index].id;
-      
-      if (event.metaKey || event.ctrlKey) {
-          setSelectedPageIds(prev => {
-              const newSet = new Set(prev);
-              if (newSet.has(clickedId)) {
-                  newSet.delete(clickedId);
-              } else {
-                  newSet.add(clickedId);
-              }
-              return newSet;
-          });
-      } else {
-          setSelectedPageIds(new Set([clickedId]));
+      if (viewMode === 'editor') {
+          setActivePageIndex(index);
+          const targetPage = pageRefs.current[index];
+          if (targetPage) {
+              targetPage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+      } else { // Grid mode logic
+          const clickedId = pageObjects[index].id;
+          if (event.metaKey || event.ctrlKey) {
+              setSelectedPageIds(prev => {
+                  const newSet = new Set(prev);
+                  if (newSet.has(clickedId)) {
+                      newSet.delete(clickedId);
+                  } else {
+                      newSet.add(clickedId);
+                  }
+                  return newSet;
+              });
+          } else {
+              setSelectedPageIds(new Set([clickedId]));
+          }
       }
   };
 
@@ -1543,26 +1562,8 @@ export default function PdfEditorHomepage() {
     };
 
     const handleAddBlankPage = () => {
-        if (activePageIndex === null && pageObjects.length === 0) {
-             const blankCanvas = document.createElement('canvas');
-            blankCanvas.width = 595;
-            blankCanvas.height = 842;
-            const ctx = blankCanvas.getContext('2d');
-            if (ctx) {
-                ctx.fillStyle = 'white';
-                ctx.fillRect(0, 0, blankCanvas.width, blankCanvas.height);
-            }
-            const newPageObject: PageObject = { id: uuidv4(), sourceCanvas: blankCanvas, rotation: 0 };
-            setPageObjects([newPageObject]);
-            setActivePageIndex(0);
-            setSelectedPageIds(new Set([newPageObject.id]));
-            return;
-        }
-
-        if (activePageIndex === null) return;
-
         const blankCanvas = document.createElement('canvas');
-        blankCanvas.width = 595;
+        blankCanvas.width = 595; // A4-ish
         blankCanvas.height = 842;
         const ctx = blankCanvas.getContext('2d');
         if (ctx) {
@@ -1570,7 +1571,8 @@ export default function PdfEditorHomepage() {
             ctx.fillRect(0, 0, blankCanvas.width, blankCanvas.height);
         }
         const newPageObject: PageObject = { id: uuidv4(), sourceCanvas: blankCanvas, rotation: 0 };
-        const insertAt = activePageIndex + 1;
+        
+        let insertAt = (activePageIndex ?? -1) + 1;
 
         setPageObjects(prev => {
             const newPages = [...prev];
@@ -1586,6 +1588,14 @@ export default function PdfEditorHomepage() {
             title: texts.comingSoon,
             description: `${featureName} ${texts.featureNotImplemented}`
         });
+    };
+    
+    const handleZoom = (direction: 'in' | 'out') => {
+      const ZOOM_STEP = 0.1;
+      setMainCanvasZoom(prev => {
+        let newZoom = direction === 'in' ? prev + ZOOM_STEP : prev - ZOOM_STEP;
+        return Math.max(0.1, Math.min(newZoom, 5)); // Clamp zoom between 10% and 500%
+      });
     };
 
   return (
@@ -1608,12 +1618,12 @@ export default function PdfEditorHomepage() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="watermark-preview-title"
-          className="fixed inset-0 z-[60] flex items-center justify-center" // Increased z-index
+          className="fixed inset-0 z-[60] flex items-center justify-center"
           onClick={() => setIsWatermarkPreviewModalOpen(false)}
         >
           <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" aria-hidden="true"></div>
           <div
-            className="relative bg-card text-card-foreground shadow-2xl rounded-lg w-[90vw] max-w-4xl h-auto max-h-[90vh] flex flex-col" // Enlarged modal
+            className="relative bg-card text-card-foreground shadow-2xl rounded-lg w-[90vw] max-w-4xl h-auto max-h-[90vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
             role="document"
           >
@@ -1960,7 +1970,7 @@ export default function PdfEditorHomepage() {
 
             </div>
           ) : viewMode === 'grid' ? (
-              <div className="flex-grow p-6 overflow-y-auto">
+              <div ref={mainViewContainerRef} className="flex-grow p-6 overflow-y-auto">
                 <Card className="shadow-lg">
                   <CardHeader className="flex flex-row items-center justify-between">
                     <div>
@@ -1982,7 +1992,6 @@ export default function PdfEditorHomepage() {
                   <CardContent>
                     <div
                       id="previewContainer"
-                      ref={previewContainerRef}
                       className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-1 bg-muted/20 rounded-md min-h-[200px]"
                     >
                       {pageObjects.map((pageObj, index) => (
@@ -1991,7 +2000,7 @@ export default function PdfEditorHomepage() {
                           pageObj={pageObj}
                           index={index}
                           isSelected={selectedPageIds.has(pageObj.id)}
-                          onClick={() => handleThumbnailClick(index, {} as React.MouseEvent)}
+                          onClick={(e) => handleThumbnailClick(index, e)}
                           onDoubleClick={() => {
                             setActivePageIndex(index);
                             setViewMode('editor');
@@ -2012,17 +2021,16 @@ export default function PdfEditorHomepage() {
           ) : (
             <div className="flex-grow flex overflow-hidden">
                 {/* Left Panel: Thumbnails */}
-                <div className="w-1/5 border-r bg-card flex-shrink-0 overflow-y-auto p-2 space-y-2">
+                <div ref={thumbnailContainerRef} className="w-1/5 border-r bg-card flex-shrink-0 overflow-y-auto p-2 space-y-2">
                     {pageObjects.map((page, index) => {
-                        const isSelected = selectedPageIds.has(page.id);
                         const isActive = activePageIndex === index;
                         return (
                            <div key={page.id}
+                                data-id={page.id}
                                 onClick={(e) => handleThumbnailClick(index, e)}
                                 className={cn(
                                     "p-1 rounded-md cursor-pointer border-2",
-                                    isActive ? "border-primary" : "border-transparent",
-                                    isSelected && !isActive ? "bg-primary/10" : ""
+                                    isActive ? "border-primary" : "border-transparent"
                                 )}>
                                 <canvas
                                     ref={canvas => {
@@ -2033,10 +2041,26 @@ export default function PdfEditorHomepage() {
                                             const aspectRatio = source.width / source.height;
                                             canvas.width = 100;
                                             canvas.height = 100 / aspectRatio;
-                                            ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
+                                            const sourceAspectRatio = source.width / source.height;
+                                            const thumbAspectRatio = canvas.width / canvas.height;
+                                            let drawWidth = canvas.width;
+                                            let drawHeight = canvas.height;
+                                            let x = 0;
+                                            let y = 0;
+                                            
+                                            if(sourceAspectRatio > thumbAspectRatio){
+                                                drawHeight = drawWidth / sourceAspectRatio;
+                                                y = (canvas.height - drawHeight) / 2;
+                                            } else {
+                                                drawWidth = drawHeight * sourceAspectRatio;
+                                                x = (canvas.width - drawWidth) / 2;
+                                            }
+                                            
+                                            ctx.clearRect(0,0,canvas.width, canvas.height);
+                                            ctx.drawImage(source, x, y, drawWidth, drawHeight);
                                         }
                                     }}
-                                    className="w-full h-auto rounded-sm shadow-sm"
+                                    className="w-full h-auto rounded-sm shadow-sm bg-white"
                                 />
                                <p className='text-center text-xs mt-1 text-muted-foreground'>{texts.page} {index + 1}</p>
                            </div>
@@ -2045,8 +2069,52 @@ export default function PdfEditorHomepage() {
                 </div>
 
                 {/* Center Panel: Main View */}
-                <div ref={mainCanvasContainerRef} onWheel={handleWheelZoom} className="w-4/5 md:w-3/5 flex-grow bg-muted/30 overflow-auto flex items-center justify-center p-4">
-                    <canvas ref={mainCanvasRef} className="shadow-lg" />
+                <div ref={mainViewContainerRef} className="w-4/5 md:w-3/5 flex-grow bg-muted/30 overflow-y-auto flex flex-col items-center p-4 space-y-4 relative">
+                    {pageObjects.map((page, index) => {
+                        const {sourceCanvas, rotation} = page;
+                        const srcWidth = sourceCanvas.width;
+                        const srcHeight = sourceCanvas.height;
+                        
+                        let bufferWidth, bufferHeight;
+                        if (rotation % 180 !== 0) {
+                            bufferWidth = srcHeight * mainCanvasZoom;
+                            bufferHeight = srcWidth * mainCanvasZoom;
+                        } else {
+                            bufferWidth = srcWidth * mainCanvasZoom;
+                            bufferHeight = srcHeight * mainCanvasZoom;
+                        }
+
+                        return (
+                            <div key={page.id} ref={el => pageRefs.current[index] = el} data-page-index={index} className="shadow-lg">
+                                <canvas
+                                  ref={canvas => {
+                                      if (canvas) {
+                                          const ctx = canvas.getContext('2d');
+                                          if (!ctx) return;
+                                          canvas.width = bufferWidth;
+                                          canvas.height = bufferHeight;
+                                          ctx.save();
+                                          ctx.fillStyle = 'white';
+                                          ctx.fillRect(0,0,canvas.width, canvas.height);
+                                          ctx.translate(canvas.width / 2, canvas.height / 2);
+                                          ctx.rotate(rotation * Math.PI / 180);
+                                          ctx.drawImage(
+                                              sourceCanvas,
+                                              -bufferWidth / (mainCanvasZoom * 2), -bufferHeight / (mainCanvasZoom * 2),
+                                              srcWidth, srcHeight
+                                          );
+                                          ctx.restore();
+                                      }
+                                  }}
+                                />
+                            </div>
+                        )
+                    })}
+                    <div className="sticky bottom-4 mx-auto bg-card p-2 rounded-full shadow-lg flex items-center gap-2 border">
+                        <Button variant="ghost" size="icon" onClick={() => handleZoom('out')}><ZoomOut className="h-5 w-5" /></Button>
+                        <Button variant="ghost" size="sm" onClick={handleFitToWidth} className="w-20 text-sm">{`${Math.round(mainCanvasZoom * 100)}%`}</Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleZoom('in')}><ZoomIn className="h-5 w-5" /></Button>
+                    </div>
                 </div>
                 
                 {/* Right Panel: Tools */}
@@ -2054,8 +2122,8 @@ export default function PdfEditorHomepage() {
                     <div className="grid grid-cols-2 gap-2">
                         <ToolbarButton icon={RotateCw} label={texts.toolRotate} onClick={() => handleRotatePage('cw')} disabled={activePageIndex === null}/>
                         <ToolbarButton icon={Trash2} label={texts.toolDelete} onClick={() => { if(activePageIndex !== null) { setPageToDelete(activePageIndex); setIsDeleteConfirmOpen(true); } }} disabled={activePageIndex === null}/>
-                        <ToolbarButton icon={FilePlus2} label={texts.toolAddBlank} onClick={handleAddBlankPage} disabled={activePageIndex === null && pageObjects.length > 0} />
-                        <ToolbarButton icon={Combine} label={texts.toolMerge} onClick={() => insertPdfRef.current?.click()} disabled={activePageIndex === null && pageObjects.length > 0}/>
+                        <ToolbarButton icon={FilePlus2} label={texts.toolAddBlank} onClick={handleAddBlankPage} />
+                        <ToolbarButton icon={Combine} label={texts.toolMerge} onClick={() => insertPdfRef.current?.click()} />
                         <ToolbarButton icon={Scissors} label={texts.toolSplit} onClick={handleSplitPdf} disabled={selectedPageIds.size === 0}/>
                         <ToolbarButton icon={Droplet} label={texts.toolWatermark} onClick={openWatermarkPreviewModal} disabled={pageObjects.length === 0} />
                         <ToolbarButton icon={Type} label={texts.toolInsertText} onClick={() => handlePlaceholderClick("Insert Text")} disabled={activePageIndex === null}/>

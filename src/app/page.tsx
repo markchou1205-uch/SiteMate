@@ -183,7 +183,6 @@ const translations = {
         pdfCompressionSuccess: 'PDF processed successfully!',
         pdfCompressionError: 'Error processing PDF',
         pdfCompressionNote: 'Note: This uses pdf-lib to re-save the PDF. File size reduction varies. useObjectStreams:false is applied.',
-        noPdfToCompress: 'No PDF selected to compress.',
         comingSoon: 'Coming Soon!',
         featureNotImplemented: 'feature is not yet implemented.',
         editorMode: 'Editor Mode',
@@ -328,7 +327,6 @@ const translations = {
         pdfCompressionSuccess: 'PDF 處理成功！',
         pdfCompressionError: '處理 PDF 時發生錯誤',
         pdfCompressionNote: '注意：此功能使用 pdf-lib 重新儲存 PDF。檔案大小縮減效果不一。已套用 useObjectStreams:false。',
-        noPdfToCompress: '尚未選擇要壓縮的 PDF。',
         comingSoon: '即將推出！',
         featureNotImplemented: '功能尚未實現。',
         editorMode: '編輯模式',
@@ -1640,12 +1638,12 @@ export default function PdfEditorHomepage() {
 
             // Use a short delay to distinguish click from drag
             setTimeout(() => {
-              if (!isDraggingRef.current) {
-                if (type === 'annotation') {
-                  setSelectedAnnotationId(id);
+                if (!isDraggingRef.current) {
+                    if (type === 'annotation') {
+                        setSelectedAnnotationId(id);
+                    }
                 }
-              }
-              isDraggingRef.current = false;
+                isDraggingRef.current = false;
             }, 50);
         };
 
@@ -2103,7 +2101,7 @@ export default function PdfEditorHomepage() {
             <TextAnnotationToolbar
                 annotation={selectedAnnotation}
                 onAnnotationChange={handleAnnotationChange}
-                onDelete={handleDeleteAnnotation}
+                onDelete={() => handleDeleteAnnotation(selectedAnnotation.id)}
             />
         )}
         {pageObjects.length === 0 ? (
@@ -2369,20 +2367,29 @@ export default function PdfEditorHomepage() {
                                         key={ann.id}
                                         onMouseDown={(e) => handleDragMouseDown(e, 'annotation', ann.id)}
                                         onClick={(e) => {
-                                          e.stopPropagation();
+                                            e.stopPropagation();
+                                            if (!isDraggingRef.current) {
+                                                setSelectedAnnotationId(ann.id);
+                                            }
                                         }}
-                                        className="absolute cursor-grab"
+                                        className={cn(
+                                            "absolute cursor-grab",
+                                            selectedAnnotationId === ann.id && "border-2 border-dashed border-primary"
+                                        )}
                                         style={{
                                             left: `${ann.leftRatio * 100}%`,
                                             top: `${ann.topRatio * 100}%`,
                                             width: `${ann.widthRatio * 100}%`,
-                                            border: selectedAnnotationId === ann.id ? '1px dashed blue' : '1px solid transparent',
                                             zIndex: 20
                                         }}
                                     >
                                        <Textarea
                                             value={ann.text}
                                             onChange={(e) => handleAnnotationChange({ ...ann, text: e.target.value })}
+                                            onMouseDown={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedAnnotationId(ann.id);
+                                            }}
                                             className="w-full h-full p-0 bg-transparent border-0 resize-none focus:ring-0"
                                             style={{
                                                 fontFamily: ann.fontFamily.includes('Times') ? '"Times New Roman", Times, serif' : ann.fontFamily,
@@ -2392,6 +2399,7 @@ export default function PdfEditorHomepage() {
                                                 textDecoration: ann.underline ? 'underline' : 'none',
                                                 color: ann.color,
                                                 textAlign: ann.textAlign,
+                                                cursor: 'text',
                                             }}
                                         />
                                     </div>
@@ -2447,4 +2455,3 @@ export default function PdfEditorHomepage() {
   );
 }
 
-    

@@ -298,7 +298,7 @@ const translations = {
         noteInputPlaceholder: '新增臨時筆記（不會儲存於 PDF）',
         pageManagement: '頁面管理',
         fileOperations: '檔案操作',
-        watermarkSectionTitle: 'Watermark',
+        watermarkSectionTitle: '浮水印',
         watermarkInputPlaceholder: '輸入浮水印文字',
         watermarkFontSizeLabel: '字體大小',
         watermarkColorLabel: '顏色',
@@ -663,7 +663,7 @@ const TextAnnotationComponent = ({
                 ref={textareaRef}
                 value={annotation.text}
                 onChange={(e) => onAnnotationChange({ ...annotation, text: e.target.value })}
-                onMouseDown={(e) => {
+                onClick={(e) => {
                     if (isEditing) {
                         e.stopPropagation();
                     }
@@ -739,18 +739,7 @@ export default function PdfEditorHomepage() {
   const dragStartRef = useRef({ x: 0, y: 0, initialLeft: 0, initialTop: 0, initialWidth: 0, initialHeight: 0 });
   const isDraggingRef = useRef(false);
 
-  const [watermarkConfig, setWatermarkConfig] = useState<WatermarkConfig>({
-    text: '',
-    type: 'text',
-    imageUrl: null,
-    topRatio: 0.5,
-    leftRatio: 0.5,
-    fontSize: 48,
-    color: '#808080',
-    opacity: 0.5,
-  });
-
-  const [tempWatermarkConfig, setTempWatermarkConfig] = useState<WatermarkConfig>(watermarkConfig);
+  const [tempWatermarkConfig, setTempWatermarkConfig] = useState<WatermarkConfig>(null!);
   const [isWatermarkPreviewModalOpen, setIsWatermarkPreviewModalOpen] = useState(false);
   const watermarkImageUploadRef = useRef<HTMLInputElement>(null);
   const watermarkPreviewModalCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -1818,7 +1807,7 @@ export default function PdfEditorHomepage() {
         toast({ title: texts.watermarkSectionTitle, description: texts.noPdfForWatermarkPreview, variant: "destructive"});
         return;
     }
-    setTempWatermarkConfig(watermarkConfig);
+    // setTempWatermarkConfig(watermarkConfig);
     setIsWatermarkPreviewModalOpen(true);
   };
 
@@ -1840,7 +1829,7 @@ export default function PdfEditorHomepage() {
         }
       }
     }
-  }, [isWatermarkPreviewModalOpen, pageObjects, tempWatermarkConfig.imageUrl]); // Re-run when image changes too
+  }, [isWatermarkPreviewModalOpen, pageObjects, tempWatermarkConfig?.imageUrl]);
 
   const handleWatermarkImageFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -1860,7 +1849,7 @@ export default function PdfEditorHomepage() {
 
 
   const confirmWatermarkSettings = () => {
-    setWatermarkConfig(tempWatermarkConfig);
+    // setWatermarkConfig(tempWatermarkConfig);
     setIsWatermarkPreviewModalOpen(false);
   };
 
@@ -2075,20 +2064,15 @@ export default function PdfEditorHomepage() {
         e.stopPropagation();
         if (isDraggingRef.current) return;
         
-        // This is the logic for single-click selects
-        if (editingAnnotationId !== id) {
-            setSelectedAnnotationId(id);
-            setEditingAnnotationId(null); // Ensure not in edit mode
-            setSelectedImageId(null);
-            setSelectedHighlightId(null);
-        }
+        setSelectedAnnotationId(id);
+        setEditingAnnotationId(null);
+        setSelectedImageId(null);
+        setSelectedHighlightId(null);
     };
 
     const handleAnnotationDoubleClick = (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
-        // This is the logic for double-click edits
-        setSelectedAnnotationId(id); // Select it
-        setEditingAnnotationId(id);  // And enter edit mode
+        setEditingAnnotationId(id);
     };
     
     useEffect(() => {
@@ -2323,11 +2307,11 @@ export default function PdfEditorHomepage() {
                     <MenubarMenu>
                         <MenubarTrigger><Edit className="mr-2 h-4 w-4" />PDF編輯</MenubarTrigger>
                         <MenubarContent>
-                            <MenubarItem onClick={() => insertPdfRef.current?.click()} disabled={pageObjects.length === 0}><Combine className="mr-2 h-4 w-4" />合併PDF</MenubarItem>
+                            <MenubarItem onClick={() => router.push('/merge-pdf')}><Combine className="mr-2 h-4 w-4" />合併PDF</MenubarItem>
                             <MenubarItem onClick={handleSplitPdf} disabled={selectedPageIds.size === 0}><Scissors className="mr-2 h-4 w-4" />拆分PDF</MenubarItem>
                             <MenubarItem onClick={() => setIsDeleteConfirmOpen(true)} disabled={selectedPageIds.size === 0}><Trash2 className="mr-2 h-4 w-4" />刪除頁面</MenubarItem>
                             <MenubarItem onClick={handleSplitPdf} disabled={selectedPageIds.size === 0}><FileUp className="mr-2 h-4 w-4" />擷取頁面</MenubarItem>
-                             <MenubarItem onClick={() => toast({ title: '變換順序', description: '請在縮圖模式中直接拖曳頁面來變換順序。' })} disabled={pageObjects.length < 2}><ListOrdered className="mr-2 h-4 w-4" />變換順序</MenubarItem>
+                            <MenubarItem onClick={() => toast({ title: '變換順序', description: '請在縮圖模式中直接拖曳頁面來變換順序。' })} disabled={pageObjects.length < 2}><ListOrdered className="mr-2 h-4 w-4" />變換順序</MenubarItem>
                             <MenubarItem onClick={openWatermarkPreviewModal} disabled={pageObjects.length === 0}><Droplet className="mr-2 h-4 w-4" />添加浮水印</MenubarItem>
                         </MenubarContent>
                     </MenubarMenu>
@@ -2392,7 +2376,14 @@ export default function PdfEditorHomepage() {
         </div>
       </header>
 
-      <main className="flex-grow flex overflow-hidden relative" onClick={() => {setSelectedAnnotationId(null); setEditingAnnotationId(null); setSelectedImageId(null); setSelectedHighlightId(null); }}>
+      <main className="flex-grow flex overflow-hidden relative" onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          setSelectedAnnotationId(null); 
+          setEditingAnnotationId(null); 
+          setSelectedImageId(null); 
+          setSelectedHighlightId(null);
+        }
+      }}>
         {editingAnnotationId && editingAnnotation && (
             <TextAnnotationToolbar
                 annotation={editingAnnotation}
@@ -2674,7 +2665,7 @@ export default function PdfEditorHomepage() {
                         <ToolbarButton icon={RotateCw} label={texts.toolRotate} onClick={() => handleRotatePage('cw')} disabled={activePageIndex === null}/>
                         <ToolbarButton icon={Trash2} label={texts.toolDelete} onClick={() => { if(activePageIndex !== null) { setPageToDelete(activePageIndex); setIsDeleteConfirmOpen(true); } }} disabled={activePageIndex === null}/>
                         <ToolbarButton icon={FilePlus2} label={texts.toolAddBlank} onClick={handleAddBlankPage} />
-                        <ToolbarButton icon={Combine} label={texts.toolMerge} onClick={() => insertPdfRef.current?.click()} disabled={pageObjects.length === 0} />
+                        <ToolbarButton icon={Combine} label={texts.toolMerge} onClick={() => router.push('/merge-pdf')} />
                         <ToolbarButton icon={Type} label={texts.toolInsertText} onClick={handleAddTextAnnotation} disabled={activePageIndex === null}/>
                         <ToolbarButton icon={ImagePlus} label={texts.toolInsertImage} onClick={() => imageUploadRef.current?.click()} disabled={activePageIndex === null}/>
                         <ToolbarButton icon={Highlighter} label={texts.toolHighlight} onClick={handleAddHighlightAnnotation} disabled={activePageIndex === null} />
@@ -2761,7 +2752,6 @@ export default function PdfEditorHomepage() {
                               </AccordionContent>
                           </AccordionItem>
                       </Accordion>
-
                 </div>
             </>
           )}

@@ -1975,6 +1975,7 @@ export default function PdfEditorHomepage() {
       };
       setTextAnnotations(prev => [...prev, newAnnotation]);
       setSelectedAnnotationId(newAnnotation.id);
+      setEditingAnnotationId(null);
       setSelectedImageId(null);
       setSelectedHighlightId(null);
     };
@@ -2016,6 +2017,7 @@ export default function PdfEditorHomepage() {
             setImageAnnotations(prev => [...prev, newAnnotation]);
             setSelectedImageId(newAnnotation.id);
             setSelectedAnnotationId(null);
+            setEditingAnnotationId(null);
             setSelectedHighlightId(null);
         };
         img.src = dataUrl;
@@ -2082,6 +2084,7 @@ export default function PdfEditorHomepage() {
       setHighlightAnnotations(prev => [...prev, newAnnotation]);
       setSelectedHighlightId(newAnnotation.id);
       setSelectedAnnotationId(null);
+      setEditingAnnotationId(null);
       setSelectedImageId(null);
     };
 
@@ -2090,24 +2093,28 @@ export default function PdfEditorHomepage() {
         if (selectedHighlightId === id) setSelectedHighlightId(null);
     }
 
-    const handleAnnotationClick = (id: string, e: React.MouseEvent) => {
+    const handleAnnotationMouseDown = (id: string, e: React.MouseEvent) => {
+        // This is the single-click action: select for moving.
         e.stopPropagation();
-        // If we are already in edit mode for this item, do nothing.
-        // This allows text selection inside the textarea.
+
         if (editingAnnotationId === id) {
+            // If we're already editing, a single click should not change state.
+            // This allows the user to click inside to place the cursor.
             return;
         }
-        // Otherwise, select the item for moving/styling.
+
         setSelectedAnnotationId(id);
-        setEditingAnnotationId(null);
+        setEditingAnnotationId(null); // Ensure we are not in edit mode.
         setSelectedImageId(null);
         setSelectedHighlightId(null);
+
+        // This initiates the drag.
+        handleDragMouseDown(e, 'annotation', id);
     };
 
     const handleAnnotationDoubleClick = (id: string, e: React.MouseEvent) => {
+        // This is the double-click action: enter edit mode.
         e.stopPropagation();
-        // Enter edit mode on double click.
-        setSelectedAnnotationId(id);
         setEditingAnnotationId(id);
     };
     
@@ -2240,7 +2247,7 @@ export default function PdfEditorHomepage() {
       </div>
     );
 
-    const selectedAnnotation = textAnnotations.find(ann => ann.id === selectedAnnotationId && !editingAnnotationId);
+    const editingAnnotation = textAnnotations.find(ann => ann.id === editingAnnotationId);
 
 
     const handlePlaceholderClick = (featureName: string) => {
@@ -2532,11 +2539,11 @@ export default function PdfEditorHomepage() {
       </header>
 
       <main className="flex-grow flex overflow-hidden relative">
-        {selectedAnnotation && (
+        {editingAnnotation && (
             <TextAnnotationToolbar
-                annotation={selectedAnnotation}
+                annotation={editingAnnotation}
                 onAnnotationChange={handleAnnotationChange}
-                onDelete={() => handleDeleteAnnotation(selectedAnnotation.id)}
+                onDelete={() => handleDeleteAnnotation(editingAnnotation.id)}
             />
         )}
         {pageObjects.length === 0 ? (
@@ -2718,7 +2725,7 @@ export default function PdfEditorHomepage() {
                     })}
                 </div>
 
-                <div ref={mainViewContainerRef} className="flex-grow bg-muted/30 overflow-y-auto flex flex-col items-center p-4 space-y-4 relative" onClick={() => {setSelectedAnnotationId(null); setEditingAnnotationId(null); setSelectedImageId(null); setSelectedHighlightId(null);}}>
+                <div ref={mainViewContainerRef} className="flex-grow bg-muted/30 overflow-y-auto flex flex-col items-center p-4 space-y-4 relative" onClick={() => {setSelectedAnnotationId(null); setEditingAnnotationId(null); setSelectedImageId(null); setSelectedHighlightId(null)}}>
                     {pageObjects.map((page, index) => {
                         const {sourceCanvas, rotation} = page;
                         
@@ -2805,6 +2812,7 @@ export default function PdfEditorHomepage() {
                                             if (!isDraggingRef.current) {
                                                 setSelectedHighlightId(ann.id);
                                                 setSelectedAnnotationId(null);
+                                                setEditingAnnotationId(null);
                                                 setSelectedImageId(null);
                                             }
                                         }}
@@ -2833,15 +2841,15 @@ export default function PdfEditorHomepage() {
                                 {imageAnnotations.filter(ann => ann.pageIndex === index).map(ann => (
                                     <div
                                         key={ann.id}
-                                        onMouseDown={(e) => handleDragMouseDown(e, 'image', ann.id)}
-                                        onClick={(e) => {
+                                        onMouseDown={(e) => {
                                             e.stopPropagation();
-                                            if (!isDraggingRef.current) {
-                                                setSelectedImageId(ann.id);
-                                                setSelectedAnnotationId(null);
-                                                setSelectedHighlightId(null);
-                                            }
+                                            setSelectedImageId(ann.id);
+                                            setSelectedAnnotationId(null);
+                                            setEditingAnnotationId(null);
+                                            setSelectedHighlightId(null);
+                                            handleDragMouseDown(e, 'image', ann.id);
                                         }}
+                                        onClick={(e) => e.stopPropagation()}
                                         className={cn(
                                             "absolute cursor-grab",
                                             selectedImageId === ann.id && "border-2 border-dashed border-primary"
@@ -2869,16 +2877,12 @@ export default function PdfEditorHomepage() {
                                 {textAnnotations.filter(ann => ann.pageIndex === index).map(ann => (
                                     <div
                                         key={ann.id}
-                                        onClick={(e) => handleAnnotationClick(ann.id, e)}
+                                        onMouseDown={(e) => handleAnnotationMouseDown(ann.id, e)}
                                         onDoubleClick={(e) => handleAnnotationDoubleClick(ann.id, e)}
-                                        onMouseDown={(e) => {
-                                            if (editingAnnotationId !== ann.id) {
-                                                handleDragMouseDown(e, 'annotation', ann.id);
-                                            }
-                                        }}
+                                        onClick={(e) => e.stopPropagation()}
                                         className={cn(
                                             "absolute",
-                                            editingAnnotationId === ann.id ? "cursor-text z-30" : "cursor-grab z-20",
+                                            editingAnnotationId !== ann.id && "cursor-grab",
                                             selectedAnnotationId === ann.id && editingAnnotationId !== ann.id && "border-2 border-dashed border-primary",
                                             ann.link && editingAnnotationId !== ann.id && "border-2 border-dashed border-blue-500"
                                         )}
@@ -2887,6 +2891,7 @@ export default function PdfEditorHomepage() {
                                             top: `${ann.topRatio * 100}%`,
                                             width: `${ann.widthRatio * 100}%`,
                                             height: 'auto',
+                                            zIndex: 20,
                                         }}
                                     >
                                        <Textarea

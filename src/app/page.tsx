@@ -20,11 +20,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, FileType, FileDigit, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, FontSize, Eye, Scissors } from 'lucide-react';
+import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, FileType, FileDigit, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, FontSize, Eye, Scissors, LayoutGrid, PanelLeft, FilePlus2, Combine, Type, ImagePlus, Link as LinkIcon, MessageSquarePlus } from 'lucide-react';
 import { Slider } from "@/components/ui/slider";
 
 import { storage, functions as firebaseFunctions, app as firebaseApp } from '@/lib/firebase'; // Firebase SDK
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { cn } from '@/lib/utils';
 
 
 if (typeof window !== 'undefined') {
@@ -53,7 +54,7 @@ const translations = {
         insertAfterLabel: 'Insert after selected page',
         instSelect: 'Click page to select/deselect.',
         instDrag: 'Drag pages to reorder.',
-        instZoom: 'Double click page to zoom/edit.',
+        instZoom: 'Use mouse wheel to zoom.',
         modalCloseButton: 'Close',
         rotateLeft: 'Rotate Left 90°',
         rotateRight: 'Rotate Right 90°',
@@ -162,6 +163,22 @@ const translations = {
         pdfCompressionError: 'Error processing PDF',
         pdfCompressionNote: 'Note: This uses pdf-lib to re-save the PDF. File size reduction varies. useObjectStreams:false is applied.',
         noPdfToCompress: 'No PDF selected to compress.',
+        comingSoon: 'Coming Soon!',
+        featureNotImplemented: 'feature is not yet implemented.',
+        editorMode: 'Editor Mode',
+        gridMode: 'Grid Mode',
+        deletePageConfirmTitle: 'Delete Page?',
+        deletePageConfirmDescription: 'Are you sure you want to delete this page? This action cannot be undone.',
+        toolRotate: 'Rotate',
+        toolDelete: 'Delete',
+        toolAddBlank: 'Add Blank',
+        toolMerge: 'Merge',
+        toolSplit: 'Split',
+        toolWatermark: 'Watermark',
+        toolInsertText: 'Insert Text',
+        toolInsertImage: 'Insert Image',
+        toolInsertLink: 'Insert Link',
+        toolInsertComment: 'Comment',
     },
     zh: {
         pageTitle: 'DocuPilot 文件助手',
@@ -178,7 +195,7 @@ const translations = {
         insertAfterLabel: '插入此頁之後',
         instSelect: '點選頁面以選取/取消。',
         instDrag: '拖曳頁面以調整順序。',
-        instZoom: '雙擊頁面以放大/編輯。',
+        instZoom: '使用滑鼠滾輪縮放。',
         modalCloseButton: '關閉',
         rotateLeft: '向左旋轉90°',
         rotateRight: '向右旋轉90°',
@@ -287,6 +304,22 @@ const translations = {
         pdfCompressionError: '處理 PDF 時發生錯誤',
         pdfCompressionNote: '注意：此功能使用 pdf-lib 重新儲存 PDF。檔案大小縮減效果不一。已套用 useObjectStreams:false。',
         noPdfToCompress: '尚未選擇要壓縮的 PDF。',
+        comingSoon: '即將推出！',
+        featureNotImplemented: '功能尚未實現。',
+        editorMode: '編輯模式',
+        gridMode: '縮圖模式',
+        deletePageConfirmTitle: '刪除頁面？',
+        deletePageConfirmDescription: '您確定要刪除此頁面嗎？此操作無法復原。',
+        toolRotate: '旋轉',
+        toolDelete: '刪除',
+        toolAddBlank: '新增空白',
+        toolMerge: '合併',
+        toolSplit: '拆分',
+        toolWatermark: '浮水印',
+        toolInsertText: '插入文字',
+        toolInsertImage: '插入圖片',
+        toolInsertLink: '插入連結',
+        toolInsertComment: '註解',
     }
 };
 
@@ -325,7 +358,7 @@ interface PagePreviewItemProps {
   texts: typeof translations.en;
 }
 
-const PagePreviewItem: React.FC<PagePreviewItemProps> = React.memo(({
+const PagePreviewItem = React.memo(({
   pageObj, index, isSelected, onClick, onDoubleClick, watermarkConfig, texts
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -432,6 +465,18 @@ const PagePreviewItem: React.FC<PagePreviewItemProps> = React.memo(({
 });
 PagePreviewItem.displayName = 'PagePreviewItem';
 
+const ToolbarButton = ({ icon: Icon, label, onClick, disabled = false }: { icon: React.ElementType, label: string, onClick?: () => void, disabled?: boolean }) => (
+    <Button
+        variant="ghost"
+        className="flex flex-col items-center justify-center h-20 w-full text-xs space-y-1"
+        onClick={onClick}
+        disabled={disabled}
+    >
+        <Icon className="h-6 w-6 text-primary" />
+        <span className="text-muted-foreground">{label}</span>
+    </Button>
+);
+
 
 export default function PdfEditorHomepage() {
   const router = useRouter();
@@ -440,12 +485,15 @@ export default function PdfEditorHomepage() {
   const [pageObjects, setPageObjects] = useState<PageObject[]>([]);
   const [selectedPageIds, setSelectedPageIds] = useState<Set<string>>(new Set());
   
-  const [isZoomModalOpen, setIsZoomModalOpen] = useState(false);
-  const [zoomedPageData, setZoomedPageData] = useState<{ page: PageObject, index: number } | null>(null);
-  const [currentModalRotation, setCurrentModalRotation] = useState(0); 
-  const [zoomLevel, setZoomLevel] = useState(1);
-  const zoomCanvasRef = useRef<HTMLCanvasElement>(null);
-  const zoomScrollContainerRef = useRef<HTMLDivElement>(null);
+  const [activePageIndex, setActivePageIndex] = useState<number | null>(null);
+  const [viewMode, setViewMode] = useState<'editor' | 'grid'>('editor');
+
+  const mainCanvasRef = useRef<HTMLCanvasElement>(null);
+  const mainCanvasContainerRef = useRef<HTMLDivElement>(null);
+  const [mainCanvasZoom, setMainCanvasZoom] = useState(1);
+
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [pageToDelete, setPageToDelete] = useState<number | null>(null);
 
 
   const [currentLanguage, setCurrentLanguage] = useState<'en' | 'zh'>('zh');
@@ -453,7 +501,7 @@ export default function PdfEditorHomepage() {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
-  const [isExtractingText, setIsExtractingText] = useState(false);
+  
   const [insertPosition, setInsertPosition] = useState<'before' | 'after'>('before');
   const [isInsertConfirmOpen, setIsInsertConfirmOpen] = useState(false);
   const [pendingInsertFile, setPendingInsertFile] = useState<File | null>(null);
@@ -569,21 +617,8 @@ export default function PdfEditorHomepage() {
     }
   }, []);
 
-
-  const updateLanguage = (lang: 'en' | 'zh') => {
-    setCurrentLanguage(lang);
-  };
-
-  const handleLogout = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('isLoggedIn');
-    }
-    setIsLoggedIn(false);
-    toast({ title: texts.logout, description: currentLanguage === 'zh' ? "您已成功登出。" : "You have been logged out successfully." });
-  };
-
   useEffect(() => {
-    if (pageObjects.length > 0 && previewContainerRef.current && !sortableInstanceRef.current) {
+    if (viewMode === 'grid' && pageObjects.length > 0 && previewContainerRef.current && !sortableInstanceRef.current) {
         sortableInstanceRef.current = Sortable.create(previewContainerRef.current, {
             animation: 150,
             ghostClass: 'opacity-50',
@@ -600,7 +635,7 @@ export default function PdfEditorHomepage() {
                 });
             }
         });
-    } else if (pageObjects.length === 0 && sortableInstanceRef.current) {
+    } else if ((viewMode !== 'grid' || pageObjects.length === 0) && sortableInstanceRef.current) {
         sortableInstanceRef.current.destroy();
         sortableInstanceRef.current = null;
     }
@@ -610,64 +645,73 @@ export default function PdfEditorHomepage() {
             sortableInstanceRef.current = null;
         }
     };
-  }, [pageObjects.length]); 
+  }, [pageObjects.length, viewMode]); 
 
 
-  const ZOOM_SPEED = 0.1; 
-  const MIN_ZOOM = 0.1;   
-  const MAX_ZOOM = 5;   
+  const updateLanguage = (lang: 'en' | 'zh') => {
+    setCurrentLanguage(lang);
+  };
 
+  const handleLogout = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('isLoggedIn');
+    }
+    setIsLoggedIn(false);
+    toast({ title: texts.logout, description: currentLanguage === 'zh' ? "您已成功登出。" : "You have been logged out successfully." });
+  };
+  
   const handleWheelZoom = (event: React.WheelEvent<HTMLDivElement>) => {
-    if (!isZoomModalOpen || !zoomedPageData || !zoomScrollContainerRef.current?.contains(event.target as Node) ) return; 
-    event.preventDefault(); 
-    
-    const zoomAmount = -event.deltaY * ZOOM_SPEED * 0.01; 
-    
-    setZoomLevel(prevZoomLevel => {
-      let newZoomLevel = prevZoomLevel + zoomAmount;
-      newZoomLevel = Math.max(MIN_ZOOM, Math.min(newZoomLevel, MAX_ZOOM)); 
-      return newZoomLevel;
-    });
+      if (!mainCanvasContainerRef.current?.contains(event.target as Node)) return;
+      event.preventDefault();
+      const ZOOM_SPEED = 0.1;
+      const MIN_ZOOM = 0.1;
+      const MAX_ZOOM = 5;
+      const zoomAmount = -event.deltaY * ZOOM_SPEED * 0.01;
+
+      setMainCanvasZoom(prevZoomLevel => {
+          let newZoomLevel = prevZoomLevel + zoomAmount;
+          return Math.max(MIN_ZOOM, Math.min(newZoomLevel, MAX_ZOOM));
+      });
   };
 
   useEffect(() => {
-    if (isZoomModalOpen && zoomedPageData && zoomCanvasRef.current) {
-      const canvas = zoomCanvasRef.current; 
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-  
-      const sourceCanvas = zoomedPageData.page.sourceCanvas; 
-      const srcWidth = sourceCanvas.width;
-      const srcHeight = sourceCanvas.height;
-  
-      let bufferWidth, bufferHeight;
-      if (currentModalRotation % 180 !== 0) { 
-        bufferWidth = srcHeight * zoomLevel;
-        bufferHeight = srcWidth * zoomLevel;
-      } else { 
-        bufferWidth = srcWidth * zoomLevel;
-        bufferHeight = srcHeight * zoomLevel;
-      }
-      
-      canvas.width = bufferWidth;
-      canvas.height = bufferHeight;
-      
-      ctx.save();
-      ctx.clearRect(0, 0, canvas.width, canvas.height); 
-      ctx.translate(canvas.width / 2, canvas.height / 2);
-      ctx.rotate(currentModalRotation * Math.PI / 180);
-  
-      ctx.drawImage(
-        sourceCanvas,
-        -canvas.width / 2, 
-        -canvas.height / 2,
-        canvas.width,       
-        canvas.height      
-      );
-      
-      ctx.restore(); 
+    if (viewMode === 'editor' && activePageIndex !== null && pageObjects[activePageIndex] && mainCanvasRef.current) {
+        const canvas = mainCanvasRef.current;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const page = pageObjects[activePageIndex];
+        const sourceCanvas = page.sourceCanvas;
+        const rotation = page.rotation;
+        const srcWidth = sourceCanvas.width;
+        const srcHeight = sourceCanvas.height;
+
+        let bufferWidth, bufferHeight;
+        if (rotation % 180 !== 0) {
+            bufferWidth = srcHeight * mainCanvasZoom;
+            bufferHeight = srcWidth * mainCanvasZoom;
+        } else {
+            bufferWidth = srcWidth * mainCanvasZoom;
+            bufferHeight = srcHeight * mainCanvasZoom;
+        }
+
+        canvas.width = bufferWidth;
+        canvas.height = bufferHeight;
+
+        ctx.save();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate(rotation * Math.PI / 180);
+        ctx.drawImage(
+            sourceCanvas,
+            -canvas.width / 2,
+            -canvas.height / 2,
+            canvas.width,
+            canvas.height
+        );
+        ctx.restore();
     }
-  }, [isZoomModalOpen, zoomedPageData, currentModalRotation, zoomLevel]);
+  }, [activePageIndex, pageObjects, mainCanvasZoom, viewMode]);
 
 
   const processPdfFile = async (file: File): Promise<{ newPageObjects: PageObject[], docProxy: PDFDocumentProxyType }> => {
@@ -721,12 +765,15 @@ export default function PdfEditorHomepage() {
       const { newPageObjects, docProxy } = await processPdfFile(file);
       setPageObjects(newPageObjects);
       setPdfDocumentProxy(docProxy); 
-      setSelectedPageIds(new Set()); 
+      setSelectedPageIds(new Set([newPageObjects[0]?.id].filter(Boolean) as string[]));
+      setActivePageIndex(newPageObjects.length > 0 ? 0 : null);
+      setViewMode('editor');
     } catch (err: any) {
       toast({ title: texts.loadError, description: err.message, variant: "destructive" });
       setPdfDocumentProxy(null);
       setUploadedPdfFile(null);
       setPageObjects([]);
+      setActivePageIndex(null);
     } finally {
       setIsLoading(false);
       setLoadingMessage('');
@@ -735,19 +782,41 @@ export default function PdfEditorHomepage() {
   };
 
   const handleDeletePages = () => {
-    if (selectedPageIds.size === 0) {
-      toast({ title: texts.pageManagement, description: texts.noPageSelected, variant: "destructive" });
-      return;
+    if (pageToDelete !== null) { // Single page delete from editor
+        const newPages = pageObjects.filter((p, index) => index !== pageToDelete);
+        const newActiveIndex = pageToDelete >= newPages.length ? newPages.length - 1 : pageToDelete;
+        
+        setPageObjects(newPages);
+        setActivePageIndex(newActiveIndex);
+        if (newPages.length > 0) {
+            setSelectedPageIds(new Set([newPages[newActiveIndex].id]));
+        } else {
+            setSelectedPageIds(new Set());
+            setPdfDocumentProxy(null);
+            setUploadedPdfFile(null);
+        }
+    } else { // Multi page delete from grid
+        if (selectedPageIds.size === 0) {
+            toast({ title: texts.pageManagement, description: texts.noPageSelected, variant: "destructive" });
+            return;
+        }
+        const newPages = pageObjects.filter(p => !selectedPageIds.has(p.id));
+        
+        setPageObjects(newPages);
+        setActivePageIndex(null);
+        setSelectedPageIds(new Set());
+        
+        if (newPages.length === 0) {
+            setPdfDocumentProxy(null);
+            setUploadedPdfFile(null);
+        }
     }
-    const newPages = pageObjects.filter(p => !selectedPageIds.has(p.id));
-    setPageObjects(newPages);
-    setSelectedPageIds(new Set()); 
-    if (newPages.length === 0) { 
-        setPdfDocumentProxy(null);
-        setUploadedPdfFile(null);
-    }
+    
     toast({ title: texts.pageManagement, description: currentLanguage === 'zh' ? "選取的頁面已刪除。" : "Selected pages have been deleted." });
+    setPageToDelete(null);
+    setIsDeleteConfirmOpen(false);
   };
+  
 
   const hexToRgb = (hex: string): { r: number; g: number; b: number } => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -1060,61 +1129,6 @@ export default function PdfEditorHomepage() {
     }
   };
 
-
-  const handleDownloadTxt = async () => {
-    if (!pdfDocumentProxy) {
-      toast({ title: texts.txtDownloadError, description: texts.noPdfToExtractText, variant: "destructive" });
-      return;
-    }
-
-     if (!isLoggedIn && typeof window !== 'undefined') {
-      const today = new Date().toISOString().split('T')[0];
-      let downloadInfoString = localStorage.getItem('DocuPilotDownloadInfo');
-      let downloadInfo = downloadInfoString ? JSON.parse(downloadInfoString) : { count: 0, date: today };
-
-      if (downloadInfo.date !== today) { 
-        downloadInfo = { count: 0, date: today };
-      }
-
-      if (downloadInfo.count >= DAILY_DOWNLOAD_LIMIT) {
-        setShowPaymentModal(true);
-        return;
-      }
-      downloadInfo.count++;
-      localStorage.setItem('DocuPilotDownloadInfo', JSON.stringify(downloadInfo));
-    }
-
-    setIsExtractingText(true);
-    setLoadingMessage(texts.extractingText);
-    try {
-      let fullText = '';
-      for (let i = 0; i < pageObjects.length; i++) { 
-        const pdfJsPage = await pdfDocumentProxy.getPage(i + 1); 
-        const textContent = await pdfJsPage.getTextContent();
-        const pageText = textContent.items.map((item: any) => item.str).join(' '); 
-        fullText += pageText + '\n\n'; 
-      }
-
-      const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'DocuPilot_extracted_text.txt';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      toast({ title: texts.downloadTxt, description: currentLanguage === 'zh' ? "文字提取並下載成功！" : "Text extracted and downloaded successfully!" });
-
-    } catch (err: any) {
-      toast({ title: texts.txtDownloadError, description: err.message, variant: "destructive" });
-    } finally {
-      setIsExtractingText(false);
-      setLoadingMessage('');
-    }
-  };
-
-
   const handleInsertPdfFileSelected = (event: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLDivElement>) => {
     let file: File | null = null;
     if ('dataTransfer' in event) { 
@@ -1150,14 +1164,7 @@ export default function PdfEditorHomepage() {
     try {
       const { newPageObjects: insertPageObjects } = await processPdfFile(file); 
 
-      let insertAtIndex = pageObjects.length; 
-      if (selectedPageIds.size > 0) {
-        const firstSelectedId = Array.from(selectedPageIds)[0];
-        const firstSelectedIndex = pageObjects.findIndex(p => p.id === firstSelectedId);
-        if (firstSelectedIndex !== -1) {
-            insertAtIndex = insertPosition === 'before' ? firstSelectedIndex : firstSelectedIndex + 1;
-        }
-      }
+      let insertAtIndex = activePageIndex !== null ? activePageIndex + 1 : pageObjects.length;
 
       const newCombinedPageObjects = [...pageObjects];
       newCombinedPageObjects.splice(insertAtIndex, 0, ...insertPageObjects); 
@@ -1168,6 +1175,7 @@ export default function PdfEditorHomepage() {
         newSelectedIds.add(insertPageObjects[0].id); 
       }
       setSelectedPageIds(newSelectedIds);
+      setActivePageIndex(insertAtIndex);
 
       toast({ title: texts.insertAreaTitle, description: currentLanguage === 'zh' ? "PDF 插入成功。" : "PDF inserted successfully." });
 
@@ -1298,31 +1306,6 @@ export default function PdfEditorHomepage() {
         e.currentTarget.classList.remove('border-primary', 'bg-primary/10'); 
         handler(e); 
     }
-  };
-
-
-  const headerFeatures = [
-    { icon: Edit3, labelKey: 'featureEdit' as keyof (typeof translations.en) },
-    { icon: Columns, labelKey: 'featureMerge' as keyof (typeof translations.en) },
-    { icon: ListOrdered, labelKey: 'featurePageNum' as keyof (typeof translations.en) },
-    { icon: ShieldCheck, labelKey: 'featureProtect' as keyof (typeof translations.en) },
-    { icon: FileType, labelKey: 'featureConvert' as keyof (typeof translations.en) },
-  ];
-
-  const closeZoomModal = () => {
-    if (zoomedPageData && typeof zoomedPageData.index === 'number') {
-        const updatedPageObjects = pageObjects.map((pObj, idx) => {
-            if (idx === zoomedPageData.index) {
-                return { ...pObj, rotation: currentModalRotation };
-            }
-            return pObj;
-        });
-        setPageObjects(updatedPageObjects);
-    }
-    setIsZoomModalOpen(false);
-    setZoomedPageData(null); 
-    setCurrentModalRotation(0);   
-    setZoomLevel(1);         
   };
 
   const handleImageToPdf = async () => {
@@ -1504,9 +1487,7 @@ export default function PdfEditorHomepage() {
     }
     setWatermarkPreviewPageCanvas(pageObjects[0].sourceCanvas);
     setTempWatermarkConfig(prevTemp => ({
-        ...watermarkConfig, // Copy all current global settings (text, image, styles)
-        // Preserve existing temp drag position if modal was already open and user is re-entering after changing type/text
-        // Otherwise, use the globally confirmed position
+        ...watermarkConfig, 
         topRatio: prevTemp.topRatio !== undefined && isWatermarkPreviewModalOpen ? prevTemp.topRatio : watermarkConfig.topRatio,
         leftRatio: prevTemp.leftRatio !== undefined && isWatermarkPreviewModalOpen ? prevTemp.leftRatio : watermarkConfig.leftRatio,
     }));
@@ -1518,7 +1499,7 @@ export default function PdfEditorHomepage() {
     if (file) {
         const reader = new FileReader();
         reader.onloadend = () => {
-            setWatermarkConfig(prev => ({ ...prev, imageUrl: reader.result as string, type: 'image' }));
+            setTempWatermarkConfig(prev => ({ ...prev, imageUrl: reader.result as string, type: 'image' }));
         };
         reader.readAsDataURL(file);
     }
@@ -1531,79 +1512,96 @@ export default function PdfEditorHomepage() {
     setWatermarkPreviewPageCanvas(null);
   };
 
-  return (
-    <div className="min-h-screen bg-background text-foreground">
+  const handleThumbnailClick = (index: number, event: React.MouseEvent) => {
+      setActivePageIndex(index);
+      const clickedId = pageObjects[index].id;
+      
+      if (event.metaKey || event.ctrlKey) {
+          setSelectedPageIds(prev => {
+              const newSet = new Set(prev);
+              if (newSet.has(clickedId)) {
+                  newSet.delete(clickedId);
+              } else {
+                  newSet.add(clickedId);
+              }
+              return newSet;
+          });
+      } else {
+          setSelectedPageIds(new Set([clickedId]));
+      }
+  };
 
-      {(isLoading || isDownloading || isExtractingText || isConvertingToWord || isConvertingImagesToPdf || isCompressingPdf) && (
+    const handleRotatePage = (direction: 'cw' | 'ccw') => {
+        if (activePageIndex === null) return;
+        setPageObjects(prev => prev.map((page, index) => {
+            if (index === activePageIndex) {
+                const newRotation = (page.rotation + (direction === 'cw' ? 90 : -90) + 360) % 360;
+                return { ...page, rotation: newRotation };
+            }
+            return page;
+        }));
+    };
+
+    const handleAddBlankPage = () => {
+        if (activePageIndex === null && pageObjects.length === 0) {
+             const blankCanvas = document.createElement('canvas');
+            blankCanvas.width = 595;
+            blankCanvas.height = 842;
+            const ctx = blankCanvas.getContext('2d');
+            if (ctx) {
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, blankCanvas.width, blankCanvas.height);
+            }
+            const newPageObject: PageObject = { id: uuidv4(), sourceCanvas: blankCanvas, rotation: 0 };
+            setPageObjects([newPageObject]);
+            setActivePageIndex(0);
+            setSelectedPageIds(new Set([newPageObject.id]));
+            return;
+        }
+
+        if (activePageIndex === null) return;
+
+        const blankCanvas = document.createElement('canvas');
+        blankCanvas.width = 595;
+        blankCanvas.height = 842;
+        const ctx = blankCanvas.getContext('2d');
+        if (ctx) {
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, blankCanvas.width, blankCanvas.height);
+        }
+        const newPageObject: PageObject = { id: uuidv4(), sourceCanvas: blankCanvas, rotation: 0 };
+        const insertAt = activePageIndex + 1;
+
+        setPageObjects(prev => {
+            const newPages = [...prev];
+            newPages.splice(insertAt, 0, newPageObject);
+            return newPages;
+        });
+        setActivePageIndex(insertAt);
+        setSelectedPageIds(new Set([newPageObject.id]));
+    };
+
+    const handlePlaceholderClick = (featureName: string) => {
+        toast({
+            title: texts.comingSoon,
+            description: `${featureName} ${texts.featureNotImplemented}`
+        });
+    };
+
+  return (
+    <div className="flex flex-col h-screen bg-background text-foreground font-sans">
+      {(isLoading || isDownloading || isConvertingToWord || isConvertingImagesToPdf || isCompressingPdf) && (
         <div className="fixed inset-0 bg-black/50 z-[100] flex flex-col items-center justify-center">
           <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
           <p className="text-white text-lg">
             {isLoading ? loadingMessage :
              isConvertingToWord ? texts.convertingToWord :
              isDownloading ? texts.generatingFile : 
-             isExtractingText ? texts.extractingText : 
              isConvertingImagesToPdf ? texts.generatingPdfFromImages :
              isCompressingPdf ? texts.compressingPdf : ''}
           </p>
         </div>
       )}
-
-      
-      {isZoomModalOpen && zoomedPageData && (
-         <div 
-          role="dialog" 
-          aria-modal="true" 
-          aria-label={`${texts.previewOf} ${texts.page} ${zoomedPageData.index + 1} (${(zoomLevel * 100).toFixed(0)}%)`}
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          onClick={closeZoomModal} 
-        >
-          <div 
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm" 
-            aria-hidden="true"
-          ></div>
-          <div 
-            className="relative bg-card text-card-foreground shadow-2xl rounded-lg w-[90vw] max-w-4xl h-[90vh] flex flex-col overflow-hidden"
-            onClick={(e) => e.stopPropagation()} 
-            role="document"
-          >
-            <div className="flex items-center justify-between p-4 border-b border-border bg-card">
-              <h2 className="text-lg font-semibold text-foreground" id="zoom-dialog-title">
-                 {texts.previewOf} {texts.page} {zoomedPageData.index + 1}
-                 <span className="text-sm text-muted-foreground ml-2">({(zoomLevel * 100).toFixed(0)}%)</span>
-              </h2>
-              <Button variant="ghost" size="icon" onClick={closeZoomModal} aria-label={texts.modalCloseButton}>
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
-            <div
-              ref={zoomScrollContainerRef}
-              className="flex-grow bg-muted/40 overflow-auto p-4" 
-              onWheel={handleWheelZoom} 
-              style={{ touchAction: 'none' }} 
-            >
-              <canvas
-                ref={zoomCanvasRef}
-                className="shadow-lg" 
-                style={{ willReadFrequently: true } as any} 
-              />
-            </div>
-            <div className="p-4 border-t border-border bg-card flex flex-col md:flex-row items-center gap-2 justify-between">
-              <Input 
-                type="text" 
-                placeholder={texts.noteInputPlaceholder} 
-                className="flex-grow md:max-w-xs" 
-                aria-label={texts.noteInputPlaceholder}
-              />
-              <div className="flex flex-wrap gap-2 justify-center sm:justify-end">
-                  <Button variant="outline" onClick={() => setCurrentModalRotation((r) => (r - 90 + 360) % 360)}><RotateCcw className="mr-2 h-4 w-4" /> {texts.rotateLeft}</Button>
-                  <Button variant="outline" onClick={() => setCurrentModalRotation((r) => (r + 90) % 360)}><RotateCw className="mr-2 h-4 w-4" /> {texts.rotateRight}</Button>
-                  <Button variant="outline" onClick={() => { setCurrentModalRotation(0); setZoomLevel(1); }}><X className="mr-2 h-4 w-4" /> {texts.resetRotation}</Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       
       {isWatermarkPreviewModalOpen && watermarkPreviewPageCanvas && (
         <div
@@ -1781,6 +1779,21 @@ export default function PdfEditorHomepage() {
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
+        <AlertDialogContent>
+            <ShadAlertDialogHeader>
+            <ShadAlertDialogTitle>{texts.deletePageConfirmTitle}</ShadAlertDialogTitle>
+            <AlertDialogDescription>
+                {texts.deletePageConfirmDescription}
+            </AlertDialogDescription>
+            </ShadAlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel>{texts.cancel}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleDeletePages()}>{texts.confirm}</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={showWordLimitModal} onOpenChange={setShowWordLimitModal}>
         <AlertDialogContent>
@@ -1797,19 +1810,30 @@ export default function PdfEditorHomepage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <header className="p-4 border-b bg-card sticky top-0 z-40">
+      <header className="p-4 border-b bg-card sticky top-0 z-40 flex-shrink-0">
         <div className="container mx-auto flex justify-between items-center">
             <h1 className="text-xl font-bold text-primary flex items-center">
               <MenuSquare className="mr-2 h-6 w-6"/> {texts.pageTitle}
             </h1>
-            <div className="hidden md:flex items-center gap-3 text-sm text-muted-foreground">
-              {headerFeatures.map(feature => (
-                <div key={feature.labelKey} className="flex items-center gap-1">
-                  <feature.icon className="h-4 w-4 text-primary/80" />
-                  <span>{texts[feature.labelKey]}</span>
+            
+            {pageObjects.length > 0 && (
+                <div className='flex items-center gap-2'>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setViewMode(viewMode === 'editor' ? 'grid' : 'editor')}
+                        title={viewMode === 'editor' ? texts.gridMode : texts.editorMode}
+                    >
+                        {viewMode === 'editor' ? <LayoutGrid className='h-4 w-4 mr-2' /> : <PanelLeft className='h-4 w-4 mr-2' />}
+                        {viewMode === 'editor' ? texts.gridMode : texts.editorMode}
+                    </Button>
+                    <Button onClick={handleDownloadPdf} disabled={isDownloading}>
+                        <Download className="mr-2 h-4 w-4" />
+                        {texts.downloadPdf}
+                    </Button>
                 </div>
-              ))}
-            </div>
+            )}
+            
             <div className="flex items-center gap-4">
                 <div className="flex gap-2">
                     <Button variant={currentLanguage === 'en' ? "secondary" : "outline"} size="sm" onClick={() => updateLanguage('en')}>English</Button>
@@ -1838,9 +1862,9 @@ export default function PdfEditorHomepage() {
         </div>
       </header>
 
-      <div className="container mx-auto p-4 md:p-6">
+      <main className="flex-grow flex flex-col">
         {pageObjects.length === 0 ? (
-            <div className="flex flex-col items-center justify-center min-h-[calc(100vh-20rem)] space-y-8">
+            <div className="flex-grow flex flex-col items-center justify-center p-4 space-y-8">
               <Card className="w-full max-w-lg shadow-xl">
                 <CardHeader className="text-center">
                   <Upload className="h-16 w-16 text-primary mx-auto mb-4" />
@@ -1935,359 +1959,122 @@ export default function PdfEditorHomepage() {
               </div>
 
             </div>
+          ) : viewMode === 'grid' ? (
+              <div className="flex-grow p-6 overflow-y-auto">
+                <Card className="shadow-lg">
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center text-xl"><Shuffle className="mr-2 h-5 w-5 text-primary" /> {texts.pageManagement}</CardTitle>
+                      <CardDescription>
+                        {pageObjects.length} {texts.pagesLoaded}.
+                        {selectedPageIds.size > 0 ? ` ${selectedPageIds.size} ${texts.pageSelectedSuffix}.` : ''}
+                      </CardDescription>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button onClick={handleSplitPdf} variant="outline" size="sm" disabled={selectedPageIds.size === 0}>
+                        <Scissors className="mr-2 h-4 w-4" /> {texts.splitPages}
+                      </Button>
+                      <Button onClick={() => { setPageToDelete(null); setIsDeleteConfirmOpen(true); }} variant="destructive" size="sm" disabled={selectedPageIds.size === 0}>
+                        <Trash2 className="mr-2 h-4 w-4" /> {texts.deletePages}
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div
+                      id="previewContainer"
+                      ref={previewContainerRef}
+                      className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-1 bg-muted/20 rounded-md min-h-[200px]"
+                    >
+                      {pageObjects.map((pageObj, index) => (
+                        <PagePreviewItem
+                          key={pageObj.id}
+                          pageObj={pageObj}
+                          index={index}
+                          isSelected={selectedPageIds.has(pageObj.id)}
+                          onClick={() => handleThumbnailClick(index, {} as React.MouseEvent)}
+                          onDoubleClick={()={() => {
+                            setActivePageIndex(index);
+                            setViewMode('editor');
+                          }}}
+                          watermarkConfig={watermarkConfig}
+                          texts={texts}
+                        />
+                      ))}
+                    </div>
+                    <div className="mt-4 text-sm text-muted-foreground space-y-1">
+                      <p><Info className="inline h-4 w-4 mr-1 text-primary/80" /> {texts.instSelect}</p>
+                      <p><Info className="inline h-4 w-4 mr-1 text-primary/80" /> {texts.instDrag}</p>
+                      <p><Info className="inline h-4 w-4 mr-1 text-primary/80" /> Double-click page to enter editor mode.</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                
-                <div className="md:col-span-8"> 
-                    <Card className="shadow-lg min-h-[calc(100vh-20rem)] md:min-h-[calc(100vh-18rem)]">
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <div>
-                                <CardTitle className="flex items-center text-xl"><Shuffle className="mr-2 h-5 w-5 text-primary" /> {texts.pageManagement}</CardTitle>
-                                <CardDescription>
-                                  {pageObjects.length} {texts.pagesLoaded}.
-                                  {selectedPageIds.size > 0 ? ` ${selectedPageIds.size} ${texts.pageSelectedSuffix}.` : ''}
-                                </CardDescription>
-                            </div>
-                             <div className="flex gap-2">
-                                <Button
-                                    onClick={handleSplitPdf}
-                                    variant="outline"
-                                    size="sm"
-                                    disabled={selectedPageIds.size === 0 || pageObjects.length === 0}
-                                >
-                                    <Scissors className="mr-2 h-4 w-4" /> {texts.splitPages}
-                                </Button>
-                                <Button
-                                    onClick={handleDeletePages}
-                                    variant="destructive"
-                                    size="sm"
-                                    disabled={selectedPageIds.size === 0 || pageObjects.length === 0}
-                                >
-                                    <Trash2 className="mr-2 h-4 w-4" /> {texts.deletePages}
-                                </Button>
-                             </div>
-                        </CardHeader>
-                        <CardContent>
-                        <div
-                          id="previewContainer"
-                          ref={previewContainerRef}
-                          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-1 bg-muted/20 rounded-md min-h-[200px]"
-                        >
-                           {pageObjects.map((pageObj, index) => (
-                            <PagePreviewItem
-                              key={pageObj.id}
-                              pageObj={pageObj}
-                              index={index}
-                              isSelected={selectedPageIds.has(pageObj.id)}
-                              onClick={() => {
-                                setSelectedPageIds(prevSelectedIds => {
-                                  const newSelectedIds = new Set(prevSelectedIds);
-                                  if (newSelectedIds.has(pageObj.id)) {
-                                    newSelectedIds.delete(pageObj.id);
-                                  } else {
-                                    newSelectedIds.add(pageObj.id);
-                                  }
-                                  return newSelectedIds;
-                                });
-                              }}
-                              onDoubleClick={() => {
-                                setZoomedPageData({ page: pageObj, index });
-                                setCurrentModalRotation(pageObj.rotation); 
-                                setZoomLevel(1);
-                                setIsZoomModalOpen(true);
-                              }}
-                              watermarkConfig={watermarkConfig} 
-                              texts={texts}
-                            />
-                          ))}
-                        </div>
-                         <div className="mt-4 text-sm text-muted-foreground space-y-1">
-                            <p><Info className="inline h-4 w-4 mr-1 text-primary/80" /> {texts.instSelect}</p>
-                            <p><Info className="inline h-4 w-4 mr-1 text-primary/80" /> {texts.instDrag}</p>
-                            <p><Info className="inline h-4 w-4 mr-1 text-primary/80" /> {texts.instZoom}</p>
-                        </div>
-                      </CardContent>
-                    </Card>
+            <div className="flex-grow flex overflow-hidden">
+                {/* Left Panel: Thumbnails */}
+                <div className="w-1/5 border-r bg-card flex-shrink-0 overflow-y-auto p-2 space-y-2">
+                    {pageObjects.map((page, index) => {
+                        const isSelected = selectedPageIds.has(page.id);
+                        const isActive = activePageIndex === index;
+                        return (
+                           <div key={page.id}
+                                onClick={(e) => handleThumbnailClick(index, e)}
+                                className={cn(
+                                    "p-1 rounded-md cursor-pointer border-2",
+                                    isActive ? "border-primary" : "border-transparent",
+                                    isSelected && !isActive ? "bg-primary/10" : ""
+                                )}>
+                                <canvas
+                                    ref={canvas => {
+                                        if (canvas) {
+                                            const ctx = canvas.getContext('2d');
+                                            if (!ctx) return;
+                                            const source = page.sourceCanvas;
+                                            const aspectRatio = source.width / source.height;
+                                            canvas.width = 100;
+                                            canvas.height = 100 / aspectRatio;
+                                            ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
+                                        }
+                                    }}
+                                    className="w-full h-auto rounded-sm shadow-sm"
+                                />
+                               <p className='text-center text-xs mt-1 text-muted-foreground'>{texts.page} {index + 1}</p>
+                           </div>
+                        )
+                    })}
                 </div>
 
+                {/* Center Panel: Main View */}
+                <div ref={mainCanvasContainerRef} onWheel={handleWheelZoom} className="w-4/5 md:w-3/5 flex-grow bg-muted/30 overflow-auto flex items-center justify-center p-4">
+                    <canvas ref={mainCanvasRef} className="shadow-lg" />
+                </div>
                 
-                <div className="md:col-span-4 space-y-6">
-                     <Card className="shadow-lg">
-                      <CardHeader>
-                        <CardTitle className="flex items-center text-lg"><FilePlus className="mr-2 h-5 w-5 text-primary" /> {texts.insertAreaTitle}</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div>
-                          <div
-                              className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer"
-                              onClick={() => insertPdfRef.current?.click()}
-                              onDragOver={commonDragEvents.onDragOver}
-                              onDragLeave={commonDragEvents.onDragLeave}
-                              onDrop={(e) => commonDragEvents.onDrop(e, (ev) => handleInsertPdfFileSelected(ev as any))}
-                            >
-                              <Upload className="h-10 w-10 text-muted-foreground mb-2" />
-                              <p className="text-sm text-muted-foreground text-center">{texts.dropInsertFileHere}</p>
-                            </div>
-                          <Input
-                              type="file"
-                              id="insertPdfInput"
-                              accept="application/pdf"
-                              onChange={handleInsertPdfFileSelected}
-                              ref={insertPdfRef}
-                              className="hidden"
-                          />
-                        </div>
-                        <RadioGroup value={insertPosition} onValueChange={(value: 'before' | 'after') => setInsertPosition(value)} disabled={selectedPageIds.size === 0}>
-                          <Label className="font-medium mb-1 block">{texts.insertOptionsTitle}</Label>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="before" id="r-before" />
-                            <Label htmlFor="r-before" className="font-normal">{texts.insertBeforeLabel}</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="after" id="r-after" />
-                            <Label htmlFor="r-after" className="font-normal">{texts.insertAfterLabel}</Label>
-                          </div>
-                        </RadioGroup>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card className="shadow-lg">
-                      <CardHeader>
-                        <CardTitle className="flex items-center text-xl"><Download className="mr-2 h-5 w-5 text-primary" /> {texts.downloadAndConvertTitle}</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <Button onClick={handleDownloadPdf} disabled={pageObjects.length === 0 || isDownloading} className="w-full">
-                              {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                              {texts.downloadPdf}
-                            </Button>
-                            <Button onClick={handleDownloadTxt} disabled={!pdfDocumentProxy || isExtractingText} className="w-full">
-                              {isExtractingText ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
-                              {texts.downloadTxt}
-                            </Button>
-                            <Button
-                                onClick={handleConvertToWord}
-                                disabled={!uploadedPdfFile || isConvertingToWord || !isFirebaseSystemReady}
-                                className="w-full sm:col-span-2"
-                                title={!isFirebaseSystemReady ? firebaseConfigWarning : ""}
-                            >
-                                {isConvertingToWord ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileType className="mr-2 h-4 w-4" />}
-                                {texts.convertToWord}
-                            </Button>
-                        </div>
-
-                        {wordFileUrl && (
-                            <div className="mt-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded text-sm">
-                                <p>
-                                {texts.wordConvertSuccess}{' '}
-                                <a href={wordFileUrl} download target="_blank" rel="noopener noreferrer" className="font-semibold underline hover:text-green-800">
-                                    {texts.downloadWordFile}
-                                </a>
-                                </p>
-                            </div>
-                        )}
-                        {wordConversionError && (
-                            <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
-                                <p>{wordConversionError}</p>
-                            </div>
-                        )}
-                        {!isFirebaseSystemReady && firebaseConfigWarning && (
-                            <p className="text-xs text-amber-600 mt-2">
-                              {firebaseConfigWarning}
-                            </p>
-                        )}
-                      </CardContent>
-                    </Card>
-
-                    <Accordion type="single" collapsible defaultValue="doc-enhance" className="w-full">
-                        <Card className="shadow-lg">
-                            <AccordionItem value="doc-enhance" className="border-b-0">
-                                <AccordionTrigger className="p-6 hover:no-underline">
-                                    <CardTitle className="flex items-center text-xl"><ListOrdered className="mr-2 h-5 w-5 text-primary" /> {texts.accordionDocEnhanceProtect}</CardTitle>
-                                </AccordionTrigger>
-                                <AccordionContent className="px-6 pb-6 space-y-6">
-                                    <Card>
-                                      <CardHeader>
-                                        <CardTitle className="flex items-center text-lg"><Droplet className="mr-2 h-5 w-5 text-primary" /> {texts.watermarkSectionTitle}</CardTitle>
-                                      </CardHeader>
-                                      <CardContent className="space-y-4">
-                                        <div>
-                                            <Label className="mb-1 block text-sm font-medium">{texts.watermarkTypeLabel}</Label>
-                                            <RadioGroup 
-                                                value={watermarkConfig.type} 
-                                                onValueChange={(value: 'text' | 'image') => setWatermarkConfig(prev => ({...prev, type: value, imageUrl: value === 'text' ? null : prev.imageUrl, text: value === 'image' ? '' : prev.text}))}
-                                                className="flex space-x-4"
-                                            >
-                                                <div className="flex items-center space-x-2">
-                                                    <RadioGroupItem value="text" id="wm-text" />
-                                                    <Label htmlFor="wm-text" className="font-normal">{texts.watermarkTypeText}</Label>
-                                                </div>
-                                                <div className="flex items-center space-x-2">
-                                                    <RadioGroupItem value="image" id="wm-image" />
-                                                    <Label htmlFor="wm-image" className="font-normal">{texts.watermarkTypeImage}</Label>
-                                                </div>
-                                            </RadioGroup>
-                                        </div>
-
-                                        {watermarkConfig.type === 'text' && (
-                                            <div>
-                                                <Label htmlFor="watermarkInput" className="mb-1 block text-sm font-medium">{texts.watermarkInputPlaceholder}</Label>
-                                                <Input
-                                                    id="watermarkInput"
-                                                    type="text"
-                                                    placeholder={texts.watermarkInputPlaceholder}
-                                                    value={watermarkConfig.text}
-                                                    onChange={(e) => setWatermarkConfig(prev => ({...prev, text: e.target.value}))}
-                                                />
-                                            </div>
-                                        )}
-
-                                        {watermarkConfig.type === 'image' && (
-                                          <div>
-                                            <Label htmlFor="watermarkImageUpload" className="mb-1 block text-sm font-medium">{texts.watermarkImageLabel}</Label>
-                                            <Input
-                                                id="watermarkImageUpload"
-                                                type="file"
-                                                accept="image/png, image/jpeg"
-                                                ref={watermarkImageUploadRef}
-                                                onChange={handleWatermarkImageFileChange}
-                                                className="text-sm"
-                                            />
-                                            {watermarkConfig.imageUrl && (
-                                                <img src={watermarkConfig.imageUrl} alt="Selected watermark" className="mt-2 max-h-20 rounded-md border"/>
-                                            )}
-                                          </div>
-                                        )}
-                                        
-                                        <Button onClick={openWatermarkPreviewModal} className="w-full" disabled={pageObjects.length === 0 || (watermarkConfig.type === 'text' && !watermarkConfig.text) || (watermarkConfig.type === 'image' && !watermarkConfig.imageUrl)}>
-                                            <Eye className="mr-2 h-4 w-4" /> {texts.watermarkPreviewButton}
-                                        </Button>
-                                      </CardContent>
-                                    </Card>
-                                    <Card>
-                                      <CardHeader>
-                                        <CardTitle className="flex items-center text-lg"><FileDigit className="mr-2 h-5 w-5 text-primary" /> {texts.pageNumberingSectionTitle}</CardTitle>
-                                      </CardHeader>
-                                      <CardContent className="space-y-4">
-                                        <div className="flex items-center space-x-2">
-                                          <Switch id="enablePageNumbering" checked={pageNumberingConfig.enabled} onCheckedChange={(checked) => setPageNumberingConfig(prev => ({...prev, enabled: checked}))} />
-                                          <Label htmlFor="enablePageNumbering">{texts.enablePageNumbering}</Label>
-                                        </div>
-                                        {pageNumberingConfig.enabled && (
-                                          <>
-                                            <div>
-                                              <Label htmlFor="pn-position">{texts.pageNumberPosition}</Label>
-                                              <Select value={pageNumberingConfig.position} onValueChange={(value: PageNumberPosition) => setPageNumberingConfig(prev => ({...prev, position: value}))}>
-                                                <SelectTrigger id="pn-position"><SelectValue placeholder={texts.pageNumberPosition} /></SelectTrigger>
-                                                <SelectContent>
-                                                  {pageNumberPositions.map(pos => <SelectItem key={pos.value} value={pos.value}>{texts[pos.labelKey]}</SelectItem>)}
-                                                </SelectContent>
-                                              </Select>
-                                            </div>
-                                            <div><Label htmlFor="pn-start">{texts.pageNumberStart}</Label><Input id="pn-start" type="number" value={pageNumberingConfig.start} onChange={(e) => setPageNumberingConfig(prev => ({...prev, start: parseInt(e.target.value,10) || 1}))} min="1" /></div>
-                                            <div><Label htmlFor="pn-fontSize">{texts.pageNumberFontSize}</Label><Input id="pn-fontSize" type="number" value={pageNumberingConfig.fontSize} onChange={(e) => setPageNumberingConfig(prev => ({...prev, fontSize: parseInt(e.target.value,10) || 12}))} min="6" /></div>
-                                            <div><Label htmlFor="pn-margin">{texts.pageNumberMargin}</Label><Input id="pn-margin" type="number" value={pageNumberingConfig.margin} onChange={(e) => setPageNumberingConfig(prev => ({...prev, margin: parseInt(e.target.value,10) || 20}))} min="0" /></div>
-                                            <div><Label htmlFor="pn-format">{texts.pageNumberFormat}</Label><Input id="pn-format" type="text" value={pageNumberingConfig.format} placeholder={texts.pageNumberFormatPlaceholder} onChange={(e) => setPageNumberingConfig(prev => ({...prev, format: e.target.value}))} /></div>
-                                          </>
-                                        )}
-                                      </CardContent>
-                                    </Card>
-                                    <Card>
-                                      <CardHeader>
-                                        <CardTitle className="flex items-center text-lg"><Lock className="mr-2 h-5 w-5 text-primary" /> {texts.protectPdfSectionTitle}</CardTitle>
-                                      </CardHeader>
-                                      <CardContent className="space-y-4">
-                                        <div className="flex items-center space-x-2">
-                                          <Switch id="enablePdfProtection" checked={pdfProtectionConfig.enabled} onCheckedChange={(checked) => setPdfProtectionConfig(prev => ({...prev, enabled: checked}))} />
-                                          <Label htmlFor="enablePdfProtection">{texts.enablePdfProtection}</Label>
-                                        </div>
-                                        {pdfProtectionConfig.enabled && (
-                                          <div>
-                                            <Label htmlFor="pdf-password">{texts.pdfPassword}</Label>
-                                            <Input id="pdf-password" type="password" placeholder={texts.pdfPasswordPlaceholder} value={pdfProtectionConfig.password} onChange={(e) => setPdfProtectionConfig(prev => ({...prev, password: e.target.value}))} />
-                                          </div>
-                                        )}
-                                      </CardContent>
-                                    </Card>
-                                </AccordionContent>
-                            </AccordionItem>
-                        </Card>
-                    </Accordion>
-
-                    
-                    <Card className="shadow-lg">
-                        <CardHeader>
-                        <CardTitle className="flex items-center text-lg"><ImageIcon className="mr-2 h-5 w-5 text-primary" /> {texts.imageToPdfTitle}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                        <div>
-                            <div
-                                className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20"
-                                onClick={() => imageToPdfUploadRef.current?.click()}
-                                onDragOver={commonDragEvents.onDragOver}
-                                onDragLeave={commonDragEvents.onDragLeave}
-                                onDrop={(e) => {
-                                    commonDragEvents.onDrop(e, (ev) => {
-                                        if (ev.dataTransfer.files) setImageFiles(ev.dataTransfer.files);
-                                    });
-                                }}
-                            >
-                                <Upload className="h-10 w-10 text-muted-foreground mb-2" />
-                                <p className="text-sm text-muted-foreground text-center">{texts.dropImagesHere}</p>
-                            </div>
-                            <Input type="file" id="imageToPdfInputLoaded" accept="image/*" multiple
-                                ref={imageToPdfUploadRef}
-                                onChange={(e) => setImageFiles(e.target.files)}
-                                className="hidden" />
-                        </div>
-                        {imageFiles && imageFiles.length > 0 && <p className="text-xs text-muted-foreground">{imageFiles.length} image(s) selected.</p>}
-                        <Button onClick={handleImageToPdf} disabled={!imageFiles || imageFiles.length === 0 || isConvertingImagesToPdf} className="w-full">
-                            {isConvertingImagesToPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                            {texts.convertToPdfButton}
-                        </Button>
-                        </CardContent>
-                    </Card>
-
-                    
-                    <Card className="shadow-lg">
-                        <CardHeader>
-                        <CardTitle className="flex items-center text-lg"><Minimize2 className="mr-2 h-5 w-5 text-primary" /> {texts.pdfCompressionTitle}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                        <div>
-                            <div
-                                className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20"
-                                onClick={() => pdfCompressUploadRef.current?.click()}
-                                onDragOver={commonDragEvents.onDragOver}
-                                onDragLeave={commonDragEvents.onDragLeave}
-                                onDrop={(e) => {
-                                    commonDragEvents.onDrop(e, (ev) => {
-                                        if (ev.dataTransfer.files && ev.dataTransfer.files.length > 0) setPdfToCompress(ev.dataTransfer.files[0]);
-                                    });
-                                }}
-                            >
-                                <Upload className="h-10 w-10 text-muted-foreground mb-2" />
-                                <p className="text-sm text-muted-foreground text-center">{texts.dropPdfToCompressHere}</p>
-                            </div>
-                            <Input type="file" id="pdfCompressInputLoaded" accept="application/pdf"
-                                ref={pdfCompressUploadRef}
-                                onChange={(e) => setPdfToCompress(e.target.files ? e.target.files[0] : null)}
-                                className="hidden" />
-                        </div>
-                        {pdfToCompress && <p className="text-xs text-muted-foreground">{pdfToCompress.name} selected.</p>}
-                        <Button onClick={handlePdfCompression} disabled={!pdfToCompress || isCompressingPdf} className="w-full">
-                            {isCompressingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                            {texts.compressPdfButton}
-                        </Button>
-                        <p className="text-xs text-muted-foreground">{texts.pdfCompressionNote}</p>
-                        </CardContent>
-                    </Card>
-
+                {/* Right Panel: Tools */}
+                <div className="w-1/5 md:w-1/5 border-l bg-card flex-shrink-0 overflow-y-auto p-2">
+                    <div className="grid grid-cols-2 gap-2">
+                        <ToolbarButton icon={RotateCw} label={texts.toolRotate} onClick={() => handleRotatePage('cw')} disabled={activePageIndex === null}/>
+                        <ToolbarButton icon={Trash2} label={texts.toolDelete} onClick={() => { if(activePageIndex !== null) { setPageToDelete(activePageIndex); setIsDeleteConfirmOpen(true); } }} disabled={activePageIndex === null}/>
+                        <ToolbarButton icon={FilePlus2} label={texts.toolAddBlank} onClick={handleAddBlankPage} disabled={activePageIndex === null && pageObjects.length > 0} />
+                        <ToolbarButton icon={Combine} label={texts.toolMerge} onClick={() => insertPdfRef.current?.click()} disabled={activePageIndex === null && pageObjects.length > 0}/>
+                        <ToolbarButton icon={Scissors} label={texts.toolSplit} onClick={handleSplitPdf} disabled={selectedPageIds.size === 0}/>
+                        <ToolbarButton icon={Droplet} label={texts.toolWatermark} onClick={openWatermarkPreviewModal} disabled={pageObjects.length === 0} />
+                        <ToolbarButton icon={Type} label={texts.toolInsertText} onClick={() => handlePlaceholderClick("Insert Text")} disabled={activePageIndex === null}/>
+                        <ToolbarButton icon={ImagePlus} label={texts.toolInsertImage} onClick={() => handlePlaceholderClick("Insert Image")} disabled={activePageIndex === null}/>
+                        <ToolbarButton icon={LinkIcon} label={texts.toolInsertLink} onClick={() => handlePlaceholderClick("Insert Link")} disabled={activePageIndex === null}/>
+                        <ToolbarButton icon={MessageSquarePlus} label={texts.toolInsertComment} onClick={() => handlePlaceholderClick("Insert Comment")} disabled={activePageIndex === null}/>
+                    </div>
+                     <Input
+                        type="file"
+                        id="insertPdfInput"
+                        accept="application/pdf"
+                        onChange={handleInsertPdfFileSelected}
+                        ref={insertPdfRef}
+                        className="hidden"
+                     />
                 </div>
             </div>
           )}
-      </div>
+      </main>
     </div>
   );
 }
-

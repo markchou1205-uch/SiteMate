@@ -43,6 +43,11 @@ interface PageObject {
   rotation: number; // 0, 90, 180, 270
 }
 
+interface LinkAnnotationDef {
+  type: 'url' | 'page';
+  value: string; // URL string or page number as a string
+}
+
 interface TextAnnotation {
   id: string;
   pageIndex: number;
@@ -57,6 +62,7 @@ interface TextAnnotation {
   underline: boolean;
   color: string;
   textAlign: 'left' | 'center' | 'right';
+  link?: LinkAnnotationDef;
 }
 
 interface ImageAnnotation {
@@ -68,6 +74,7 @@ interface ImageAnnotation {
     widthRatio: number;
     heightRatio: number;
     aspectRatio: number;
+    link?: LinkAnnotationDef;
 }
 
 interface HighlightAnnotation {
@@ -229,6 +236,15 @@ const translations = {
         imageInsertSuccess: 'Image inserted successfully.',
         imageInsertError: 'Error inserting image.',
         imagePasteSuccess: 'Image pasted successfully.',
+        linkSetUrl: 'Link to URL',
+        linkSetPage: 'Link to Page',
+        linkEnterUrl: 'Enter URL',
+        linkEnterPage: 'Enter Page Number',
+        linkSave: 'Save Link',
+        linkRemove: 'Remove Link',
+        linkEditTitle: 'Edit Link',
+        linkAttached: 'Link attached',
+        linkRemoved: 'Link removed',
     },
     zh: {
         pageTitle: 'DocuPilot 文件助手',
@@ -378,6 +394,15 @@ const translations = {
         imageInsertSuccess: '圖片插入成功。',
         imageInsertError: '圖片插入失敗。',
         imagePasteSuccess: '圖片貼上成功。',
+        linkSetUrl: '連結到網址',
+        linkSetPage: '連結到頁碼',
+        linkEnterUrl: '輸入網址',
+        linkEnterPage: '輸入頁碼',
+        linkSave: '儲存連結',
+        linkRemove: '移除連結',
+        linkEditTitle: '編輯連結',
+        linkAttached: '連結已附加',
+        linkRemoved: '連結已移除',
     }
 };
 
@@ -523,17 +548,32 @@ const PagePreviewItem = React.memo(({
 });
 PagePreviewItem.displayName = 'PagePreviewItem';
 
-const ToolbarButton = ({ icon: Icon, label, onClick, disabled = false }: { icon: React.ElementType, label: string, onClick?: () => void, disabled?: boolean }) => (
-    <Button
-        variant="ghost"
-        className="flex flex-col items-center justify-center h-20 w-full text-xs space-y-1"
-        onClick={onClick}
-        disabled={disabled}
-    >
-        <Icon className="h-6 w-6 text-primary" />
-        <span className="text-muted-foreground">{label}</span>
-    </Button>
-);
+const ToolbarButton = ({ icon: Icon, label, onClick, disabled = false, popoverContent }: { icon: React.ElementType, label: string, onClick?: () => void, disabled?: boolean, popoverContent?: React.ReactNode }) => {
+    const button = (
+        <Button
+            variant="ghost"
+            className="flex flex-col items-center justify-center h-20 w-full text-xs space-y-1"
+            onClick={onClick}
+            disabled={disabled}
+        >
+            <Icon className="h-6 w-6 text-primary" />
+            <span className="text-muted-foreground">{label}</span>
+        </Button>
+    );
+
+    if (popoverContent) {
+        return (
+            <Popover>
+                <PopoverTrigger asChild disabled={disabled}>{button}</PopoverTrigger>
+                <PopoverContent className="w-80" side="left" align="start">
+                    {popoverContent}
+                </PopoverContent>
+            </Popover>
+        )
+    }
+
+    return button;
+};
 
 const fonts = [
   { name: 'Arial', value: 'Helvetica' },
@@ -634,9 +674,13 @@ export default function PdfEditorHomepage() {
 
   const [highlightAnnotations, setHighlightAnnotations] = useState<HighlightAnnotation[]>([]);
   const [selectedHighlightId, setSelectedHighlightId] = useState<string | null>(null);
+  
+  const [isLinkPopoverOpen, setIsLinkPopoverOpen] = useState(false);
+  const [currentLink, setCurrentLink] = useState<LinkAnnotationDef>({ type: 'url', value: '' });
 
   const dragStartRef = useRef({ x: 0, y: 0, initialLeft: 0, initialTop: 0, initialWidth: 0, initialHeight: 0 });
   const isDraggingRef = useRef(false);
+  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [watermarkConfig, setWatermarkConfig] = useState<WatermarkConfig>({
     text: '',
@@ -1109,12 +1153,25 @@ export default function PdfEditorHomepage() {
                 continue;
             }
 
-            pdfLibPage.drawImage(embeddedImage, {
-                x: annotation.leftRatio * pageWidth,
-                y: pageHeight - (annotation.topRatio * pageHeight) - (annotation.heightRatio * pageHeight),
-                width: annotation.widthRatio * pageWidth,
-                height: annotation.heightRatio * pageHeight,
-            });
+            const imgX = annotation.leftRatio * pageWidth;
+            const imgHeight = annotation.heightRatio * pageHeight;
+            const imgY = pageHeight - (annotation.topRatio * pageHeight) - imgHeight;
+            const imgWidth = annotation.widthRatio * pageWidth;
+            
+            pdfLibPage.drawImage(embeddedImage, { x: imgX, y: imgY, width: imgWidth, height: imgHeight });
+
+            if (annotation.link) {
+                const linkRect = { x: imgX, y: imgY, width: imgWidth, height: imgHeight };
+                if(annotation.link.type === 'url') {
+                    pdfLibPage.addURIAnnotation(linkRect, annotation.link.value);
+                } else if (annotation.link.type === 'page') {
+                    const targetPageNum = parseInt(annotation.link.value, 10);
+                    if (!isNaN(targetPageNum) && targetPageNum > 0 && targetPageNum <= pdfDocOut.getPageCount()) {
+                       const targetPage = pdfDocOut.getPages()[targetPageNum - 1];
+                       pdfLibPage.addLinkAnnotation(linkRect, targetPage);
+                    }
+                }
+            }
         }
         
         // Apply Text Annotations
@@ -1143,19 +1200,36 @@ export default function PdfEditorHomepage() {
                 size: annotation.fontSize,
                 color: rgb(r, g, b),
                 lineHeight: annotation.fontSize * 1.2,
-                maxWidth: boxWidth
+                maxWidth: boxWidth,
+                wordBreaks: [' '],
             });
 
             if (annotation.underline) {
-              const lineY = y - textHeight;
-              pdfLibPage.drawLine({
-                  start: { x: x, y: lineY },
-                  end: { x: x + boxWidth, y: lineY },
-                  thickness: 1,
-                  color: rgb(r, g, b)
+              const textWidth = font.widthOfTextAtSize(textLayout.lines.map(l=>l.text).join('\n'), annotation.fontSize);
+              textLayout.lines.forEach((line, i) => {
+                  const lineY = y - (font.ascent * (annotation.fontSize / font.unitsPerEm)) - (i * annotation.fontSize * 1.2) - 2;
+                   pdfLibPage.drawLine({
+                      start: { x: x, y: lineY },
+                      end: { x: x + line.width, y: lineY },
+                      thickness: 0.5,
+                      color: rgb(r, g, b)
+                  });
               });
             }
             pdfLibPage.popGraphicsState();
+
+            if (annotation.link) {
+                const linkRect = { x, y: y - textHeight, width: boxWidth, height: textHeight };
+                if(annotation.link.type === 'url') {
+                    pdfLibPage.addURIAnnotation(linkRect, annotation.link.value);
+                } else if (annotation.link.type === 'page') {
+                    const targetPageNum = parseInt(annotation.link.value, 10);
+                    if (!isNaN(targetPageNum) && targetPageNum > 0 && targetPageNum <= pdfDocOut.getPageCount()) {
+                       const targetPage = pdfDocOut.getPages()[targetPageNum - 1];
+                       pdfLibPage.addLinkAnnotation(linkRect, targetPage);
+                    }
+                }
+            }
         }
 
         if ((watermarkConfig.type === 'text' && watermarkConfig.text) || (watermarkConfig.type === 'image' && watermarkConfig.imageUrl)) {
@@ -1674,9 +1748,12 @@ export default function PdfEditorHomepage() {
         id: string
     ) => {
         if (editingAnnotationId === id) return;
-
         event.stopPropagation();
-        isDraggingRef.current = false;
+        
+        if (clickTimeoutRef.current) {
+            clearTimeout(clickTimeoutRef.current);
+            clickTimeoutRef.current = null;
+        }
 
         const isResize = type.endsWith('-resize');
         const itemType = type.split('-')[0] as 'watermark' | 'annotation' | 'image' | 'highlight';
@@ -2020,6 +2097,35 @@ export default function PdfEditorHomepage() {
         if (selectedHighlightId === id) setSelectedHighlightId(null);
     }
 
+    const handleAnnotationMouseDown = (id: string, event: React.MouseEvent<HTMLDivElement>) => {
+        if (editingAnnotationId === id) {
+            return;
+        }
+
+        if (clickTimeoutRef.current) {
+            clearTimeout(clickTimeoutRef.current);
+            clickTimeoutRef.current = null;
+            // Double click
+            setSelectedAnnotationId(id);
+            setEditingAnnotationId(id);
+            setSelectedImageId(null);
+            setSelectedHighlightId(null);
+        } else {
+            // Single click preparation
+            handleDragMouseDown(event, 'annotation', id);
+            clickTimeoutRef.current = setTimeout(() => {
+                clickTimeoutRef.current = null;
+                if (!isDraggingRef.current) {
+                    // Single click action
+                    setSelectedAnnotationId(id);
+                    setEditingAnnotationId(null);
+                    setSelectedImageId(null);
+                    setSelectedHighlightId(null);
+                }
+            }, 200);
+        }
+    };
+    
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Delete') {
@@ -2043,6 +2149,111 @@ export default function PdfEditorHomepage() {
         };
     }, [selectedAnnotationId, editingAnnotationId, selectedImageId, selectedHighlightId, handlePaste]);
 
+
+    const handleOpenLinkPopover = () => {
+        const activeId = selectedAnnotationId || selectedImageId;
+        if (!activeId) return;
+
+        const isText = !!selectedAnnotationId;
+        const annotation = isText
+            ? textAnnotations.find(a => a.id === activeId)
+            : imageAnnotations.find(a => a.id === activeId);
+
+        if (annotation?.link) {
+            setCurrentLink(annotation.link);
+        } else {
+            setCurrentLink({ type: 'url', value: '' });
+        }
+    };
+
+    const handleSaveLink = () => {
+        const activeId = selectedAnnotationId || selectedImageId;
+        if (!activeId) return;
+
+        const isText = !!selectedAnnotationId;
+        if (isText) {
+            setTextAnnotations(prev => prev.map(ann =>
+                ann.id === activeId ? { ...ann, link: currentLink } : ann
+            ));
+        } else {
+            setImageAnnotations(prev => prev.map(ann =>
+                ann.id === activeId ? { ...ann, link: currentLink } : ann
+            ));
+        }
+        setIsLinkPopoverOpen(false);
+        toast({ title: texts.linkAttached });
+    };
+
+    const handleRemoveLink = () => {
+        const activeId = selectedAnnotationId || selectedImageId;
+        if (!activeId) return;
+
+        const isText = !!selectedAnnotationId;
+        if (isText) {
+            setTextAnnotations(prev => prev.map(ann => {
+                if (ann.id === activeId) {
+                    const { link, ...rest } = ann;
+                    return rest;
+                }
+                return ann;
+            }));
+        } else {
+            setImageAnnotations(prev => prev.map(ann => {
+                if (ann.id === activeId) {
+                    const { link, ...rest } = ann;
+                    return rest;
+                }
+                return ann;
+            }));
+        }
+        setIsLinkPopoverOpen(false);
+        toast({ title: texts.linkRemoved, variant: "destructive" });
+    };
+
+
+    const linkPopoverContent = (
+      <div className="grid gap-4">
+        <div className="space-y-2">
+          <h4 className="font-medium leading-none">{texts.linkEditTitle}</h4>
+        </div>
+        <div className="grid gap-2">
+          <RadioGroup value={currentLink.type} onValueChange={(type: 'url' | 'page') => setCurrentLink({ ...currentLink, type })}>
+              <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="url" id="r-url" />
+                  <Label htmlFor="r-url">{texts.linkSetUrl}</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="page" id="r-page" />
+                  <Label htmlFor="r-page">{texts.linkSetPage}</Label>
+              </div>
+          </RadioGroup>
+          <div className="mt-2">
+            {currentLink.type === 'url' ? (
+                <Input
+                    id="link-url"
+                    placeholder="https://example.com"
+                    value={currentLink.value}
+                    onChange={(e) => setCurrentLink({ ...currentLink, value: e.target.value })}
+                />
+            ) : (
+                <Input
+                    id="link-page"
+                    type="number"
+                    placeholder="e.g., 5"
+                    min="1"
+                    max={pageObjects.length}
+                    value={currentLink.value}
+                    onChange={(e) => setCurrentLink({ ...currentLink, value: e.target.value })}
+                />
+            )}
+          </div>
+        </div>
+        <div className="flex justify-between">
+            <Button variant="destructive" size="sm" onClick={handleRemoveLink}>{texts.linkRemove}</Button>
+            <Button size="sm" onClick={handleSaveLink}>{texts.linkSave}</Button>
+        </div>
+      </div>
+    );
 
     const selectedAnnotation = textAnnotations.find(ann => ann.id === selectedAnnotationId);
 
@@ -2664,44 +2875,31 @@ export default function PdfEditorHomepage() {
                                     >
                                         <img src={ann.dataUrl} className="w-full h-full object-contain pointer-events-none" alt="user content" />
                                         {selectedImageId === ann.id && (
+                                          <>
                                             <div
                                                 className="absolute -right-1 -bottom-1 w-4 h-4 bg-primary rounded-full border-2 border-white cursor-se-resize"
                                                 onMouseDown={(e) => handleDragMouseDown(e, 'image-resize', ann.id)}
                                             />
+                                            {ann.link && <LinkIcon className="absolute -top-1 -right-1 h-4 w-4 text-white bg-blue-500 p-0.5 rounded-full" />}
+                                          </>
                                         )}
                                     </div>
                                 ))}
                                 {textAnnotations.filter(ann => ann.pageIndex === index).map(ann => (
                                     <div
                                         key={ann.id}
-                                        onMouseDown={(e) => handleDragMouseDown(e, 'annotation', ann.id)}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            if (!isDraggingRef.current) {
-                                                setSelectedAnnotationId(ann.id);
-                                                setEditingAnnotationId(null);
-                                                setSelectedImageId(null);
-                                                setSelectedHighlightId(null);
-                                            }
-                                        }}
-                                        onDoubleClick={(e) => {
-                                            e.stopPropagation();
-                                            setSelectedAnnotationId(ann.id);
-                                            setEditingAnnotationId(ann.id);
-                                            setSelectedImageId(null);
-                                            setSelectedHighlightId(null);
-                                        }}
+                                        onMouseDown={(e) => handleAnnotationMouseDown(ann.id, e)}
                                         className={cn(
                                             "absolute",
-                                            editingAnnotationId === ann.id ? "cursor-text" : "cursor-grab",
-                                            selectedAnnotationId === ann.id && "border-2 border-dashed border-primary"
+                                            editingAnnotationId === ann.id ? "cursor-text z-30" : "cursor-grab z-20",
+                                            selectedAnnotationId === ann.id && editingAnnotationId !== ann.id && "border-2 border-dashed border-primary",
+                                            ann.link && editingAnnotationId !== ann.id && "border-2 border-dashed border-blue-500"
                                         )}
                                         style={{
                                             left: `${ann.leftRatio * 100}%`,
                                             top: `${ann.topRatio * 100}%`,
                                             width: `${ann.widthRatio * 100}%`,
-                                            height: 'auto',
-                                            zIndex: 20
+                                            height: 'auto'
                                         }}
                                     >
                                        <Textarea
@@ -2728,6 +2926,7 @@ export default function PdfEditorHomepage() {
                                                 lineHeight: 1.3,
                                             }}
                                         />
+                                        {ann.link && editingAnnotationId !== ann.id && <LinkIcon className="absolute -top-1.5 -right-1.5 h-4 w-4 text-white bg-blue-500 p-0.5 rounded-full" />}
                                     </div>
                                 ))}
                             </div>
@@ -2754,7 +2953,22 @@ export default function PdfEditorHomepage() {
                         <ToolbarButton icon={Type} label={texts.toolInsertText} onClick={handleAddTextAnnotation} disabled={activePageIndex === null}/>
                         <ToolbarButton icon={ImagePlus} label={texts.toolInsertImage} onClick={() => imageUploadRef.current?.click()} disabled={activePageIndex === null}/>
                         <ToolbarButton icon={Highlighter} label={texts.toolHighlight} onClick={handleAddHighlightAnnotation} disabled={activePageIndex === null} />
-                        <ToolbarButton icon={LinkIcon} label={texts.toolInsertLink} onClick={() => handlePlaceholderClick("Insert Link")} disabled={activePageIndex === null}/>
+                        <Popover open={isLinkPopoverOpen} onOpenChange={setIsLinkPopoverOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                className="flex flex-col items-center justify-center h-20 w-full text-xs space-y-1"
+                                disabled={!selectedAnnotationId && !selectedImageId}
+                                onClick={handleOpenLinkPopover}
+                            >
+                                <LinkIcon className="h-6 w-6 text-primary" />
+                                <span className="text-muted-foreground">{texts.toolInsertLink}</span>
+                            </Button>
+                           </PopoverTrigger>
+                           <PopoverContent className="w-80" side="left" align="start">
+                            {linkPopoverContent}
+                           </PopoverContent>
+                        </Popover>
                     </div>
                      <Input
                         type="file"
@@ -2772,15 +2986,6 @@ export default function PdfEditorHomepage() {
                         ref={imageUploadRef}
                         className="hidden"
                       />
-                     <Accordion type="multiple" className="w-full">
-                        <AccordionItem value="item-1">
-                            <AccordionTrigger>{texts.watermarkSectionTitle}</AccordionTrigger>
-                            <AccordionContent className="space-y-4 pt-4">
-                               <p className="text-sm text-muted-foreground">{currentLanguage === 'zh' ? '在此設定全域浮水印。點擊下方按鈕以預覽並定位。' : 'Configure global watermark. Click below to preview and position.'}</p>
-                                <Button onClick={openWatermarkPreviewModal} disabled={pageObjects.length === 0} className="w-full">{texts.watermarkPreviewButton}</Button>
-                            </AccordionContent>
-                        </AccordionItem>
-                     </Accordion>
                 </div>
             </>
           )}

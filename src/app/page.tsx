@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, FontSize, Eye, Scissors, LayoutGrid, PanelLeft, FilePlus2, Combine, Type, ImagePlus, Link as LinkIcon, MessageSquarePlus, ZoomIn, ZoomOut, Expand, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Highlighter, ArrowRightLeft, Edit, FileUp, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus } from 'lucide-react';
+import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, FontSize, Eye, Scissors, LayoutGrid, PanelLeft, FilePlus2, Combine, Type, ImagePlus, Link as LinkIcon, MessageSquarePlus, ZoomIn, ZoomOut, Expand, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Highlighter, ArrowRightLeft, Edit, FileUp, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets } from 'lucide-react';
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
@@ -118,7 +118,7 @@ const translations = {
         modalCloseButton: 'Close',
         rotateLeft: 'Rotate Left 90°',
         rotateRight: 'Rotate Right 90°',
-        resetRotation: 'Reset Rotation &amp; Zoom',
+        resetRotation: 'Reset Rotation & Zoom',
         generatingFile: 'Generating file, please wait…',
         extractingText: 'Extracting text, please wait...',
         loadError: 'Failed to load PDF',
@@ -181,7 +181,7 @@ const translations = {
         topCenter: 'Top Center',
         topRight: 'Top Right',
         pdfEditingTools: 'PDF Tools',
-        downloadAndConvertTitle: 'Download &amp; Convert',
+        downloadAndConvertTitle: 'Download & Convert',
         startEditingYourPdf: 'Start Editing Your PDF',
         pagesLoaded: 'page(s) loaded',
         pageSelectedSuffix: 'selected',
@@ -190,7 +190,7 @@ const translations = {
         featurePageNum: 'Page #',
         featureProtect: 'Protect',
         featureConvert: 'Convert',
-        accordionDocEnhanceProtect: 'Document Enhancements &amp; Protection',
+        accordionDocEnhanceProtect: 'Document Enhancements & Protection',
         imageToPdfTitle: 'Image to PDF',
         selectImagesLabel: 'Select image(s):',
         dropImagesHere: 'Drop image(s) here or click to upload',
@@ -228,7 +228,7 @@ const translations = {
         zoomOut: 'Zoom Out',
         fitToWidth: 'Fit to Width',
         fitToPage: 'Fit to Page',
-        textAnnotationSample: '範例文本',
+        textAnnotationSample: 'Sample Text',
         noImageForInsertion: 'No image selected for insertion.',
         imageInsertSuccess: 'Image inserted successfully.',
         imageInsertError: 'Error inserting image.',
@@ -242,6 +242,25 @@ const translations = {
         linkEditTitle: 'Edit Link',
         linkAttached: 'Link attached',
         linkRemoved: 'Link removed',
+        pdfEditMenu: 'PDF Edit',
+        pdfConvertMenu: 'PDF Convert',
+        mergePdf: 'Merge PDF',
+        splitPdf: 'Split PDF',
+        deletePdfPages: 'Delete Pages',
+        extractPdfPages: 'Extract Pages',
+        reorderPdfPages: 'Reorder Pages',
+        addWatermark: 'Add Watermark',
+        convertToPdf: 'Convert to PDF',
+        convertFromPdf: 'Convert from PDF',
+        wordToPdf: 'WORD to PDF',
+        excelToPdf: 'EXCEL to PDF',
+        pptToPdf: 'PPT to PDF',
+        htmlToPdf: 'HTML to PDF',
+        jpgToPdf: 'JPG to PDF',
+        pdfToWord: 'PDF to WORD',
+        pdfToExcel: 'PDF to EXCEL',
+        pdfToPpt: 'PDF to PPT',
+        pdfToHtml: 'PDF to HTML',
     },
     zh: {
         pageTitle: 'DocuPilot 文件助手',
@@ -386,6 +405,25 @@ const translations = {
         linkEditTitle: '編輯連結',
         linkAttached: '連結已附加',
         linkRemoved: '連結已移除',
+        pdfEditMenu: 'PDF編輯',
+        pdfConvertMenu: 'PDF轉換',
+        mergePdf: '合併PDF',
+        splitPdf: '拆分PDF',
+        deletePdfPages: '刪除頁面',
+        extractPdfPages: '擷取頁面',
+        reorderPdfPages: '變換順序',
+        addWatermark: '添加浮水印',
+        convertToPdf: '轉換為PDF',
+        convertFromPdf: '從PDF轉換',
+        wordToPdf: 'WORD轉PDF',
+        excelToPdf: 'EXCEL轉PDF',
+        pptToPdf: 'PPT轉PDF',
+        htmlToPdf: 'HTML轉PDF',
+        jpgToPdf: 'JPG轉PDF',
+        pdfToWord: 'PDF轉WORD',
+        pdfToExcel: 'PDF轉EXCEL',
+        pdfToPpt: 'PDF轉PPT',
+        pdfToHtml: 'PDF轉HTML',
     }
 };
 
@@ -569,7 +607,7 @@ const TextAnnotationComponent = ({
     isSelected,
     isEditing,
     onAnnotationChange,
-    onClick,
+    onWrapperClick,
     onDoubleClick,
     onDragStart,
     onResizeStart,
@@ -579,7 +617,7 @@ const TextAnnotationComponent = ({
     isSelected: boolean,
     isEditing: boolean,
     onAnnotationChange: (annotation: TextAnnotation) => void,
-    onClick: (id: string, e: React.MouseEvent) => void,
+    onWrapperClick: (id: string, e: React.MouseEvent) => void,
     onDoubleClick: (id: string, e: React.MouseEvent) => void,
     onDragStart: (e: React.MouseEvent, id: string) => void,
     onResizeStart: (e: React.MouseEvent, id: string) => void,
@@ -600,8 +638,8 @@ const TextAnnotationComponent = ({
             onMouseDown={(e) => {
                 if (!isEditing) onDragStart(e, annotation.id)
             }}
-            onClick={(e) => onClick(annotation.id, e)}
-            onDoubleClick={(e) => onDoubleClick(annotation.id, e)}
+            onClick={onWrapperClick.bind(null, annotation.id)}
+            onDoubleClick={onDoubleClick.bind(null, annotation.id)}
             className={cn(
                 "absolute group/text-annotation",
                 !isEditing && "cursor-grab",
@@ -668,13 +706,12 @@ export default function PdfEditorHomepage() {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [pageToDelete, setPageToDelete] = useState<number | null>(null);
 
-  const [currentLanguage, setCurrentLanguage] = useState<'en' | 'zh'>('zh');
+  const [currentLanguage, setCurrentLanguage] = useState<'en' | 'zh'>>('zh');
   const [texts, setTexts] = useState(translations.zh);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
-
-  const [insertPosition, setInsertPosition] = useState<'before' | 'after'>('before');
+  
   const [isInsertConfirmOpen, setIsInsertConfirmOpen] = useState(false);
   const [pendingInsertFile, setPendingInsertFile] = useState<File | null>(null);
   
@@ -725,18 +762,9 @@ export default function PdfEditorHomepage() {
   const thumbnailRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const pdfUploadRef = useRef<HTMLInputElement>(null);
-  const insertPdfRef = useRef<HTMLInputElement>(null);
   const imageUploadRef = useRef<HTMLInputElement>(null);
   const sortableInstanceRef = useRef<Sortable | null>(null);
-
-  const [imageFiles, setImageFiles] = useState<FileList | null>(null);
-  const imageToPdfUploadRef = useRef<HTMLInputElement>(null);
-  const [isConvertingImagesToPdf, setIsConvertingImagesToPdf] = useState(false);
-
-  const [pdfToCompress, setPdfToCompress] = useState<File | null>(null);
-  const pdfCompressUploadRef = useRef<HTMLInputElement>(null);
-  const [isCompressingPdf, setIsCompressingPdf] = useState(false);
-
+  
   const observerRef = useRef<IntersectionObserver | null>(null);
 
   useEffect(() => {
@@ -1258,7 +1286,6 @@ export default function PdfEditorHomepage() {
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
       a.download = 'DocuPilot_edited.pdf';
       document.body.appendChild(a);
       a.click();
@@ -1274,170 +1301,7 @@ export default function PdfEditorHomepage() {
     }
   };
 
-  const handleSplitPdf = async () => {
-    const selectedPages = pageObjects.filter(p => selectedPageIds.has(p.id));
-    if (selectedPages.length === 0) {
-      toast({ title: texts.splitPages, description: texts.noPageSelected, variant: "destructive" });
-      return;
-    }
-
-    if (!isLoggedIn && typeof window !== 'undefined') {
-      const today = new Date().toISOString().split('T')[0];
-      let downloadInfoString = localStorage.getItem('DocuPilotDownloadInfo');
-      let downloadInfo = downloadInfoString ? JSON.parse(downloadInfoString) : { count: 0, date: today };
-
-      if (downloadInfo.date !== today) {
-        downloadInfo = { count: 0, date: today };
-      }
-
-      if (downloadInfo.count >= DAILY_DOWNLOAD_LIMIT) {
-        setShowPaymentModal(true);
-        return;
-      }
-      downloadInfo.count++;
-      localStorage.setItem('DocuPilotDownloadInfo', JSON.stringify(downloadInfo));
-    }
-
-    setIsDownloading(true);
-    setLoadingMessage(texts.generatingFile);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 100));
-      const pdfDocOut = await PDFLibDocument.create();
-      const helveticaFont = await pdfDocOut.embedFont(StandardFonts.Helvetica);
-
-      for (const [index, pageObj] of selectedPages.entries()) {
-        const { sourceCanvas, rotation } = pageObj;
-        const tempRenderCanvas = document.createElement('canvas');
-        const tempCtx = tempRenderCanvas.getContext('2d');
-        if (!tempCtx) continue;
-
-        const rad = rotation * Math.PI / 180;
-        if (rotation % 180 !== 0) {
-          tempRenderCanvas.width = sourceCanvas.height;
-          tempRenderCanvas.height = sourceCanvas.width;
-        } else {
-          tempRenderCanvas.width = sourceCanvas.width;
-          tempRenderCanvas.height = sourceCanvas.height;
-        }
-
-        tempCtx.translate(tempRenderCanvas.width / 2, tempRenderCanvas.height / 2);
-        tempCtx.rotate(rad);
-        tempCtx.drawImage(sourceCanvas, -sourceCanvas.width / 2, -sourceCanvas.height / 2, sourceCanvas.width, sourceCanvas.height);
-
-        const imgDataUrl = tempRenderCanvas.toDataURL('image/png');
-        const pngImage = await pdfDocOut.embedPng(imgDataUrl);
-        const pdfLibPage = pdfDocOut.addPage([tempRenderCanvas.width, tempRenderCanvas.height]);
-        pdfLibPage.drawImage(pngImage, { x: 0, y: 0, width: tempRenderCanvas.width, height: tempRenderCanvas.height });
-
-        const { width: pageWidth, height: pageHeight } = pdfLibPage.getSize();
-        
-        if (pageNumberingConfig.enabled) {
-            const { width: pnPageWidth, height: pnPageHeight } = pdfLibPage.getSize();
-            const currentPageNum = index + pageNumberingConfig.start;
-            const totalNumPages = selectedPages.length;
-            let text = pageNumberingConfig.format.replace('{page}', currentPageNum.toString()).replace('{total}', totalNumPages.toString());
-            const textSize = pageNumberingConfig.fontSize;
-            const pnFont = await pdfDocOut.embedFont(StandardFonts.Helvetica);
-            const textWidthNum = pnFont.widthOfTextAtSize(text, textSize);
-            const pnAscent = pnFont.ascender / pnFont.unitsPerEm * textSize;
-            let x, y;
-            switch (pageNumberingConfig.position) {
-                case 'top-left': x = pageNumberingConfig.margin; y = pnPageHeight - pageNumberingConfig.margin - pnAscent; break;
-                case 'top-center': x = pnPageWidth / 2 - textWidthNum / 2; y = pnPageHeight - pageNumberingConfig.margin - pnAscent; break;
-                case 'top-right': x = pnPageWidth - pageNumberingConfig.margin - textWidthNum; y = pnPageHeight - pageNumberingConfig.margin - pnAscent; break;
-                case 'bottom-left': x = pageNumberingConfig.margin; y = pageNumberingConfig.margin; break;
-                case 'bottom-center': x = pnPageWidth / 2 - textWidthNum / 2; y = pageNumberingConfig.margin; break;
-                case 'bottom-right': x = pnPageWidth - pageNumberingConfig.margin - textWidthNum; y = pageNumberingConfig.margin; break;
-                default: x = pnPageWidth / 2 - textWidthNum / 2; y = pageNumberingConfig.margin;
-            }
-            pdfLibPage.drawText(text, { x, y, font: pnFont, size: textSize, color: grayscale(0) });
-        }
-      }
-
-      if (pdfProtectionConfig.enabled && pdfProtectionConfig.password) {
-        await pdfDocOut.encrypt({ userPassword: pdfProtectionConfig.password, ownerPassword: pdfProtectionConfig.password, permissions: {} });
-      }
-
-      const pdfBytes = await pdfDocOut.save();
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'DocuPilot_split.pdf';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      toast({ title: texts.splitPages, description: texts.splitPdfSuccess });
-    } catch (err: any) {
-      console.error("Split PDF error:", err);
-      toast({ title: texts.splitPdfError, description: err.message, variant: "destructive" });
-    } finally {
-      setIsDownloading(false);
-      setLoadingMessage('');
-    }
-  };
-
-  const handleInsertPdfFileSelected = (event: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLDivElement>) => {
-    let file: File | null = null;
-    if ('dataTransfer' in event) {
-        event.preventDefault();
-        event.stopPropagation();
-        if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
-            file = event.dataTransfer.files[0];
-            event.dataTransfer.clearData();
-        }
-    } else {
-        file = event.target.files?.[0] || null;
-    }
-
-    if (!file || !file.type.includes('pdf')) {
-        if(file) toast({ title: texts.insertError, description: currentLanguage === 'zh' ? "無效的檔案類型。請上傳 PDF。" : "Invalid file type. Please upload a PDF.", variant: "destructive" });
-        return;
-    }
-
-    setPendingInsertFile(file);
-    if (pageObjects.length > 0 && selectedPageIds.size === 0) {
-        setIsInsertConfirmOpen(true);
-    } else {
-        proceedWithInsert(file);
-    }
-  };
-
-  const proceedWithInsert = async (fileToInsert?: File) => {
-    const file = fileToInsert || pendingInsertFile;
-    if (!file) return;
-
-    setIsLoading(true);
-    setLoadingMessage(texts.insertingPdf);
-    try {
-      const { newPageObjects: insertPageObjects } = await processPdfFile(file);
-
-      let insertAtIndex = activePageIndex !== null ? activePageIndex + 1 : pageObjects.length;
-
-      const newCombinedPageObjects = [...pageObjects];
-      newCombinedPageObjects.splice(insertAtIndex, 0, ...insertPageObjects);
-      setPageObjects(newCombinedPageObjects);
-
-      const newActivePageId = insertPageObjects[0]?.id;
-      if (newActivePageId) {
-        setSelectedPageIds(new Set([newActivePageId]));
-      }
-      setActivePageIndex(insertAtIndex);
-
-      toast({ title: texts.insertAreaTitle, description: currentLanguage === 'zh' ? "PDF 插入成功。" : "PDF inserted successfully." });
-
-    } catch (err: any) {
-      toast({ title: texts.insertError, description: err.message, variant: "destructive" });
-    } finally {
-      setIsLoading(false);
-      setLoadingMessage('');
-      setPendingInsertFile(null);
-      if (insertPdfRef.current) insertPdfRef.current.value = '';
-    }
-  };
-
- const handleConvertToWord = async () => {
+  const handleConvertToWord = async () => {
     if (!uploadedPdfFile) {
       toast({ title: texts.wordConvertError, description: texts.noPdfToConvert, variant: "destructive" });
       return;
@@ -1555,197 +1419,107 @@ export default function PdfEditorHomepage() {
         handler(e);
     }
   };
+  
+  const handleDragMouseDown = (
+      event: React.MouseEvent<HTMLElement>,
+      type: 'annotation' | 'image' | 'highlight' | 'image-resize' | 'highlight-resize' | 'annotation-resize',
+      id: string
+  ) => {
+      event.stopPropagation();
 
-  const handleImageToPdf = async () => {
-    if (!imageFiles || imageFiles.length === 0) {
-      toast({ title: texts.imageToPdfError, description: texts.noImagesSelected, variant: "destructive" });
-      return;
-    }
-    setIsConvertingImagesToPdf(true);
-    setLoadingMessage(texts.generatingPdfFromImages);
-    try {
-      const pdfDoc = await PDFLibDocument.create();
-      for (let i = 0; i < imageFiles.length; i++) {
-        const file = imageFiles[i];
-        const imageBytes = await file.arrayBuffer();
-        let image;
-        if (file.type === 'image/jpeg' || file.type === 'image/jpg') {
-          image = await pdfDoc.embedJpg(imageBytes);
-        } else if (file.type === 'image/png') {
-          image = await pdfDoc.embedPng(imageBytes);
-        } else {
-          console.warn(`Skipping unsupported image type: ${file.type}`);
-          toast({ title: texts.imageToPdfError, description: `Unsupported image type: ${file.name}`, variant: "destructive" });
-          continue;
-        }
-        const page = pdfDoc.addPage([image.width, image.height]);
-        page.drawImage(image, {
-          x: 0,
-          y: 0,
-          width: image.width,
-          height: image.height,
-        });
+      const isResize = type.endsWith('-resize');
+      const itemType = type.split('-')[0] as 'annotation' | 'image' | 'highlight';
+
+      const draggedElement = event.currentTarget as HTMLElement;
+      const containerElement = (draggedElement.closest('.main-page-container')) as HTMLElement;
+      if (!containerElement) return;
+
+      const containerRect = containerElement.getBoundingClientRect();
+      
+      let initialItemState: any;
+      switch (itemType) {
+          case 'annotation': initialItemState = textAnnotations.find(a => a.id === id); break;
+          case 'image': initialItemState = imageAnnotations.find(a => a.id === id); break;
+          case 'highlight': initialItemState = highlightAnnotations.find(a => a.id === id); break;
       }
-      if (pdfDoc.getPageCount() === 0) {
-        toast({ title: texts.imageToPdfError, description: texts.noImagesSelected, variant: "destructive" });
-        setIsConvertingImagesToPdf(false);
-        setLoadingMessage('');
-        return;
-      }
-      const pdfBytes = await pdfDoc.save();
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'DocuPilot_Images.pdf';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      toast({ title: texts.imageToPdfTitle, description: texts.imageToPdfSuccess });
-    } catch (err: any) {
-      console.error("Image to PDF error:", err);
-      toast({ title: texts.imageToPdfError, description: err.message, variant: "destructive" });
-    } finally {
-      setIsConvertingImagesToPdf(false);
-      setLoadingMessage('');
-      setImageFiles(null);
-      if(imageToPdfUploadRef.current) imageToPdfUploadRef.current.value = '';
-    }
+      
+      if (!initialItemState) return;
+
+      dragStartRef.current = {
+          x: event.clientX,
+          y: event.clientY,
+          initialLeft: initialItemState.leftRatio * containerRect.width,
+          initialTop: initialItemState.topRatio * containerRect.height,
+          initialWidth: 'widthRatio' in initialItemState ? initialItemState.widthRatio * containerRect.width : 0,
+          initialHeight: 'heightRatio' in initialItemState ? initialItemState.heightRatio * containerRect.height : 0
+      };
+
+      const handleMouseMove = (moveEvent: MouseEvent) => {
+          moveEvent.preventDefault();
+          isDraggingRef.current = true;
+          draggedElement.style.cursor = 'grabbing';
+
+          const deltaX = moveEvent.clientX - dragStartRef.current.x;
+          const deltaY = moveEvent.clientY - dragStartRef.current.y;
+
+          if (isResize && 'aspectRatio' in initialItemState && itemType === 'image') {
+              const newWidthPx = dragStartRef.current.initialWidth + deltaX;
+              const newWidthRatio = Math.max(0.05, newWidthPx / containerRect.width);
+              setImageAnnotations(prev => prev.map(ann =>
+                  ann.id === id ? {
+                      ...ann,
+                      widthRatio: newWidthRatio,
+                      heightRatio: newWidthRatio / ann.aspectRatio * (containerRect.width / containerRect.height)
+                  } : ann
+              ));
+          } else if (isResize && itemType === 'highlight') {
+              const newWidthPx = dragStartRef.current.initialWidth + deltaX;
+              const newHeightPx = dragStartRef.current.initialHeight + deltaY;
+              setHighlightAnnotations(prev => prev.map(ann =>
+                  ann.id === id ? {
+                      ...ann,
+                      widthRatio: Math.max(0.01, newWidthPx / containerRect.width),
+                      heightRatio: Math.max(0.01, newHeightPx / containerRect.height)
+                  } : ann
+              ));
+          } else if (isResize && itemType === 'annotation') {
+              const newWidthPx = dragStartRef.current.initialWidth + deltaX;
+              const newWidthRatio = Math.max(0.1, newWidthPx / containerRect.width);
+               setTextAnnotations(prev => prev.map(ann =>
+                  ann.id === id ? { ...ann, widthRatio: newWidthRatio } : ann
+              ));
+          }
+          else { // It's a drag operation
+              const newLeftPx = dragStartRef.current.initialLeft + deltaX;
+              const newTopPx = dragStartRef.current.initialTop + deltaY;
+
+              const newLeftRatio = Math.max(0, Math.min(1, newLeftPx / containerRect.width));
+              const newTopRatio = Math.max(0, Math.min(1, newTopPx / containerRect.height));
+              
+              const updater = (prev: any) => ({ ...prev, topRatio: newTopRatio, leftRatio: newLeftRatio });
+
+              switch (itemType) {
+                  case 'annotation': 
+                      if (editingAnnotationId === id) return;
+                      setTextAnnotations(prev => prev.map(ann => ann.id === id ? updater(ann) : ann)); 
+                      break;
+                  case 'image': setImageAnnotations(prev => prev.map(ann => ann.id === id ? updater(ann) : ann)); break;
+                  case 'highlight': setHighlightAnnotations(prev => prev.map(ann => ann.id === id ? updater(ann) : ann)); break;
+              }
+          }
+      };
+
+      const handleMouseUp = () => {
+          document.removeEventListener('mousemove', handleMouseMove);
+          document.removeEventListener('mouseup', handleMouseUp);
+          draggedElement.style.cursor = 'grab';
+
+          setTimeout(() => { isDraggingRef.current = false; }, 50);
+      };
+
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
   };
-
-  const handlePdfCompression = async () => {
-    if (!pdfToCompress) {
-      toast({ title: texts.pdfCompressionError, description: texts.noPdfToCompress, variant: "destructive" });
-      return;
-    }
-    setIsCompressingPdf(true);
-    setLoadingMessage(texts.compressingPdf);
-    try {
-      const arrayBuffer = await pdfToCompress.arrayBuffer();
-      const pdfDoc = await PDFLibDocument.load(arrayBuffer);
-      const pdfBytes = await pdfDoc.save({ useObjectStreams: false });
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${pdfToCompress.name.replace(/\.pdf$/i, '')}_compressed.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      toast({ title: texts.pdfCompressionTitle, description: texts.pdfCompressionSuccess });
-    } catch (err: any) {
-      console.error("PDF Compression error:", err);
-      toast({ title: texts.pdfCompressionError, description: err.message, variant: "destructive" });
-    } finally {
-      setIsCompressingPdf(false);
-      setLoadingMessage('');
-      setPdfToCompress(null);
-      if(pdfCompressUploadRef.current) pdfCompressUploadRef.current.value = '';
-    }
-  };
-
-    const handleDragMouseDown = (
-        event: React.MouseEvent<HTMLElement>,
-        type: 'watermark' | 'annotation' | 'image' | 'highlight' | 'image-resize' | 'highlight-resize' | 'annotation-resize',
-        id: string
-    ) => {
-        event.stopPropagation();
-
-        const isResize = type.endsWith('-resize');
-        const itemType = type.split('-')[0] as 'watermark' | 'annotation' | 'image' | 'highlight';
-
-        const draggedElement = event.currentTarget as HTMLElement;
-        const containerElement = (itemType === 'watermark' ? watermarkPreviewCanvasContainerRef.current : draggedElement.closest('.main-page-container')) as HTMLElement;
-        if (!containerElement) return;
-
-        const containerRect = containerElement.getBoundingClientRect();
-        
-        let initialItemState: any;
-        switch (itemType) {
-            case 'annotation': initialItemState = textAnnotations.find(a => a.id === id); break;
-            case 'image': initialItemState = imageAnnotations.find(a => a.id === id); break;
-            case 'highlight': initialItemState = highlightAnnotations.find(a => a.id === id); break;
-        }
-        
-        if (!initialItemState) return;
-
-        dragStartRef.current = {
-            x: event.clientX,
-            y: event.clientY,
-            initialLeft: initialItemState.leftRatio * containerRect.width,
-            initialTop: initialItemState.topRatio * containerRect.height,
-            initialWidth: 'widthRatio' in initialItemState ? initialItemState.widthRatio * containerRect.width : 0,
-            initialHeight: 'heightRatio' in initialItemState ? initialItemState.heightRatio * containerRect.height : 0
-        };
-
-        const handleMouseMove = (moveEvent: MouseEvent) => {
-            moveEvent.preventDefault();
-            isDraggingRef.current = true;
-            draggedElement.style.cursor = 'grabbing';
-
-            const deltaX = moveEvent.clientX - dragStartRef.current.x;
-            const deltaY = moveEvent.clientY - dragStartRef.current.y;
-
-            if (isResize && 'aspectRatio' in initialItemState && itemType === 'image') {
-                const newWidthPx = dragStartRef.current.initialWidth + deltaX;
-                const newWidthRatio = Math.max(0.05, newWidthPx / containerRect.width);
-                setImageAnnotations(prev => prev.map(ann =>
-                    ann.id === id ? {
-                        ...ann,
-                        widthRatio: newWidthRatio,
-                        heightRatio: newWidthRatio / ann.aspectRatio * (containerRect.width / containerRect.height)
-                    } : ann
-                ));
-            } else if (isResize && itemType === 'highlight') {
-                const newWidthPx = dragStartRef.current.initialWidth + deltaX;
-                const newHeightPx = dragStartRef.current.initialHeight + deltaY;
-                setHighlightAnnotations(prev => prev.map(ann =>
-                    ann.id === id ? {
-                        ...ann,
-                        widthRatio: Math.max(0.01, newWidthPx / containerRect.width),
-                        heightRatio: Math.max(0.01, newHeightPx / containerRect.height)
-                    } : ann
-                ));
-            } else if (isResize && itemType === 'annotation') {
-                const newWidthPx = dragStartRef.current.initialWidth + deltaX;
-                const newWidthRatio = Math.max(0.1, newWidthPx / containerRect.width);
-                 setTextAnnotations(prev => prev.map(ann =>
-                    ann.id === id ? { ...ann, widthRatio: newWidthRatio } : ann
-                ));
-            }
-            else { // It's a drag operation
-                const newLeftPx = dragStartRef.current.initialLeft + deltaX;
-                const newTopPx = dragStartRef.current.initialTop + deltaY;
-
-                const newLeftRatio = Math.max(0, Math.min(1, newLeftPx / containerRect.width));
-                const newTopRatio = Math.max(0, Math.min(1, newTopPx / containerRect.height));
-                
-                const updater = (prev: any) => ({ ...prev, topRatio: newTopRatio, leftRatio: newLeftRatio });
-
-                switch (itemType) {
-                    case 'annotation': 
-                        if (editingAnnotationId === id) return;
-                        setTextAnnotations(prev => prev.map(ann => ann.id === id ? updater(ann) : ann)); 
-                        break;
-                    case 'image': setImageAnnotations(prev => prev.map(ann => ann.id === id ? updater(ann) : ann)); break;
-                    case 'highlight': setHighlightAnnotations(prev => prev.map(ann => ann.id === id ? updater(ann) : ann)); break;
-                }
-            }
-        };
-
-        const handleMouseUp = () => {
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
-            draggedElement.style.cursor = 'grab';
-
-            setTimeout(() => { isDraggingRef.current = false; }, 50);
-        };
-
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('mouseup', handleMouseUp);
-    };
 
 
   const handleThumbnailClick = (index: number, event: React.MouseEvent) => {
@@ -1955,21 +1729,22 @@ export default function PdfEditorHomepage() {
         if (selectedHighlightId === id) setSelectedHighlightId(null);
     }
 
-    const handleAnnotationClick = (id: string, e: React.MouseEvent) => {
+    const handleAnnotationWrapperClick = (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
         if (isDraggingRef.current) return;
-        if (editingAnnotationId === id) return;
-
-        setSelectedAnnotationId(id);
-        setEditingAnnotationId(null);
-        setSelectedImageId(null);
-        setSelectedHighlightId(null);
+        
+        if (editingAnnotationId !== id) {
+            setEditingAnnotationId(null);
+            setSelectedAnnotationId(id);
+            setSelectedImageId(null);
+            setSelectedHighlightId(null);
+        }
     };
 
     const handleAnnotationDoubleClick = (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
-        setSelectedAnnotationId(id);
         setEditingAnnotationId(id);
+        setSelectedAnnotationId(id);
     };
     
     useEffect(() => {
@@ -2121,15 +1896,13 @@ export default function PdfEditorHomepage() {
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground font-sans">
-      {(isLoading || isDownloading || isConvertingToWord || isConvertingImagesToPdf || isCompressingPdf) && (
+      {(isLoading || isDownloading || isConvertingToWord) && (
         <div className="fixed inset-0 bg-black/50 z-[100] flex flex-col items-center justify-center">
           <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
           <p className="text-white text-lg">
             {isLoading ? loadingMessage :
              isConvertingToWord ? texts.convertingToWord :
-             isDownloading ? texts.generatingFile :
-             isConvertingImagesToPdf ? texts.generatingPdfFromImages :
-             isCompressingPdf ? texts.compressingPdf : ''}
+             isDownloading ? texts.generatingFile : ''}
           </p>
         </div>
       )}
@@ -2144,7 +1917,9 @@ export default function PdfEditorHomepage() {
           </ShadAlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setPendingInsertFile(null)}>{texts.cancel}</AlertDialogCancel>
-            <AlertDialogAction onClick={() => proceedWithInsert()}>{texts.confirm}</AlertDialogAction>
+            <AlertDialogAction onClick={() => {
+                // This is a placeholder as the insert functionality is not fully implemented
+            }}>{texts.confirm}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -2197,40 +1972,41 @@ export default function PdfEditorHomepage() {
       <header className="p-0 border-b bg-card sticky top-0 z-40 flex-shrink-0">
         <div className="container mx-auto flex justify-between items-center h-16">
             <div className="flex items-center gap-6">
-                <h1 className="text-xl font-bold text-primary flex items-center">
+                <h1 className="text-xl font-bold text-primary flex items-center cursor-pointer" onClick={() => router.push('/')}>
                     <MenuSquare className="mr-2 h-6 w-6"/> {texts.pageTitle}
                 </h1>
                 <Menubar className="border-none shadow-none bg-transparent">
                     <MenubarMenu>
-                        <MenubarTrigger><Edit className="mr-2 h-4 w-4" />{currentLanguage === 'zh' ? 'PDF編輯' : 'PDF Edit'}</MenubarTrigger>
+                        <MenubarTrigger><Edit className="mr-2 h-4 w-4" />{texts.pdfEditMenu}</MenubarTrigger>
                         <MenubarContent>
-                            <MenubarItem onClick={() => router.push('/merge-pdf')}><Combine className="mr-2 h-4 w-4" />{currentLanguage === 'zh' ? '合併PDF' : 'Merge PDF'}</MenubarItem>
-                            <MenubarItem onClick={handleSplitPdf} disabled={selectedPageIds.size === 0}><Scissors className="mr-2 h-4 w-4" />{currentLanguage === 'zh' ? '拆分PDF' : 'Split PDF'}</MenubarItem>
-                            <MenubarItem onClick={() => setIsDeleteConfirmOpen(true)} disabled={selectedPageIds.size === 0}><Trash2 className="mr-2 h-4 w-4" />{currentLanguage === 'zh' ? '刪除頁面' : 'Delete Pages'}</MenubarItem>
-                            <MenubarItem onClick={handleSplitPdf} disabled={selectedPageIds.size === 0}><FileUp className="mr-2 h-4 w-4" />{currentLanguage === 'zh' ? '擷取頁面' : 'Extract Pages'}</MenubarItem>
-                            <MenubarItem onClick={() => toast({ title: '變換順序', description: '請在縮圖模式中直接拖曳頁面來變換順序。' })} disabled={pageObjects.length < 2}><ListOrdered className="mr-2 h-4 w-4" />{currentLanguage === 'zh' ? '變換順序' : 'Reorder Pages'}</MenubarItem>
+                            <MenubarItem onClick={() => router.push('/merge-pdf')}><Combine className="mr-2 h-4 w-4" />{texts.mergePdf}</MenubarItem>
+                            <MenubarItem onClick={() => router.push('/split-pdf')}><Scissors className="mr-2 h-4 w-4" />{texts.splitPdf}</MenubarItem>
+                            <MenubarItem onClick={() => router.push('/split-pdf')}><Trash2 className="mr-2 h-4 w-4" />{texts.deletePdfPages}</MenubarItem>
+                            <MenubarItem onClick={() => router.push('/split-pdf')}><FileUp className="mr-2 h-4 w-4" />{texts.extractPdfPages}</MenubarItem>
+                            <MenubarItem onClick={() => setViewMode('grid')} disabled={pageObjects.length < 2}><ListOrdered className="mr-2 h-4 w-4" />{texts.reorderPdfPages}</MenubarItem>
+                            <MenubarItem onClick={() => handlePlaceholderClick(texts.addWatermark)}><Droplets className="mr-2 h-4 w-4" />{texts.addWatermark}</MenubarItem>
                         </MenubarContent>
                     </MenubarMenu>
                     <MenubarMenu>
-                        <MenubarTrigger><ArrowRightLeft className="mr-2 h-4 w-4" />{currentLanguage === 'zh' ? 'PDF轉換' : 'PDF Convert'}</MenubarTrigger>
+                        <MenubarTrigger><ArrowRightLeft className="mr-2 h-4 w-4" />{texts.pdfConvertMenu}</MenubarTrigger>
                         <MenubarContent>
                             <MenubarSub>
-                                <MenubarSubTrigger><FilePlus className="mr-2 h-4 w-4" />{currentLanguage === 'zh' ? '轉換為PDF' : 'Convert to PDF'}</MenubarSubTrigger>
+                                <MenubarSubTrigger><FilePlus className="mr-2 h-4 w-4" />{texts.convertToPdf}</MenubarSubTrigger>
                                 <MenubarSubContent>
-                                    <MenubarItem onClick={() => handlePlaceholderClick('WORD轉PDF')}><FileText className="mr-2 h-4 w-4" />WORD &rarr; PDF</MenubarItem>
-                                    <MenubarItem onClick={() => handlePlaceholderClick('EXCEL轉PDF')}><FileSpreadsheet className="mr-2 h-4 w-4" />EXCEL &rarr; PDF</MenubarItem>
-                                    <MenubarItem onClick={() => handlePlaceholderClick('PPT轉PDF')}><LucidePresentation className="mr-2 h-4 w-4" />PPT &rarr; PDF</MenubarItem>
-                                    <MenubarItem onClick={() => handlePlaceholderClick('HTML轉PDF')}><Code className="mr-2 h-4 w-4" />HTML &rarr; PDF</MenubarItem>
-                                    <MenubarItem onClick={() => imageToPdfUploadRef.current?.click()}><FileImage className="mr-2 h-4 w-4" />JPG &rarr; PDF</MenubarItem>
+                                    <MenubarItem onClick={() => handlePlaceholderClick(texts.wordToPdf)}><FileText className="mr-2 h-4 w-4" />{texts.wordToPdf}</MenubarItem>
+                                    <MenubarItem onClick={() => handlePlaceholderClick(texts.excelToPdf)}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.excelToPdf}</MenubarItem>
+                                    <MenubarItem onClick={() => handlePlaceholderClick(texts.pptToPdf)}><LucidePresentation className="mr-2 h-4 w-4" />{texts.pptToPdf}</MenubarItem>
+                                    <MenubarItem onClick={() => handlePlaceholderClick(texts.htmlToPdf)}><Code className="mr-2 h-4 w-4" />{texts.htmlToPdf}</MenubarItem>
+                                    <MenubarItem onClick={() => handlePlaceholderClick(texts.jpgToPdf)}><FileImage className="mr-2 h-4 w-4" />{texts.jpgToPdf}</MenubarItem>
                                 </MenubarSubContent>
                             </MenubarSub>
                             <MenubarSub>
-                                <MenubarSubTrigger><FileMinus className="mr-2 h-4 w-4" />{currentLanguage === 'zh' ? '從PDF轉換' : 'Convert from PDF'}</MenubarSubTrigger>
+                                <MenubarSubTrigger><FileMinus className="mr-2 h-4 w-4" />{texts.convertFromPdf}</MenubarSubTrigger>
                                 <MenubarSubContent>
-                                    <MenubarItem onClick={handleConvertToWord} disabled={!uploadedPdfFile}><FileText className="mr-2 h-4 w-4" />PDF &rarr; WORD</MenubarItem>
-                                    <MenubarItem onClick={() => handlePlaceholderClick('PDF轉EXCEL')} disabled={!uploadedPdfFile}><FileSpreadsheet className="mr-2 h-4 w-4" />PDF &rarr; EXCEL</MenubarItem>
-                                    <MenubarItem onClick={() => handlePlaceholderClick('PDF轉PPT')} disabled={!uploadedPdfFile}><LucidePresentation className="mr-2 h-4 w-4" />PDF &rarr; PPT</MenubarItem>
-                                    <MenubarItem onClick={() => handlePlaceholderClick('PDF轉HTML')} disabled={!uploadedPdfFile}><Code className="mr-2 h-4 w-4" />PDF &rarr; HTML</MenubarItem>
+                                    <MenubarItem onClick={handleConvertToWord} disabled={!uploadedPdfFile}><FileText className="mr-2 h-4 w-4" />{texts.pdfToWord}</MenubarItem>
+                                    <MenubarItem onClick={() => handlePlaceholderClick(texts.pdfToExcel)} disabled={!uploadedPdfFile}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.pdfToExcel}</MenubarItem>
+                                    <MenubarItem onClick={() => handlePlaceholderClick(texts.pdfToPpt)} disabled={!uploadedPdfFile}><LucidePresentation className="mr-2 h-4 w-4" />{texts.pdfToPpt}</MenubarItem>
+                                    <MenubarItem onClick={() => handlePlaceholderClick(texts.pdfToHtml)} disabled={!uploadedPdfFile}><Code className="mr-2 h-4 w-4" />{texts.pdfToHtml}</MenubarItem>
                                 </MenubarSubContent>
                             </MenubarSub>
                         </MenubarContent>
@@ -2239,12 +2015,6 @@ export default function PdfEditorHomepage() {
             </div>
 
             <div className="flex items-center gap-4">
-                {pageObjects.length > 0 && (
-                     <Button onClick={handleDownloadPdf} disabled={isDownloading}>
-                        <Download className="mr-2 h-4 w-4" />
-                        {texts.downloadPdf}
-                    </Button>
-                )}
                 <div className="flex gap-2">
                     <Button variant={currentLanguage === 'en' ? "secondary" : "outline"} size="sm" onClick={() => updateLanguage('en')}>English</Button>
                     <Button variant={currentLanguage === 'zh' ? "secondary" : "outline"} size="sm" onClick={() => updateLanguage('zh')}>中文</Button>
@@ -2273,18 +2043,19 @@ export default function PdfEditorHomepage() {
       </header>
 
       <main className="flex-grow flex overflow-hidden relative" onClick={(e) => {
-        if (e.currentTarget === e.target) {
+        const target = e.target as HTMLElement;
+        if (!target.closest('.main-page-container, .absolute.top-2, .popover-content')) {
             setSelectedAnnotationId(null);
             setEditingAnnotationId(null);
             setSelectedImageId(null);
             setSelectedHighlightId(null);
         }
       }}>
-        {editingAnnotation && (
+        {editingAnnotationId && textAnnotations.find(ann => ann.id === editingAnnotationId) && (
             <TextAnnotationToolbar
-                annotation={editingAnnotation}
+                annotation={textAnnotations.find(ann => ann.id === editingAnnotationId)!}
                 onAnnotationChange={handleAnnotationChange}
-                onDelete={() => handleDeleteAnnotation(editingAnnotationId)}
+                onDelete={() => handleDeleteAnnotation(editingAnnotationId!)}
             />
         )}
         {pageObjects.length === 0 ? (
@@ -2314,10 +2085,6 @@ export default function PdfEditorHomepage() {
                     ref={pdfUploadRef}
                     className="hidden"
                   />
-                  <Input type="file" id="imageToPdfInput" accept="image/*" multiple
-                            ref={imageToPdfUploadRef}
-                            onChange={(e) => setImageFiles(e.target.files)}
-                            className="hidden" />
                 </CardContent>
               </Card>
             </div>
@@ -2336,7 +2103,7 @@ export default function PdfEditorHomepage() {
                       <Button onClick={() => setViewMode('editor')} variant="outline" size="sm">
                         <PanelLeft className='h-4 w-4 mr-2' /> {texts.editorMode}
                       </Button>
-                      <Button onClick={handleSplitPdf} variant="outline" size="sm" disabled={selectedPageIds.size === 0}>
+                      <Button onClick={() => router.push('/split-pdf')} variant="outline" size="sm">
                         <Scissors className="mr-2 h-4 w-4" /> {texts.splitPages}
                       </Button>
                       <Button onClick={() => { setPageToDelete(null); setIsDeleteConfirmOpen(true); }} variant="destructive" size="sm" disabled={selectedPageIds.size === 0}>
@@ -2528,7 +2295,7 @@ export default function PdfEditorHomepage() {
                                         mainCanvasZoom={mainCanvasZoom}
                                         isSelected={selectedAnnotationId === ann.id}
                                         isEditing={editingAnnotationId === ann.id}
-                                        onClick={(id, e) => handleAnnotationClick(id, e)}
+                                        onWrapperClick={(id, e) => handleAnnotationWrapperClick(id, e)}
                                         onDoubleClick={(id, e) => handleAnnotationDoubleClick(id, e)}
                                         onAnnotationChange={handleAnnotationChange}
                                         onDragStart={(e, id) => {
@@ -2561,7 +2328,6 @@ export default function PdfEditorHomepage() {
                         <ToolbarButton icon={RotateCw} label={texts.toolRotate} onClick={() => handleRotatePage('cw')} disabled={activePageIndex === null}/>
                         <ToolbarButton icon={Trash2} label={texts.toolDelete} onClick={() => { if(activePageIndex !== null) { setPageToDelete(activePageIndex); setIsDeleteConfirmOpen(true); } }} disabled={activePageIndex === null}/>
                         <ToolbarButton icon={FilePlus2} label={texts.toolAddBlank} onClick={handleAddBlankPage} />
-                        <ToolbarButton icon={Combine} label={texts.toolMerge} onClick={() => router.push('/merge-pdf')} />
                         <ToolbarButton icon={Type} label={texts.toolInsertText} onClick={handleAddTextAnnotation} disabled={activePageIndex === null}/>
                         <ToolbarButton icon={ImagePlus} label={texts.toolInsertImage} onClick={() => imageUploadRef.current?.click()} disabled={activePageIndex === null}/>
                         <ToolbarButton icon={Highlighter} label={texts.toolHighlight} onClick={handleAddHighlightAnnotation} disabled={activePageIndex === null} />
@@ -2582,14 +2348,6 @@ export default function PdfEditorHomepage() {
                            </PopoverContent>
                         </Popover>
                     </div>
-                     <Input
-                        type="file"
-                        id="insertPdfInput"
-                        accept="application/pdf"
-                        onChange={handleInsertPdfFileSelected}
-                        ref={insertPdfRef}
-                        className="hidden"
-                     />
                       <Input
                         type="file"
                         id="imageUploadInput"
@@ -2600,54 +2358,12 @@ export default function PdfEditorHomepage() {
                       />
 
                       <Separator />
-
-                      <Accordion type="single" collapsible className="w-full">
-                          <AccordionItem value="page-numbering">
-                              <AccordionTrigger>{texts.pageNumberingSectionTitle}</AccordionTrigger>
-                              <AccordionContent className="space-y-4">
-                                  <div className="flex items-center space-x-2">
-                                      <Switch id="enable-page-numbers" checked={pageNumberingConfig.enabled} onCheckedChange={(checked) => setPageNumberingConfig(p => ({ ...p, enabled: checked }))} />
-                                      <Label htmlFor="enable-page-numbers">{texts.enablePageNumbering}</Label>
-                                  </div>
-                                  {pageNumberingConfig.enabled && (
-                                      <>
-                                          <div>
-                                              <Label htmlFor="pn-position">{texts.pageNumberPosition}</Label>
-                                              <Select value={pageNumberingConfig.position} onValueChange={(value: PageNumberPosition) => setPageNumberingConfig(p => ({ ...p, position: value }))}>
-                                                  <SelectTrigger id="pn-position"><SelectValue /></SelectTrigger>
-                                                  <SelectContent>
-                                                      {pageNumberPositions.map(pos => <SelectItem key={pos.value} value={pos.value}>{texts[pos.labelKey]}</SelectItem>)}
-                                                  </SelectContent>
-                                              </Select>
-                                          </div>
-                                          <div>
-                                              <Label htmlFor="pn-start">{texts.pageNumberStart}</Label>
-                                              <Input id="pn-start" type="number" value={pageNumberingConfig.start} onChange={e => setPageNumberingConfig(p => ({ ...p, start: parseInt(e.target.value, 10) || 1 }))} />
-                                          </div>
-                                          <div>
-                                              <Label htmlFor="pn-format">{texts.pageNumberFormat}</Label>
-                                              <Input id="pn-format" value={pageNumberingConfig.format} onChange={e => setPageNumberingConfig(p => ({ ...p, format: e.target.value }))} placeholder={texts.pageNumberFormatPlaceholder} />
-                                          </div>
-                                      </>
-                                  )}
-                              </AccordionContent>
-                          </AccordionItem>
-                          <AccordionItem value="pdf-protection">
-                              <AccordionTrigger>{texts.protectPdfSectionTitle}</AccordionTrigger>
-                              <AccordionContent className="space-y-4">
-                                  <div className="flex items-center space-x-2">
-                                      <Switch id="enable-protection" checked={pdfProtectionConfig.enabled} onCheckedChange={(checked) => setPdfProtectionConfig(p => ({...p, enabled: checked}))} />
-                                      <Label htmlFor="enable-protection">{texts.enablePdfProtection}</Label>
-                                  </div>
-                                  {pdfProtectionConfig.enabled && (
-                                      <div>
-                                          <Label htmlFor="pdf-password">{texts.pdfPassword}</Label>
-                                          <Input id="pdf-password" type="password" value={pdfProtectionConfig.password} onChange={e => setPdfProtectionConfig(p => ({...p, password: e.target.value}))} placeholder={texts.pdfPasswordPlaceholder} />
-                                      </div>
-                                  )}
-                              </AccordionContent>
-                          </AccordionItem>
-                      </Accordion>
+                       {pageObjects.length > 0 && (
+                         <Button onClick={handleDownloadPdf} disabled={isDownloading} className="w-full">
+                            <Download className="mr-2 h-4 w-4" />
+                            {texts.downloadPdf}
+                        </Button>
+                       )}
                 </div>
             </>
           )}

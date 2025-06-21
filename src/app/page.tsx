@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, FileType, FileDigit, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, FontSize, Eye } from 'lucide-react';
+import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, FileType, FileDigit, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, FontSize, Eye, Scissors } from 'lucide-react';
 import { Slider } from "@/components/ui/slider";
 
 import { storage, functions as firebaseFunctions, app as firebaseApp } from '@/lib/firebase'; // Firebase SDK
@@ -42,6 +42,7 @@ const translations = {
         pageTitle: 'DocuPilot',
         uploadLabel: 'Select PDF file to edit:',
         deletePages: 'Delete Selected Pages',
+        splitPages: 'Split Selected',
         downloadPdf: 'Download Edited PDF',
         downloadTxt: 'Download as TXT',
         convertToWord: 'Convert to Word',
@@ -61,6 +62,8 @@ const translations = {
         extractingText: 'Extracting text, please wait...',
         loadError: 'Failed to load PDF',
         downloadError: 'Failed to download PDF',
+        splitPdfSuccess: 'Split PDF downloaded successfully!',
+        splitPdfError: 'Failed to split PDF',
         txtDownloadError: 'Failed to download TXT',
         wordConvertError: 'Failed to convert to Word',
         pdfCoMethodNotFoundError: 'PDF.co Error: "Method Not Found" or API key issue. Please verify your PDF.co API Key is correct and the API endpoint in the Cloud Function is valid. Check PDF.co documentation.',
@@ -134,8 +137,8 @@ const translations = {
         pdfEditingTools: 'PDF Tools',
         downloadAndConvertTitle: 'Download & Convert',
         startEditingYourPdf: 'Start Editing Your PDF',
-        pagesLoaded: 'pages loaded.',
-        pageSelectedSuffix: 'selected.',
+        pagesLoaded: 'page(s) loaded',
+        pageSelectedSuffix: 'selected',
         featureEdit: 'Edit',
         featureMerge: 'Merge',
         featurePageNum: 'Page #',
@@ -164,6 +167,7 @@ const translations = {
         pageTitle: 'DocuPilot 文件助手',
         uploadLabel: '選擇要編輯的 PDF 檔案：',
         deletePages: '刪除選取的頁面',
+        splitPages: '拆分選定頁面',
         downloadPdf: '下載編輯後 PDF',
         downloadTxt: '下載為 TXT 檔案',
         convertToWord: '轉換為 Word',
@@ -183,6 +187,8 @@ const translations = {
         extractingText: '正在提取文字，請稍候...',
         loadError: '載入 PDF 失敗',
         downloadError: '下載 PDF 失敗',
+        splitPdfSuccess: 'PDF 拆分下載成功！',
+        splitPdfError: '拆分 PDF 失敗',
         txtDownloadError: '下載 TXT 失敗',
         wordConvertError: '轉換 Word 失敗',
         pdfCoMethodNotFoundError: 'PDF.co 錯誤：「方法未找到」或 API 金鑰問題。請確認您的 PDF.co API 金鑰是否正確，以及 Cloud Function 中的 API 端點是否有效。請查閱 PDF.co 文件。',
@@ -256,8 +262,8 @@ const translations = {
         pdfEditingTools: 'PDF 工具',
         downloadAndConvertTitle: '下載与轉換',
         startEditingYourPdf: '開始編輯您的 PDF',
-        pagesLoaded: '頁已載入。',
-        pageSelectedSuffix: '已選取。',
+        pagesLoaded: '頁已載入',
+        pageSelectedSuffix: '已選取',
         featureEdit: '編輯',
         featureMerge: '合併',
         featurePageNum: '頁碼',
@@ -783,7 +789,7 @@ export default function PdfEditorHomepage() {
       const pdfDocOut = await PDFLibDocument.create();
       const helveticaFont = await pdfDocOut.embedFont(StandardFonts.Helvetica);
 
-      for (const pageObj of pageObjects) {
+      for (const [index, pageObj] of pageObjects.entries()) {
         const { sourceCanvas, rotation } = pageObj;
 
         const tempRenderCanvas = document.createElement('canvas');
@@ -866,7 +872,7 @@ export default function PdfEditorHomepage() {
 
         if (pageNumberingConfig.enabled) {
             const { width: pnPageWidth, height: pnPageHeight } = pdfLibPage.getSize();
-            const currentPageNum = pdfDocOut.getPageCount() -1 + pageNumberingConfig.start; 
+            const currentPageNum = index + pageNumberingConfig.start; 
             const totalNumPages = pageObjects.length;
             
             let text = pageNumberingConfig.format
@@ -919,6 +925,141 @@ export default function PdfEditorHomepage() {
       setLoadingMessage('');
     }
   };
+
+  const handleSplitPdf = async () => {
+    const selectedPages = pageObjects.filter(p => selectedPageIds.has(p.id));
+    if (selectedPages.length === 0) {
+      toast({ title: texts.splitPages, description: texts.noPageSelected, variant: "destructive" });
+      return;
+    }
+
+    if (!isLoggedIn && typeof window !== 'undefined') {
+      const today = new Date().toISOString().split('T')[0];
+      let downloadInfoString = localStorage.getItem('DocuPilotDownloadInfo');
+      let downloadInfo = downloadInfoString ? JSON.parse(downloadInfoString) : { count: 0, date: today };
+
+      if (downloadInfo.date !== today) {
+        downloadInfo = { count: 0, date: today };
+      }
+
+      if (downloadInfo.count >= DAILY_DOWNLOAD_LIMIT) {
+        setShowPaymentModal(true);
+        return;
+      }
+      downloadInfo.count++;
+      localStorage.setItem('DocuPilotDownloadInfo', JSON.stringify(downloadInfo));
+    }
+
+    setIsDownloading(true);
+    setLoadingMessage(texts.generatingFile);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      const pdfDocOut = await PDFLibDocument.create();
+      const helveticaFont = await pdfDocOut.embedFont(StandardFonts.Helvetica);
+
+      for (const [index, pageObj] of selectedPages.entries()) {
+        const { sourceCanvas, rotation } = pageObj;
+        const tempRenderCanvas = document.createElement('canvas');
+        const tempCtx = tempRenderCanvas.getContext('2d');
+        if (!tempCtx) continue;
+
+        const rad = rotation * Math.PI / 180;
+        if (rotation % 180 !== 0) {
+          tempRenderCanvas.width = sourceCanvas.height;
+          tempRenderCanvas.height = sourceCanvas.width;
+        } else {
+          tempRenderCanvas.width = sourceCanvas.width;
+          tempRenderCanvas.height = sourceCanvas.height;
+        }
+
+        tempCtx.translate(tempRenderCanvas.width / 2, tempRenderCanvas.height / 2);
+        tempCtx.rotate(rad);
+        tempCtx.drawImage(sourceCanvas, -sourceCanvas.width / 2, -sourceCanvas.height / 2, sourceCanvas.width, sourceCanvas.height);
+
+        const imgDataUrl = tempRenderCanvas.toDataURL('image/png');
+        const pngImage = await pdfDocOut.embedPng(imgDataUrl);
+        const pdfLibPage = pdfDocOut.addPage([tempRenderCanvas.width, tempRenderCanvas.height]);
+        pdfLibPage.drawImage(pngImage, { x: 0, y: 0, width: tempRenderCanvas.width, height: tempRenderCanvas.height });
+
+        const { width: pageWidth, height: pageHeight } = pdfLibPage.getSize();
+        if ((watermarkConfig.type === 'text' && watermarkConfig.text) || (watermarkConfig.type === 'image' && watermarkConfig.imageUrl)) {
+            pdfLibPage.pushGraphicsState();
+            pdfLibPage.setOpacity(watermarkConfig.opacity);
+            if (watermarkConfig.type === 'text' && watermarkConfig.text) {
+                const pdfWatermarkFontSize = watermarkConfig.fontSize;
+                const textColor = hexToRgb(watermarkConfig.color);
+                const textWidth = helveticaFont.widthOfTextAtSize(watermarkConfig.text, pdfWatermarkFontSize);
+                const textHeight = helveticaFont.heightAtSize(pdfWatermarkFontSize);
+                const wmX_pdf_text = watermarkConfig.leftRatio * pageWidth - textWidth / 2;
+                const wmY_pdf_text = pageHeight - (watermarkConfig.topRatio * pageHeight) - textHeight / 2;
+                pdfLibPage.drawText(watermarkConfig.text, { x: wmX_pdf_text, y: wmY_pdf_text, font: helveticaFont, size: pdfWatermarkFontSize, color: rgb(textColor.r, textColor.g, textColor.b) });
+            } else if (watermarkConfig.type === 'image' && watermarkConfig.imageUrl) {
+                try {
+                    const imageBytes = await fetch(watermarkConfig.imageUrl).then(res => res.arrayBuffer());
+                    let wmEmbedImage;
+                    if (watermarkConfig.imageUrl.startsWith('data:image/png')) {
+                        wmEmbedImage = await pdfDocOut.embedPng(imageBytes);
+                    } else if (watermarkConfig.imageUrl.startsWith('data:image/jpeg') || watermarkConfig.imageUrl.startsWith('data:image/jpg')) {
+                        wmEmbedImage = await pdfDocOut.embedJpg(imageBytes);
+                    }
+                    if (wmEmbedImage) {
+                        const { width: imgOriginalWidth, height: imgOriginalHeight } = wmEmbedImage.scale(1);
+                        const wmX_pdf_img = watermarkConfig.leftRatio * pageWidth - imgOriginalWidth / 2;
+                        const wmY_pdf_img = pageHeight - (watermarkConfig.topRatio * pageHeight) - imgOriginalHeight / 2;
+                        pdfLibPage.drawImage(wmEmbedImage, { x: wmX_pdf_img, y: wmY_pdf_img, width: imgOriginalWidth, height: imgOriginalHeight });
+                    }
+                } catch (imgErr) { console.error("Error embedding watermark image:", imgErr); toast({ title: "Watermark Error", description: "Could not embed watermark image.", variant: "destructive" }); }
+            }
+            pdfLibPage.popGraphicsState();
+        }
+
+        if (pageNumberingConfig.enabled) {
+            const { width: pnPageWidth, height: pnPageHeight } = pdfLibPage.getSize();
+            const currentPageNum = index + pageNumberingConfig.start;
+            const totalNumPages = selectedPages.length;
+            let text = pageNumberingConfig.format.replace('{page}', currentPageNum.toString()).replace('{total}', totalNumPages.toString());
+            const textSize = pageNumberingConfig.fontSize;
+            const pnFont = await pdfDocOut.embedFont(StandardFonts.Helvetica);
+            const textWidthNum = pnFont.widthOfTextAtSize(text, textSize);
+            const pnAscent = pnFont.ascender / pnFont.unitsPerEm * textSize;
+            let x, y;
+            switch (pageNumberingConfig.position) {
+                case 'top-left': x = pageNumberingConfig.margin; y = pnPageHeight - pageNumberingConfig.margin - pnAscent; break;
+                case 'top-center': x = pnPageWidth / 2 - textWidthNum / 2; y = pnPageHeight - pageNumberingConfig.margin - pnAscent; break;
+                case 'top-right': x = pnPageWidth - pageNumberingConfig.margin - textWidthNum; y = pnPageHeight - pageNumberingConfig.margin - pnAscent; break;
+                case 'bottom-left': x = pageNumberingConfig.margin; y = pageNumberingConfig.margin; break;
+                case 'bottom-center': x = pnPageWidth / 2 - textWidthNum / 2; y = pageNumberingConfig.margin; break;
+                case 'bottom-right': x = pnPageWidth - pageNumberingConfig.margin - textWidthNum; y = pageNumberingConfig.margin; break;
+                default: x = pnPageWidth / 2 - textWidthNum / 2; y = pageNumberingConfig.margin;
+            }
+            pdfLibPage.drawText(text, { x, y, font: pnFont, size: textSize, color: grayscale(0) });
+        }
+      }
+
+      if (pdfProtectionConfig.enabled && pdfProtectionConfig.password) {
+        await pdfDocOut.encrypt({ userPassword: pdfProtectionConfig.password, ownerPassword: pdfProtectionConfig.password, permissions: {} });
+      }
+
+      const pdfBytes = await pdfDocOut.save();
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'DocuPilot_split.pdf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({ title: texts.splitPages, description: texts.splitPdfSuccess });
+    } catch (err: any) {
+      console.error("Split PDF error:", err);
+      toast({ title: texts.splitPdfError, description: err.message, variant: "destructive" });
+    } finally {
+      setIsDownloading(false);
+      setLoadingMessage('');
+    }
+  };
+
 
   const handleDownloadTxt = async () => {
     if (!pdfDocumentProxy) {
@@ -1802,19 +1943,29 @@ export default function PdfEditorHomepage() {
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
                                 <CardTitle className="flex items-center text-xl"><Shuffle className="mr-2 h-5 w-5 text-primary" /> {texts.pageManagement}</CardTitle>
-                                <CardDescription> 
-                                    {pageObjects.length} {pageObjects.length === 1 ? texts.page.toLowerCase() : (currentLanguage === 'zh' ? texts.pagesLoaded.replace('頁已載入。', '頁') : texts.pagesLoaded.replace('pages loaded.', 'page(s)'))} {currentLanguage === 'zh' ? '已載入' : 'loaded'}.{' '}
-                                    {selectedPageIds.size > 0 ? `${texts.page} ${pageObjects.findIndex(p => p.id === Array.from(selectedPageIds)[0]) + 1} ${texts.pageSelectedSuffix}` : ''}
+                                <CardDescription>
+                                  {pageObjects.length} {texts.pagesLoaded}.
+                                  {selectedPageIds.size > 0 ? ` ${selectedPageIds.size} ${texts.pageSelectedSuffix}.` : ''}
                                 </CardDescription>
                             </div>
-                             <Button
-                                onClick={handleDeletePages}
-                                variant="destructive"
-                                size="sm"
-                                disabled={selectedPageIds.size === 0 || pageObjects.length === 0}
-                            >
-                                <Trash2 className="mr-2 h-4 w-4" /> {texts.deletePages}
-                            </Button>
+                             <div className="flex gap-2">
+                                <Button
+                                    onClick={handleSplitPdf}
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={selectedPageIds.size === 0 || pageObjects.length === 0}
+                                >
+                                    <Scissors className="mr-2 h-4 w-4" /> {texts.splitPages}
+                                </Button>
+                                <Button
+                                    onClick={handleDeletePages}
+                                    variant="destructive"
+                                    size="sm"
+                                    disabled={selectedPageIds.size === 0 || pageObjects.length === 0}
+                                >
+                                    <Trash2 className="mr-2 h-4 w-4" /> {texts.deletePages}
+                                </Button>
+                             </div>
                         </CardHeader>
                         <CardContent>
                         <div
@@ -1829,11 +1980,15 @@ export default function PdfEditorHomepage() {
                               index={index}
                               isSelected={selectedPageIds.has(pageObj.id)}
                               onClick={() => {
-                                const newSelectedIds = new Set<string>();
-                                if (!selectedPageIds.has(pageObj.id)) {
+                                setSelectedPageIds(prevSelectedIds => {
+                                  const newSelectedIds = new Set(prevSelectedIds);
+                                  if (newSelectedIds.has(pageObj.id)) {
+                                    newSelectedIds.delete(pageObj.id);
+                                  } else {
                                     newSelectedIds.add(pageObj.id);
-                                } 
-                                setSelectedPageIds(newSelectedIds);
+                                  }
+                                  return newSelectedIds;
+                                });
                               }}
                               onDoubleClick={() => {
                                 setZoomedPageData({ page: pageObj, index });

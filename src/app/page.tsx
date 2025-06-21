@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, FileType, FileDigit, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, FontSize, Eye, Scissors, LayoutGrid, PanelLeft, FilePlus2, Combine, Type, ImagePlus, Link as LinkIcon, MessageSquarePlus, ZoomIn, ZoomOut, Expand, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Highlighter } from 'lucide-react';
+import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, FontSize, Eye, Scissors, LayoutGrid, PanelLeft, FilePlus2, Combine, Type, ImagePlus, Link as LinkIcon, MessageSquarePlus, ZoomIn, ZoomOut, Expand, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Highlighter, ArrowRightLeft, Edit, FileUp, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus } from 'lucide-react';
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
@@ -448,12 +448,11 @@ interface PagePreviewItemProps {
   isSelected: boolean;
   onClick: (event: React.MouseEvent) => void;
   onDoubleClick: () => void;
-  watermarkConfig: WatermarkConfig;
   texts: typeof translations.en;
 }
 
 const PagePreviewItem = React.memo(({
-  pageObj, index, isSelected, onClick, onDoubleClick, watermarkConfig, texts
+  pageObj, index, isSelected, onClick, onDoubleClick, texts
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -495,9 +494,6 @@ const PagePreviewItem = React.memo(({
     }
   }, [pageObj.sourceCanvas, pageObj.rotation]);
 
-
-  const previewWatermarkFontSize = Math.max(6, watermarkConfig.fontSize / (150/15));
-
   return (
     <div
       ref={wrapperRef}
@@ -512,48 +508,6 @@ const PagePreviewItem = React.memo(({
       <div className="text-xs text-muted-foreground mt-1 text-center">
         {texts.page} {index + 1}
       </div>
-
-      {watermarkConfig.type === 'text' && watermarkConfig.text && (
-        <div
-          style={{
-            position: 'absolute',
-            top: `${watermarkConfig.topRatio * 100}%`,
-            left: `${watermarkConfig.leftRatio * 100}%`,
-            padding: '1px 3px',
-            backgroundColor: 'rgba(220,220,220,0.1)',
-            border: '1px dashed rgba(150,150,150,0.3)',
-            borderRadius: '2px',
-            whiteSpace: 'nowrap',
-            userSelect: 'none',
-            fontSize: `${previewWatermarkFontSize}px`,
-            color: watermarkConfig.color,
-            opacity: watermarkConfig.opacity,
-            zIndex: 5,
-            pointerEvents: 'none',
-            transform: 'translate(-50%, -50%)',
-          }}
-        >
-          {watermarkConfig.text}
-        </div>
-      )}
-      {watermarkConfig.type === 'image' && watermarkConfig.imageUrl && (
-        <img
-          src={watermarkConfig.imageUrl}
-          alt="Watermark Preview"
-          style={{
-            position: 'absolute',
-            top: `${watermarkConfig.topRatio * 100}%`,
-            left: `${watermarkConfig.leftRatio * 100}%`,
-            opacity: watermarkConfig.opacity,
-            zIndex: 5,
-            pointerEvents: 'none',
-            maxWidth: '30px',
-            maxHeight: '30px',
-            objectFit: 'contain',
-            transform: 'translate(-50%, -50%)',
-          }}
-        />
-      )}
     </div>
   );
 });
@@ -654,9 +608,8 @@ const TextAnnotationComponent = ({
     isSelected,
     isEditing,
     onAnnotationChange,
-    onSelect,
+    onClick,
     onDoubleClick,
-    onDelete,
     onDragStart,
     onResizeStart,
 }: {
@@ -665,9 +618,8 @@ const TextAnnotationComponent = ({
     isSelected: boolean,
     isEditing: boolean,
     onAnnotationChange: (annotation: TextAnnotation) => void,
-    onSelect: (id: string, e: React.MouseEvent) => void,
+    onClick: (id: string, e: React.MouseEvent) => void,
     onDoubleClick: (id: string, e: React.MouseEvent) => void,
-    onDelete: (id: string) => void,
     onDragStart: (e: React.MouseEvent, id: string) => void,
     onResizeStart: (e: React.MouseEvent, id: string) => void,
 }) => {
@@ -688,12 +640,9 @@ const TextAnnotationComponent = ({
                 if (!isEditing) onDragStart(e, annotation.id)
             }}
             onClick={(e) => {
-                 e.stopPropagation();
-                 if (isEditing) return;
-                 onSelect(annotation.id, e);
+                 onClick(annotation.id, e);
             }}
             onDoubleClick={(e) => {
-                e.stopPropagation();
                 onDoubleClick(annotation.id, e);
             }}
             className={cn(
@@ -721,7 +670,7 @@ const TextAnnotationComponent = ({
                 }}
                 disabled={!isEditing}
                 className={cn(
-                    "w-full p-0 bg-transparent border-0 resize-none focus:ring-0 overflow-hidden",
+                    "w-full p-0 bg-transparent border-0 resize-none focus:ring-0 overflow-y-hidden",
                     isEditing ? "cursor-text pointer-events-auto" : "pointer-events-none"
                 )}
                 style={{
@@ -1071,6 +1020,7 @@ export default function PdfEditorHomepage() {
     setWordConversionError(null);
     setTextAnnotations([]);
     setSelectedAnnotationId(null);
+    setEditingAnnotationId(null);
     setImageAnnotations([]);
     setSelectedImageId(null);
     setHighlightAnnotations([]);
@@ -1331,58 +1281,6 @@ export default function PdfEditorHomepage() {
             }
         }
 
-        if ((watermarkConfig.type === 'text' && watermarkConfig.text) || (watermarkConfig.type === 'image' && watermarkConfig.imageUrl)) {
-            pdfLibPage.pushGraphicsState();
-            pdfLibPage.setOpacity(watermarkConfig.opacity);
-            const helveticaFont = await pdfDocOut.embedFont(StandardFonts.Helvetica);
-            if (watermarkConfig.type === 'text' && watermarkConfig.text) {
-                const pdfWatermarkFontSize = watermarkConfig.fontSize;
-                const textColor = hexToRgb(watermarkConfig.color);
-                const textWidth = helveticaFont.widthOfTextAtSize(watermarkConfig.text, pdfWatermarkFontSize);
-                const textHeight = helveticaFont.heightAtSize(pdfWatermarkFontSize);
-
-                const wmX_pdf_text = watermarkConfig.leftRatio * pageWidth - textWidth / 2;
-                const wmY_pdf_text = pageHeight - (watermarkConfig.topRatio * pageHeight) - textHeight / 2;
-
-
-                pdfLibPage.drawText(watermarkConfig.text, {
-                    x: wmX_pdf_text,
-                    y: wmY_pdf_text,
-                    font: helveticaFont,
-                    size: pdfWatermarkFontSize,
-                    color: rgb(textColor.r, textColor.g, textColor.b),
-                });
-            } else if (watermarkConfig.type === 'image' && watermarkConfig.imageUrl) {
-                try {
-                    const imageBytes = await fetch(watermarkConfig.imageUrl).then(res => res.arrayBuffer());
-                    let wmEmbedImage;
-                    if (watermarkConfig.imageUrl.startsWith('data:image/png')) {
-                        wmEmbedImage = await pdfDocOut.embedPng(imageBytes);
-                    } else if (watermarkConfig.imageUrl.startsWith('data:image/jpeg') || watermarkConfig.imageUrl.startsWith('data:image/jpg')) {
-                        wmEmbedImage = await pdfDocOut.embedJpg(imageBytes);
-                    }
-
-                    if (wmEmbedImage) {
-                        const { width: imgOriginalWidth, height: imgOriginalHeight } = wmEmbedImage.scale(1);
-                        const wmX_pdf_img = watermarkConfig.leftRatio * pageWidth - imgOriginalWidth / 2;
-                        const wmY_pdf_img = pageHeight - (watermarkConfig.topRatio * pageHeight) - imgOriginalHeight / 2;
-
-                        pdfLibPage.drawImage(wmEmbedImage, {
-                            x: wmX_pdf_img,
-                            y: wmY_pdf_img,
-                            width: imgOriginalWidth,
-                            height: imgOriginalHeight,
-                        });
-                    }
-                } catch (imgErr) {
-                    console.error("Error embedding watermark image:", imgErr);
-                    toast({ title: "Watermark Error", description: "Could not embed watermark image.", variant: "destructive" });
-                }
-            }
-            pdfLibPage.popGraphicsState();
-        }
-
-
         if (pageNumberingConfig.enabled) {
             const { width: pnPageWidth, height: pnPageHeight } = pdfLibPage.getSize();
             const currentPageNum = index + pageNumberingConfig.start;
@@ -1495,37 +1393,7 @@ export default function PdfEditorHomepage() {
         pdfLibPage.drawImage(pngImage, { x: 0, y: 0, width: tempRenderCanvas.width, height: tempRenderCanvas.height });
 
         const { width: pageWidth, height: pageHeight } = pdfLibPage.getSize();
-        if ((watermarkConfig.type === 'text' && watermarkConfig.text) || (watermarkConfig.type === 'image' && watermarkConfig.imageUrl)) {
-            pdfLibPage.pushGraphicsState();
-            pdfLibPage.setOpacity(watermarkConfig.opacity);
-            if (watermarkConfig.type === 'text' && watermarkConfig.text) {
-                const pdfWatermarkFontSize = watermarkConfig.fontSize;
-                const textColor = hexToRgb(watermarkConfig.color);
-                const textWidth = helveticaFont.widthOfTextAtSize(watermarkConfig.text, pdfWatermarkFontSize);
-                const textHeight = helveticaFont.heightAtSize(pdfWatermarkFontSize);
-                const wmX_pdf_text = watermarkConfig.leftRatio * pageWidth - textWidth / 2;
-                const wmY_pdf_text = pageHeight - (watermarkConfig.topRatio * pageHeight) - textHeight / 2;
-                pdfLibPage.drawText(watermarkConfig.text, { x: wmX_pdf_text, y: wmY_pdf_text, font: helveticaFont, size: pdfWatermarkFontSize, color: rgb(textColor.r, textColor.g, textColor.b) });
-            } else if (watermarkConfig.type === 'image' && watermarkConfig.imageUrl) {
-                try {
-                    const imageBytes = await fetch(watermarkConfig.imageUrl).then(res => res.arrayBuffer());
-                    let wmEmbedImage;
-                    if (watermarkConfig.imageUrl.startsWith('data:image/png')) {
-                        wmEmbedImage = await pdfDocOut.embedPng(imageBytes);
-                    } else if (watermarkConfig.imageUrl.startsWith('data:image/jpeg') || watermarkConfig.imageUrl.startsWith('data:image/jpg')) {
-                        wmEmbedImage = await pdfDocOut.embedJpg(imageBytes);
-                    }
-                    if (wmEmbedImage) {
-                        const { width: imgOriginalWidth, height: imgOriginalHeight } = wmEmbedImage.scale(1);
-                        const wmX_pdf_img = watermarkConfig.leftRatio * pageWidth - imgOriginalWidth / 2;
-                        const wmY_pdf_img = pageHeight - (watermarkConfig.topRatio * pageHeight) - imgOriginalHeight / 2;
-                        pdfLibPage.drawImage(wmEmbedImage, { x: wmX_pdf_img, y: wmY_pdf_img, width: imgOriginalWidth, height: imgOriginalHeight });
-                    }
-                } catch (imgErr) { console.error("Error embedding watermark image:", imgErr); toast({ title: "Watermark Error", description: "Could not embed watermark image.", variant: "destructive" }); }
-            }
-            pdfLibPage.popGraphicsState();
-        }
-
+        
         if (pageNumberingConfig.enabled) {
             const { width: pnPageWidth, height: pnPageHeight } = pdfLibPage.getSize();
             const currentPageNum = index + pageNumberingConfig.start;
@@ -2203,16 +2071,24 @@ export default function PdfEditorHomepage() {
         if (selectedHighlightId === id) setSelectedHighlightId(null);
     }
 
-    const handleAnnotationSelect = (id: string, e: React.MouseEvent) => {
-        setSelectedAnnotationId(id);
-        setEditingAnnotationId(null);
-        setSelectedImageId(null);
-        setSelectedHighlightId(null);
+    const handleAnnotationClick = (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (isDraggingRef.current) return;
+        
+        // This is the logic for single-click selects
+        if (editingAnnotationId !== id) {
+            setSelectedAnnotationId(id);
+            setEditingAnnotationId(null); // Ensure not in edit mode
+            setSelectedImageId(null);
+            setSelectedHighlightId(null);
+        }
     };
 
     const handleAnnotationDoubleClick = (id: string, e: React.MouseEvent) => {
-        setSelectedAnnotationId(id);
-        setEditingAnnotationId(id);
+        e.stopPropagation();
+        // This is the logic for double-click edits
+        setSelectedAnnotationId(id); // Select it
+        setEditingAnnotationId(id);  // And enter edit mode
     };
     
     useEffect(() => {
@@ -2377,152 +2253,6 @@ export default function PdfEditorHomepage() {
         </div>
       )}
 
-      {isWatermarkPreviewModalOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="watermark-preview-title"
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm"
-          onClick={() => setIsWatermarkPreviewModalOpen(false)}
-        >
-          <div
-            className="bg-card text-card-foreground shadow-2xl rounded-lg w-[90vw] max-w-6xl h-[90vh] flex flex-row overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-            role="document"
-          >
-            <div
-                ref={watermarkPreviewCanvasContainerRef}
-                className="flex-grow p-4 overflow-auto bg-muted/20 flex justify-center items-center relative"
-            >
-              <canvas
-                ref={watermarkPreviewModalCanvasRef}
-                className="max-w-full max-h-full object-contain shadow-md"
-              />
-
-              {watermarkPreviewCanvasContainerRef.current && (
-                <>
-                {tempWatermarkConfig.type === 'text' && tempWatermarkConfig.text && (
-                    <div
-                    onMouseDown={(e) => handleDragMouseDown(e, 'watermark', 'watermark-drag-handle')}
-                    style={{
-                        position: 'absolute',
-                        top: `${tempWatermarkConfig.topRatio * 100}%`,
-                        left: `${tempWatermarkConfig.leftRatio * 100}%`,
-                        transform: `translate(-50%, -50%)`,
-                        fontSize: `${Math.max(8, tempWatermarkConfig.fontSize * ((watermarkPreviewModalCanvasRef.current?.height || 600) / 842 / 2) )}px`,
-                        color: tempWatermarkConfig.color,
-                        opacity: tempWatermarkConfig.opacity,
-                        cursor: 'grab',
-                        padding: '3px 5px',
-                        backgroundColor: 'rgba(200,200,200,0.2)',
-                        border: '1px dashed gray',
-                        userSelect: 'none',
-                        whiteSpace: 'nowrap',
-                        zIndex: 10,
-                    }}
-                    className="draggable-watermark-modal"
-                    >
-                    {tempWatermarkConfig.text}
-                    </div>
-                )}
-                {tempWatermarkConfig.type === 'image' && tempWatermarkConfig.imageUrl && (
-                    <img
-                    src={tempWatermarkConfig.imageUrl}
-                    alt="Watermark"
-                    onMouseDown={(e) => handleDragMouseDown(e, 'watermark', 'watermark-drag-handle')}
-                    style={{
-                        position: 'absolute',
-                        top: `${tempWatermarkConfig.topRatio * 100}%`,
-                        left: `${tempWatermarkConfig.leftRatio * 100}%`,
-                        transform: `translate(-50%, -50%)`,
-                        opacity: tempWatermarkConfig.opacity,
-                        cursor: 'grab',
-                        maxWidth: '200px',
-                        maxHeight: '200px',
-                        userSelect: 'none',
-                        zIndex: 10,
-                        objectFit: 'contain',
-                        border: '1px dashed gray',
-                    }}
-                    className="draggable-watermark-modal"
-                    />
-                )}
-                </>
-              )}
-            </div>
-            <div className="w-80 flex-shrink-0 p-4 border-l space-y-4 overflow-y-auto">
-                <h2 id="watermark-preview-title" className="text-lg font-semibold">{texts.watermarkPreviewModalTitle}</h2>
-                <p className="text-sm text-muted-foreground">{texts.watermarkPreviewInfo}</p>
-                <Separator />
-                
-                <RadioGroup value={tempWatermarkConfig.type} onValueChange={(value) => setTempWatermarkConfig(p => ({...p, type: value as 'text' | 'image'}))} className="flex space-x-2">
-                    <div className="flex items-center space-x-2"><RadioGroupItem value="text" id="r1-modal" /><Label htmlFor="r1-modal">{texts.watermarkTypeText}</Label></div>
-                    <div className="flex items-center space-x-2"><RadioGroupItem value="image" id="r2-modal" /><Label htmlFor="r2-modal">{texts.watermarkTypeImage}</Label></div>
-                </RadioGroup>
-
-                {tempWatermarkConfig.type === 'text' ? (
-                  <>
-                    <div>
-                        <Label htmlFor="modalWatermarkText" className="text-sm font-medium">{texts.watermarkInputPlaceholder}</Label>
-                        <Input
-                            id="modalWatermarkText"
-                            type="text"
-                            value={tempWatermarkConfig.text}
-                            onChange={(e) => setTempWatermarkConfig(prev => ({...prev, text: e.target.value}))}
-                            className="mt-1"
-                        />
-                    </div>
-                    <div>
-                        <Label htmlFor="modalWatermarkFontSize" className="text-sm font-medium">{texts.watermarkFontSizeLabel} (pt for PDF)</Label>
-                        <Input
-                            id="modalWatermarkFontSize"
-                            type="number"
-                            value={tempWatermarkConfig.fontSize}
-                            onChange={(e) => setTempWatermarkConfig(prev => ({...prev, fontSize: parseInt(e.target.value, 10) || 20}))}
-                            min="8"
-                            max="200"
-                            className="mt-1"
-                        />
-                    </div>
-                    <div>
-                        <Label htmlFor="modalWatermarkColor" className="text-sm font-medium">{texts.watermarkColorLabel}</Label>
-                        <Input
-                            id="modalWatermarkColor"
-                            type="color"
-                            value={tempWatermarkConfig.color}
-                            onChange={(e) => setTempWatermarkConfig(prev => ({...prev, color: e.target.value}))}
-                            className="mt-1 h-10 w-full"
-                        />
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <Button variant="outline" onClick={() => watermarkImageUploadRef.current?.click()} className="w-full">{texts.watermarkImageLabel}</Button>
-                    <Input type="file" accept="image/png,image/jpeg" ref={watermarkImageUploadRef} onChange={handleWatermarkImageFileChange} className="hidden"/>
-                    {tempWatermarkConfig.imageUrl && <img src={tempWatermarkConfig.imageUrl} alt="watermark" className="max-w-full h-auto rounded-md border p-1"/>}
-                  </>
-                )}
-                
-                 <div>
-                    <Label htmlFor="modalWatermarkOpacity" className="text-sm font-medium">{texts.watermarkOpacityLabel} ({Math.round(tempWatermarkConfig.opacity * 100)}%)</Label>
-                    <Slider
-                        id="modalWatermarkOpacity"
-                        min={0} max={1} step={0.01}
-                        value={[tempWatermarkConfig.opacity]}
-                        onValueChange={(value) => setTempWatermarkConfig(prev => ({...prev, opacity: value[0]}))}
-                        className="mt-1"
-                    />
-                </div>
-                <div className="pt-4 flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setIsWatermarkPreviewModalOpen(false)}>{texts.cancel}</Button>
-                  <Button onClick={confirmWatermarkSettings}>{texts.watermarkConfirmPosition}</Button>
-                </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-
       <AlertDialog open={isInsertConfirmOpen} onOpenChange={setIsInsertConfirmOpen}>
         <AlertDialogContent>
           <ShadAlertDialogHeader>
@@ -2591,36 +2321,36 @@ export default function PdfEditorHomepage() {
                 </h1>
                 <Menubar className="border-none shadow-none bg-transparent">
                     <MenubarMenu>
-                        <MenubarTrigger>PDF編輯</MenubarTrigger>
+                        <MenubarTrigger><Edit className="mr-2 h-4 w-4" />PDF編輯</MenubarTrigger>
                         <MenubarContent>
-                            <MenubarItem onClick={() => insertPdfRef.current?.click()} disabled={pageObjects.length === 0}>合併PDF</MenubarItem>
-                            <MenubarItem onClick={handleSplitPdf} disabled={selectedPageIds.size === 0}>拆分PDF</MenubarItem>
-                            <MenubarItem onClick={() => setIsDeleteConfirmOpen(true)} disabled={selectedPageIds.size === 0}>刪除頁面</MenubarItem>
-                            <MenubarItem onClick={handleSplitPdf} disabled={selectedPageIds.size === 0}>擷取頁面</MenubarItem>
-                             <MenubarItem onClick={() => toast({ title: '變換順序', description: '請在縮圖模式中直接拖曳頁面來變換順序。' })} disabled={pageObjects.length < 2}>變換順序</MenubarItem>
-                            <MenubarItem onClick={openWatermarkPreviewModal} disabled={pageObjects.length === 0}>添加浮水印</MenubarItem>
+                            <MenubarItem onClick={() => insertPdfRef.current?.click()} disabled={pageObjects.length === 0}><Combine className="mr-2 h-4 w-4" />合併PDF</MenubarItem>
+                            <MenubarItem onClick={handleSplitPdf} disabled={selectedPageIds.size === 0}><Scissors className="mr-2 h-4 w-4" />拆分PDF</MenubarItem>
+                            <MenubarItem onClick={() => setIsDeleteConfirmOpen(true)} disabled={selectedPageIds.size === 0}><Trash2 className="mr-2 h-4 w-4" />刪除頁面</MenubarItem>
+                            <MenubarItem onClick={handleSplitPdf} disabled={selectedPageIds.size === 0}><FileUp className="mr-2 h-4 w-4" />擷取頁面</MenubarItem>
+                             <MenubarItem onClick={() => toast({ title: '變換順序', description: '請在縮圖模式中直接拖曳頁面來變換順序。' })} disabled={pageObjects.length < 2}><ListOrdered className="mr-2 h-4 w-4" />變換順序</MenubarItem>
+                            <MenubarItem onClick={openWatermarkPreviewModal} disabled={pageObjects.length === 0}><Droplet className="mr-2 h-4 w-4" />添加浮水印</MenubarItem>
                         </MenubarContent>
                     </MenubarMenu>
                     <MenubarMenu>
-                        <MenubarTrigger>PDF轉換</MenubarTrigger>
+                        <MenubarTrigger><ArrowRightLeft className="mr-2 h-4 w-4" />PDF轉換</MenubarTrigger>
                         <MenubarContent>
                             <MenubarSub>
-                                <MenubarSubTrigger>轉換為PDF</MenubarSubTrigger>
+                                <MenubarSubTrigger><FilePlus className="mr-2 h-4 w-4" />轉換為PDF</MenubarSubTrigger>
                                 <MenubarSubContent>
-                                    <MenubarItem onClick={() => handlePlaceholderClick('WORD轉PDF')}>WORD轉PDF</MenubarItem>
-                                    <MenubarItem onClick={() => handlePlaceholderClick('EXCEL轉PDF')}>EXCEL轉PDF</MenubarItem>
-                                    <MenubarItem onClick={() => handlePlaceholderClick('PPT轉PDF')}>PPT轉PDF</MenubarItem>
-                                    <MenubarItem onClick={() => handlePlaceholderClick('HTML轉PDF')}>HTML轉PDF</MenubarItem>
-                                    <MenubarItem onClick={() => imageToPdfUploadRef.current?.click()}>JPG轉PDF</MenubarItem>
+                                    <MenubarItem onClick={() => handlePlaceholderClick('WORD轉PDF')}><FileText className="mr-2 h-4 w-4" />WORD轉PDF</MenubarItem>
+                                    <MenubarItem onClick={() => handlePlaceholderClick('EXCEL轉PDF')}><FileSpreadsheet className="mr-2 h-4 w-4" />EXCEL轉PDF</MenubarItem>
+                                    <MenubarItem onClick={() => handlePlaceholderClick('PPT轉PDF')}><LucidePresentation className="mr-2 h-4 w-4" />PPT轉PDF</MenubarItem>
+                                    <MenubarItem onClick={() => handlePlaceholderClick('HTML轉PDF')}><Code className="mr-2 h-4 w-4" />HTML轉PDF</MenubarItem>
+                                    <MenubarItem onClick={() => imageToPdfUploadRef.current?.click()}><FileImage className="mr-2 h-4 w-4" />JPG轉PDF</MenubarItem>
                                 </MenubarSubContent>
                             </MenubarSub>
                             <MenubarSub>
-                                <MenubarSubTrigger>從PDF轉換</MenubarSubTrigger>
+                                <MenubarSubTrigger><FileMinus className="mr-2 h-4 w-4" />從PDF轉換</MenubarSubTrigger>
                                 <MenubarSubContent>
-                                    <MenubarItem onClick={handleConvertToWord} disabled={!uploadedPdfFile}>PDF轉WORD</MenubarItem>
-                                    <MenubarItem onClick={() => handlePlaceholderClick('PDF轉EXCEL')} disabled={!uploadedPdfFile}>PDF轉EXCEL</MenubarItem>
-                                    <MenubarItem onClick={() => handlePlaceholderClick('PDF轉PPT')} disabled={!uploadedPdfFile}>PDF轉PPT</MenubarItem>
-                                    <MenubarItem onClick={() => handlePlaceholderClick('PDF轉HTML')} disabled={!uploadedPdfFile}>PDF轉HTML</MenubarItem>
+                                    <MenubarItem onClick={handleConvertToWord} disabled={!uploadedPdfFile}><FileText className="mr-2 h-4 w-4" />PDF轉WORD</MenubarItem>
+                                    <MenubarItem onClick={() => handlePlaceholderClick('PDF轉EXCEL')} disabled={!uploadedPdfFile}><FileSpreadsheet className="mr-2 h-4 w-4" />PDF轉EXCEL</MenubarItem>
+                                    <MenubarItem onClick={() => handlePlaceholderClick('PDF轉PPT')} disabled={!uploadedPdfFile}><LucidePresentation className="mr-2 h-4 w-4" />PDF轉PPT</MenubarItem>
+                                    <MenubarItem onClick={() => handlePlaceholderClick('PDF轉HTML')} disabled={!uploadedPdfFile}><Code className="mr-2 h-4 w-4" />PDF轉HTML</MenubarItem>
                                 </MenubarSubContent>
                             </MenubarSub>
                         </MenubarContent>
@@ -2662,7 +2392,7 @@ export default function PdfEditorHomepage() {
         </div>
       </header>
 
-      <main className="flex-grow flex overflow-hidden relative">
+      <main className="flex-grow flex overflow-hidden relative" onClick={() => {setSelectedAnnotationId(null); setEditingAnnotationId(null); setSelectedImageId(null); setSelectedHighlightId(null); }}>
         {editingAnnotationId && editingAnnotation && (
             <TextAnnotationToolbar
                 annotation={editingAnnotation}
@@ -2743,7 +2473,6 @@ export default function PdfEditorHomepage() {
                             setActivePageIndex(index);
                             setViewMode('editor');
                           }}
-                          watermarkConfig={watermarkConfig}
                           texts={texts}
                         />
                       ))}
@@ -2790,7 +2519,7 @@ export default function PdfEditorHomepage() {
                     })}
                 </div>
 
-                <div ref={mainViewContainerRef} className="flex-grow bg-muted/30 overflow-y-auto flex flex-col items-center p-4 space-y-4 relative" onClick={() => {setSelectedAnnotationId(null); setEditingAnnotationId(null); setSelectedImageId(null); setSelectedHighlightId(null)}}>
+                <div ref={mainViewContainerRef} className="flex-grow bg-muted/30 overflow-y-auto flex flex-col items-center p-4 space-y-4 relative">
                     {pageObjects.map((page, index) => {
                         const {sourceCanvas, rotation} = page;
                         
@@ -2834,40 +2563,6 @@ export default function PdfEditorHomepage() {
                                         }
                                     }}
                                 />
-                                {((watermarkConfig.type === 'text' && watermarkConfig.text) || (watermarkConfig.type === 'image' && watermarkConfig.imageUrl)) && (
-                                    <div
-                                        style={{
-                                            position: 'absolute',
-                                            top: `${watermarkConfig.topRatio * 100}%`,
-                                            left: `${watermarkConfig.leftRatio * 100}%`,
-                                            transform: 'translate(-50%, -50%)',
-                                            opacity: watermarkConfig.opacity,
-                                            pointerEvents: 'none',
-                                            zIndex: 10,
-                                        }}
-                                    >
-                                        {watermarkConfig.type === 'text' ? (
-                                            <span style={{
-                                              color: watermarkConfig.color,
-                                              fontSize: `${watermarkConfig.fontSize * mainCanvasZoom}px`,
-                                              whiteSpace: 'nowrap',
-                                            }}>
-                                              {watermarkConfig.text}
-                                            </span>
-                                        ) : (
-                                            <img
-                                                src={watermarkConfig.imageUrl!}
-                                                alt="watermark"
-                                                style={{
-                                                    maxWidth: '200px', // Adjust as needed
-                                                    maxHeight: '200px',
-                                                    width: 'auto',
-                                                    height: 'auto'
-                                                }}
-                                            />
-                                        )}
-                                    </div>
-                                )}
                                 {highlightAnnotations.filter(ann => ann.pageIndex === index).map(ann => (
                                     <div
                                         key={ann.id}
@@ -2946,10 +2641,9 @@ export default function PdfEditorHomepage() {
                                         mainCanvasZoom={mainCanvasZoom}
                                         isSelected={selectedAnnotationId === ann.id}
                                         isEditing={editingAnnotationId === ann.id}
+                                        onClick={(id, e) => handleAnnotationClick(id, e)}
+                                        onDoubleClick={(id, e) => handleAnnotationDoubleClick(id, e)}
                                         onAnnotationChange={handleAnnotationChange}
-                                        onSelect={handleAnnotationSelect}
-                                        onDoubleClick={handleAnnotationDoubleClick}
-                                        onDelete={handleDeleteAnnotation}
                                         onDragStart={(e, id) => {
                                             if (editingAnnotationId !== id) {
                                                 handleDragMouseDown(e, 'annotation', id);

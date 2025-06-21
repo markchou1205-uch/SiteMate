@@ -2098,6 +2098,8 @@ export default function PdfEditorHomepage() {
     }
 
     const handleAnnotationMouseDown = (id: string, event: React.MouseEvent<HTMLDivElement>) => {
+        event.stopPropagation();
+    
         if (editingAnnotationId === id) {
             return;
         }
@@ -2105,18 +2107,18 @@ export default function PdfEditorHomepage() {
         if (clickTimeoutRef.current) {
             clearTimeout(clickTimeoutRef.current);
             clickTimeoutRef.current = null;
-            // Double click
+            // Double click: Enter edit mode
             setSelectedAnnotationId(id);
             setEditingAnnotationId(id);
             setSelectedImageId(null);
             setSelectedHighlightId(null);
         } else {
-            // Single click preparation
+            // First click: Prepare for potential drag and set timeout for single click
             handleDragMouseDown(event, 'annotation', id);
             clickTimeoutRef.current = setTimeout(() => {
                 clickTimeoutRef.current = null;
                 if (!isDraggingRef.current) {
-                    // Single click action
+                    // Single click action: Select for move/style
                     setSelectedAnnotationId(id);
                     setEditingAnnotationId(null);
                     setSelectedImageId(null);
@@ -2128,7 +2130,7 @@ export default function PdfEditorHomepage() {
     
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Delete') {
+            if (e.key === 'Delete' || e.key === 'Backspace') {
                 if (selectedAnnotationId && !editingAnnotationId) {
                     handleDeleteAnnotation(selectedAnnotationId);
                 }
@@ -2986,6 +2988,73 @@ export default function PdfEditorHomepage() {
                         ref={imageUploadRef}
                         className="hidden"
                       />
+
+                      <Separator />
+
+                      <Accordion type="single" collapsible className="w-full">
+                          <AccordionItem value="page-numbering">
+                              <AccordionTrigger>{texts.pageNumberingSectionTitle}</AccordionTrigger>
+                              <AccordionContent className="space-y-4">
+                                  <div className="flex items-center space-x-2">
+                                      <Switch id="enable-page-numbers" checked={pageNumberingConfig.enabled} onCheckedChange={(checked) => setPageNumberingConfig(p => ({ ...p, enabled: checked }))} />
+                                      <Label htmlFor="enable-page-numbers">{texts.enablePageNumbering}</Label>
+                                  </div>
+                                  {pageNumberingConfig.enabled && (
+                                      <>
+                                          <div>
+                                              <Label htmlFor="pn-position">{texts.pageNumberPosition}</Label>
+                                              <Select value={pageNumberingConfig.position} onValueChange={(value: PageNumberPosition) => setPageNumberingConfig(p => ({ ...p, position: value }))}>
+                                                  <SelectTrigger id="pn-position"><SelectValue /></SelectTrigger>
+                                                  <SelectContent>
+                                                      {pageNumberPositions.map(pos => <SelectItem key={pos.value} value={pos.value}>{texts[pos.labelKey]}</SelectItem>)}
+                                                  </SelectContent>
+                                              </Select>
+                                          </div>
+                                          <div>
+                                              <Label htmlFor="pn-start">{texts.pageNumberStart}</Label>
+                                              <Input id="pn-start" type="number" value={pageNumberingConfig.start} onChange={e => setPageNumberingConfig(p => ({ ...p, start: parseInt(e.target.value, 10) || 1 }))} />
+                                          </div>
+                                          <div>
+                                              <Label htmlFor="pn-format">{texts.pageNumberFormat}</Label>
+                                              <Input id="pn-format" value={pageNumberingConfig.format} onChange={e => setPageNumberingConfig(p => ({ ...p, format: e.target.value }))} placeholder={texts.pageNumberFormatPlaceholder} />
+                                          </div>
+                                      </>
+                                  )}
+                              </AccordionContent>
+                          </AccordionItem>
+                          <AccordionItem value="pdf-protection">
+                              <AccordionTrigger>{texts.protectPdfSectionTitle}</AccordionTrigger>
+                              <AccordionContent className="space-y-4">
+                                  <div className="flex items-center space-x-2">
+                                      <Switch id="enable-protection" checked={pdfProtectionConfig.enabled} onCheckedChange={(checked) => setPdfProtectionConfig(p => ({...p, enabled: checked}))} />
+                                      <Label htmlFor="enable-protection">{texts.enablePdfProtection}</Label>
+                                  </div>
+                                  {pdfProtectionConfig.enabled && (
+                                      <div>
+                                          <Label htmlFor="pdf-password">{texts.pdfPassword}</Label>
+                                          <Input id="pdf-password" type="password" value={pdfProtectionConfig.password} onChange={e => setPdfProtectionConfig(p => ({...p, password: e.target.value}))} placeholder={texts.pdfPasswordPlaceholder} />
+                                      </div>
+                                  )}
+                              </AccordionContent>
+                          </AccordionItem>
+                          <AccordionItem value="convert-word">
+                              <AccordionTrigger>{texts.convertToWord}</AccordionTrigger>
+                              <AccordionContent className="space-y-4">
+                                 <Button onClick={handleConvertToWord} disabled={!uploadedPdfFile || isConvertingToWord || !isFirebaseSystemReady} className="w-full">
+                                    {isConvertingToWord ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileType className="mr-2 h-4 w-4" />}
+                                    {texts.convertToWord}
+                                 </Button>
+                                 {wordFileUrl && (
+                                     <a href={wordFileUrl} target="_blank" rel="noopener noreferrer">
+                                         <Button variant="outline" className="w-full">{texts.downloadWordFile}</Button>
+                                     </a>
+                                 )}
+                                 {wordConversionError && <p className="text-sm text-destructive">{wordConversionError}</p>}
+                                 {!isFirebaseSystemReady && <p className="text-xs text-destructive">{firebaseConfigWarning}</p>}
+                              </AccordionContent>
+                          </AccordionItem>
+                      </Accordion>
+
                 </div>
             </>
           )}

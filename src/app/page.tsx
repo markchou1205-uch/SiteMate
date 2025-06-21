@@ -59,6 +59,16 @@ interface TextAnnotation {
   textAlign: 'left' | 'center' | 'right';
 }
 
+interface ImageAnnotation {
+    id: string;
+    pageIndex: number;
+    dataUrl: string;
+    topRatio: number;
+    leftRatio: number;
+    widthRatio: number;
+    heightRatio: number;
+    aspectRatio: number;
+}
 
 const translations = {
     en: {
@@ -204,6 +214,10 @@ const translations = {
         fitToWidth: 'Fit to Width',
         fitToPage: 'Fit to Page',
         textAnnotationSample: 'Sample Text',
+        noImageForInsertion: 'No image selected for insertion.',
+        imageInsertSuccess: 'Image inserted successfully.',
+        imageInsertError: 'Error inserting image.',
+        imagePasteSuccess: 'Image pasted successfully.',
     },
     zh: {
         pageTitle: 'DocuPilot 文件助手',
@@ -334,7 +348,7 @@ const translations = {
         deletePageConfirmTitle: '刪除頁面？',
         deletePageConfirmDescription: '您確定要刪除此頁面嗎？此操作無法復原。',
         toolRotate: '旋轉',
-        toolDelete: '刪除',
+        toolDelete: 'Delete',
         toolAddBlank: '新增空白',
         toolMerge: '合併',
         toolSplit: '拆分',
@@ -348,6 +362,10 @@ const translations = {
         fitToWidth: '符合頁寬',
         fitToPage: '符合頁面',
         textAnnotationSample: '範例文本',
+        noImageForInsertion: '未選擇要插入的圖片。',
+        imageInsertSuccess: '圖片插入成功。',
+        imageInsertError: '圖片插入失敗。',
+        imagePasteSuccess: '圖片貼上成功。',
     }
 };
 
@@ -599,7 +617,10 @@ export default function PdfEditorHomepage() {
   const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
   const [editingAnnotationId, setEditingAnnotationId] = useState<string | null>(null);
 
-  const dragStartRef = useRef({ x: 0, y: 0, initialLeft: 0, initialTop: 0 });
+  const [imageAnnotations, setImageAnnotations] = useState<ImageAnnotation[]>([]);
+  const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
+
+  const dragStartRef = useRef({ x: 0, y: 0, initialLeft: 0, initialTop: 0, initialWidth: 0, initialHeight: 0 });
   const isDraggingRef = useRef(false);
 
   const [watermarkConfig, setWatermarkConfig] = useState<WatermarkConfig>({
@@ -652,6 +673,7 @@ export default function PdfEditorHomepage() {
 
   const pdfUploadRef = useRef<HTMLInputElement>(null);
   const insertPdfRef = useRef<HTMLInputElement>(null);
+  const imageUploadRef = useRef<HTMLInputElement>(null);
   const sortableInstanceRef = useRef<Sortable | null>(null);
 
   const [imageFiles, setImageFiles] = useState<FileList | null>(null);
@@ -882,6 +904,8 @@ export default function PdfEditorHomepage() {
     setWordConversionError(null);
     setTextAnnotations([]);
     setSelectedAnnotationId(null);
+    setImageAnnotations([]);
+    setSelectedImageId(null);
 
     setIsLoading(true);
     setLoadingMessage(texts.loadingPdf);
@@ -893,6 +917,7 @@ export default function PdfEditorHomepage() {
       setActivePageIndex(0);
       setViewMode('editor');
       
+      // Use a timeout to ensure the UI has updated before fitting the page
       setTimeout(() => handleFitPage(), 100);
 
     } catch (err: any)
@@ -1031,6 +1056,25 @@ export default function PdfEditorHomepage() {
 
         const { width: pageWidth, height: pageHeight } = pdfLibPage.getSize();
 
+        // Apply Image Annotations
+        for (const annotation of imageAnnotations.filter(a => a.pageIndex === index)) {
+            let embeddedImage;
+            if (annotation.dataUrl.startsWith('data:image/png')) {
+                embeddedImage = await pdfDocOut.embedPng(annotation.dataUrl);
+            } else if (annotation.dataUrl.startsWith('data:image/jpeg')) {
+                embeddedImage = await pdfDocOut.embedJpg(annotation.dataUrl);
+            } else {
+                continue;
+            }
+
+            pdfLibPage.drawImage(embeddedImage, {
+                x: annotation.leftRatio * pageWidth,
+                y: pageHeight - (annotation.topRatio * pageHeight) - (annotation.heightRatio * pageHeight),
+                width: annotation.widthRatio * pageWidth,
+                height: annotation.heightRatio * pageHeight,
+            });
+        }
+        
         // Apply Text Annotations
         for (const annotation of textAnnotations.filter(a => a.pageIndex === index)) {
             const font = await getPdfFont(pdfDocOut, annotation);
@@ -1584,18 +1628,20 @@ export default function PdfEditorHomepage() {
 
     const handleDragMouseDown = (
         event: React.MouseEvent<HTMLElement>,
-        type: 'watermark' | 'annotation',
+        type: 'watermark' | 'annotation' | 'image' | 'image-resize',
         id: string
     ) => {
         event.stopPropagation();
-        isDraggingRef.current = false; // Reset dragging state on new mousedown
+        isDraggingRef.current = false; // Reset dragging state
 
+        const isResize = type === 'image-resize';
         const draggedElement = event.currentTarget as HTMLElement;
         const containerElement = (type === 'watermark' ? watermarkPreviewCanvasContainerRef.current : draggedElement.closest('.main-page-container')) as HTMLElement;
         if (!containerElement) return;
 
         const containerRect = containerElement.getBoundingClientRect();
-        const initialItemState = type === 'watermark' ? tempWatermarkConfig : textAnnotations.find(a => a.id === id);
+        const initialItemState = type === 'watermark' ? tempWatermarkConfig : type === 'annotation' ? textAnnotations.find(a => a.id === id) : imageAnnotations.find(a => a.id === id);
+
         if (!initialItemState) return;
 
         dragStartRef.current = {
@@ -1603,6 +1649,8 @@ export default function PdfEditorHomepage() {
             y: event.clientY,
             initialLeft: initialItemState.leftRatio * containerRect.width,
             initialTop: initialItemState.topRatio * containerRect.height,
+            initialWidth: 'widthRatio' in initialItemState ? initialItemState.widthRatio * containerRect.width : 0,
+            initialHeight: 'heightRatio' in initialItemState ? initialItemState.heightRatio * containerRect.height : 0
         };
 
         const handleMouseMove = (moveEvent: MouseEvent) => {
@@ -1612,40 +1660,40 @@ export default function PdfEditorHomepage() {
 
             const deltaX = moveEvent.clientX - dragStartRef.current.x;
             const deltaY = moveEvent.clientY - dragStartRef.current.y;
-            
-            const newLeftPx = dragStartRef.current.initialLeft + deltaX;
-            const newTopPx = dragStartRef.current.initialTop + deltaY;
 
-            const newLeftRatio = Math.max(0, Math.min(1, newLeftPx / containerRect.width));
-            const newTopRatio = Math.max(0, Math.min(1, newTopPx / containerRect.height));
-
-            if (type === 'watermark') {
-                setTempWatermarkConfig(prev => ({
-                    ...prev,
-                    topRatio: parseFloat(newTopRatio.toFixed(4)),
-                    leftRatio: parseFloat(newLeftRatio.toFixed(4))
-                }));
-            } else if (type === 'annotation') {
-                setTextAnnotations(prev => prev.map(ann =>
-                    ann.id === id ? { ...ann, topRatio: newTopRatio, leftRatio: newLeftRatio } : ann
+            if (isResize && 'aspectRatio' in initialItemState) {
+                const newWidthPx = dragStartRef.current.initialWidth + deltaX;
+                const newWidthRatio = Math.max(0.05, newWidthPx / containerRect.width); // Prevent collapsing
+                setImageAnnotations(prev => prev.map(ann =>
+                    ann.id === id ? {
+                        ...ann,
+                        widthRatio: newWidthRatio,
+                        heightRatio: newWidthRatio / ann.aspectRatio * (containerRect.width / containerRect.height)
+                    } : ann
                 ));
+            } else { // It's a drag operation
+                const newLeftPx = dragStartRef.current.initialLeft + deltaX;
+                const newTopPx = dragStartRef.current.initialTop + deltaY;
+
+                const newLeftRatio = Math.max(0, Math.min(1, newLeftPx / containerRect.width));
+                const newTopRatio = Math.max(0, Math.min(1, newTopPx / containerRect.height));
+
+                if (type === 'watermark') {
+                    setTempWatermarkConfig(prev => ({ ...prev, topRatio: parseFloat(newTopRatio.toFixed(4)), leftRatio: parseFloat(newLeftRatio.toFixed(4)) }));
+                } else if (type === 'annotation') {
+                    setTextAnnotations(prev => prev.map(ann => ann.id === id ? { ...ann, topRatio: newTopRatio, leftRatio: newLeftRatio } : ann));
+                } else if (type === 'image') {
+                    setImageAnnotations(prev => prev.map(ann => ann.id === id ? { ...ann, topRatio: newTopRatio, leftRatio: newLeftRatio } : ann));
+                }
             }
         };
 
-        const handleMouseUp = (upEvent: MouseEvent) => {
+        const handleMouseUp = () => {
             document.removeEventListener('mousemove', handleMouseMove);
             document.removeEventListener('mouseup', handleMouseUp);
             draggedElement.style.cursor = 'grab';
 
-            // Use a short delay to distinguish click from drag
-            setTimeout(() => {
-                 if (!isDraggingRef.current) {
-                    if (type === 'annotation') {
-                        // This logic is now handled by onClick/onDoubleClick
-                    }
-                }
-                isDraggingRef.current = false;
-            }, 50);
+            setTimeout(() => { isDraggingRef.current = false; }, 50);
         };
 
         document.addEventListener('mousemove', handleMouseMove);
@@ -1793,6 +1841,7 @@ export default function PdfEditorHomepage() {
       };
       setTextAnnotations(prev => [...prev, newAnnotation]);
       setSelectedAnnotationId(newAnnotation.id);
+      setSelectedImageId(null);
     };
     
     const handleAnnotationChange = (updatedAnnotation: TextAnnotation) => {
@@ -1803,26 +1852,105 @@ export default function PdfEditorHomepage() {
 
     const handleDeleteAnnotation = (id: string) => {
         setTextAnnotations(prev => prev.filter(ann => ann.id !== id));
-        if (selectedAnnotationId === id) {
+        if (selectedAnnotationId === id) setSelectedAnnotationId(null);
+        if (editingAnnotationId === id) setEditingAnnotationId(null);
+    }
+    
+    const addImageAnnotation = useCallback((dataUrl: string, pageIndex: number) => {
+        const img = new window.Image();
+        img.onload = () => {
+            const container = pageRefs.current[pageIndex];
+            if (!container) return;
+            const containerWidth = container.offsetWidth;
+            const containerHeight = container.offsetHeight;
+
+            const aspectRatio = img.width / img.height;
+            let widthRatio = 0.25; // Default width ratio
+            let heightRatio = widthRatio / aspectRatio * (containerWidth / containerHeight);
+
+            const newAnnotation: ImageAnnotation = {
+                id: uuidv4(),
+                pageIndex,
+                dataUrl,
+                topRatio: 0.5,
+                leftRatio: 0.5,
+                widthRatio,
+                heightRatio,
+                aspectRatio
+            };
+            setImageAnnotations(prev => [...prev, newAnnotation]);
+            setSelectedImageId(newAnnotation.id);
             setSelectedAnnotationId(null);
+        };
+        img.src = dataUrl;
+    }, []);
+
+    const handleImageFileSelected = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+        if (activePageIndex === null) return;
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const dataUrl = e.target?.result as string;
+            if (dataUrl) {
+                addImageAnnotation(dataUrl, activePageIndex);
+                toast({ title: texts.imageInsertSuccess });
+            }
+        };
+        reader.readAsDataURL(file);
+        if(imageUploadRef.current) imageUploadRef.current.value = '';
+    }, [activePageIndex, addImageAnnotation, texts.imageInsertSuccess]);
+
+    const handlePaste = useCallback((event: ClipboardEvent) => {
+        if (activePageIndex === null) return;
+        const items = event.clipboardData?.items;
+        if (!items) return;
+
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf("image") !== -1) {
+                const file = items[i].getAsFile();
+                if (!file) continue;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const dataUrl = e.target?.result as string;
+                    if (dataUrl) {
+                        addImageAnnotation(dataUrl, activePageIndex);
+                        toast({ title: texts.imagePasteSuccess });
+                    }
+                };
+                reader.readAsDataURL(file);
+                event.preventDefault();
+                return;
+            }
         }
-        if (editingAnnotationId === id) {
-            setEditingAnnotationId(null);
-        }
+    }, [activePageIndex, addImageAnnotation, texts.imagePasteSuccess]);
+
+    const handleDeleteImageAnnotation = (id: string) => {
+        setImageAnnotations(prev => prev.filter(ann => ann.id !== id));
+        if (selectedImageId === id) setSelectedImageId(null);
     }
     
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Delete' && selectedAnnotationId && !editingAnnotationId) {
-                handleDeleteAnnotation(selectedAnnotationId);
+            if (e.key === 'Delete') {
+                if (selectedAnnotationId && !editingAnnotationId) {
+                    handleDeleteAnnotation(selectedAnnotationId);
+                }
+                if (selectedImageId) {
+                    handleDeleteImageAnnotation(selectedImageId);
+                }
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('paste', handlePaste);
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('paste', handlePaste);
         };
-    }, [selectedAnnotationId, editingAnnotationId, handleDeleteAnnotation]);
+    }, [selectedAnnotationId, editingAnnotationId, selectedImageId, handleDeleteAnnotation, handleDeleteImageAnnotation, handlePaste]);
 
 
     const selectedAnnotation = textAnnotations.find(ann => ann.id === selectedAnnotationId);
@@ -2303,7 +2431,7 @@ export default function PdfEditorHomepage() {
                     })}
                 </div>
 
-                <div ref={mainViewContainerRef} className="flex-grow bg-muted/30 overflow-y-auto flex flex-col items-center p-4 space-y-4 relative" onClick={() => {setSelectedAnnotationId(null); setEditingAnnotationId(null);}}>
+                <div ref={mainViewContainerRef} className="flex-grow bg-muted/30 overflow-y-auto flex flex-col items-center p-4 space-y-4 relative" onClick={() => {setSelectedAnnotationId(null); setEditingAnnotationId(null); setSelectedImageId(null)}}>
                     {pageObjects.map((page, index) => {
                         const {sourceCanvas, rotation} = page;
                         
@@ -2381,11 +2509,47 @@ export default function PdfEditorHomepage() {
                                         )}
                                     </div>
                                 )}
+                                {imageAnnotations.filter(ann => ann.pageIndex === index).map(ann => (
+                                    <div
+                                        key={ann.id}
+                                        onMouseDown={(e) => {
+                                            if (e.detail === 1) { // Single click
+                                                handleDragMouseDown(e, 'image', ann.id);
+                                            }
+                                        }}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (!isDraggingRef.current) {
+                                                setSelectedImageId(ann.id);
+                                                setSelectedAnnotationId(null);
+                                            }
+                                        }}
+                                        className={cn(
+                                            "absolute cursor-grab",
+                                            selectedImageId === ann.id && "border-2 border-dashed border-primary"
+                                        )}
+                                        style={{
+                                            left: `${ann.leftRatio * 100}%`,
+                                            top: `${ann.topRatio * 100}%`,
+                                            width: `${ann.widthRatio * 100}%`,
+                                            height: `${ann.heightRatio * 100}%`,
+                                            zIndex: 20
+                                        }}
+                                    >
+                                        <img src={ann.dataUrl} className="w-full h-full object-contain pointer-events-none" alt="user content" />
+                                        {selectedImageId === ann.id && (
+                                            <div
+                                                className="absolute -right-1 -bottom-1 w-4 h-4 bg-primary rounded-full border-2 border-white cursor-se-resize"
+                                                onMouseDown={(e) => handleDragMouseDown(e, 'image-resize', ann.id)}
+                                            />
+                                        )}
+                                    </div>
+                                ))}
                                 {textAnnotations.filter(ann => ann.pageIndex === index).map(ann => (
                                     <div
                                         key={ann.id}
                                         onMouseDown={(e) => {
-                                            if (editingAnnotationId !== ann.id) {
+                                            if (editingAnnotationId !== ann.id && e.detail === 1) {
                                                 handleDragMouseDown(e, 'annotation', ann.id);
                                             }
                                         }}
@@ -2393,13 +2557,14 @@ export default function PdfEditorHomepage() {
                                             e.stopPropagation();
                                             if (!isDraggingRef.current) {
                                                 setSelectedAnnotationId(ann.id);
-                                                setEditingAnnotationId(null);
+                                                setSelectedImageId(null);
                                             }
                                         }}
                                         onDoubleClick={(e) => {
                                             e.stopPropagation();
                                             setSelectedAnnotationId(ann.id);
                                             setEditingAnnotationId(ann.id);
+                                            setSelectedImageId(null);
                                         }}
                                         className={cn(
                                             "absolute",
@@ -2416,7 +2581,9 @@ export default function PdfEditorHomepage() {
                                        <Textarea
                                             value={ann.text}
                                             onChange={(e) => handleAnnotationChange({ ...ann, text: e.target.value })}
-                                            onMouseDown={(e) => e.stopPropagation()} // Prevent parent drag when clicking textarea
+                                            onMouseDown={(e) => {
+                                                if (editingAnnotationId === ann.id) e.stopPropagation();
+                                            }}
                                             disabled={editingAnnotationId !== ann.id}
                                             className={cn(
                                                 "w-full h-full p-0 bg-transparent border-0 resize-none focus:ring-0",
@@ -2456,7 +2623,7 @@ export default function PdfEditorHomepage() {
                         <ToolbarButton icon={Scissors} label={texts.toolSplit} onClick={handleSplitPdf} disabled={selectedPageIds.size === 0}/>
                         <ToolbarButton icon={Droplet} label={texts.toolWatermark} onClick={openWatermarkPreviewModal} disabled={pageObjects.length === 0} />
                         <ToolbarButton icon={Type} label={texts.toolInsertText} onClick={handleAddTextAnnotation} disabled={activePageIndex === null}/>
-                        <ToolbarButton icon={ImagePlus} label={texts.toolInsertImage} onClick={() => handlePlaceholderClick("Insert Image")} disabled={activePageIndex === null}/>
+                        <ToolbarButton icon={ImagePlus} label={texts.toolInsertImage} onClick={() => imageUploadRef.current?.click()} disabled={activePageIndex === null}/>
                         <ToolbarButton icon={LinkIcon} label={texts.toolInsertLink} onClick={() => handlePlaceholderClick("Insert Link")} disabled={activePageIndex === null}/>
                         <ToolbarButton icon={MessageSquarePlus} label={texts.toolInsertComment} onClick={() => handlePlaceholderClick("Insert Comment")} disabled={activePageIndex === null}/>
                     </div>
@@ -2468,6 +2635,14 @@ export default function PdfEditorHomepage() {
                         ref={insertPdfRef}
                         className="hidden"
                      />
+                      <Input
+                        type="file"
+                        id="imageUploadInput"
+                        accept="image/*"
+                        onChange={handleImageFileSelected}
+                        ref={imageUploadRef}
+                        className="hidden"
+                      />
                      <Accordion type="multiple" className="w-full">
                         <AccordionItem value="item-1">
                             <AccordionTrigger>{texts.watermarkSectionTitle}</AccordionTrigger>
@@ -2484,4 +2659,5 @@ export default function PdfEditorHomepage() {
     </div>
   );
 }
+
 

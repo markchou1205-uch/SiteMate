@@ -9,24 +9,26 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarSub, MenubarSubContent, MenubarSubTrigger, MenubarTrigger } from "@/components/ui/menubar";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Label } from "@/components/ui/label";
 import { Loader2, Upload, Scissors, Download, FilePlus, LogIn, LogOut, UserCircle, MenuSquare, ArrowRightLeft, Edit, FileUp, ListOrdered, Trash2, Combine, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const translations = {
   en: {
-    pageTitle: 'PDF Converter',
-    pageDescription: 'Convert your PDF to various formats like Word, Excel, and more.',
-    startTitle: 'Upload PDF to Convert',
-    startDescription: 'Select a PDF file and choose the output format.',
-    uploadButton: 'Click or drag a file here to upload',
+    pageTitle: 'Batch PDF Converter',
+    pageDescription: 'Convert multiple PDFs to various formats like Word, Excel, and more.',
+    startTitle: 'Upload PDFs to Convert',
+    startDescription: 'Select PDF files and choose the output format.',
+    uploadButton: 'Click or drag files here to upload',
     selectFormatLabel: 'Choose output format:',
     convertButton: 'Upload and Convert',
     convertingMessage: 'Processing...',
-    conversionSuccess: 'Download Complete',
+    conversionSuccess: 'Batch Conversion Complete',
+    conversionSuccessDesc: (success: number, failed: number) => `${success} file(s) succeeded, ${failed} file(s) failed. Your download will start in a new tab.`,
     conversionError: 'Conversion failed',
-    conversionErrorDesc: 'Please check the file format or content.',
+    conversionErrorDesc: 'Please check the files or server status.',
     appTitle: 'DocuPilot',
     loggedInAs: 'Logged in as User',
     login: 'Login',
@@ -55,21 +57,25 @@ const translations = {
     pdfToHtml: 'PDF to HTML',
     pdfToJpg: 'PDF to Image',
     pdfToOcr: 'PDF with OCR',
-    selectedFile: 'Selected File:',
-    noFileSelected: 'Please select a file to convert.',
+    selectedFiles: 'Selected Files',
+    noFilesSelected: 'No files selected yet.',
+    noFileSelected: 'Please select one or more files to convert.',
+    invalidFileError: 'Invalid Files Detected',
+    invalidFileErrorDesc: 'Some files were not valid PDFs and were ignored.',
   },
   zh: {
-    pageTitle: 'PDF 多格式轉換',
-    pageDescription: '將您的 PDF 轉換為 Word、Excel 等多種格式。',
+    pageTitle: 'PDF 多檔批次轉換',
+    pageDescription: '將多個 PDF 檔案批次轉換為 Word、Excel 等多種格式。',
     startTitle: '上傳 PDF 以進行轉換',
-    startDescription: '選擇一個 PDF 檔案並選擇輸出格式。',
+    startDescription: '選擇多個 PDF 檔案並選擇輸出格式。',
     uploadButton: '點擊或拖曳檔案到此處以上傳',
     selectFormatLabel: '選擇輸出格式：',
     convertButton: '上傳並轉換',
     convertingMessage: '處理中...',
-    conversionSuccess: '下載完成',
+    conversionSuccess: '批次轉換完成',
+    conversionSuccessDesc: (success: number, failed: number) => `${success} 個檔案成功，${failed} 個檔案失敗。下載將在新分頁開始。`,
     conversionError: '轉換失敗',
-    conversionErrorDesc: '請確認檔案格式或內容。',
+    conversionErrorDesc: '請檢查檔案或伺服器狀態。',
     appTitle: 'DocuPilot 文件助手',
     loggedInAs: '已登入為使用者',
     login: '登入',
@@ -98,18 +104,21 @@ const translations = {
     pdfToHtml: 'PDF轉HTML',
     pdfToJpg: 'PDF轉圖片',
     pdfToOcr: 'PDF光學掃描(OCR)',
-    selectedFile: '已選檔案：',
-    noFileSelected: '請選擇要轉換的檔案。',
+    selectedFiles: '已選檔案',
+    noFilesSelected: '尚未選取任何檔案。',
+    noFileSelected: '請選取一個或多個要轉換的檔案。',
+    invalidFileError: '偵測到無效檔案',
+    invalidFileErrorDesc: '部分非 PDF 檔案已被忽略。',
   },
 };
 
 const formatOptions = [
-  { value: 'word', labelKey: 'pdfToWord', icon: FileText },
-  { value: 'excel', labelKey: 'pdfToExcel', icon: FileSpreadsheet },
-  { value: 'ppt', labelKey: 'pdfToPpt', icon: LucidePresentation },
-  { value: 'html', labelKey: 'pdfToHtml', icon: Code },
-  { value: 'image', labelKey: 'pdfToJpg', icon: FileImage },
-  { value: 'ocr', labelKey: 'pdfToOcr', icon: ScanText },
+  { value: 'word', labelKey: 'pdfToWord', icon: FileText, extension: 'docx' },
+  { value: 'excel', labelKey: 'pdfToExcel', icon: FileSpreadsheet, extension: 'xlsx' },
+  { value: 'ppt', labelKey: 'pdfToPpt', icon: LucidePresentation, extension: 'pptx' },
+  { value: 'html', labelKey: 'pdfToHtml', icon: Code, extension: 'html' },
+  { value: 'image', labelKey: 'pdfToJpg', icon: FileImage, extension: 'zip' },
+  { value: 'ocr', labelKey: 'pdfToOcr', icon: ScanText, extension: 'txt' },
 ];
 
 function PdfConverterContent() {
@@ -121,7 +130,7 @@ function PdfConverterContent() {
   const [texts, setTexts] = useState(translations.zh);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [format, setFormat] = useState("excel");
   const [isLoading, setIsLoading] = useState(false);
   
@@ -165,75 +174,56 @@ function PdfConverterContent() {
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.type === 'application/pdf') {
-        setSelectedFile(file);
-      } else {
-        toast({ title: texts.conversionError, description: 'Please select a valid PDF file.', variant: 'destructive' });
-        setSelectedFile(null);
-      }
-    }
-  };
-
-  const getExtension = (fmt: string) => {
-    switch (fmt) {
-      case "word": return "docx";
-      case "excel": return "xlsx";
-      case "ppt": return "pptx";
-      case "html": return "html";
-      case "image": return "zip";
-      case "ocr": return "txt";
-      default: return "out";
+    const files = event.target.files;
+    if (files) {
+        const validFiles = Array.from(files).filter(file => file.type === 'application/pdf');
+        if (validFiles.length !== files.length) {
+            toast({ title: texts.invalidFileError, description: texts.invalidFileErrorDesc, variant: 'destructive' });
+        }
+        setSelectedFiles(validFiles);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedFile) {
+    if (selectedFiles.length === 0) {
         toast({ title: texts.conversionError, description: texts.noFileSelected, variant: 'destructive'});
         return;
     }
 
     setIsLoading(true);
     const formData = new FormData();
-    formData.append('file', selectedFile);
+    selectedFiles.forEach(file => {
+      formData.append('file', file);
+    });
     formData.append('format', format);
 
     try {
-      const response = await fetch("https://pdfsolution.dpdns.org/upload", {
+      const response = await fetch("https://pdfsolution.dpdns.org:5001/batch-upload", {
         method: 'POST',
         body: formData,
       });
 
+      const result = await response.json();
+
       if (!response.ok) {
-        let errorMsg = texts.conversionErrorDesc;
-        try {
-            const errorData = await response.json();
-            errorMsg = errorData.error || `Server error: ${response.status}`;
-        } catch (e) { 
-             const textError = await response.text();
-             console.error('Could not parse error response json. Response status:', response.status, 'Response text:', textError);
-             errorMsg = textError || errorMsg;
-        }
-        throw new Error(errorMsg);
+        throw new Error(result.error || texts.conversionErrorDesc);
       }
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      const extension = getExtension(format);
-      const originalFileName = selectedFile.name.substring(0, selectedFile.name.lastIndexOf('.')) || selectedFile.name;
-      link.href = url;
-      link.download = `${originalFileName}.${extension}`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      const fullDownloadUrl = `https://pdfsolution.dpdns.org:5001${result.download_url}`;
+      window.open(fullDownloadUrl, '_blank');
+
+      const successCount = result.results.filter((r: any) => r.status === 'success').length;
+      const failedCount = result.results.length - successCount;
       
-      toast({ title: texts.conversionSuccess });
-      setSelectedFile(null);
+      toast({ 
+        title: texts.conversionSuccess,
+        description: texts.conversionSuccessDesc(successCount, failedCount)
+      });
+
+      setSelectedFiles([]);
       if(fileUploadRef.current) fileUploadRef.current.value = '';
+
     } catch (err: any) {
       console.error("PDF Conversion Fetch Error:", err);
       toast({ title: texts.conversionError, description: err.message, variant: "destructive" });
@@ -337,15 +327,12 @@ function PdfConverterContent() {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div 
-                  className={cn(
-                    "flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20",
-                    selectedFile && "border-primary"
-                  )}
+                  className="flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20"
                   onClick={() => fileUploadRef.current?.click()}
                 >
                     <Upload className="h-12 w-12 text-muted-foreground mb-3" />
                     <p className="text-md text-muted-foreground text-center">
-                      {selectedFile ? texts.selectedFile + " " + selectedFile.name : texts.uploadButton}
+                      {selectedFiles.length > 0 ? `${selectedFiles.length} file(s) selected` : texts.uploadButton}
                     </p>
                     <Input
                         type="file"
@@ -353,32 +340,51 @@ function PdfConverterContent() {
                         onChange={handleFileChange}
                         accept="application/pdf"
                         required
+                        multiple
                         className="hidden"
                     />
                 </div>
+                
+                {selectedFiles.length > 0 && (
+                    <div className="space-y-2">
+                        <Label>{texts.selectedFiles} ({selectedFiles.length})</Label>
+                        <ScrollArea className="h-32 w-full rounded-md border p-2">
+                            <ul className="space-y-1">
+                                {selectedFiles.map((file, index) => (
+                                <li key={index} className="text-sm text-muted-foreground truncate flex items-center justify-between">
+                                    <span>{file.name}</span>
+                                </li>
+                                ))}
+                            </ul>
+                        </ScrollArea>
+                    </div>
+                )}
+
 
                 <div className="space-y-2">
                   <Label htmlFor="format-select">{texts.selectFormatLabel}</Label>
-                  <ToggleGroup
-                      type="single"
-                      value={format}
-                      onValueChange={(value) => { if (value) setFormat(value); }}
-                      className="grid grid-cols-2 sm:grid-cols-3 gap-4"
-                  >
-                      {formatOptions.map((opt) => {
-                          const Icon = opt.icon;
-                          return (
-                              <ToggleGroupItem key={opt.value} value={opt.value} className="flex flex-col h-24 p-4 data-[state=on]:border-primary data-[state=on]:border-2 data-[state=on]:shadow-lg" aria-label={texts[opt.labelKey as keyof typeof texts]}>
-                                  <Icon className="h-8 w-8 mb-2 text-primary" />
-                                  <span className="text-sm">{texts[opt.labelKey as keyof typeof texts]}</span>
-                              </ToggleGroupItem>
-                          );
-                      })}
-                  </ToggleGroup>
+                  <Select value={format} onValueChange={setFormat}>
+                    <SelectTrigger id="format-select">
+                        <SelectValue placeholder="Select a format" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {formatOptions.map(opt => {
+                             const Icon = opt.icon;
+                             return (
+                                <SelectItem key={opt.value} value={opt.value}>
+                                    <div className="flex items-center gap-2">
+                                    <Icon className="h-4 w-4" />
+                                    <span>{texts[opt.labelKey as keyof typeof texts]}</span>
+                                    </div>
+                                </SelectItem>
+                            )
+                        })}
+                    </SelectContent>
+                  </Select>
                 </div>
 
 
-                <Button type="submit" className="w-full" disabled={isLoading || !selectedFile}>
+                <Button type="submit" className="w-full" disabled={isLoading || selectedFiles.length === 0}>
                   {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                   {texts.convertButton}
                 </Button>
@@ -397,3 +403,5 @@ export default function PdfConverterPage() {
         </Suspense>
     );
 }
+
+    

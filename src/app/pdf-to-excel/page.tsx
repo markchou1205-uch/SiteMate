@@ -1,27 +1,31 @@
 
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useRef, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarSub, MenubarSubContent, MenubarSubTrigger, MenubarTrigger } from "@/components/ui/menubar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { Loader2, Upload, Scissors, Download, FilePlus, LogIn, LogOut, UserCircle, MenuSquare, ArrowRightLeft, Edit, FileUp, ListOrdered, Trash2, Combine, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets } from 'lucide-react';
 
 const translations = {
   en: {
-    pageTitle: 'PDF to Excel',
-    pageDescription: 'Convert your PDF files into editable Excel spreadsheets.',
-    startTitle: 'Upload a PDF to Convert',
-    startDescription: 'Select a PDF file to convert it to an Excel (.xlsx) document.',
-    uploadButton: 'Click here to select a file',
+    pageTitle: 'PDF Converter',
+    pageDescription: 'Convert your PDF to various formats like Word, Excel, and more.',
+    startTitle: 'Upload PDF to Convert',
+    startDescription: 'Select a PDF file and choose the output format.',
+    uploadButton: 'Click or drag a file here to upload',
+    selectFormatLabel: 'Choose output format:',
     convertButton: 'Upload and Convert',
     convertingMessage: 'Processing...',
     conversionSuccess: 'Download Complete',
-    conversionError: 'Conversion failed, please check the file format or content.',
+    conversionError: 'Conversion failed',
+    conversionErrorDesc: 'Please check the file format or content.',
     appTitle: 'DocuPilot',
     loggedInAs: 'Logged in as User',
     login: 'Login',
@@ -52,15 +56,17 @@ const translations = {
     noFileSelected: 'Please select a file to convert.',
   },
   zh: {
-    pageTitle: 'PDF 轉 Excel',
-    pageDescription: '將您的 PDF 檔案轉換為可編輯的 Excel 試算表。',
+    pageTitle: 'PDF 多格式轉換',
+    pageDescription: '將您的 PDF 轉換為 Word、Excel 等多種格式。',
     startTitle: '上傳 PDF 以進行轉換',
-    startDescription: '選擇一個 PDF 檔案，將其轉換為 Excel (.xlsx) 文件。',
-    uploadButton: '點擊此處選擇檔案',
+    startDescription: '選擇一個 PDF 檔案並選擇輸出格式。',
+    uploadButton: '點擊或拖曳檔案到此處以上傳',
+    selectFormatLabel: '選擇輸出格式：',
     convertButton: '上傳並轉換',
     convertingMessage: '處理中...',
-    conversionSuccess: '✅ 下載完成',
-    conversionError: '❌ 轉換失敗，請確認檔案格式或內容',
+    conversionSuccess: '下載完成',
+    conversionError: '轉換失敗',
+    conversionErrorDesc: '請確認檔案格式或內容。',
     appTitle: 'DocuPilot 文件助手',
     loggedInAs: '已登入為使用者',
     login: '登入',
@@ -86,22 +92,32 @@ const translations = {
     pdfToWord: 'PDF轉WORD',
     pdfToExcel: 'PDF轉EXCEL',
     pdfToPpt: 'PDF轉PPT',
-    pdfToHtml: 'PDF to HTML',
+    pdfToHtml: 'PDF轉HTML',
     selectedFile: '已選檔案：',
     noFileSelected: '請選擇要轉換的檔案。',
   },
 };
 
-export default function PdfToExcelPage() {
+const formatOptions = [
+  { value: 'excel', label: 'Excel (.xlsx)', icon: FileSpreadsheet },
+  { value: 'docx', label: 'Word (.docx)', icon: FileText },
+  { value: 'ppt', label: 'PowerPoint (.pptx)', icon: LucidePresentation },
+  { value: 'html', label: 'HTML (.html)', icon: Code },
+  { value: 'jpg', label: 'JPG Images (.zip)', icon: FileImage },
+];
+
+function PdfConverterContent() {
   const router = useRouter();
   const { toast } = useToast();
+  const searchParams = useSearchParams();
 
   const [currentLanguage, setCurrentLanguage] = useState<'en' | 'zh'>('zh');
   const [texts, setTexts] = useState(translations.zh);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [format, setFormat] = useState("excel");
+  const [isLoading, setIsLoading] = useState(false);
   
   const fileUploadRef = useRef<HTMLInputElement>(null);
 
@@ -115,6 +131,13 @@ export default function PdfToExcelPage() {
       setIsLoggedIn(loggedInStatus);
     }
   }, []);
+
+  useEffect(() => {
+    const formatFromUrl = searchParams.get('format');
+    if (formatFromUrl && formatOptions.some(opt => opt.value === formatFromUrl)) {
+      setFormat(formatFromUrl);
+    }
+  }, [searchParams]);
 
   const updateLanguage = (lang: 'en' | 'zh') => {
     setCurrentLanguage(lang);
@@ -140,11 +163,21 @@ export default function PdfToExcelPage() {
     if (file) {
       if (file.type === 'application/pdf') {
         setSelectedFile(file);
-        setMessage('');
       } else {
         toast({ title: texts.conversionError, description: 'Please select a valid PDF file.', variant: 'destructive' });
         setSelectedFile(null);
       }
+    }
+  };
+
+  const getExtension = (fmt: string) => {
+    switch (fmt) {
+      case "excel": return "xlsx";
+      case "docx": return "docx";
+      case "ppt": return "pptx";
+      case "html": return "html";
+      case "jpg": return "zip";
+      default: return "out";
     }
   };
 
@@ -156,55 +189,53 @@ export default function PdfToExcelPage() {
     }
 
     setIsLoading(true);
-    setMessage(texts.convertingMessage);
     const formData = new FormData();
     formData.append('file', selectedFile);
+    formData.append('format', format);
 
     try {
-      const response = await fetch('http://34.81.133.5/upload', {
+      const response = await fetch('http://34.81.133.5:5000/upload', {
         method: 'POST',
         body: formData,
       });
 
       if (!response.ok) {
-        let errorMsg = texts.conversionError;
+        let errorMsg = texts.conversionErrorDesc;
         try {
             const errorData = await response.json();
-            errorMsg = errorData.error || texts.conversionError;
-        } catch (e) {
-            // Response might not be JSON, use the default error.
-        }
+            errorMsg = errorData.error || errorMsg;
+        } catch (e) { /* Response might not be JSON, use the default error. */ }
         throw new Error(errorMsg);
       }
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
+      const extension = getExtension(format);
       const originalFileName = selectedFile.name.substring(0, selectedFile.name.lastIndexOf('.')) || selectedFile.name;
       link.href = url;
-      link.download = `${originalFileName}.xlsx`;
+      link.download = `${originalFileName}.${extension}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
       
       toast({ title: texts.conversionSuccess });
-      setSelectedFile(null); // Clear the file input after success
+      setSelectedFile(null);
+      if(fileUploadRef.current) fileUploadRef.current.value = '';
     } catch (err: any) {
       toast({ title: texts.conversionError, description: err.message, variant: "destructive" });
     } finally {
       setIsLoading(false);
-      setMessage('');
     }
   };
-
 
   return (
     <div className="flex flex-col h-screen bg-background">
       {isLoading && (
         <div className="fixed inset-0 bg-black/50 z-[100] flex flex-col items-center justify-center">
           <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
-          <p className="text-white text-lg">{message}</p>
+          <p className="text-white text-lg">{texts.convertingMessage}</p>
         </div>
       )}
 
@@ -242,10 +273,10 @@ export default function PdfToExcelPage() {
                             <MenubarSub>
                                 <MenubarSubTrigger><FileMinus className="mr-2 h-4 w-4" />{texts.convertFromPdf}</MenubarSubTrigger>
                                 <MenubarSubContent>
-                                    <MenubarItem onClick={() => router.push('/')}><FileText className="mr-2 h-4 w-4" />{texts.pdfToWord}</MenubarItem>
-                                    <MenubarItem disabled><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.pdfToExcel}</MenubarItem>
-                                    <MenubarItem onClick={() => handlePlaceholderClick(texts.pdfToPpt)}><LucidePresentation className="mr-2 h-4 w-4" />{texts.pdfToPpt}</MenubarItem>
-                                    <MenubarItem onClick={() => handlePlaceholderClick(texts.pdfToHtml)}><Code className="mr-2 h-4 w-4" />{texts.pdfToHtml}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=docx')}><FileText className="mr-2 h-4 w-4" />{texts.pdfToWord}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=excel')}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.pdfToExcel}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=ppt')}><LucidePresentation className="mr-2 h-4 w-4" />{texts.pdfToPpt}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=html')}><Code className="mr-2 h-4 w-4" />{texts.pdfToHtml}</MenubarItem>
                                 </MenubarSubContent>
                             </MenubarSub>
                         </MenubarContent>
@@ -284,10 +315,10 @@ export default function PdfToExcelPage() {
           <Card className="max-w-2xl w-full mx-auto">
             <CardHeader className="text-center">
                 <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4">
-                    <FileSpreadsheet className="h-10 w-10 text-primary" />
+                    <ArrowRightLeft className="h-10 w-10 text-primary" />
                 </div>
                 <CardTitle>{texts.startTitle}</CardTitle>
-                <CardDescription>{texts.startDescription}</CardDescription>
+                <CardDescription>{texts.pageDescription}</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -312,6 +343,29 @@ export default function PdfToExcelPage() {
                     <strong>{texts.selectedFile}</strong> {selectedFile.name}
                   </div>
                 )}
+                
+                <div className="space-y-2">
+                  <Label htmlFor="format-select">{texts.selectFormatLabel}</Label>
+                  <Select value={format} onValueChange={setFormat}>
+                    <SelectTrigger id="format-select">
+                      <SelectValue placeholder="Select a format" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {formatOptions.map(opt => {
+                        const Icon = opt.icon;
+                        return (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            <div className="flex items-center gap-2">
+                              <Icon className="h-4 w-4" />
+                              <span>{opt.label}</span>
+                            </div>
+                          </SelectItem>
+                        )
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+
 
                 <Button type="submit" className="w-full" disabled={isLoading || !selectedFile}>
                   {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
@@ -323,4 +377,12 @@ export default function PdfToExcelPage() {
       </main>
     </div>
   )
+}
+
+export default function PdfConverterPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <PdfConverterContent />
+        </Suspense>
+    );
 }

@@ -1,11 +1,10 @@
 
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import * as pdfjsLib from 'pdfjs-dist';
-import type { PDFDocumentProxy as PDFDocumentProxyType } from 'pdfjs-dist';
 import { PDFDocument as PDFLibDocument, StandardFonts, rgb, degrees, grayscale, pushGraphicsState, popGraphicsState, setOpacity, layoutMultilineText, PDFFont, BlendMode } from 'pdf-lib';
 import Sortable from 'sortablejs';
 import { v4 as uuidv4 } from 'uuid';
@@ -38,9 +37,6 @@ import {
   MenubarSubTrigger,
   MenubarTrigger,
 } from "@/components/ui/menubar"
-
-import { storage, functions as firebaseFunctions, app as firebaseApp } from '@/lib/firebase'; // Firebase SDK
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { cn } from '@/lib/utils';
 
 
@@ -428,7 +424,6 @@ const translations = {
 };
 
 const DAILY_DOWNLOAD_LIMIT = 3;
-const DAILY_WORD_CONVERSION_LIMIT = 1;
 
 type PageNumberPosition = 'bottom-left' | 'bottom-center' | 'bottom-right' | 'top-left' | 'top-center' | 'top-right';
 
@@ -624,7 +619,7 @@ const TextAnnotationComponent = ({
 }) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-    useLayoutEffect(() => {
+    useEffect(() => {
         const textarea = textareaRef.current;
         if (textarea) {
             textarea.style.height = 'auto';
@@ -638,8 +633,12 @@ const TextAnnotationComponent = ({
             onMouseDown={(e) => {
                 if (!isEditing) onDragStart(e, annotation.id)
             }}
-            onClick={onWrapperClick.bind(null, annotation.id)}
-            onDoubleClick={onDoubleClick.bind(null, annotation.id)}
+            onClick={(e) => {
+                e.stopPropagation();
+                if (isEditing) return;
+                onWrapperClick(annotation.id, e);
+            }}
+            onDoubleClick={(e) => onDoubleClick(annotation.id, e)}
             className={cn(
                 "absolute group/text-annotation",
                 !isEditing && "cursor-grab",
@@ -733,16 +732,6 @@ export default function PdfEditorHomepage() {
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [pdfDocumentProxy, setPdfDocumentProxy] = useState<PDFDocumentProxyType | null>(null);
-  const [uploadedPdfFile, setUploadedPdfFile] = useState<File | null>(null);
-
-  const [isConvertingToWord, setIsConvertingToWord] = useState(false);
-  const [wordFileUrl, setWordFileUrl] = useState<string | null>(null);
-  const [wordConversionError, setWordConversionError] = useState<string | null>(null);
-  const [showWordLimitModal, setShowWordLimitModal] = useState(false);
-
-  const [isFirebaseSystemReady, setIsFirebaseSystemReady] = useState(false);
-  const [firebaseConfigWarning, setFirebaseConfigWarning] = useState('');
 
   const [pageNumberingConfig, setPageNumberingConfig] = useState({
     enabled: false,
@@ -770,18 +759,6 @@ export default function PdfEditorHomepage() {
   useEffect(() => {
     setTexts(translations[currentLanguage] || translations.en);
   }, [currentLanguage]);
-
-  useEffect(() => {
-    const sdkServicesInitialized = !!firebaseApp && !!storage && !!firebaseFunctions;
-    if (sdkServicesInitialized) {
-        setIsFirebaseSystemReady(true);
-        setFirebaseConfigWarning('');
-    } else {
-        setIsFirebaseSystemReady(false);
-        let warningMsg = texts?.firebaseSdkInitError || "Firebase SDK services (app, storage, functions) NOT initialized.";
-        setFirebaseConfigWarning(warningMsg);
-    }
-  }, [currentLanguage, texts]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -939,7 +916,7 @@ export default function PdfEditorHomepage() {
   };
 
 
-  const processPdfFile = async (file: File): Promise<{ newPageObjects: PageObject[], docProxy: PDFDocumentProxyType }> => {
+  const processPdfFile = async (file: File) => {
     const arrayBuffer = await file.arrayBuffer();
     const pdfDocProxy = await pdfjsLib.getDocument({
       data: arrayBuffer,
@@ -960,7 +937,7 @@ export default function PdfEditorHomepage() {
       await page.render({ canvasContext: ctx, viewport }).promise;
       loadedPageObjects.push({ id: uuidv4(), sourceCanvas: canvas, rotation: 0 });
     }
-    return { newPageObjects: loadedPageObjects, docProxy: pdfDocProxy };
+    return loadedPageObjects;
   };
 
   const handlePdfUpload = async (event: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLDivElement>) => {
@@ -980,9 +957,6 @@ export default function PdfEditorHomepage() {
         if (file) toast({ title: texts.loadError, description: currentLanguage === 'zh' ? "無效的檔案類型。請上傳 PDF。" : "Invalid file type. Please upload a PDF.", variant: "destructive" });
         return;
     }
-    setUploadedPdfFile(file);
-    setWordFileUrl(null);
-    setWordConversionError(null);
     setTextAnnotations([]);
     setSelectedAnnotationId(null);
     setEditingAnnotationId(null);
@@ -994,9 +968,8 @@ export default function PdfEditorHomepage() {
     setIsLoading(true);
     setLoadingMessage(texts.loadingPdf);
     try {
-      const { newPageObjects, docProxy } = await processPdfFile(file);
+      const newPageObjects = await processPdfFile(file);
       setPageObjects(newPageObjects);
-      setPdfDocumentProxy(docProxy);
       setSelectedPageIds(new Set());
       setActivePageIndex(0);
       setViewMode('editor');
@@ -1007,8 +980,6 @@ export default function PdfEditorHomepage() {
     } catch (err: any)
     {
       toast({ title: texts.loadError, description: err.message, variant: "destructive" });
-      setPdfDocumentProxy(null);
-      setUploadedPdfFile(null);
       setPageObjects([]);
       setActivePageIndex(null);
     } finally {
@@ -1030,8 +1001,7 @@ export default function PdfEditorHomepage() {
     setSelectedPageIds(new Set());
 
     if (newPages.length === 0) {
-      setPdfDocumentProxy(null);
-      setUploadedPdfFile(null);
+        setPageObjects([]);
     }
 
     toast({ title: texts.pageManagement, description: currentLanguage === 'zh' ? "選取的頁面已刪除。" : "Selected pages have been deleted." });
@@ -1060,7 +1030,7 @@ export default function PdfEditorHomepage() {
     };
   };
 
-  const getPdfFont = async (pdfDoc: PDFLibDocument, annotation: TextAnnotation): Promise<PDFFont> => {
+  const getPdfFont = async (pdfDoc: PDFLibDocument, annotation: TextAnnotation) => {
     const { fontFamily, bold, italic } = annotation;
     let font = StandardFonts.Helvetica;
 
@@ -1288,6 +1258,7 @@ export default function PdfEditorHomepage() {
       const a = document.createElement('a');
       a.download = 'DocuPilot_edited.pdf';
       document.body.appendChild(a);
+      a.href = url;
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
@@ -1297,106 +1268,6 @@ export default function PdfEditorHomepage() {
       toast({ title: texts.downloadError, description: err.message, variant: "destructive" });
     } finally {
       setIsDownloading(false);
-      setLoadingMessage('');
-    }
-  };
-
-  const handleConvertToWord = async () => {
-    if (!uploadedPdfFile) {
-      toast({ title: texts.wordConvertError, description: texts.noPdfToConvert, variant: "destructive" });
-      return;
-    }
-
-    if (!isFirebaseSystemReady || !storage || !firebaseFunctions) {
-        toast({ title: texts.wordConvertError, description: firebaseConfigWarning || (currentLanguage === 'zh' ? translations.zh.firebaseSdkInitError : translations.en.firebaseSdkInitError), variant: "destructive" });
-        return;
-    }
-
-    setWordFileUrl(null);
-    setWordConversionError(null);
-
-    if (!isLoggedIn && typeof window !== 'undefined') {
-      const today = new Date().toISOString().split('T')[0];
-      let wordConversionInfoString = localStorage.getItem('DocuPilotWordConversionInfo');
-      let wordConversionInfo = wordConversionInfoString ? JSON.parse(wordConversionInfoString) : { count: 0, date: today };
-
-      if (wordConversionInfo.date !== today) {
-        wordConversionInfo = { count: 0, date: today };
-      }
-
-      if (wordConversionInfo.count >= DAILY_WORD_CONVERSION_LIMIT) {
-        setShowWordLimitModal(true);
-        return;
-      }
-    }
-
-    setIsConvertingToWord(true);
-    setLoadingMessage(texts.convertingToWord);
-
-    try {
-      const fileName = `uploads/${new Date().getTime()}_${uploadedPdfFile.name}`;
-      const fileStorageRef = storageRef(storage, fileName);
-      await uploadBytes(fileStorageRef, uploadedPdfFile);
-      const pdfStorageUrl = await getDownloadURL(fileStorageRef);
-
-      const functionUrl = `https://us-central1-sitemate-otkpt.cloudfunctions.net/convertPdfToWord`;
-
-      const response = await fetch(functionUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ fileUrl: pdfStorageUrl }),
-      });
-
-      if (!response.ok) {
-        let errorData;
-        try {
-            errorData = await response.json();
-        } catch (e) {
-            const errorText = await response.text();
-            errorData = { detail: errorText || response.statusText };
-        }
-
-        const detailMessage = errorData?.detail || errorData?.error || `HTTP error! status: ${response.status}`;
-        let toastDescription = detailMessage;
-        if (typeof detailMessage === 'string' && (detailMessage.toLowerCase().includes("method not found") || detailMessage.toLowerCase().includes("api key not configured") || detailMessage.toLowerCase().includes("please provide your api key")) ) {
-             toastDescription = texts.pdfCoMethodNotFoundError;
-        }
-        throw new Error(detailMessage);
-      }
-
-      const result = await response.json();
-
-      if (!result.wordUrl) {
-        throw new Error("Firebase Function did not return a Word file URL.");
-      }
-
-      setWordFileUrl(result.wordUrl);
-      toast({ title: texts.wordConvertSuccess, description: texts.downloadWordFile });
-
-      if (!isLoggedIn && typeof window !== 'undefined') {
-        const today = new Date().toISOString().split('T')[0];
-        let wordConversionInfoString = localStorage.getItem('DocuPilotWordConversionInfo');
-        let wordConversionInfo = wordConversionInfoString ? JSON.parse(wordConversionInfoString) : { count: 0, date: today };
-        if (wordConversionInfo.date !== today) { wordConversionInfo = { count: 0, date: today };}
-        wordConversionInfo.count++;
-        localStorage.setItem('DocuPilotWordConversionInfo', JSON.stringify(wordConversionInfo));
-      }
-
-    } catch (error: any) {
-      let errMsg = error.message || (currentLanguage === 'zh' ? "未知錯誤" : "Unknown error");
-
-      if (typeof errMsg === 'string' && (errMsg.toLowerCase().includes("method not found") || errMsg.toLowerCase().includes("api key") || errMsg.toLowerCase().includes("please provide your api key") )) {
-        errMsg = texts.pdfCoMethodNotFoundError;
-      } else if (errMsg.toLowerCase().includes("pdf.co api key is not correctly hardcoded")) {
-        errMsg = (currentLanguage === 'zh' ? "後端 API 金鑰設定錯誤，請聯絡管理員。" : "Backend API Key configuration error. Please contact administrator.");
-      }
-
-      setWordConversionError(`${texts.wordConvertError}: ${errMsg}`);
-      toast({ title: texts.wordConvertError, description: errMsg, variant: "destructive" });
-    } finally {
-      setIsConvertingToWord(false);
       setLoadingMessage('');
     }
   };
@@ -1893,12 +1764,11 @@ export default function PdfEditorHomepage() {
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground font-sans">
-      {(isLoading || isDownloading || isConvertingToWord) && (
+      {(isLoading || isDownloading) && (
         <div className="fixed inset-0 bg-black/50 z-[100] flex flex-col items-center justify-center">
           <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
           <p className="text-white text-lg">
             {isLoading ? loadingMessage :
-             isConvertingToWord ? texts.convertingToWord :
              isDownloading ? texts.generatingFile : ''}
           </p>
         </div>
@@ -1951,21 +1821,6 @@ export default function PdfEditorHomepage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={showWordLimitModal} onOpenChange={setShowWordLimitModal}>
-        <AlertDialogContent>
-            <ShadAlertDialogHeader>
-            <ShadAlertDialogTitle>{texts.wordConvertLimitTitle}</ShadAlertDialogTitle>
-            <AlertDialogDescription>
-                {texts.wordConvertLimitDescription}
-            </AlertDialogDescription>
-            </ShadAlertDialogHeader>
-            <AlertDialogFooter>
-            <AlertDialogCancel>{texts.cancel}</AlertDialogCancel>
-            <AlertDialogAction onClick={() => router.push('/login')}>{texts.login}</AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       <header className="p-0 border-b bg-card sticky top-0 z-40 flex-shrink-0">
         <div className="container mx-auto flex justify-between items-center h-16">
             <div className="flex items-center gap-6">
@@ -2000,10 +1855,10 @@ export default function PdfEditorHomepage() {
                             <MenubarSub>
                                 <MenubarSubTrigger><FileMinus className="mr-2 h-4 w-4" />{texts.convertFromPdf}</MenubarSubTrigger>
                                 <MenubarSubContent>
-                                    <MenubarItem onClick={handleConvertToWord} disabled={!uploadedPdfFile}><FileText className="mr-2 h-4 w-4" />{texts.pdfToWord}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/pdf-to-excel')}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.pdfToExcel}</MenubarItem>
-                                    <MenubarItem onClick={() => handlePlaceholderClick(texts.pdfToPpt)} disabled={!uploadedPdfFile}><LucidePresentation className="mr-2 h-4 w-4" />{texts.pdfToPpt}</MenubarItem>
-                                    <MenubarItem onClick={() => handlePlaceholderClick(texts.pdfToHtml)} disabled={!uploadedPdfFile}><Code className="mr-2 h-4 w-4" />{texts.pdfToHtml}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=docx')}><FileText className="mr-2 h-4 w-4" />{texts.pdfToWord}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=excel')}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.pdfToExcel}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=ppt')}><LucidePresentation className="mr-2 h-4 w-4" />{texts.pdfToPpt}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=html')}><Code className="mr-2 h-4 w-4" />{texts.pdfToHtml}</MenubarItem>
                                 </MenubarSubContent>
                             </MenubarSub>
                         </MenubarContent>

@@ -29,6 +29,7 @@ const translations = {
     conversionSuccessDesc: (success: number, failed: number) => `${success} file(s) succeeded, ${failed} file(s) failed. Your download will start in a new tab.`,
     conversionError: 'Conversion failed',
     conversionErrorDesc: 'Please check the files or server status.',
+    timeoutErrorDesc: 'The request timed out. Please check your network or try again.',
     appTitle: 'DocuPilot',
     loggedInAs: 'Logged in as User',
     login: 'Login',
@@ -76,6 +77,7 @@ const translations = {
     conversionSuccessDesc: (success: number, failed: number) => `${success} 個檔案成功，${failed} 個檔案失敗。下載將在新分頁開始。`,
     conversionError: '轉換失敗',
     conversionErrorDesc: '請檢查檔案或伺服器狀態。',
+    timeoutErrorDesc: '請求逾時。請檢查您的網路連線或再試一次。',
     appTitle: 'DocuPilot 文件助手',
     loggedInAs: '已登入為使用者',
     login: '登入',
@@ -173,10 +175,14 @@ function PdfConverterContent() {
     });
   };
 
+  const isPdf = (file: File) => {
+    return file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+  };
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
-        const validFiles = Array.from(files).filter(file => file.type === 'application/pdf');
+        const validFiles = Array.from(files).filter(isPdf);
         if (validFiles.length !== files.length) {
             toast({ title: texts.invalidFileError, description: texts.invalidFileErrorDesc, variant: 'destructive' });
         }
@@ -198,16 +204,22 @@ function PdfConverterContent() {
     });
     formData.append('format', format);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
+
     try {
       const response = await fetch("https://pdfsolution.dpdns.org:5001/batch-upload", {
         method: 'POST',
         body: formData,
+        signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
 
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || texts.conversionErrorDesc);
+        throw new Error(String(result.error || texts.conversionErrorDesc));
       }
 
       const fullDownloadUrl = `https://pdfsolution.dpdns.org:5001${result.download_url}`;
@@ -225,8 +237,13 @@ function PdfConverterContent() {
       if(fileUploadRef.current) fileUploadRef.current.value = '';
 
     } catch (err: any) {
+      clearTimeout(timeoutId);
       console.error("PDF Conversion Fetch Error:", err);
-      toast({ title: texts.conversionError, description: err.message, variant: "destructive" });
+      if (err.name === 'AbortError') {
+          toast({ title: texts.conversionError, description: texts.timeoutErrorDesc, variant: "destructive" });
+      } else {
+          toast({ title: texts.conversionError, description: err.message, variant: "destructive" });
+      }
     } finally {
       setIsLoading(false);
     }

@@ -211,7 +211,9 @@ function PdfConverterContent() {
         try {
             const errorData = await response.json();
             errorMsg = errorData.error || errorMsg;
-        } catch (e) { console.error('Could not parse error response:', e) }
+        } catch (e) { 
+            console.error('Could not parse error response json. Response status:', response.status, 'Response text:', await response.text());
+        }
         throw new Error(errorMsg);
       }
 

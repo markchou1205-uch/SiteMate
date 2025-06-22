@@ -78,7 +78,7 @@ const translations = {
     excelToPdf: 'EXCEL to PDF',
     pptToPdf: 'PPT to PDF',
     htmlToPdf: 'HTML to PDF',
-    jpgToPdf: 'PDF to Image',
+    jpgToPdf: 'JPG to PDF',
     pdfToWord: 'PDF to WORD',
     pdfToExcel: 'PDF to EXCEL',
     pdfToPpt: 'PDF to PPT',

@@ -194,7 +194,7 @@ function PdfConverterContent() {
     formData.append('format', format);
 
     try {
-      const response = await fetch('http://34.81.133.5:5000/upload', {
+      const response = await fetch("https://pdfsolution.dpdns.org/upload", {
         method: 'POST',
         body: formData,
       });

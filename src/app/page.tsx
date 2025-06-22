@@ -2001,7 +2001,7 @@ export default function PdfEditorHomepage() {
                                 <MenubarSubTrigger><FileMinus className="mr-2 h-4 w-4" />{texts.convertFromPdf}</MenubarSubTrigger>
                                 <MenubarSubContent>
                                     <MenubarItem onClick={handleConvertToWord} disabled={!uploadedPdfFile}><FileText className="mr-2 h-4 w-4" />{texts.pdfToWord}</MenubarItem>
-                                    <MenubarItem onClick={() => handlePlaceholderClick(texts.pdfToExcel)} disabled={!uploadedPdfFile}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.pdfToExcel}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-excel')}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.pdfToExcel}</MenubarItem>
                                     <MenubarItem onClick={() => handlePlaceholderClick(texts.pdfToPpt)} disabled={!uploadedPdfFile}><LucidePresentation className="mr-2 h-4 w-4" />{texts.pdfToPpt}</MenubarItem>
                                     <MenubarItem onClick={() => handlePlaceholderClick(texts.pdfToHtml)} disabled={!uploadedPdfFile}><Code className="mr-2 h-4 w-4" />{texts.pdfToHtml}</MenubarItem>
                                 </MenubarSubContent>

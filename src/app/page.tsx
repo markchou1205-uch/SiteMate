@@ -1034,7 +1034,7 @@ export default function PdfEditorHomepage() {
     };
   };
 
-  const getPdfFont = async (pdfDoc: PDFLibDocument, annotation: TextAnnotation) => {
+  const getPdfFont = async (pdfDoc: PDFLibDocument, annotation: TextAnnotation): Promise<PDFFont> => {
     const { fontFamily, bold, italic } = annotation;
     let font = StandardFonts.Helvetica;
 
@@ -1859,11 +1859,11 @@ export default function PdfEditorHomepage() {
                             <MenubarSub>
                                 <MenubarSubTrigger><FileMinus className="mr-2 h-4 w-4" />{texts.convertFromPdf}</MenubarSubTrigger>
                                 <MenubarSubContent>
-                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=docx')}><FileText className="mr-2 h-4 w-4" />{texts.pdfToWord}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=word')}><FileText className="mr-2 h-4 w-4" />{texts.pdfToWord}</MenubarItem>
                                     <MenubarItem onClick={() => router.push('/pdf-to-excel?format=excel')}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.pdfToExcel}</MenubarItem>
                                     <MenubarItem onClick={() => router.push('/pdf-to-excel?format=ppt')}><LucidePresentation className="mr-2 h-4 w-4" />{texts.pdfToPpt}</MenubarItem>
                                     <MenubarItem onClick={() => router.push('/pdf-to-excel?format=html')}><Code className="mr-2 h-4 w-4" />{texts.pdfToHtml}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=jpg')}><FileImage className="mr-2 h-4 w-4" />{texts.pdfToJpg}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=image')}><FileImage className="mr-2 h-4 w-4" />{texts.pdfToJpg}</MenubarItem>
                                     <MenubarItem onClick={() => router.push('/pdf-to-excel?format=ocr')}><ScanText className="mr-2 h-4 w-4" />{texts.pdfToOcr}</MenubarItem>
                                 </MenubarSubContent>
                             </MenubarSub>

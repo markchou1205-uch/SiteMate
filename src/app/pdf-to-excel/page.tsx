@@ -104,11 +104,11 @@ const translations = {
 };
 
 const formatOptions = [
-  { value: 'docx', labelKey: 'pdfToWord', icon: FileText },
+  { value: 'word', labelKey: 'pdfToWord', icon: FileText },
   { value: 'excel', labelKey: 'pdfToExcel', icon: FileSpreadsheet },
   { value: 'ppt', labelKey: 'pdfToPpt', icon: LucidePresentation },
   { value: 'html', labelKey: 'pdfToHtml', icon: Code },
-  { value: 'jpg', labelKey: 'pdfToJpg', icon: FileImage },
+  { value: 'image', labelKey: 'pdfToJpg', icon: FileImage },
   { value: 'ocr', labelKey: 'pdfToOcr', icon: ScanText },
 ];
 
@@ -178,11 +178,11 @@ function PdfConverterContent() {
 
   const getExtension = (fmt: string) => {
     switch (fmt) {
+      case "word": return "docx";
       case "excel": return "xlsx";
-      case "docx": return "docx";
       case "ppt": return "pptx";
       case "html": return "html";
-      case "jpg": return "zip";
+      case "image": return "zip";
       case "ocr": return "txt";
       default: return "out";
     }
@@ -210,9 +210,11 @@ function PdfConverterContent() {
         let errorMsg = texts.conversionErrorDesc;
         try {
             const errorData = await response.json();
-            errorMsg = errorData.error || errorMsg;
+            errorMsg = errorData.error || `Server error: ${response.status}`;
         } catch (e) { 
-            console.error('Could not parse error response json. Response status:', response.status, 'Response text:', await response.text());
+             const textError = await response.text();
+             console.error('Could not parse error response json. Response status:', response.status, 'Response text:', textError);
+             errorMsg = textError || errorMsg;
         }
         throw new Error(errorMsg);
       }
@@ -283,11 +285,11 @@ function PdfConverterContent() {
                             <MenubarSub>
                                 <MenubarSubTrigger><FileMinus className="mr-2 h-4 w-4" />{texts.convertFromPdf}</MenubarSubTrigger>
                                 <MenubarSubContent>
-                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=docx')}><FileText className="mr-2 h-4 w-4" />{texts.pdfToWord}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=word')}><FileText className="mr-2 h-4 w-4" />{texts.pdfToWord}</MenubarItem>
                                     <MenubarItem onClick={() => router.push('/pdf-to-excel?format=excel')}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.pdfToExcel}</MenubarItem>
                                     <MenubarItem onClick={() => router.push('/pdf-to-excel?format=ppt')}><LucidePresentation className="mr-2 h-4 w-4" />{texts.pdfToPpt}</MenubarItem>
                                     <MenubarItem onClick={() => router.push('/pdf-to-excel?format=html')}><Code className="mr-2 h-4 w-4" />{texts.pdfToHtml}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=jpg')}><FileImage className="mr-2 h-4 w-4" />{texts.pdfToJpg}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=image')}><FileImage className="mr-2 h-4 w-4" />{texts.pdfToJpg}</MenubarItem>
                                     <MenubarItem onClick={() => router.push('/pdf-to-excel?format=ocr')}><ScanText className="mr-2 h-4 w-4" />{texts.pdfToOcr}</MenubarItem>
                                 </MenubarSubContent>
                             </MenubarSub>

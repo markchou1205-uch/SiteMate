@@ -224,6 +224,7 @@ function PdfConverterContent() {
       setSelectedFile(null);
       if(fileUploadRef.current) fileUploadRef.current.value = '';
     } catch (err: any) {
+      console.error("PDF Conversion Fetch Error:", err);
       toast({ title: texts.conversionError, description: err.message, variant: "destructive" });
     } finally {
       setIsLoading(false);

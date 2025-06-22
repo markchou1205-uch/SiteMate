@@ -49,6 +49,7 @@ const translations = {
     pdfToPpt: 'PDF to PPT',
     pdfToHtml: 'PDF to HTML',
     selectedFile: 'Selected File:',
+    noFileSelected: 'Please select a file to convert.',
   },
   zh: {
     pageTitle: 'PDF 轉 Excel',
@@ -87,6 +88,7 @@ const translations = {
     pdfToPpt: 'PDF轉PPT',
     pdfToHtml: 'PDF to HTML',
     selectedFile: '已選檔案：',
+    noFileSelected: '請選擇要轉換的檔案。',
   },
 };
 
@@ -149,45 +151,51 @@ export default function PdfToExcelPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedFile) {
-        toast({ title: texts.conversionError, description: 'No file selected.', variant: 'destructive'});
+        toast({ title: texts.conversionError, description: texts.noFileSelected, variant: 'destructive'});
         return;
     }
 
-    // --- Placeholder for backend functionality ---
-    handlePlaceholderClick(texts.pdfToExcel);
-    
-    // --- The original logic (commented out as backend doesn't exist) ---
-    /*
     setIsLoading(true);
     setMessage(texts.convertingMessage);
     const formData = new FormData();
     formData.append('file', selectedFile);
 
     try {
-      // This endpoint '/upload' needs to be implemented on your backend
-      const response = await fetch('/upload', { 
+      const response = await fetch('http://34.81.133.5/upload', {
         method: 'POST',
         body: formData,
       });
 
-      if (!response.ok) throw new Error(texts.conversionError);
+      if (!response.ok) {
+        let errorMsg = texts.conversionError;
+        try {
+            const errorData = await response.json();
+            errorMsg = errorData.error || texts.conversionError;
+        } catch (e) {
+            // Response might not be JSON, use the default error.
+        }
+        throw new Error(errorMsg);
+      }
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
+      const originalFileName = selectedFile.name.substring(0, selectedFile.name.lastIndexOf('.')) || selectedFile.name;
       link.href = url;
-      link.download = 'converted.xlsx';
+      link.download = `${originalFileName}.xlsx`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      setMessage(texts.conversionSuccess);
+      
+      toast({ title: texts.conversionSuccess });
+      setSelectedFile(null); // Clear the file input after success
     } catch (err: any) {
-      setMessage(`❌ ${err.message}`);
+      toast({ title: texts.conversionError, description: err.message, variant: "destructive" });
     } finally {
       setIsLoading(false);
+      setMessage('');
     }
-    */
   };
 
 
@@ -310,7 +318,6 @@ export default function PdfToExcelPage() {
                   {texts.convertButton}
                 </Button>
               </form>
-              {message && !isLoading && <div id="message" className="mt-4 text-center text-sm font-medium text-primary">{message}</div>}
             </CardContent>
           </Card>
       </main>

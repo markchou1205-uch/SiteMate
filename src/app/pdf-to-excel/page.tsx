@@ -208,7 +208,7 @@ function PdfConverterContent() {
     const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
 
     try {
-      const response = await fetch("https://pdfsolution.dpdns.org:5001/batch-upload", {
+      const response = await fetch("http://pdfsolution.dpdns.org:5001/batch-upload", {
         method: 'POST',
         body: formData,
         signal: controller.signal
@@ -222,7 +222,7 @@ function PdfConverterContent() {
         throw new Error(String(result.error || texts.conversionErrorDesc));
       }
 
-      const fullDownloadUrl = `https://pdfsolution.dpdns.org:5001${result.download_url}`;
+      const fullDownloadUrl = `http://pdfsolution.dpdns.org:5001${result.download_url}`;
       window.open(fullDownloadUrl, '_blank');
 
       const successCount = result.results.filter((r: any) => r.status === 'success').length;

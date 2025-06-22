@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload, Scissors, Download, FilePlus, LogIn, LogOut, UserCircle, MenuSquare, ArrowRightLeft, Edit, FileUp, ListOrdered, Trash2, Combine, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, CheckSquare, Square } from 'lucide-react';
+import { Loader2, Upload, Scissors, Download, FilePlus, LogIn, LogOut, UserCircle, MenuSquare, ArrowRightLeft, Edit, FileUp, ListOrdered, Trash2, Combine, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, CheckSquare, Square, ScanText } from 'lucide-react';
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarSub, MenubarSubContent, MenubarSubTrigger, MenubarTrigger } from "@/components/ui/menubar";
 
 
@@ -63,11 +63,13 @@ const translations = {
     excelToPdf: 'EXCEL to PDF',
     pptToPdf: 'PPT to PDF',
     htmlToPdf: 'HTML to PDF',
-    jpgToPdf: 'JPG to PDF',
+    jpgToPdf: 'PDF to Image',
     pdfToWord: 'PDF to WORD',
     pdfToExcel: 'PDF to EXCEL',
     pdfToPpt: 'PDF to PPT',
     pdfToHtml: 'PDF to HTML',
+    pdfToJpg: 'PDF to Image',
+    pdfToOcr: 'PDF with OCR',
     selectAll: 'Select All',
     deselectAll: 'Deselect All',
     pagesSelected: 'pages selected',
@@ -116,7 +118,9 @@ const translations = {
     pdfToWord: 'PDF轉WORD',
     pdfToExcel: 'PDF轉EXCEL',
     pdfToPpt: 'PDF轉PPT',
-    pdfToHtml: 'PDF to HTML',
+    pdfToHtml: 'PDF轉HTML',
+    pdfToJpg: 'PDF轉圖片',
+    pdfToOcr: 'PDF光學掃描(OCR)',
     selectAll: '全選',
     deselectAll: '取消全選',
     pagesSelected: '頁已選取',
@@ -378,6 +382,8 @@ export default function SplitPdfPage() {
                                     <MenubarItem onClick={() => router.push('/pdf-to-excel?format=excel')}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.pdfToExcel}</MenubarItem>
                                     <MenubarItem onClick={() => router.push('/pdf-to-excel?format=ppt')}><LucidePresentation className="mr-2 h-4 w-4" />{texts.pdfToPpt}</MenubarItem>
                                     <MenubarItem onClick={() => router.push('/pdf-to-excel?format=html')}><Code className="mr-2 h-4 w-4" />{texts.pdfToHtml}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=jpg')}><FileImage className="mr-2 h-4 w-4" />{texts.pdfToJpg}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=ocr')}><ScanText className="mr-2 h-4 w-4" />{texts.pdfToOcr}</MenubarItem>
                                 </MenubarSubContent>
                             </MenubarSub>
                         </MenubarContent>

@@ -9,9 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarSub, MenubarSubContent, MenubarSubTrigger, MenubarTrigger } from "@/components/ui/menubar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Label } from "@/components/ui/label";
-import { Loader2, Upload, Scissors, Download, FilePlus, LogIn, LogOut, UserCircle, MenuSquare, ArrowRightLeft, Edit, FileUp, ListOrdered, Trash2, Combine, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets } from 'lucide-react';
+import { Loader2, Upload, Scissors, Download, FilePlus, LogIn, LogOut, UserCircle, MenuSquare, ArrowRightLeft, Edit, FileUp, ListOrdered, Trash2, Combine, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const translations = {
   en: {
@@ -47,11 +48,13 @@ const translations = {
     excelToPdf: 'EXCEL to PDF',
     pptToPdf: 'PPT to PDF',
     htmlToPdf: 'HTML to PDF',
-    jpgToPdf: 'JPG to PDF',
+    jpgToPdf: 'PDF to Image',
     pdfToWord: 'PDF to WORD',
     pdfToExcel: 'PDF to EXCEL',
     pdfToPpt: 'PDF to PPT',
     pdfToHtml: 'PDF to HTML',
+    pdfToJpg: 'PDF to Image',
+    pdfToOcr: 'PDF with OCR',
     selectedFile: 'Selected File:',
     noFileSelected: 'Please select a file to convert.',
   },
@@ -93,17 +96,20 @@ const translations = {
     pdfToExcel: 'PDF轉EXCEL',
     pdfToPpt: 'PDF轉PPT',
     pdfToHtml: 'PDF轉HTML',
+    pdfToJpg: 'PDF轉圖片',
+    pdfToOcr: 'PDF光學掃描(OCR)',
     selectedFile: '已選檔案：',
     noFileSelected: '請選擇要轉換的檔案。',
   },
 };
 
 const formatOptions = [
-  { value: 'excel', label: 'Excel (.xlsx)', icon: FileSpreadsheet },
-  { value: 'docx', label: 'Word (.docx)', icon: FileText },
-  { value: 'ppt', label: 'PowerPoint (.pptx)', icon: LucidePresentation },
-  { value: 'html', label: 'HTML (.html)', icon: Code },
-  { value: 'jpg', label: 'JPG Images (.zip)', icon: FileImage },
+  { value: 'docx', labelKey: 'pdfToWord', icon: FileText },
+  { value: 'excel', labelKey: 'pdfToExcel', icon: FileSpreadsheet },
+  { value: 'ppt', labelKey: 'pdfToPpt', icon: LucidePresentation },
+  { value: 'html', labelKey: 'pdfToHtml', icon: Code },
+  { value: 'jpg', labelKey: 'pdfToJpg', icon: FileImage },
+  { value: 'ocr', labelKey: 'pdfToOcr', icon: ScanText },
 ];
 
 function PdfConverterContent() {
@@ -177,6 +183,7 @@ function PdfConverterContent() {
       case "ppt": return "pptx";
       case "html": return "html";
       case "jpg": return "zip";
+      case "ocr": return "txt";
       default: return "out";
     }
   };
@@ -204,7 +211,7 @@ function PdfConverterContent() {
         try {
             const errorData = await response.json();
             errorMsg = errorData.error || errorMsg;
-        } catch (e) { /* Response might not be JSON, use the default error. */ }
+        } catch (e) { console.error('Could not parse error response:', e) }
         throw new Error(errorMsg);
       }
 
@@ -278,6 +285,8 @@ function PdfConverterContent() {
                                     <MenubarItem onClick={() => router.push('/pdf-to-excel?format=excel')}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.pdfToExcel}</MenubarItem>
                                     <MenubarItem onClick={() => router.push('/pdf-to-excel?format=ppt')}><LucidePresentation className="mr-2 h-4 w-4" />{texts.pdfToPpt}</MenubarItem>
                                     <MenubarItem onClick={() => router.push('/pdf-to-excel?format=html')}><Code className="mr-2 h-4 w-4" />{texts.pdfToHtml}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=jpg')}><FileImage className="mr-2 h-4 w-4" />{texts.pdfToJpg}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=ocr')}><ScanText className="mr-2 h-4 w-4" />{texts.pdfToOcr}</MenubarItem>
                                 </MenubarSubContent>
                             </MenubarSub>
                         </MenubarContent>
@@ -324,11 +333,16 @@ function PdfConverterContent() {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div 
-                  className="flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20"
+                  className={cn(
+                    "flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20",
+                    selectedFile && "border-primary"
+                  )}
                   onClick={() => fileUploadRef.current?.click()}
                 >
                     <Upload className="h-12 w-12 text-muted-foreground mb-3" />
-                    <p className="text-md text-muted-foreground text-center">{texts.uploadButton}</p>
+                    <p className="text-md text-muted-foreground text-center">
+                      {selectedFile ? texts.selectedFile + " " + selectedFile.name : texts.uploadButton}
+                    </p>
                     <Input
                         type="file"
                         ref={fileUploadRef}
@@ -339,32 +353,24 @@ function PdfConverterContent() {
                     />
                 </div>
 
-                {selectedFile && (
-                  <div className="text-center text-sm text-muted-foreground">
-                    <strong>{texts.selectedFile}</strong> {selectedFile.name}
-                  </div>
-                )}
-                
                 <div className="space-y-2">
                   <Label htmlFor="format-select">{texts.selectFormatLabel}</Label>
-                  <Select value={format} onValueChange={setFormat}>
-                    <SelectTrigger id="format-select">
-                      <SelectValue placeholder="Select a format" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {formatOptions.map(opt => {
-                        const Icon = opt.icon;
-                        return (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            <div className="flex items-center gap-2">
-                              <Icon className="h-4 w-4" />
-                              <span>{opt.label}</span>
-                            </div>
-                          </SelectItem>
-                        )
+                  <ToggleGroup
+                      type="single"
+                      value={format}
+                      onValueChange={(value) => { if (value) setFormat(value); }}
+                      className="grid grid-cols-2 sm:grid-cols-3 gap-4"
+                  >
+                      {formatOptions.map((opt) => {
+                          const Icon = opt.icon;
+                          return (
+                              <ToggleGroupItem key={opt.value} value={opt.value} className="flex flex-col h-24 p-4 data-[state=on]:border-primary data-[state=on]:border-2 data-[state=on]:shadow-lg" aria-label={texts[opt.labelKey as keyof typeof texts]}>
+                                  <Icon className="h-8 w-8 mb-2 text-primary" />
+                                  <span className="text-sm">{texts[opt.labelKey as keyof typeof texts]}</span>
+                              </ToggleGroupItem>
+                          );
                       })}
-                    </SelectContent>
-                  </Select>
+                  </ToggleGroup>
                 </div>
 
 

@@ -19,7 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, FontSize, Eye, Scissors, LayoutGrid, PanelLeft, FilePlus2, Combine, Type, ImagePlus, Link as LinkIcon, MessageSquarePlus, ZoomIn, ZoomOut, Expand, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Highlighter, ArrowRightLeft, Edit, FileUp, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets } from 'lucide-react';
+import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, FontSize, Eye, Scissors, LayoutGrid, PanelLeft, FilePlus2, Combine, Type, ImagePlus, Link as LinkIcon, MessageSquarePlus, ZoomIn, ZoomOut, Expand, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Highlighter, ArrowRightLeft, Edit, FileUp, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText } from 'lucide-react';
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
@@ -252,11 +252,13 @@ const translations = {
         excelToPdf: 'EXCEL to PDF',
         pptToPdf: 'PPT to PDF',
         htmlToPdf: 'HTML to PDF',
-        jpgToPdf: 'JPG to PDF',
+        jpgToPdf: 'PDF to Image',
         pdfToWord: 'PDF to WORD',
         pdfToExcel: 'PDF to EXCEL',
         pdfToPpt: 'PDF to PPT',
         pdfToHtml: 'PDF to HTML',
+        pdfToJpg: 'PDF to Image',
+        pdfToOcr: 'PDF with OCR',
     },
     zh: {
         pageTitle: 'DocuPilot 文件助手',
@@ -420,6 +422,8 @@ const translations = {
         pdfToExcel: 'PDF轉EXCEL',
         pdfToPpt: 'PDF轉PPT',
         pdfToHtml: 'PDF轉HTML',
+        pdfToJpg: 'PDF轉圖片',
+        pdfToOcr: 'PDF光學掃描(OCR)',
     }
 };
 
@@ -1859,6 +1863,8 @@ export default function PdfEditorHomepage() {
                                     <MenubarItem onClick={() => router.push('/pdf-to-excel?format=excel')}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.pdfToExcel}</MenubarItem>
                                     <MenubarItem onClick={() => router.push('/pdf-to-excel?format=ppt')}><LucidePresentation className="mr-2 h-4 w-4" />{texts.pdfToPpt}</MenubarItem>
                                     <MenubarItem onClick={() => router.push('/pdf-to-excel?format=html')}><Code className="mr-2 h-4 w-4" />{texts.pdfToHtml}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=jpg')}><FileImage className="mr-2 h-4 w-4" />{texts.pdfToJpg}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=ocr')}><ScanText className="mr-2 h-4 w-4" />{texts.pdfToOcr}</MenubarItem>
                                 </MenubarSubContent>
                             </MenubarSub>
                         </MenubarContent>

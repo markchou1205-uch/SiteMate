@@ -16,7 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader as ShadAlertDialogHeader, AlertDialogTitle as ShadAlertDialogTitle } from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload, Combine, Download, FilePlus, LogIn, LogOut, UserCircle, MenuSquare, ArrowRightLeft, Edit, FileUp, ListOrdered, Trash2, Scissors, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets } from 'lucide-react';
+import { Loader2, Upload, Combine, Download, FilePlus, LogIn, LogOut, UserCircle, MenuSquare, ArrowRightLeft, Edit, FileUp, ListOrdered, Trash2, Scissors, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText } from 'lucide-react';
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarSub, MenubarSubContent, MenubarSubTrigger, MenubarTrigger } from "@/components/ui/menubar";
 
 
@@ -78,11 +78,13 @@ const translations = {
     excelToPdf: 'EXCEL to PDF',
     pptToPdf: 'PPT to PDF',
     htmlToPdf: 'HTML to PDF',
-    jpgToPdf: 'JPG to PDF',
+    jpgToPdf: 'PDF to Image',
     pdfToWord: 'PDF to WORD',
     pdfToExcel: 'PDF to EXCEL',
     pdfToPpt: 'PDF to PPT',
     pdfToHtml: 'PDF to HTML',
+    pdfToJpg: 'PDF to Image',
+    pdfToOcr: 'PDF with OCR',
   },
   zh: {
     pageTitle: '合併 PDF 檔案',
@@ -141,7 +143,9 @@ const translations = {
     pdfToWord: 'PDF轉WORD',
     pdfToExcel: 'PDF轉EXCEL',
     pdfToPpt: 'PDF轉PPT',
-    pdfToHtml: 'PDF to HTML',
+    pdfToHtml: 'PDF轉HTML',
+    pdfToJpg: 'PDF轉圖片',
+    pdfToOcr: 'PDF光學掃描(OCR)',
   },
 };
 
@@ -465,6 +469,8 @@ export default function MergePdfPage() {
                                     <MenubarItem onClick={() => router.push('/pdf-to-excel?format=excel')}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.pdfToExcel}</MenubarItem>
                                     <MenubarItem onClick={() => router.push('/pdf-to-excel?format=ppt')}><LucidePresentation className="mr-2 h-4 w-4" />{texts.pdfToPpt}</MenubarItem>
                                     <MenubarItem onClick={() => router.push('/pdf-to-excel?format=html')}><Code className="mr-2 h-4 w-4" />{texts.pdfToHtml}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=jpg')}><FileImage className="mr-2 h-4 w-4" />{texts.pdfToJpg}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=ocr')}><ScanText className="mr-2 h-4 w-4" />{texts.pdfToOcr}</MenubarItem>
                                 </MenubarSubContent>
                             </MenubarSub>
                         </MenubarContent>

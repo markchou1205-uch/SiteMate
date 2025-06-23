@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useRef, useEffect, Suspense } from 'react';
@@ -202,9 +201,6 @@ function PdfConverterContent() {
     formData.append("file", blob, selectedFile.name);
     formData.append("format", format);
 
-    console.log("format:", formData.get("format"));
-    console.log("file:", formData.get("file"));
-
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
 
@@ -223,14 +219,24 @@ function PdfConverterContent() {
       }
       
       const resBlob = await response.blob();
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let downloadFilename = 'result.pdf'; // Default filename
+
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (match && match[1]) {
+          downloadFilename = match[1];
+        }
+      } else {
+        // Fallback filename generation
+        const selectedFormatOption = formatOptions.find(f => f.value === format);
+        const extension = selectedFormatOption?.extension || format;
+        const originalName = selectedFile.name.substring(0, selectedFile.name.lastIndexOf('.'));
+        downloadFilename = `${originalName}.${extension}`;
+      }
+      
       const url = window.URL.createObjectURL(resBlob);
       const a = document.createElement('a');
-
-      const selectedFormatOption = formatOptions.find(f => f.value === format);
-      const extension = selectedFormatOption?.extension || format;
-      const originalName = selectedFile.name.substring(0, selectedFile.name.lastIndexOf('.'));
-      const downloadFilename = `${originalName}.${extension}`;
-
       a.href = url;
       a.download = downloadFilename;
       document.body.appendChild(a);

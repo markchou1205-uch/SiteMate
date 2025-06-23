@@ -133,7 +133,7 @@ function PdfConverterContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [format, setFormat] = useState("excel");
+  const [format, setFormat] = useState("word");
   const [isLoading, setIsLoading] = useState(false);
   
   const fileUploadRef = useRef<HTMLInputElement>(null);
@@ -200,7 +200,7 @@ function PdfConverterContent() {
     setIsLoading(true);
     const formData = new FormData();
     selectedFiles.forEach(file => {
-      formData.append('file', file);
+      formData.append('files', file);
     });
     formData.append('format', format);
 

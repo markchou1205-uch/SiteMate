@@ -228,12 +228,6 @@ function PdfConverterContent() {
         if (match && match[1]) {
           downloadFilename = match[1];
         }
-      } else {
-        // Fallback filename generation
-        const selectedFormatOption = formatOptions.find(f => f.value === format);
-        const extension = selectedFormatOption?.extension || format;
-        const originalName = selectedFile.name.substring(0, selectedFile.name.lastIndexOf('.'));
-        downloadFilename = `${originalName}.${extension}`;
       }
       
       const url = window.URL.createObjectURL(resBlob);
@@ -309,12 +303,12 @@ function PdfConverterContent() {
                             <MenubarSub>
                                 <MenubarSubTrigger><FileMinus className="mr-2 h-4 w-4" />{texts.convertFromPdf}</MenubarSubTrigger>
                                 <MenubarSubContent>
-                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=word')}><FileText className="mr-2 h-4 w-4" />{texts.pdfToWord}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=excel')}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.pdfToExcel}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=ppt')}><LucidePresentation className="mr-2 h-4 w-4" />{texts.pdfToPpt}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=html')}><Code className="mr-2 h-4 w-4" />{texts.pdfToHtml}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=image')}><FileImage className="mr-2 h-4 w-4" />{texts.pdfToJpg}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=ocr')}><ScanText className="mr-2 h-4 w-4" />{texts.pdfToOcr}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=word')} disabled><FileText className="mr-2 h-4 w-4" />{texts.pdfToWord}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=excel')} disabled><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.pdfToExcel}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=ppt')} disabled><LucidePresentation className="mr-2 h-4 w-4" />{texts.pdfToPpt}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=html')} disabled><Code className="mr-2 h-4 w-4" />{texts.pdfToHtml}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=image')} disabled><FileImage className="mr-2 h-4 w-4" />{texts.pdfToJpg}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-excel?format=ocr')} disabled><ScanText className="mr-2 h-4 w-4" />{texts.pdfToOcr}</MenubarItem>
                                 </MenubarSubContent>
                             </MenubarSub>
                         </MenubarContent>

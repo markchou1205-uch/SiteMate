@@ -194,11 +194,11 @@ function PdfConverterContent() {
 
     setIsLoading(true);
     const formData = new FormData();
-    formData.append("pdf_file", selectedFile);
+    formData.append("file", selectedFile);
     formData.append("format", format);
 
     console.log("format:", formData.get("format"));
-    console.log("file:", formData.get("pdf_file"));
+    console.log("file:", formData.get("file"));
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout

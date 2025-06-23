@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useRef, useEffect, Suspense } from 'react';
@@ -113,7 +114,7 @@ const formatOptions = [
   { value: 'ppt', labelKey: 'pdfToPpt', icon: LucidePresentation, extension: 'pptx' },
   { value: 'html', labelKey: 'pdfToHtml', icon: Code, extension: 'html' },
   { value: 'image', labelKey: 'pdfToJpg', icon: FileImage, extension: 'zip' },
-  { value: 'ocr', labelKey: 'pdfToOcr', icon: ScanText, extension: 'txt' },
+  { value: 'ocr', labelKey: 'pdfToOcr', icon: ScanText, extension: 'pdf' },
 ];
 
 function PdfConverterContent() {

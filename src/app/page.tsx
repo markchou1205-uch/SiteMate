@@ -257,7 +257,7 @@ export default function Homepage() {
           <div className="flex flex-col items-center">
             <h2 className="text-xl font-semibold mb-6 text-foreground">{texts.pdfEditMenu}</h2>
             <div className="grid grid-cols-3 gap-y-6 gap-x-4 w-full">
-              {pdfEditingTools.map(tool => <FeatureIcon key={tool.key} {...tool} />)}
+              {pdfEditingTools.map(({ key, ...rest }) => <FeatureIcon key={key} {...rest} />)}
             </div>
           </div>
 
@@ -265,7 +265,7 @@ export default function Homepage() {
           <div className="flex flex-col items-center">
             <h2 className="text-xl font-semibold mb-6 text-foreground">{texts.convertFromPdf}</h2>
             <div className="grid grid-cols-3 gap-y-6 gap-x-4 w-full">
-              {convertFromPdfTools.map(tool => <FeatureIcon key={tool.key} {...tool} />)}
+              {convertFromPdfTools.map(({ key, ...rest }) => <FeatureIcon key={key} {...rest} />)}
             </div>
           </div>
 
@@ -273,7 +273,7 @@ export default function Homepage() {
           <div className="flex flex-col items-center">
             <h2 className="text-xl font-semibold mb-6 text-foreground">{texts.convertToPdf}</h2>
             <div className="grid grid-cols-3 gap-y-6 gap-x-4 w-full">
-              {convertToPdfTools.map(tool => <FeatureIcon key={tool.key} {...tool} />)}
+              {convertToPdfTools.map(({ key, ...rest }) => <FeatureIcon key={key} {...rest} />)}
             </div>
           </div>
         </div>

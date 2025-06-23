@@ -49,9 +49,9 @@ const translations = {
     convertFromPdf: 'Convert from PDF',
     wordToPdf: 'WORD to PDF',
     excelToPdf: 'EXCEL to PDF',
-    pptToPdf: 'PPT to PDF',
-    htmlToPdf: 'HTML to PDF',
-    jpgToPdf: 'JPG to PDF',
+    pptToPdf: 'PPT to PPT',
+    htmlToPdf: 'HTML to HTML',
+    jpgToPdf: 'JPG to Image',
     pdfToWord: 'PDF to WORD',
     pdfToExcel: 'PDF to EXCEL',
     pdfToPpt: 'PDF to PPT',
@@ -200,9 +200,12 @@ function PdfConverterContent() {
     setIsLoading(true);
     const formData = new FormData();
     selectedFiles.forEach(file => {
-      formData.append('files', file);
+      formData.append('pdf_file', file);
     });
     formData.append('format', format);
+
+    console.log("format:", formData.get("format"));
+    console.log("files:", formData.getAll("pdf_file"));
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout

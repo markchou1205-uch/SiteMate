@@ -6,9 +6,12 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { LogIn, LogOut, UserCircle, MenuSquare, ArrowRightLeft, Edit, FileUp, ListOrdered, Trash2, Combine, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText, Scissors, Sparkles, Star } from 'lucide-react';
+import { 
+    LogIn, LogOut, UserCircle, MenuSquare, ArrowRightLeft, Edit, FileUp, ListOrdered, 
+    Trash2, Combine, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, 
+    FileMinus, Droplets, ScanText, Scissors, Sparkles 
+} from 'lucide-react';
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSub, MenubarSubContent, MenubarSubTrigger, MenubarTrigger } from "@/components/ui/menubar";
 
 const translations = {
@@ -22,7 +25,7 @@ const translations = {
     guest: 'Guest',
     comingSoon: 'Coming Soon!',
     featureNotImplemented: 'feature is not yet implemented.',
-    pdfEditMenu: 'PDF Edit',
+    pdfEditMenu: 'PDF Editing Tools',
     pdfConvertMenu: 'PDF Convert',
     mergePdf: 'Merge PDF',
     splitPdf: 'Split PDF',
@@ -44,14 +47,6 @@ const translations = {
     pdfToJpg: 'PDF to Image',
     pdfToOcr: 'PDF with OCR',
     proMode: 'Professional Mode',
-    
-    editPdfDesc: 'Edit text, images, and links in your PDF document.',
-    mergePdfDesc: 'Combine multiple PDF files into a single document.',
-    splitPdfDesc: 'Extract or delete pages from your PDF file.',
-    pdfToWordDesc: 'Convert PDFs to editable Word documents.',
-    pdfToExcelDesc: 'Extract data from PDFs into Excel spreadsheets.',
-    pdfToPptDesc: 'Turn PDFs into PowerPoint presentations.',
-    pdfToJpgDesc: 'Save each page of your PDF as a separate image.',
   },
   zh: {
     pageTitle: '歡迎使用 Pdf Solution 文件助手',
@@ -63,7 +58,7 @@ const translations = {
     guest: '訪客',
     comingSoon: '即將推出！',
     featureNotImplemented: '功能尚未實現。',
-    pdfEditMenu: 'PDF 編輯',
+    pdfEditMenu: 'PDF 編輯工具',
     pdfConvertMenu: 'PDF 轉換',
     mergePdf: '合併 PDF',
     splitPdf: '拆分 PDF',
@@ -85,27 +80,33 @@ const translations = {
     pdfToJpg: 'PDF 轉圖片',
     pdfToOcr: 'PDF 光學掃描(OCR)',
     proMode: '專業模式',
-
-    editPdfDesc: '編輯您 PDF 文件中的文字、圖片和連結。',
-    mergePdfDesc: '將多個 PDF 檔案合併為一份單獨的文件。',
-    splitPdfDesc: '從您的 PDF 檔案中擷取或刪除頁面。',
-    pdfToWordDesc: '將 PDF 轉換為可編輯的 Word 文件。',
-    pdfToExcelDesc: '將 PDF 中的數據提取到 Excel 試算表中。',
-    pdfToPptDesc: '將 PDF 變成 PowerPoint 簡報。',
-    pdfToJpgDesc: '將 PDF 的每一頁儲存為獨立的圖片檔案。',
   },
 };
 
-const features = [
-    { key: 'editPdf', titleKey: 'proMode', descriptionKey: 'editPdfDesc', icon: Sparkles, href: '/edit-pdf', isPro: true },
-    { key: 'merge', titleKey: 'mergePdf', descriptionKey: 'mergePdfDesc', icon: Combine, href: '/merge-pdf' },
-    { key: 'split', titleKey: 'splitPdf', descriptionKey: 'splitPdfDesc', icon: Scissors, href: '/split-pdf' },
-    { key: 'pdfToWord', titleKey: 'pdfToWord', descriptionKey: 'pdfToWordDesc', icon: FileText, href: '/pdf-to-word' },
-    { key: 'pdfToExcel', titleKey: 'pdfToExcel', descriptionKey: 'pdfToExcelDesc', icon: FileSpreadsheet, href: '/pdf-to-excel' },
-    { key: 'pdfToPpt', titleKey: 'pdfToPpt', descriptionKey: 'pdfToPptDesc', icon: LucidePresentation, href: '/pdf-to-ppt' },
-    { key: 'pdfToJpg', titleKey: 'pdfToJpg', descriptionKey: 'pdfToJpgDesc', icon: FileImage, href: '/pdf-to-image' },
-    { key: 'pdfToHtml', titleKey: 'pdfToHtml', descriptionKey: 'pdfToHtml', icon: Code, href: '/pdf-to-html' },
-    { key: 'pdfToOcr', titleKey: 'pdfToOcr', descriptionKey: 'pdfToOcr', icon: ScanText, href: '/pdf-to-ocr' },
+const pdfEditingTools = [
+    { key: 'mergePdf', titleKey: 'mergePdf', href: '/merge-pdf', icon: Combine },
+    { key: 'splitPdf', titleKey: 'splitPdf', href: '/split-pdf', icon: Scissors },
+    { key: 'deletePdfPages', titleKey: 'deletePdfPages', href: '/split-pdf', icon: Trash2 },
+    { key: 'extractPdfPages', titleKey: 'extractPdfPages', href: '/split-pdf', icon: FileUp },
+    { key: 'reorderPdfPages', titleKey: 'reorderPdfPages', href: '/edit-pdf', icon: ListOrdered },
+    { key: 'addWatermark', titleKey: 'addWatermark', href: '/edit-pdf', icon: Droplets },
+];
+
+const convertFromPdfTools = [
+    { key: 'pdfToWord', titleKey: 'pdfToWord', href: '/pdf-to-word', icon: FileText },
+    { key: 'pdfToExcel', titleKey: 'pdfToExcel', href: '/pdf-to-excel', icon: FileSpreadsheet },
+    { key: 'pdfToPpt', titleKey: 'pdfToPpt', href: '/pdf-to-ppt', icon: LucidePresentation },
+    { key: 'pdfToHtml', titleKey: 'pdfToHtml', href: '/pdf-to-html', icon: Code },
+    { key: 'pdfToJpg', titleKey: 'pdfToJpg', href: '/pdf-to-image', icon: FileImage },
+    { key: 'pdfToOcr', titleKey: 'pdfToOcr', href: '/pdf-to-ocr', icon: ScanText },
+];
+
+const convertToPdfTools = [
+    { key: 'wordToPdf', titleKey: 'wordToPdf', href: '#', icon: FileText, placeholder: true },
+    { key: 'excelToPdf', titleKey: 'excelToPdf', href: '#', icon: FileSpreadsheet, placeholder: true },
+    { key: 'pptToPdf', titleKey: 'pptToPdf', href: '#', icon: LucidePresentation, placeholder: true },
+    { key: 'htmlToPdf', titleKey: 'htmlToPdf', href: '#', icon: Code, placeholder: true },
+    { key: 'jpgToPdf', titleKey: 'jpgToPdf', href: '#', icon: FileImage, placeholder: true },
 ];
 
 export default function Homepage() {
@@ -144,6 +145,25 @@ export default function Homepage() {
         title: texts.comingSoon,
         description: `${featureName} ${texts.featureNotImplemented}`
     });
+  };
+
+  const FeatureIcon = ({ href, icon: Icon, titleKey, placeholder }: { href: string; icon: React.ElementType; titleKey: string; placeholder?: boolean }) => {
+    const title = texts[titleKey as keyof typeof texts];
+    const content = (
+      <div 
+        className="flex flex-col items-center justify-center p-2 space-y-2 rounded-lg hover:bg-accent/50 transition-colors h-24 group"
+        onClick={placeholder ? () => handlePlaceholderClick(title) : undefined}
+      >
+        <Icon className="h-8 w-8 text-primary group-hover:scale-110 transition-transform" />
+        <span className="text-xs text-center text-muted-foreground group-hover:text-primary">{title}</span>
+      </div>
+    );
+  
+    if (placeholder) {
+      return <div className="cursor-pointer">{content}</div>;
+    }
+  
+    return <Link href={href}>{content}</Link>;
   };
 
   return (
@@ -226,33 +246,33 @@ export default function Homepage() {
         </div>
       </header>
 
-      <main className="flex-grow container mx-auto px-4 py-8">
-        <div className="text-center mb-12">
+      <main className="flex-grow container mx-auto px-4 py-12">
+        <div className="text-center mb-16">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">{texts.pageTitle}</h1>
           <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">{texts.pageDescription}</p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {features.map((feature) => (
-            <Link href={feature.href} key={feature.key} passHref>
-              <Card className="h-full flex flex-col hover:shadow-lg hover:border-primary transition-all duration-200 cursor-pointer group">
-                <CardHeader className="flex-shrink-0">
-                  <div className="flex justify-between items-center">
-                    <feature.icon className="h-8 w-8 text-primary group-hover:scale-110 transition-transform" />
-                    {feature.isPro && (
-                      <div className="flex items-center gap-1 text-xs font-semibold bg-yellow-400/20 text-yellow-600 px-2 py-1 rounded-full">
-                        <Star className="h-3 w-3" /> PRO
-                      </div>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent className="flex-grow flex flex-col">
-                  <CardTitle className="text-lg font-semibold mb-2">{texts[feature.titleKey as keyof typeof texts]}</CardTitle>
-                  <CardDescription className="flex-grow">{texts[feature.descriptionKey as keyof typeof texts]}</CardDescription>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="bg-card p-6 rounded-xl border shadow-sm">
+            <h2 className="text-xl font-semibold mb-6 text-center text-foreground">{texts.pdfEditMenu}</h2>
+            <div className="grid grid-cols-3 gap-y-6 gap-x-4">
+              {pdfEditingTools.map(tool => <FeatureIcon key={tool.key} {...tool} />)}
+            </div>
+          </div>
+
+          <div className="bg-card p-6 rounded-xl border shadow-sm">
+            <h2 className="text-xl font-semibold mb-6 text-center text-foreground">{texts.convertFromPdf}</h2>
+            <div className="grid grid-cols-3 gap-y-6 gap-x-4">
+              {convertFromPdfTools.map(tool => <FeatureIcon key={tool.key} {...tool} />)}
+            </div>
+          </div>
+
+          <div className="bg-card p-6 rounded-xl border shadow-sm">
+            <h2 className="text-xl font-semibold mb-6 text-center text-foreground">{texts.convertToPdf}</h2>
+            <div className="grid grid-cols-3 gap-y-6 gap-x-4">
+              {convertToPdfTools.map(tool => <FeatureIcon key={tool.key} {...tool} />)}
+            </div>
+          </div>
         </div>
       </main>
     </div>

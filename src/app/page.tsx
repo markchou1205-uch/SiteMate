@@ -37,7 +37,7 @@ const translations = {
     convertFromPdf: 'Convert from PDF',
     wordToPdf: 'WORD to PDF',
     excelToPdf: 'EXCEL to PDF',
-    pptToPdf: 'PPT to PPT',
+    pptToPdf: 'PPT to PDF',
     htmlToPdf: 'HTML to HTML',
     jpgToPdf: 'JPG to Image',
     pdfToWord: 'PDF to WORD',
@@ -47,6 +47,7 @@ const translations = {
     pdfToJpg: 'PDF to Image',
     pdfToOcr: 'PDF with OCR',
     proMode: 'Professional Mode',
+    proModeDescription: 'All-in-one editor with batch processing and more.',
   },
   zh: {
     pageTitle: '歡迎使用 Pdf Solution 文件助手',
@@ -80,6 +81,7 @@ const translations = {
     pdfToJpg: 'PDF 轉圖片',
     pdfToOcr: 'PDF 光學掃描(OCR)',
     proMode: '專業模式',
+    proModeDescription: '整合所有編輯、轉換與批次處理功能。',
   },
 };
 
@@ -252,32 +254,46 @@ export default function Homepage() {
           <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">{texts.pageDescription}</p>
         </div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-12">
           {/* Left Column: PDF Editing Tools */}
           <div className="flex flex-col items-center">
             <h2 className="text-xl font-semibold mb-6 text-foreground">{texts.pdfEditMenu}</h2>
-            <div className="grid grid-cols-3 gap-y-6 gap-x-4 w-full">
-              {pdfEditingTools.map(({ key, ...rest }) => <FeatureIcon key={key} {...rest} />)}
+            <div className="grid grid-cols-3 gap-y-4 gap-x-2 w-full">
+              {pdfEditingTools.map(({ key, ...tool }) => <FeatureIcon key={key} {...tool} />)}
             </div>
           </div>
 
-          {/* Middle Column: Convert from PDF */}
+          {/* Middle-Left Column: Convert from PDF */}
           <div className="flex flex-col items-center">
             <h2 className="text-xl font-semibold mb-6 text-foreground">{texts.convertFromPdf}</h2>
-            <div className="grid grid-cols-3 gap-y-6 gap-x-4 w-full">
-              {convertFromPdfTools.map(({ key, ...rest }) => <FeatureIcon key={key} {...rest} />)}
+            <div className="grid grid-cols-3 gap-y-4 gap-x-2 w-full">
+              {convertFromPdfTools.map(({ key, ...tool }) => <FeatureIcon key={key} {...tool} />)}
             </div>
           </div>
 
-          {/* Right Column: Convert to PDF */}
+          {/* Middle-Right Column: Convert to PDF */}
           <div className="flex flex-col items-center">
             <h2 className="text-xl font-semibold mb-6 text-foreground">{texts.convertToPdf}</h2>
-            <div className="grid grid-cols-3 gap-y-6 gap-x-4 w-full">
-              {convertToPdfTools.map(({ key, ...rest }) => <FeatureIcon key={key} {...rest} />)}
+            <div className="grid grid-cols-3 gap-y-4 gap-x-2 w-full">
+              {convertToPdfTools.map(({ key, ...tool }) => <FeatureIcon key={key} {...tool} />)}
             </div>
           </div>
+          
+          {/* Rightmost Column: Pro Mode */}
+          <div className="flex flex-col items-center md:col-span-2 lg:col-span-1 lg:border-l-2 lg:border-dashed lg:border-primary/30 lg:pl-8">
+            <h2 className="text-xl font-semibold mb-6 text-primary">{texts.proMode}</h2>
+            <div className="w-full flex justify-center">
+              <FeatureIcon key="pro-mode" href="/edit-pdf" icon={Sparkles} titleKey="proMode" />
+            </div>
+             <p className="text-sm text-center text-muted-foreground mt-2 px-4">
+              {texts.proModeDescription}
+            </p>
+          </div>
+
         </div>
       </main>
     </div>
   );
 }
+
+    

@@ -76,7 +76,7 @@ const translations = {
     convertFromPdf: 'Convert from PDF',
     wordToPdf: 'WORD to PDF',
     excelToPdf: 'EXCEL to PDF',
-    pptToPdf: 'PPT to PPT',
+    pptToPdf: 'PPT to PDF',
     htmlToPdf: 'HTML to HTML',
     jpgToPdf: 'JPG to Image',
     pdfToWord: 'PDF to WORD',
@@ -600,3 +600,5 @@ export default function MergePdfPage() {
     </div>
   )
 }
+
+    

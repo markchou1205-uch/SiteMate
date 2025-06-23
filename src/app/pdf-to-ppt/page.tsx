@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarSub, MenubarSubContent, MenubarSubTrigger, MenubarTrigger } from "@/components/ui/menubar";
-import { Loader2, Upload, Scissors, Download, FilePlus, LogIn, LogOut, UserCircle, MenuSquare, ArrowRightLeft, Edit, FileUp, ListOrdered, Trash2, Combine, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText } from 'lucide-react';
+import { Loader2, Upload, Scissors, Download, FilePlus, LogIn, LogOut, UserCircle, MenuSquare, ArrowRightLeft, Edit, FileUp, ListOrdered, Trash2, Combine, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText, Sparkles } from 'lucide-react';
 
 const translations = {
   en: {
@@ -55,6 +55,7 @@ const translations = {
     noFileSelected: 'Please select a file to convert.',
     invalidFileError: 'Invalid File Detected',
     invalidFileErrorDesc: 'The selected file was not a valid PDF.',
+    proMode: 'Pro Mode',
   },
   zh: {
     pageTitle: 'PDF 轉 PowerPoint',
@@ -99,6 +100,7 @@ const translations = {
     noFileSelected: '請選取一個要轉換的檔案。',
     invalidFileError: '偵測到無效檔案',
     invalidFileErrorDesc: '選取的檔案不是有效的 PDF。',
+    proMode: '專業模式',
   },
 };
 
@@ -251,7 +253,7 @@ export default function PdfToPptPage() {
                             <MenubarItem onClick={() => router.push('/split-pdf')}><Scissors className="mr-2 h-4 w-4" />{texts.splitPdf}</MenubarItem>
                             <MenubarItem onClick={() => router.push('/split-pdf')}><Trash2 className="mr-2 h-4 w-4" />{texts.deletePdfPages}</MenubarItem>
                             <MenubarItem onClick={() => router.push('/split-pdf')}><FileUp className="mr-2 h-4 w-4" />{texts.extractPdfPages}</MenubarItem>
-                            <MenubarItem onClick={() => router.push('/')}><ListOrdered className="mr-2 h-4 w-4" />{texts.reorderPdfPages}</MenubarItem>
+                            <MenubarItem onClick={() => router.push('/edit-pdf')}><ListOrdered className="mr-2 h-4 w-4" />{texts.reorderPdfPages}</MenubarItem>
                             <MenubarItem onClick={() => handlePlaceholderClick(texts.addWatermark)}><Droplets className="mr-2 h-4 w-4" />{texts.addWatermark}</MenubarItem>
                         </MenubarContent>
                     </MenubarMenu>
@@ -280,6 +282,12 @@ export default function PdfToPptPage() {
                                 </MenubarSubContent>
                             </MenubarSub>
                         </MenubarContent>
+                    </MenubarMenu>
+                    <MenubarMenu>
+                        <MenubarTrigger onClick={() => router.push('/pro-convert')} className="text-primary hover:text-primary focus:text-primary">
+                            <Sparkles className="mr-2 h-4 w-4" />
+                            {texts.proMode}
+                        </MenubarTrigger>
                     </MenubarMenu>
                 </Menubar>
             </div>

@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload, Scissors, Download, FilePlus, LogIn, LogOut, UserCircle, MenuSquare, ArrowRightLeft, Edit, FileUp, ListOrdered, Trash2, Combine, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, CheckSquare, Square, ScanText } from 'lucide-react';
+import { Loader2, Upload, Scissors, Download, FilePlus, LogIn, LogOut, UserCircle, MenuSquare, ArrowRightLeft, Edit, FileUp, ListOrdered, Trash2, Combine, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, CheckSquare, Square, ScanText, Sparkles } from 'lucide-react';
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarSub, MenubarSubContent, MenubarSubTrigger, MenubarTrigger } from "@/components/ui/menubar";
 
 
@@ -61,9 +61,9 @@ const translations = {
     convertFromPdf: 'Convert from PDF',
     wordToPdf: 'WORD to PDF',
     excelToPdf: 'EXCEL to PDF',
-    pptToPdf: 'PPT to PDF',
-    htmlToPdf: 'HTML to PDF',
-    jpgToPdf: 'JPG to PDF',
+    pptToPdf: 'PPT to PPT',
+    htmlToPdf: 'HTML to HTML',
+    jpgToPdf: 'JPG to Image',
     pdfToWord: 'PDF to WORD',
     pdfToExcel: 'PDF to EXCEL',
     pdfToPpt: 'PDF to PPT',
@@ -73,6 +73,7 @@ const translations = {
     selectAll: 'Select All',
     deselectAll: 'Deselect All',
     pagesSelected: 'pages selected',
+    proMode: 'Pro Mode',
   },
   zh: {
     pageTitle: '拆分 PDF',
@@ -124,6 +125,7 @@ const translations = {
     selectAll: '全選',
     deselectAll: '取消全選',
     pagesSelected: '頁已選取',
+    proMode: '專業模式',
   },
 };
 
@@ -358,7 +360,7 @@ export default function SplitPdfPage() {
                             <MenubarItem disabled><Scissors className="mr-2 h-4 w-4" />{texts.splitPdf}</MenubarItem>
                             <MenubarItem disabled><Trash2 className="mr-2 h-4 w-4" />{texts.deletePdfPages}</MenubarItem>
                             <MenubarItem disabled><FileUp className="mr-2 h-4 w-4" />{texts.extractPdfPages}</MenubarItem>
-                            <MenubarItem onClick={() => router.push('/')}><ListOrdered className="mr-2 h-4 w-4" />{texts.reorderPdfPages}</MenubarItem>
+                            <MenubarItem onClick={() => router.push('/edit-pdf')}><ListOrdered className="mr-2 h-4 w-4" />{texts.reorderPdfPages}</MenubarItem>
                             <MenubarItem onClick={() => handlePlaceholderClick(texts.addWatermark)}><Droplets className="mr-2 h-4 w-4" />{texts.addWatermark}</MenubarItem>
                         </MenubarContent>
                     </MenubarMenu>
@@ -387,6 +389,12 @@ export default function SplitPdfPage() {
                                 </MenubarSubContent>
                             </MenubarSub>
                         </MenubarContent>
+                    </MenubarMenu>
+                    <MenubarMenu>
+                        <MenubarTrigger onClick={() => router.push('/pro-convert')} className="text-primary hover:text-primary focus:text-primary">
+                            <Sparkles className="mr-2 h-4 w-4" />
+                            {texts.proMode}
+                        </MenubarTrigger>
                     </MenubarMenu>
                 </Menubar>
             </div>

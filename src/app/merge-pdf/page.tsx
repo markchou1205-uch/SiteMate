@@ -16,7 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader as ShadAlertDialogHeader, AlertDialogTitle as ShadAlertDialogTitle } from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload, Combine, Download, FilePlus, LogIn, LogOut, UserCircle, MenuSquare, ArrowRightLeft, Edit, FileUp, ListOrdered, Trash2, Scissors, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText } from 'lucide-react';
+import { Loader2, Upload, Combine, Download, FilePlus, LogIn, LogOut, UserCircle, MenuSquare, ArrowRightLeft, Edit, FileUp, ListOrdered, Trash2, Scissors, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText, Sparkles } from 'lucide-react';
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarSub, MenubarSubContent, MenubarSubTrigger, MenubarTrigger } from "@/components/ui/menubar";
 
 
@@ -76,15 +76,16 @@ const translations = {
     convertFromPdf: 'Convert from PDF',
     wordToPdf: 'WORD to PDF',
     excelToPdf: 'EXCEL to PDF',
-    pptToPdf: 'PPT to PDF',
-    htmlToPdf: 'HTML to PDF',
-    jpgToPdf: 'JPG to PDF',
+    pptToPdf: 'PPT to PPT',
+    htmlToPdf: 'HTML to HTML',
+    jpgToPdf: 'JPG to Image',
     pdfToWord: 'PDF to WORD',
     pdfToExcel: 'PDF to EXCEL',
     pdfToPpt: 'PDF to PPT',
     pdfToHtml: 'PDF to HTML',
     pdfToJpg: 'PDF to Image',
     pdfToOcr: 'PDF with OCR',
+    proMode: 'Pro Mode',
   },
   zh: {
     pageTitle: '合併 PDF 檔案',
@@ -146,6 +147,7 @@ const translations = {
     pdfToHtml: 'PDF轉HTML',
     pdfToJpg: 'PDF轉圖片',
     pdfToOcr: 'PDF光學掃描(OCR)',
+    proMode: '專業模式',
   },
 };
 
@@ -445,7 +447,7 @@ export default function MergePdfPage() {
                             <MenubarItem onClick={() => router.push('/split-pdf')}><Scissors className="mr-2 h-4 w-4" />{texts.splitPdf}</MenubarItem>
                             <MenubarItem onClick={() => router.push('/split-pdf')}><Trash2 className="mr-2 h-4 w-4" />{texts.deletePdfPages}</MenubarItem>
                             <MenubarItem onClick={() => router.push('/split-pdf')}><FileUp className="mr-2 h-4 w-4" />{texts.extractPdfPages}</MenubarItem>
-                            <MenubarItem onClick={() => router.push('/')}><ListOrdered className="mr-2 h-4 w-4" />{texts.reorderPdfPages}</MenubarItem>
+                            <MenubarItem onClick={() => router.push('/edit-pdf')}><ListOrdered className="mr-2 h-4 w-4" />{texts.reorderPdfPages}</MenubarItem>
                             <MenubarItem onClick={() => handlePlaceholderClick(texts.addWatermark)}><Droplets className="mr-2 h-4 w-4" />{texts.addWatermark}</MenubarItem>
                         </MenubarContent>
                     </MenubarMenu>
@@ -474,6 +476,12 @@ export default function MergePdfPage() {
                                 </MenubarSubContent>
                             </MenubarSub>
                         </MenubarContent>
+                    </MenubarMenu>
+                    <MenubarMenu>
+                        <MenubarTrigger onClick={() => router.push('/pro-convert')} className="text-primary hover:text-primary focus:text-primary">
+                            <Sparkles className="mr-2 h-4 w-4" />
+                            {texts.proMode}
+                        </MenubarTrigger>
                     </MenubarMenu>
                 </Menubar>
             </div>

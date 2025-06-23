@@ -57,7 +57,7 @@ const translations = {
     cancel: 'Cancel',
     confirm: 'Confirm',
     page: 'Page',
-    appTitle: 'DocuPilot',
+    appTitle: 'Pdf Solution',
     loggedInAs: 'Logged in as User',
     login: 'Login',
     logout: 'Logout',
@@ -85,7 +85,7 @@ const translations = {
     pdfToHtml: 'PDF to HTML',
     pdfToJpg: 'PDF to Image',
     pdfToOcr: 'PDF with OCR',
-    proMode: 'Pro Mode',
+    proMode: 'Professional Mode',
   },
   zh: {
     pageTitle: '合併 PDF 檔案',
@@ -119,7 +119,7 @@ const translations = {
     cancel: '取消',
     confirm: '確認',
     page: '頁',
-    appTitle: 'DocuPilot 文件助手',
+    appTitle: 'Pdf Solution',
     loggedInAs: '已登入為使用者',
     login: '登入',
     logout: '登出',
@@ -369,7 +369,7 @@ export default function MergePdfPage() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'DocuPilot_merged.pdf';
+        a.download = 'PdfSolution_merged.pdf';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -445,17 +445,15 @@ export default function MergePdfPage() {
                         <MenubarContent>
                             <MenubarItem onClick={() => router.push('/merge-pdf')} disabled><Combine className="mr-2 h-4 w-4" />{texts.mergePdf}</MenubarItem>
                             <MenubarItem onClick={() => router.push('/split-pdf')}><Scissors className="mr-2 h-4 w-4" />{texts.splitPdf}</MenubarItem>
-                            <MenubarItem onClick={() => router.push('/split-pdf')}><Trash2 className="mr-2 h-4 w-4" />{texts.deletePdfPages}</MenubarItem>
-                            <MenubarItem onClick={() => router.push('/split-pdf')}><FileUp className="mr-2 h-4 w-4" />{texts.extractPdfPages}</MenubarItem>
                             <MenubarItem onClick={() => router.push('/edit-pdf')}><ListOrdered className="mr-2 h-4 w-4" />{texts.reorderPdfPages}</MenubarItem>
-                            <MenubarItem onClick={() => handlePlaceholderClick(texts.addWatermark)}><Droplets className="mr-2 h-4 w-4" />{texts.addWatermark}</MenubarItem>
+                            <MenubarItem onClick={() => router.push('/edit-pdf')}><Droplets className="mr-2 h-4 w-4" />{texts.addWatermark}</MenubarItem>
                         </MenubarContent>
                     </MenubarMenu>
                     <MenubarMenu>
                         <MenubarTrigger><ArrowRightLeft className="mr-2 h-4 w-4" />{texts.pdfConvertMenu}</MenubarTrigger>
                         <MenubarContent>
                             <MenubarSub>
-                                <MenubarSubTrigger><FilePlus className="mr-2 h-4 w-4" />{texts.convertToPdf}</MenubarSubTrigger>
+                                <MenubarSubTrigger><FileUp className="mr-2 h-4 w-4" />{texts.convertToPdf}</MenubarSubTrigger>
                                 <MenubarSubContent>
                                     <MenubarItem onClick={() => handlePlaceholderClick(texts.wordToPdf)}><FileText className="mr-2 h-4 w-4" />{texts.wordToPdf}</MenubarItem>
                                     <MenubarItem onClick={() => handlePlaceholderClick(texts.excelToPdf)}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.excelToPdf}</MenubarItem>
@@ -478,7 +476,7 @@ export default function MergePdfPage() {
                         </MenubarContent>
                     </MenubarMenu>
                     <MenubarMenu>
-                        <MenubarTrigger onClick={() => router.push('/pro-convert')} className="text-primary hover:text-primary focus:text-primary">
+                        <MenubarTrigger onClick={() => router.push('/edit-pdf')} className="text-primary hover:text-primary focus:text-primary ring-1 ring-primary/50">
                             <Sparkles className="mr-2 h-4 w-4" />
                             {texts.proMode}
                         </MenubarTrigger>
@@ -602,5 +600,3 @@ export default function MergePdfPage() {
     </div>
   )
 }
-
-    

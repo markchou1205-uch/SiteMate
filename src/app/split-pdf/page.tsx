@@ -42,7 +42,7 @@ const translations = {
     downloadSuccessDesc: (filename: string) => `${filename} has been downloaded.`,
     downloadError: 'Download Failed',
     page: 'Page',
-    appTitle: 'DocuPilot',
+    appTitle: 'Pdf Solution',
     loggedInAs: 'Logged in as User',
     login: 'Login',
     logout: 'Logout',
@@ -73,7 +73,7 @@ const translations = {
     selectAll: 'Select All',
     deselectAll: 'Deselect All',
     pagesSelected: 'pages selected',
-    proMode: 'Pro Mode',
+    proMode: 'Professional Mode',
   },
   zh: {
     pageTitle: '拆分 PDF',
@@ -94,7 +94,7 @@ const translations = {
     downloadSuccessDesc: (filename: string) => `${filename} 已下載。`,
     downloadError: '下載失敗',
     page: '頁',
-    appTitle: 'DocuPilot 文件助手',
+    appTitle: 'Pdf Solution',
     loggedInAs: '已登入為使用者',
     login: '登入',
     logout: '登出',
@@ -321,7 +321,7 @@ export default function SplitPdfPage() {
         const blob = new Blob([pdfBytes], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        const filename = `DocuPilot_${mode === 'extract' ? 'extracted' : 'trimmed'}.pdf`;
+        const filename = `PdfSolution_${mode === 'extract' ? 'extracted' : 'trimmed'}.pdf`;
         a.href = url;
         a.download = filename;
         document.body.appendChild(a);
@@ -358,17 +358,15 @@ export default function SplitPdfPage() {
                         <MenubarContent>
                             <MenubarItem onClick={() => router.push('/merge-pdf')}><Combine className="mr-2 h-4 w-4" />{texts.mergePdf}</MenubarItem>
                             <MenubarItem disabled><Scissors className="mr-2 h-4 w-4" />{texts.splitPdf}</MenubarItem>
-                            <MenubarItem disabled><Trash2 className="mr-2 h-4 w-4" />{texts.deletePdfPages}</MenubarItem>
-                            <MenubarItem disabled><FileUp className="mr-2 h-4 w-4" />{texts.extractPdfPages}</MenubarItem>
                             <MenubarItem onClick={() => router.push('/edit-pdf')}><ListOrdered className="mr-2 h-4 w-4" />{texts.reorderPdfPages}</MenubarItem>
-                            <MenubarItem onClick={() => handlePlaceholderClick(texts.addWatermark)}><Droplets className="mr-2 h-4 w-4" />{texts.addWatermark}</MenubarItem>
+                            <MenubarItem onClick={() => router.push('/edit-pdf')}><Droplets className="mr-2 h-4 w-4" />{texts.addWatermark}</MenubarItem>
                         </MenubarContent>
                     </MenubarMenu>
                     <MenubarMenu>
                         <MenubarTrigger><ArrowRightLeft className="mr-2 h-4 w-4" />{texts.pdfConvertMenu}</MenubarTrigger>
                         <MenubarContent>
                             <MenubarSub>
-                                <MenubarSubTrigger><FilePlus className="mr-2 h-4 w-4" />{texts.convertToPdf}</MenubarSubTrigger>
+                                <MenubarSubTrigger><FileUp className="mr-2 h-4 w-4" />{texts.convertToPdf}</MenubarSubTrigger>
                                 <MenubarSubContent>
                                     <MenubarItem onClick={() => handlePlaceholderClick(texts.wordToPdf)}><FileText className="mr-2 h-4 w-4" />{texts.wordToPdf}</MenubarItem>
                                     <MenubarItem onClick={() => handlePlaceholderClick(texts.excelToPdf)}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.excelToPdf}</MenubarItem>
@@ -391,7 +389,7 @@ export default function SplitPdfPage() {
                         </MenubarContent>
                     </MenubarMenu>
                     <MenubarMenu>
-                        <MenubarTrigger onClick={() => router.push('/pro-convert')} className="text-primary hover:text-primary focus:text-primary">
+                        <MenubarTrigger onClick={() => router.push('/edit-pdf')} className="text-primary hover:text-primary focus:text-primary ring-1 ring-primary/50">
                             <Sparkles className="mr-2 h-4 w-4" />
                             {texts.proMode}
                         </MenubarTrigger>
@@ -494,5 +492,3 @@ export default function SplitPdfPage() {
     </div>
   )
 }
-
-    

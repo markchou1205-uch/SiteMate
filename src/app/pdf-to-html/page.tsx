@@ -24,7 +24,7 @@ const translations = {
     conversionSuccessDesc: (filename: string) => `${filename} has been downloaded successfully.`,
     conversionError: 'Conversion failed',
     timeoutErrorDesc: 'The request timed out. Please try again.',
-    appTitle: 'DocuPilot',
+    appTitle: 'Pdf Solution',
     loggedInAs: 'Logged in as User',
     login: 'Login',
     logout: 'Logout',
@@ -55,7 +55,7 @@ const translations = {
     noFileSelected: 'Please select a file to convert.',
     invalidFileError: 'Invalid File Detected',
     invalidFileErrorDesc: 'The selected file was not a valid PDF.',
-    proMode: 'Pro Mode',
+    proMode: 'Professional Mode',
   },
   zh: {
     pageTitle: 'PDF 轉 HTML',
@@ -69,7 +69,7 @@ const translations = {
     conversionSuccessDesc: (filename: string) => `${filename} 已成功下載。`,
     conversionError: '轉換失敗',
     timeoutErrorDesc: '請求逾時，請再試一次。',
-    appTitle: 'DocuPilot 文件助手',
+    appTitle: 'Pdf Solution',
     loggedInAs: '已登入為使用者',
     login: '登入',
     logout: '登出',
@@ -191,15 +191,13 @@ export default function PdfToHtmlPage() {
       
       const resBlob = await response.blob();
       const contentDisposition = response.headers.get('Content-Disposition');
-      let downloadFilename = 'result.html'; // Default filename
+      let downloadFilename = 'result.html';
 
       if (contentDisposition) {
         const match = contentDisposition.match(/filename="?([^"]+)"?/);
         if (match && match[1]) {
           downloadFilename = match[1];
         }
-      } else {
-        downloadFilename = selectedFile.name.replace(/\.pdf$/i, '.html');
       }
       
       const url = window.URL.createObjectURL(resBlob);
@@ -245,23 +243,21 @@ export default function PdfToHtmlPage() {
                 <h1 className="text-xl font-bold text-primary flex items-center cursor-pointer" onClick={() => router.push('/')}>
                     <MenuSquare className="mr-2 h-6 w-6"/> {texts.appTitle}
                 </h1>
-                <Menubar className="border-none shadow-none bg-transparent">
+                 <Menubar className="border-none shadow-none bg-transparent">
                     <MenubarMenu>
                         <MenubarTrigger><Edit className="mr-2 h-4 w-4" />{texts.pdfEditMenu}</MenubarTrigger>
                         <MenubarContent>
                             <MenubarItem onClick={() => router.push('/merge-pdf')}><Combine className="mr-2 h-4 w-4" />{texts.mergePdf}</MenubarItem>
                             <MenubarItem onClick={() => router.push('/split-pdf')}><Scissors className="mr-2 h-4 w-4" />{texts.splitPdf}</MenubarItem>
-                            <MenubarItem onClick={() => router.push('/split-pdf')}><Trash2 className="mr-2 h-4 w-4" />{texts.deletePdfPages}</MenubarItem>
-                            <MenubarItem onClick={() => router.push('/split-pdf')}><FileUp className="mr-2 h-4 w-4" />{texts.extractPdfPages}</MenubarItem>
                             <MenubarItem onClick={() => router.push('/edit-pdf')}><ListOrdered className="mr-2 h-4 w-4" />{texts.reorderPdfPages}</MenubarItem>
-                            <MenubarItem onClick={() => handlePlaceholderClick(texts.addWatermark)}><Droplets className="mr-2 h-4 w-4" />{texts.addWatermark}</MenubarItem>
+                            <MenubarItem onClick={() => router.push('/edit-pdf')}><Droplets className="mr-2 h-4 w-4" />{texts.addWatermark}</MenubarItem>
                         </MenubarContent>
                     </MenubarMenu>
                     <MenubarMenu>
                         <MenubarTrigger><ArrowRightLeft className="mr-2 h-4 w-4" />{texts.pdfConvertMenu}</MenubarTrigger>
                         <MenubarContent>
                             <MenubarSub>
-                                <MenubarSubTrigger><FilePlus className="mr-2 h-4 w-4" />{texts.convertToPdf}</MenubarSubTrigger>
+                                <MenubarSubTrigger><FileUp className="mr-2 h-4 w-4" />{texts.convertToPdf}</MenubarSubTrigger>
                                 <MenubarSubContent>
                                     <MenubarItem onClick={() => handlePlaceholderClick(texts.wordToPdf)}><FileText className="mr-2 h-4 w-4" />{texts.wordToPdf}</MenubarItem>
                                     <MenubarItem onClick={() => handlePlaceholderClick(texts.excelToPdf)}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.excelToPdf}</MenubarItem>
@@ -284,7 +280,7 @@ export default function PdfToHtmlPage() {
                         </MenubarContent>
                     </MenubarMenu>
                     <MenubarMenu>
-                        <MenubarTrigger onClick={() => router.push('/pro-convert')} className="text-primary hover:text-primary focus:text-primary">
+                        <MenubarTrigger onClick={() => router.push('/edit-pdf')} className="text-primary hover:text-primary focus:text-primary ring-1 ring-primary/50">
                             <Sparkles className="mr-2 h-4 w-4" />
                             {texts.proMode}
                         </MenubarTrigger>

@@ -8,14 +8,14 @@ import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { LogIn, LogOut, UserCircle, MenuSquare, ArrowRightLeft, Edit, FileUp, ListOrdered, Trash2, Combine, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText, Scissors, Sparkles, Star, FilePlus } from 'lucide-react';
-import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarSub, MenubarSubContent, MenubarSubTrigger, MenubarTrigger } from "@/components/ui/menubar";
+import { LogIn, LogOut, UserCircle, MenuSquare, ArrowRightLeft, Edit, FileUp, ListOrdered, Trash2, Combine, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText, Scissors, Sparkles, Star } from 'lucide-react';
+import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSub, MenubarSubContent, MenubarSubTrigger, MenubarTrigger } from "@/components/ui/menubar";
 
 const translations = {
   en: {
-    pageTitle: 'Welcome to DocuPilot',
+    pageTitle: 'Welcome to Pdf Solution',
     pageDescription: 'Your all-in-one solution for PDF editing and conversion. Select a tool below to get started.',
-    appTitle: 'DocuPilot',
+    appTitle: 'Pdf Solution',
     loggedInAs: 'Logged in as User',
     login: 'Login',
     logout: 'Logout',
@@ -43,21 +43,20 @@ const translations = {
     pdfToHtml: 'PDF to HTML',
     pdfToJpg: 'PDF to Image',
     pdfToOcr: 'PDF with OCR',
-    proMode: 'Pro Mode',
+    proMode: 'Professional Mode',
     
     editPdfDesc: 'Edit text, images, and links in your PDF document.',
     mergePdfDesc: 'Combine multiple PDF files into a single document.',
     splitPdfDesc: 'Extract or delete pages from your PDF file.',
-    proModeDesc: 'Batch convert multiple PDFs to your desired format at once.',
     pdfToWordDesc: 'Convert PDFs to editable Word documents.',
     pdfToExcelDesc: 'Extract data from PDFs into Excel spreadsheets.',
     pdfToPptDesc: 'Turn PDFs into PowerPoint presentations.',
     pdfToJpgDesc: 'Save each page of your PDF as a separate image.',
   },
   zh: {
-    pageTitle: '歡迎使用 DocuPilot 文件助手',
+    pageTitle: '歡迎使用 Pdf Solution 文件助手',
     pageDescription: '您的一站式 PDF 編輯與轉換解決方案。請從下方選擇一個工具開始。',
-    appTitle: 'DocuPilot 文件助手',
+    appTitle: 'Pdf Solution',
     loggedInAs: '已登入為使用者',
     login: '登入',
     logout: '登出',
@@ -90,7 +89,6 @@ const translations = {
     editPdfDesc: '編輯您 PDF 文件中的文字、圖片和連結。',
     mergePdfDesc: '將多個 PDF 檔案合併為一份單獨的文件。',
     splitPdfDesc: '從您的 PDF 檔案中擷取或刪除頁面。',
-    proModeDesc: '一次性將多個 PDF 批次轉換為您想要的格式。',
     pdfToWordDesc: '將 PDF 轉換為可編輯的 Word 文件。',
     pdfToExcelDesc: '將 PDF 中的數據提取到 Excel 試算表中。',
     pdfToPptDesc: '將 PDF 變成 PowerPoint 簡報。',
@@ -99,14 +97,15 @@ const translations = {
 };
 
 const features = [
-    { key: 'editPdf', titleKey: 'pdfEditMenu', descriptionKey: 'editPdfDesc', icon: Edit, href: '/edit-pdf' },
-    { key: 'proConvert', titleKey: 'proMode', descriptionKey: 'proModeDesc', icon: Sparkles, href: '/pro-convert', isPro: true },
+    { key: 'editPdf', titleKey: 'proMode', descriptionKey: 'editPdfDesc', icon: Sparkles, href: '/edit-pdf', isPro: true },
     { key: 'merge', titleKey: 'mergePdf', descriptionKey: 'mergePdfDesc', icon: Combine, href: '/merge-pdf' },
     { key: 'split', titleKey: 'splitPdf', descriptionKey: 'splitPdfDesc', icon: Scissors, href: '/split-pdf' },
     { key: 'pdfToWord', titleKey: 'pdfToWord', descriptionKey: 'pdfToWordDesc', icon: FileText, href: '/pdf-to-word' },
     { key: 'pdfToExcel', titleKey: 'pdfToExcel', descriptionKey: 'pdfToExcelDesc', icon: FileSpreadsheet, href: '/pdf-to-excel' },
     { key: 'pdfToPpt', titleKey: 'pdfToPpt', descriptionKey: 'pdfToPptDesc', icon: LucidePresentation, href: '/pdf-to-ppt' },
     { key: 'pdfToJpg', titleKey: 'pdfToJpg', descriptionKey: 'pdfToJpgDesc', icon: FileImage, href: '/pdf-to-image' },
+    { key: 'pdfToHtml', titleKey: 'pdfToHtml', descriptionKey: 'pdfToHtml', icon: Code, href: '/pdf-to-html' },
+    { key: 'pdfToOcr', titleKey: 'pdfToOcr', descriptionKey: 'pdfToOcr', icon: ScanText, href: '/pdf-to-ocr' },
 ];
 
 export default function Homepage() {
@@ -161,17 +160,15 @@ export default function Homepage() {
                         <MenubarContent>
                             <MenubarItem onClick={() => router.push('/merge-pdf')}><Combine className="mr-2 h-4 w-4" />{texts.mergePdf}</MenubarItem>
                             <MenubarItem onClick={() => router.push('/split-pdf')}><Scissors className="mr-2 h-4 w-4" />{texts.splitPdf}</MenubarItem>
-                            <MenubarItem onClick={() => router.push('/split-pdf')}><Trash2 className="mr-2 h-4 w-4" />{texts.deletePdfPages}</MenubarItem>
-                            <MenubarItem onClick={() => router.push('/split-pdf')}><FileUp className="mr-2 h-4 w-4" />{texts.extractPdfPages}</MenubarItem>
                             <MenubarItem onClick={() => router.push('/edit-pdf')}><ListOrdered className="mr-2 h-4 w-4" />{texts.reorderPdfPages}</MenubarItem>
-                            <MenubarItem onClick={() => handlePlaceholderClick(texts.addWatermark)}><Droplets className="mr-2 h-4 w-4" />{texts.addWatermark}</MenubarItem>
+                            <MenubarItem onClick={() => router.push('/edit-pdf')}><Droplets className="mr-2 h-4 w-4" />{texts.addWatermark}</MenubarItem>
                         </MenubarContent>
                     </MenubarMenu>
                     <MenubarMenu>
                         <MenubarTrigger><ArrowRightLeft className="mr-2 h-4 w-4" />{texts.pdfConvertMenu}</MenubarTrigger>
                         <MenubarContent>
                             <MenubarSub>
-                                <MenubarSubTrigger><FilePlus className="mr-2 h-4 w-4" />{texts.convertToPdf}</MenubarSubTrigger>
+                                <MenubarSubTrigger><FileUp className="mr-2 h-4 w-4" />{texts.convertToPdf}</MenubarSubTrigger>
                                 <MenubarSubContent>
                                     <MenubarItem onClick={() => handlePlaceholderClick(texts.wordToPdf)}><FileText className="mr-2 h-4 w-4" />{texts.wordToPdf}</MenubarItem>
                                     <MenubarItem onClick={() => handlePlaceholderClick(texts.excelToPdf)}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.excelToPdf}</MenubarItem>
@@ -194,7 +191,7 @@ export default function Homepage() {
                         </MenubarContent>
                     </MenubarMenu>
                     <MenubarMenu>
-                        <MenubarTrigger onClick={() => router.push('/pro-convert')} className="text-primary hover:text-primary focus:text-primary">
+                        <MenubarTrigger onClick={() => router.push('/edit-pdf')} className="text-primary hover:text-primary focus:text-primary ring-1 ring-primary/50">
                             <Sparkles className="mr-2 h-4 w-4" />
                             {texts.proMode}
                         </MenubarTrigger>

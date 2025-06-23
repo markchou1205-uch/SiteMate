@@ -19,19 +19,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, FontSize, Eye, Scissors, LayoutGrid, PanelLeft, FilePlus2, Combine, Type, ImagePlus, Link as LinkIcon, MessageSquarePlus, ZoomIn, ZoomOut, Expand, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Highlighter, ArrowRightLeft, Edit, FileUp, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText, Sparkles } from 'lucide-react';
+import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, FontSize, Eye, Scissors, LayoutGrid, PanelLeft, FilePlus2, Combine, Type, ImagePlus, Link as LinkIcon, MessageSquarePlus, ZoomIn, ZoomOut, Expand, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Highlighter, ArrowRightLeft, Edit, FileUp, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText, Sparkles, XCircle, File } from 'lucide-react';
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Toggle } from "@/components/ui/toggle";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Progress } from "@/components/ui/progress";
 import {
   Menubar,
   MenubarContent,
   MenubarItem,
   MenubarMenu,
-  MenubarSeparator,
   MenubarSub,
   MenubarSubContent,
   MenubarSubTrigger,
@@ -96,7 +96,7 @@ interface HighlightAnnotation {
 
 const translations = {
     en: {
-        pageTitle: 'DocuPilot PDF Editor',
+        pageTitle: 'PDF Editor (Pro Mode)',
         uploadLabel: 'Select PDF file to edit:',
         deletePages: 'Delete Selected Pages',
         splitPages: 'Split Selected',
@@ -259,11 +259,25 @@ const translations = {
         pdfToHtml: 'PDF to HTML',
         pdfToJpg: 'PDF to Image',
         pdfToOcr: 'PDF with OCR',
-        proMode: 'Pro Mode',
-        appTitle: 'DocuPilot',
+        proMode: 'Professional Mode',
+        appTitle: 'Pdf Solution',
+        batchConvert: 'Batch Conversion',
+        selectFormat: 'Select Target Format',
+        uploadAreaTitle: 'Upload PDF Files for Batch Conversion',
+        uploadButton: 'Click or drag up to 5 files here',
+        convertButton: 'Convert All Files',
+        convertingMessage: 'Converting...',
+        noFilesSelected: 'Please select files to convert.',
+        tooManyFiles: 'You can only select up to 5 files at a time.',
+        invalidFileError: 'Some files were not valid PDFs and were removed.',
+        status_waiting: 'Waiting',
+        status_uploading: 'Uploading...',
+        status_converting: 'Converting...',
+        status_done: 'Done!',
+        status_error: 'Error',
     },
     zh: {
-        pageTitle: 'DocuPilot PDF 編輯器',
+        pageTitle: 'PDF 編輯器 (專業模式)',
         uploadLabel: '選擇要編輯的 PDF 檔案：',
         deletePages: '刪除選取的頁面',
         splitPages: '拆分選定頁面',
@@ -427,7 +441,21 @@ const translations = {
         pdfToJpg: 'PDF轉圖片',
         pdfToOcr: 'PDF光學掃描(OCR)',
         proMode: '專業模式',
-        appTitle: 'DocuPilot 文件助手',
+        appTitle: 'Pdf Solution',
+        batchConvert: '批次轉換',
+        selectFormat: '選擇目標格式',
+        uploadAreaTitle: '上傳 PDF 檔案以進行批次轉換',
+        uploadButton: '點擊或拖曳最多 5 個檔案到此處',
+        convertButton: '轉換所有檔案',
+        convertingMessage: '轉換中...',
+        noFilesSelected: '請選擇要轉換的檔案。',
+        tooManyFiles: '一次最多只能選擇 5 個檔案。',
+        invalidFileError: '部分檔案不是有效的 PDF，已被移除。',
+        status_waiting: '等待中',
+        status_uploading: '上傳中...',
+        status_converting: '轉換中...',
+        status_done: '完成！',
+        status_error: '錯誤',
     }
 };
 
@@ -443,6 +471,23 @@ const pageNumberPositions: {value: PageNumberPosition, labelKey: keyof typeof tr
   { value: 'top-left', labelKey: 'topLeft'},
   { value: 'top-right', labelKey: 'topRight'},
 ];
+
+const formatOptions = [
+  { value: 'word', labelKey: 'pdfToWord' },
+  { value: 'excel', labelKey: 'pdfToExcel' },
+  { value: 'ppt', labelKey: 'pdfToPpt' },
+  { value: 'html', labelKey: 'pdfToHtml' },
+  { value: 'image', labelKey: 'pdfToJpg' },
+  { value: 'ocr', labelKey: 'pdfToOcr' },
+] as const;
+
+type UploadStatus = {
+    status: 'waiting' | 'uploading' | 'converting' | 'done' | 'error';
+    progress: number;
+    error?: string;
+};
+
+const MAX_FILES = 5;
 
 interface PagePreviewItemProps {
   pageObj: PageObject;
@@ -764,6 +809,14 @@ export default function PdfEditorPage() {
   
   const observerRef = useRef<IntersectionObserver | null>(null);
 
+  // Batch Conversion State
+  const [batchFiles, setBatchFiles] = useState<File[]>([]);
+  const [targetFormat, setTargetFormat] = useState<string>('word');
+  const [isConverting, setIsConverting] = useState(false);
+  const [uploadStatuses, setUploadStatuses] = useState<{ [fileName: string]: UploadStatus }>({});
+  const batchFileUploadRef = useRef<HTMLInputElement>(null);
+
+
   useEffect(() => {
     setTexts(translations[currentLanguage] || translations.en);
   }, [currentLanguage]);
@@ -774,18 +827,18 @@ export default function PdfEditorPage() {
       setIsLoggedIn(loggedInStatus);
 
       const today = new Date().toISOString().split('T')[0];
-      let downloadInfoString = localStorage.getItem('DocuPilotDownloadInfo');
+      let downloadInfoString = localStorage.getItem('PdfSolutionDownloadInfo');
       if (downloadInfoString) {
         let downloadInfo = JSON.parse(downloadInfoString);
         if (downloadInfo.date !== today) {
-          localStorage.removeItem('DocuPilotDownloadInfo');
+          localStorage.removeItem('PdfSolutionDownloadInfo');
         }
       }
-      let wordConversionInfoString = localStorage.getItem('DocuPilotWordConversionInfo');
+      let wordConversionInfoString = localStorage.getItem('PdfSolutionWordConversionInfo');
       if (wordConversionInfoString) {
         let wordInfo = JSON.parse(wordConversionInfoString);
         if (wordInfo.date !== today) {
-            localStorage.removeItem('DocuPilotWordConversionInfo');
+            localStorage.removeItem('PdfSolutionWordConversionInfo');
         }
       }
     }
@@ -922,6 +975,12 @@ export default function PdfEditorPage() {
     setIsLoggedIn(false);
     toast({ title: texts.logout, description: currentLanguage === 'zh' ? "您已成功登出。" : "You have been logged out successfully." });
   };
+    const handlePlaceholderClick = (featureName: string) => {
+    toast({
+        title: texts.comingSoon,
+        description: `${featureName} ${texts.featureNotImplemented}`
+    });
+  };
 
 
   const processPdfFile = async (file: File) => {
@@ -982,7 +1041,6 @@ export default function PdfEditorPage() {
       setActivePageIndex(0);
       setViewMode('editor');
       
-      // Use a timeout to ensure the UI has updated before fitting the page
       setTimeout(() => handleFitPage(), 100);
 
     } catch (err: any)
@@ -1070,7 +1128,7 @@ export default function PdfEditorPage() {
 
     if (!isLoggedIn && typeof window !== 'undefined') {
       const today = new Date().toISOString().split('T')[0];
-      let downloadInfoString = localStorage.getItem('DocuPilotDownloadInfo');
+      let downloadInfoString = localStorage.getItem('PdfSolutionDownloadInfo');
       let downloadInfo = downloadInfoString ? JSON.parse(downloadInfoString) : { count: 0, date: today };
 
       if (downloadInfo.date !== today) {
@@ -1082,7 +1140,7 @@ export default function PdfEditorPage() {
         return;
       }
       downloadInfo.count++;
-      localStorage.setItem('DocuPilotDownloadInfo', JSON.stringify(downloadInfo));
+      localStorage.setItem('PdfSolutionDownloadInfo', JSON.stringify(downloadInfo));
     }
 
     setIsDownloading(true);
@@ -1264,7 +1322,7 @@ export default function PdfEditorPage() {
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.download = 'DocuPilot_edited.pdf';
+      a.download = 'PdfSolution_edited.pdf';
       document.body.appendChild(a);
       a.href = url;
       a.click();
@@ -1754,14 +1812,6 @@ export default function PdfEditorPage() {
 
     const editingAnnotation = editingAnnotationId ? textAnnotations.find(ann => ann.id === editingAnnotationId) : null;
 
-
-    const handlePlaceholderClick = (featureName: string) => {
-        toast({
-            title: texts.comingSoon,
-            description: `${featureName} ${texts.featureNotImplemented}`
-        });
-    };
-
     const handleZoom = (direction: 'in' | 'out') => {
       const ZOOM_STEP = 0.1;
       setMainCanvasZoom(prev => {
@@ -1770,14 +1820,110 @@ export default function PdfEditorPage() {
       });
     };
 
+    // --- Batch Conversion Logic ---
+
+    const handleBatchFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = event.target.files;
+      if (!files) return;
+  
+      if (files.length > MAX_FILES) {
+          toast({ title: texts.tooManyFiles, variant: 'destructive' });
+          return;
+      }
+  
+      const validFiles = Array.from(files).filter(file => file.type === 'application/pdf');
+      if (validFiles.length !== files.length) {
+          toast({ title: texts.invalidFileError, variant: 'destructive' });
+      }
+  
+      setBatchFiles(validFiles);
+      const initialStatuses: { [fileName: string]: UploadStatus } = {};
+      validFiles.forEach(file => {
+          initialStatuses[file.name] = { status: 'waiting', progress: 0 };
+      });
+      setUploadStatuses(initialStatuses);
+    };
+  
+    const removeBatchFile = (fileName: string) => {
+      setBatchFiles(prev => prev.filter(f => f.name !== fileName));
+      setUploadStatuses(prev => {
+          const newStatuses = {...prev};
+          delete newStatuses[fileName];
+          return newStatuses;
+      });
+    };
+    
+    const convertSingleFile = async (file: File) => {
+        setUploadStatuses(prev => ({ ...prev, [file.name]: { status: 'uploading', progress: 25 } }));
+        
+        const formData = new FormData();
+        const blob = new Blob([file], { type: 'application/pdf' });
+        formData.append("file", blob, file.name);
+        formData.append("format", targetFormat);
+  
+        try {
+            const response = await fetch("https://pdfsolution.dpdns.org/upload", {
+                method: 'POST',
+                body: formData,
+            });
+  
+            setUploadStatuses(prev => ({ ...prev, [file.name]: { status: 'converting', progress: 75 } }));
+  
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(String(error.error || "Conversion failed."));
+            }
+  
+            const resBlob = await response.blob();
+            const contentDisposition = response.headers.get('Content-Disposition');
+            let downloadFilename = file.name.replace(/\.pdf$/i, `.${targetFormat}`);
+            if (contentDisposition) {
+                const match = contentDisposition.match(/filename="?([^"]+)"?/);
+                if (match && match[1]) {
+                    downloadFilename = match[1];
+                }
+            }
+            
+            const url = window.URL.createObjectURL(resBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = downloadFilename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            setUploadStatuses(prev => ({ ...prev, [file.name]: { status: 'done', progress: 100 } }));
+  
+        } catch (err: any) {
+            setUploadStatuses(prev => ({ ...prev, [file.name]: { status: 'error', progress: 0, error: err.message } }));
+            toast({ title: `${file.name}: ${texts.conversionError}`, description: err.message, variant: "destructive" });
+        }
+    };
+  
+    const handleBatchSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (batchFiles.length === 0) {
+          toast({ title: texts.conversionError, description: texts.noFilesSelected, variant: 'destructive'});
+          return;
+      }
+  
+      setIsConverting(true);
+      await Promise.all(batchFiles.map(file => convertSingleFile(file)));
+      setIsConverting(false);
+    };
+
+    // --- End Batch Conversion Logic ---
+
   return (
     <div className="flex flex-col h-screen bg-background text-foreground font-sans">
-      {(isLoading || isDownloading) && (
+      {(isLoading || isDownloading || isConverting) && (
         <div className="fixed inset-0 bg-black/50 z-[100] flex flex-col items-center justify-center">
           <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
           <p className="text-white text-lg">
             {isLoading ? loadingMessage :
-             isDownloading ? texts.generatingFile : ''}
+             isDownloading ? texts.generatingFile :
+             isConverting ? texts.convertingMessage : ''}
           </p>
         </div>
       )}
@@ -1835,23 +1981,21 @@ export default function PdfEditorPage() {
                 <h1 className="text-xl font-bold text-primary flex items-center cursor-pointer" onClick={() => router.push('/')}>
                     <MenuSquare className="mr-2 h-6 w-6"/> {texts.appTitle}
                 </h1>
-                <Menubar className="border-none shadow-none bg-transparent">
+                 <Menubar className="border-none shadow-none bg-transparent">
                     <MenubarMenu>
                         <MenubarTrigger><Edit className="mr-2 h-4 w-4" />{texts.pdfEditMenu}</MenubarTrigger>
                         <MenubarContent>
                             <MenubarItem onClick={() => router.push('/merge-pdf')}><Combine className="mr-2 h-4 w-4" />{texts.mergePdf}</MenubarItem>
                             <MenubarItem onClick={() => router.push('/split-pdf')}><Scissors className="mr-2 h-4 w-4" />{texts.splitPdf}</MenubarItem>
-                            <MenubarItem onClick={() => router.push('/split-pdf')}><Trash2 className="mr-2 h-4 w-4" />{texts.deletePdfPages}</MenubarItem>
-                            <MenubarItem onClick={() => router.push('/split-pdf')}><FileUp className="mr-2 h-4 w-4" />{texts.extractPdfPages}</MenubarItem>
-                            <MenubarItem onClick={() => setViewMode('grid')} disabled={pageObjects.length < 2}><ListOrdered className="mr-2 h-4 w-4" />{texts.reorderPdfPages}</MenubarItem>
-                            <MenubarItem onClick={() => handlePlaceholderClick(texts.addWatermark)}><Droplets className="mr-2 h-4 w-4" />{texts.addWatermark}</MenubarItem>
+                            <MenubarItem onClick={() => router.push('/edit-pdf')}><ListOrdered className="mr-2 h-4 w-4" />{texts.reorderPdfPages}</MenubarItem>
+                            <MenubarItem onClick={() => router.push('/edit-pdf')}><Droplets className="mr-2 h-4 w-4" />{texts.addWatermark}</MenubarItem>
                         </MenubarContent>
                     </MenubarMenu>
                     <MenubarMenu>
                         <MenubarTrigger><ArrowRightLeft className="mr-2 h-4 w-4" />{texts.pdfConvertMenu}</MenubarTrigger>
                         <MenubarContent>
                             <MenubarSub>
-                                <MenubarSubTrigger><FilePlus className="mr-2 h-4 w-4" />{texts.convertToPdf}</MenubarSubTrigger>
+                                <MenubarSubTrigger><FileUp className="mr-2 h-4 w-4" />{texts.convertToPdf}</MenubarSubTrigger>
                                 <MenubarSubContent>
                                     <MenubarItem onClick={() => handlePlaceholderClick(texts.wordToPdf)}><FileText className="mr-2 h-4 w-4" />{texts.wordToPdf}</MenubarItem>
                                     <MenubarItem onClick={() => handlePlaceholderClick(texts.excelToPdf)}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.excelToPdf}</MenubarItem>
@@ -1874,7 +2018,7 @@ export default function PdfEditorPage() {
                         </MenubarContent>
                     </MenubarMenu>
                     <MenubarMenu>
-                        <MenubarTrigger onClick={() => router.push('/pro-convert')} className="text-primary hover:text-primary focus:text-primary">
+                        <MenubarTrigger onClick={() => router.push('/edit-pdf')} className="text-primary hover:text-primary focus:text-primary ring-1 ring-primary/50">
                             <Sparkles className="mr-2 h-4 w-4" />
                             {texts.proMode}
                         </MenubarTrigger>
@@ -2191,47 +2335,119 @@ export default function PdfEditorPage() {
                     </div>
                 </div>
 
-                <div className="w-[17%] border-l bg-card flex-shrink-0 p-4 space-y-4 overflow-y-auto">
-                    <div className="grid grid-cols-2 gap-2">
-                        <ToolbarButton icon={RotateCw} label={texts.toolRotate} onClick={() => handleRotatePage('cw')} disabled={activePageIndex === null}/>
-                        <ToolbarButton icon={Trash2} label={texts.toolDelete} onClick={() => { if(activePageIndex !== null) { setPageToDelete(activePageIndex); setIsDeleteConfirmOpen(true); } }} disabled={activePageIndex === null}/>
-                        <ToolbarButton icon={FilePlus2} label={texts.toolAddBlank} onClick={handleAddBlankPage} />
-                        <ToolbarButton icon={Type} label={texts.toolInsertText} onClick={handleAddTextAnnotation} disabled={activePageIndex === null}/>
-                        <ToolbarButton icon={ImagePlus} label={texts.toolInsertImage} onClick={() => imageUploadRef.current?.click()} disabled={activePageIndex === null}/>
-                        <ToolbarButton icon={Highlighter} label={texts.toolHighlight} onClick={handleAddHighlightAnnotation} disabled={activePageIndex === null} />
-                        <Popover open={isLinkPopoverOpen} onOpenChange={setIsLinkPopoverOpen}>
-                          <PopoverTrigger asChild>
-                            <Button
-                                variant="ghost"
-                                className="flex flex-col items-center justify-center h-20 w-full text-xs space-y-1"
-                                disabled={!selectedAnnotationId && !selectedImageId}
-                                onClick={handleOpenLinkPopover}
-                            >
-                                <LinkIcon className="h-6 w-6 text-primary" />
-                                <span className="text-muted-foreground">{texts.toolInsertLink}</span>
-                            </Button>
-                           </PopoverTrigger>
-                           <PopoverContent className="w-80" side="left" align="start">
-                            {linkPopoverContent}
-                           </PopoverContent>
-                        </Popover>
-                    </div>
-                      <Input
-                        type="file"
-                        id="imageUploadInput"
-                        accept="image/*"
-                        onChange={handleImageFileSelected}
-                        ref={imageUploadRef}
-                        className="hidden"
-                      />
-
-                      <Separator />
-                       {pageObjects.length > 0 && (
-                         <Button onClick={handleDownloadPdf} disabled={isDownloading} className="w-full">
-                            <Download className="mr-2 h-4 w-4" />
-                            {texts.downloadPdf}
-                        </Button>
-                       )}
+                <div className="w-[20%] border-l bg-card flex-shrink-0 p-4 space-y-4 overflow-y-auto">
+                    <Accordion type="single" collapsible defaultValue="item-1" className="w-full">
+                        <AccordionItem value="item-1">
+                            <AccordionTrigger className="text-base font-semibold">{texts.pdfEditingTools}</AccordionTrigger>
+                            <AccordionContent>
+                                <div className="grid grid-cols-2 gap-2 pt-2">
+                                    <ToolbarButton icon={RotateCw} label={texts.toolRotate} onClick={() => handleRotatePage('cw')} disabled={activePageIndex === null}/>
+                                    <ToolbarButton icon={Trash2} label={texts.toolDelete} onClick={() => { if(activePageIndex !== null) { setPageToDelete(activePageIndex); setIsDeleteConfirmOpen(true); } }} disabled={activePageIndex === null}/>
+                                    <ToolbarButton icon={FilePlus2} label={texts.toolAddBlank} onClick={handleAddBlankPage} />
+                                    <ToolbarButton icon={Type} label={texts.toolInsertText} onClick={handleAddTextAnnotation} disabled={activePageIndex === null}/>
+                                    <ToolbarButton icon={ImagePlus} label={texts.toolInsertImage} onClick={() => imageUploadRef.current?.click()} disabled={activePageIndex === null}/>
+                                    <ToolbarButton icon={Highlighter} label={texts.toolHighlight} onClick={handleAddHighlightAnnotation} disabled={activePageIndex === null} />
+                                    <Popover open={isLinkPopoverOpen} onOpenChange={setIsLinkPopoverOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            className="flex flex-col items-center justify-center h-20 w-full text-xs space-y-1"
+                                            disabled={!selectedAnnotationId && !selectedImageId}
+                                            onClick={handleOpenLinkPopover}
+                                        >
+                                            <LinkIcon className="h-6 w-6 text-primary" />
+                                            <span className="text-muted-foreground">{texts.toolInsertLink}</span>
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-80" side="left" align="start">
+                                        {linkPopoverContent}
+                                    </PopoverContent>
+                                    </Popover>
+                                </div>
+                                 <Input
+                                    type="file"
+                                    id="imageUploadInput"
+                                    accept="image/*"
+                                    onChange={handleImageFileSelected}
+                                    ref={imageUploadRef}
+                                    className="hidden"
+                                 />
+                            </AccordionContent>
+                        </AccordionItem>
+                        <AccordionItem value="item-2">
+                            <AccordionTrigger className="text-base font-semibold">{texts.batchConvert}</AccordionTrigger>
+                            <AccordionContent className="pt-4">
+                                <form onSubmit={handleBatchSubmit} className="space-y-4">
+                                     <div>
+                                        <Label htmlFor="targetFormat" className="text-sm font-medium">{texts.selectFormat}</Label>
+                                        <Select value={targetFormat} onValueChange={setTargetFormat} required>
+                                            <SelectTrigger id="targetFormat" className="mt-1">
+                                                <SelectValue placeholder="Select format" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {formatOptions.map(opt => (
+                                                    <SelectItem key={opt.value} value={opt.value}>
+                                                        {texts[opt.labelKey]}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div 
+                                    className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20"
+                                    onClick={() => batchFileUploadRef.current?.click()}
+                                    >
+                                        <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                                        <p className="text-xs text-muted-foreground text-center">
+                                        {texts.uploadButton}
+                                        </p>
+                                        <Input
+                                            type="file"
+                                            ref={batchFileUploadRef}
+                                            onChange={handleBatchFileChange}
+                                            accept="application/pdf"
+                                            required
+                                            multiple
+                                            className="hidden"
+                                        />
+                                    </div>
+                                    {batchFiles.length > 0 && (
+                                        <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
+                                            {batchFiles.map(file => (
+                                                <div key={file.name} className="flex items-center gap-2 p-1.5 border rounded-md text-xs">
+                                                    <File className="h-4 w-4 text-primary flex-shrink-0" />
+                                                    <div className="flex-grow min-w-0">
+                                                        <p className="font-medium truncate">{file.name}</p>
+                                                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                                                            <span>{texts[`status_${uploadStatuses[file.name]?.status}` as keyof typeof texts] || texts.status_waiting}</span>
+                                                            {uploadStatuses[file.name]?.status === 'error' && (
+                                                                <span className="text-destructive truncate" title={uploadStatuses[file.name]?.error}>- {uploadStatuses[file.name]?.error}</span>
+                                                            )}
+                                                        </div>
+                                                        <Progress value={uploadStatuses[file.name]?.progress || 0} className="h-1 mt-1" />
+                                                    </div>
+                                                    <Button variant="ghost" size="icon" className="h-5 w-5 flex-shrink-0" onClick={() => removeBatchFile(file.name)} disabled={isConverting}>
+                                                        <XCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                                                    </Button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                     <Button type="submit" className="w-full" disabled={isConverting || batchFiles.length === 0}>
+                                        {isConverting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                                        {texts.convertButton}
+                                    </Button>
+                                </form>
+                            </AccordionContent>
+                        </AccordionItem>
+                    </Accordion>
+                    <Separator />
+                    {pageObjects.length > 0 && (
+                    <Button onClick={handleDownloadPdf} disabled={isDownloading} className="w-full">
+                        <Download className="mr-2 h-4 w-4" />
+                        {texts.downloadPdf}
+                    </Button>
+                    )}
                 </div>
             </>
           )}

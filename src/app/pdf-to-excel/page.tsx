@@ -16,7 +16,7 @@ import { Loader2, Upload, Scissors, Download, FilePlus, LogIn, LogOut, UserCircl
 const translations = {
   en: {
     pageTitle: 'PDF Converter',
-    pageDescription: 'Convert a PDF to various formats like Word, Excel, and more.',
+    pageDescription: 'Convert a single PDF to various formats like Word, Excel, and more.',
     startTitle: 'Upload a PDF to Convert',
     startDescription: 'Select a PDF file and choose the output format.',
     uploadButton: 'Click or drag a file here to upload',
@@ -62,7 +62,7 @@ const translations = {
   },
   zh: {
     pageTitle: 'PDF 檔案轉換',
-    pageDescription: '將 PDF 檔案轉換為 Word、Excel 等多種格式。',
+    pageDescription: '將單一 PDF 檔案轉換為 Word、Excel 等多種格式。',
     startTitle: '上傳 PDF 以進行轉換',
     startDescription: '選擇一個 PDF 檔案並選擇輸出格式。',
     uploadButton: '點擊或拖曳檔案到此處以上傳',
@@ -192,9 +192,14 @@ function PdfConverterContent() {
         return;
     }
 
+    console.log("File name:", selectedFile.name);
+    console.log("File type:", selectedFile.type);
+
     setIsLoading(true);
     const formData = new FormData();
-    formData.append("file", selectedFile);
+
+    const blob = new Blob([selectedFile], { type: 'application/pdf' });
+    formData.append("file", blob, selectedFile.name);
     formData.append("format", format);
 
     console.log("format:", formData.get("format"));
@@ -217,8 +222,8 @@ function PdfConverterContent() {
         throw new Error(String(error.error || texts.conversionErrorDesc));
       }
       
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      const resBlob = await response.blob();
+      const url = window.URL.createObjectURL(resBlob);
       const a = document.createElement('a');
 
       const selectedFormatOption = formatOptions.find(f => f.value === format);
@@ -360,7 +365,7 @@ function PdfConverterContent() {
                         type="file"
                         ref={fileUploadRef}
                         onChange={handleFileChange}
-                        accept="application/pdf"
+                        accept="application/pdf,.pdf"
                         required
                         className="hidden"
                     />

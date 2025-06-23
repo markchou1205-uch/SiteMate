@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { 
     LogIn, LogOut, UserCircle, MenuSquare, ArrowRightLeft, Edit, FileUp, ListOrdered, 
     Trash2, Combine, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, 
-    FileMinus, Droplets, ScanText, Scissors, Sparkles 
+    FileMinus, Droplets, ScanText, Scissors, Sparkles, LayoutTemplate
 } from 'lucide-react';
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSub, MenubarSubContent, MenubarSubTrigger, MenubarTrigger } from "@/components/ui/menubar";
 
@@ -42,7 +42,7 @@ const translations = {
     jpgToPdf: 'JPG to Image',
     pdfToWord: 'PDF to WORD',
     pdfToExcel: 'PDF to EXCEL',
-    pdfToPpt: 'PDF to PPT',
+    pdfToPpt: 'PPT to PDF',
     pdfToHtml: 'PDF to HTML',
     pdfToJpg: 'PDF to Image',
     pdfToOcr: 'PDF with OCR',
@@ -76,7 +76,7 @@ const translations = {
     jpgToPdf: 'JPG 轉 PDF',
     pdfToWord: 'PDF 轉 WORD',
     pdfToExcel: 'PDF 轉 EXCEL',
-    pdfToPpt: 'PDF 轉 PPT',
+    pdfToPpt: 'PPT 轉 PDF',
     pdfToHtml: 'PDF 轉 HTML',
     pdfToJpg: 'PDF 轉圖片',
     pdfToOcr: 'PDF 光學掃描(OCR)',
@@ -110,6 +110,57 @@ const convertToPdfTools = [
     { key: 'htmlToPdf', titleKey: 'htmlToPdf', href: '#', icon: Code, placeholder: true },
     { key: 'jpgToPdf', titleKey: 'jpgToPdf', href: '#', icon: FileImage, placeholder: true },
 ];
+
+const FeatureIcon = ({ href, icon: Icon, titleKey, placeholder }: { href: string; icon: React.ElementType; titleKey: string; placeholder?: boolean }) => {
+    const texts = translations['zh']; // Or use dynamic language state
+    const title = texts[titleKey as keyof typeof texts];
+    const content = (
+      <div 
+        className="flex flex-col items-center justify-center p-2 space-y-2 rounded-lg hover:bg-accent/10 transition-colors h-24 group"
+        onClick={placeholder ? () => alert(`${title} is coming soon!`) : undefined}
+      >
+        <Icon className="h-8 w-8 text-primary group-hover:scale-110 transition-transform" />
+        <span className="text-xs text-center text-muted-foreground group-hover:text-primary-dark font-medium">{title}</span>
+      </div>
+    );
+  
+    if (placeholder) {
+      return <div className="cursor-pointer">{content}</div>;
+    }
+  
+    return <Link href={href}>{content}</Link>;
+};
+
+const ProModeFeature = ({ texts }: { texts: typeof translations.en }) => {
+  const proIcons = [
+    { icon: Combine, pos: "top-0 left-1/2 -translate-x-1/2" },
+    { icon: FileText, pos: "top-5 right-1" },
+    { icon: FileImage, pos: "bottom-5 right-1" },
+    { icon: Scissors, pos: "bottom-0 left-1/2 -translate-x-1/2" },
+    { icon: ListOrdered, pos: "bottom-5 left-1" },
+    { icon: Droplets, pos: "top-5 left-1" },
+  ];
+
+  return (
+    <Link href="/edit-pdf" className="flex flex-col items-center text-center group">
+      <div className="relative w-36 h-36 flex items-center justify-center mt-4">
+        <div className="absolute inset-0 border-2 border-dashed border-primary/50 rounded-full animate-spin [animation-duration:20s]"></div>
+        <LayoutTemplate className="w-20 h-20 text-primary transition-transform group-hover:scale-105 duration-300" />
+
+        {proIcons.map(({ icon: Icon, pos }, index) => (
+          <div key={index} className={`absolute ${pos} p-1 bg-card rounded-full shadow-lg border`}>
+             <Icon className="w-5 h-5 text-muted-foreground transition-transform group-hover:text-primary" />
+          </div>
+        ))}
+      </div>
+      <h3 className="text-lg font-semibold mt-4 text-foreground">{texts.proMode}</h3>
+      <p className="text-sm text-center text-muted-foreground mt-1 max-w-xs">
+        {texts.proModeDescription}
+      </p>
+    </Link>
+  );
+};
+
 
 export default function Homepage() {
   const router = useRouter();
@@ -147,25 +198,6 @@ export default function Homepage() {
         title: texts.comingSoon,
         description: `${featureName} ${texts.featureNotImplemented}`
     });
-  };
-
-  const FeatureIcon = ({ href, icon: Icon, titleKey, placeholder }: { href: string; icon: React.ElementType; titleKey: string; placeholder?: boolean }) => {
-    const title = texts[titleKey as keyof typeof texts];
-    const content = (
-      <div 
-        className="flex flex-col items-center justify-center p-2 space-y-2 rounded-lg hover:bg-accent/10 transition-colors h-24 group"
-        onClick={placeholder ? () => handlePlaceholderClick(title) : undefined}
-      >
-        <Icon className="h-8 w-8 text-primary group-hover:scale-110 transition-transform" />
-        <span className="text-xs text-center text-muted-foreground group-hover:text-primary-dark font-medium">{title}</span>
-      </div>
-    );
-  
-    if (placeholder) {
-      return <div className="cursor-pointer">{content}</div>;
-    }
-  
-    return <Link href={href}>{content}</Link>;
   };
 
   return (
@@ -254,11 +286,11 @@ export default function Homepage() {
           <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">{texts.pageDescription}</p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-12">
           {/* Left Column: PDF Editing Tools */}
           <div className="flex flex-col items-center">
             <h2 className="text-xl font-semibold mb-6 text-foreground">{texts.pdfEditMenu}</h2>
-            <div className="grid grid-cols-3 gap-y-4 gap-x-2 w-full">
+            <div className="grid grid-cols-3 gap-y-6 gap-x-4 w-full">
               {pdfEditingTools.map(({ key, ...tool }) => <FeatureIcon key={key} {...tool} />)}
             </div>
           </div>
@@ -266,7 +298,7 @@ export default function Homepage() {
           {/* Middle-Left Column: Convert from PDF */}
           <div className="flex flex-col items-center">
             <h2 className="text-xl font-semibold mb-6 text-foreground">{texts.convertFromPdf}</h2>
-            <div className="grid grid-cols-3 gap-y-4 gap-x-2 w-full">
+            <div className="grid grid-cols-3 gap-y-6 gap-x-4 w-full">
               {convertFromPdfTools.map(({ key, ...tool }) => <FeatureIcon key={key} {...tool} />)}
             </div>
           </div>
@@ -274,26 +306,18 @@ export default function Homepage() {
           {/* Middle-Right Column: Convert to PDF */}
           <div className="flex flex-col items-center">
             <h2 className="text-xl font-semibold mb-6 text-foreground">{texts.convertToPdf}</h2>
-            <div className="grid grid-cols-3 gap-y-4 gap-x-2 w-full">
+            <div className="grid grid-cols-3 gap-y-6 gap-x-4 w-full">
               {convertToPdfTools.map(({ key, ...tool }) => <FeatureIcon key={key} {...tool} />)}
             </div>
           </div>
           
           {/* Rightmost Column: Pro Mode */}
-          <div className="flex flex-col items-center md:col-span-2 lg:col-span-1 lg:border-l-2 lg:border-dashed lg:border-primary/30 lg:pl-8">
-            <h2 className="text-xl font-semibold mb-6 text-primary">{texts.proMode}</h2>
-            <div className="w-full flex justify-center">
-              <FeatureIcon key="pro-mode" href="/edit-pdf" icon={Sparkles} titleKey="proMode" />
-            </div>
-             <p className="text-sm text-center text-muted-foreground mt-2 px-4">
-              {texts.proModeDescription}
-            </p>
+          <div className="flex flex-col items-center lg:border-l-2 lg:border-dashed lg:border-primary/30 lg:pl-8 sm:col-span-2 lg:col-span-1">
+             <h2 className="text-xl font-semibold mb-2 text-primary">{texts.proMode}</h2>
+             <ProModeFeature texts={texts} />
           </div>
-
         </div>
       </main>
     </div>
   );
 }
-
-    

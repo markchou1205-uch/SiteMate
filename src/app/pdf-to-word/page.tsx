@@ -13,12 +13,12 @@ import { Loader2, Upload, Scissors, Download, FilePlus, LogIn, LogOut, UserCircl
 
 const translations = {
   en: {
-    pageTitle: 'PDF to Excel',
-    pageDescription: 'Convert your PDF into a structured Excel spreadsheet.',
-    startTitle: 'Upload PDF to Convert to Excel',
+    pageTitle: 'PDF to Word',
+    pageDescription: 'Convert your PDF into an editable Word document.',
+    startTitle: 'Upload PDF to Convert to Word',
     startDescription: 'Select a PDF file to begin the conversion process.',
     uploadButton: 'Click or drag a file here to upload',
-    convertButton: 'Convert to Excel',
+    convertButton: 'Convert to Word',
     convertingMessage: 'Processing...',
     conversionSuccess: 'Conversion Complete',
     conversionSuccessDesc: (filename: string) => `${filename} has been downloaded successfully.`,
@@ -57,12 +57,12 @@ const translations = {
     invalidFileErrorDesc: 'The selected file was not a valid PDF.',
   },
   zh: {
-    pageTitle: 'PDF 轉 Excel',
-    pageDescription: '將您的 PDF 檔案轉換為結構化的 Excel 試算表。',
-    startTitle: '上傳 PDF 以轉換為 Excel',
+    pageTitle: 'PDF 轉 Word',
+    pageDescription: '將您的 PDF 檔案轉換為可編輯的 Word 文件。',
+    startTitle: '上傳 PDF 以轉換為 Word',
     startDescription: '選擇一個 PDF 檔案以開始轉換流程。',
     uploadButton: '點擊或拖曳檔案到此處以上傳',
-    convertButton: '轉換為 Excel',
+    convertButton: '轉換為 Word',
     convertingMessage: '處理中...',
     conversionSuccess: '轉換完成',
     conversionSuccessDesc: (filename: string) => `${filename} 已成功下載。`,
@@ -102,7 +102,7 @@ const translations = {
   },
 };
 
-export default function PdfToExcelPage() {
+export default function PdfToWordPage() {
   const router = useRouter();
   const { toast } = useToast();
 
@@ -114,7 +114,7 @@ export default function PdfToExcelPage() {
   const [isLoading, setIsLoading] = useState(false);
   
   const fileUploadRef = useRef<HTMLInputElement>(null);
-  const format = 'excel'; // Hardcoded format
+  const format = 'word'; // Hardcoded format
 
   useEffect(() => {
     setTexts(translations[currentLanguage] || translations.en);
@@ -189,7 +189,7 @@ export default function PdfToExcelPage() {
       
       const resBlob = await response.blob();
       const contentDisposition = response.headers.get('Content-Disposition');
-      let downloadFilename = 'result.xlsx'; // Default filename
+      let downloadFilename = 'result.docx'; // Default filename
 
       if (contentDisposition) {
         const match = contentDisposition.match(/filename="?([^"]+)"?/);
@@ -197,7 +197,7 @@ export default function PdfToExcelPage() {
           downloadFilename = match[1];
         }
       } else {
-        downloadFilename = selectedFile.name.replace(/\.pdf$/i, '.xlsx');
+        downloadFilename = selectedFile.name.replace(/\.pdf$/i, '.docx');
       }
       
       const url = window.URL.createObjectURL(resBlob);
@@ -271,8 +271,8 @@ export default function PdfToExcelPage() {
                             <MenubarSub>
                                 <MenubarSubTrigger><FileMinus className="mr-2 h-4 w-4" />{texts.convertFromPdf}</MenubarSubTrigger>
                                 <MenubarSubContent>
-                                    <MenubarItem onClick={() => router.push('/pdf-to-word')}><FileText className="mr-2 h-4 w-4" />{texts.pdfToWord}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/pdf-to-excel')} disabled><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.pdfToExcel}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-word')} disabled><FileText className="mr-2 h-4 w-4" />{texts.pdfToWord}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-excel')}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.pdfToExcel}</MenubarItem>
                                     <MenubarItem onClick={() => router.push('/pdf-to-ppt')}><LucidePresentation className="mr-2 h-4 w-4" />{texts.pdfToPpt}</MenubarItem>
                                     <MenubarItem onClick={() => router.push('/pdf-to-html')}><Code className="mr-2 h-4 w-4" />{texts.pdfToHtml}</MenubarItem>
                                     <MenubarItem onClick={() => router.push('/pdf-to-image')}><FileImage className="mr-2 h-4 w-4" />{texts.pdfToJpg}</MenubarItem>
@@ -315,7 +315,7 @@ export default function PdfToExcelPage() {
           <Card className="max-w-2xl w-full mx-auto">
             <CardHeader className="text-center">
                 <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4">
-                    <FileSpreadsheet className="h-10 w-10 text-primary" />
+                    <FileText className="h-10 w-10 text-primary" />
                 </div>
                 <CardTitle>{texts.pageTitle}</CardTitle>
                 <CardDescription>{texts.pageDescription}</CardDescription>

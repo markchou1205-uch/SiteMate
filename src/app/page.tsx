@@ -151,11 +151,11 @@ export default function Homepage() {
     const title = texts[titleKey as keyof typeof texts];
     const content = (
       <div 
-        className="flex flex-col items-center justify-center p-2 space-y-2 rounded-lg hover:bg-accent/50 transition-colors h-24 group"
+        className="flex flex-col items-center justify-center p-2 space-y-2 rounded-lg hover:bg-accent/10 transition-colors h-24 group"
         onClick={placeholder ? () => handlePlaceholderClick(title) : undefined}
       >
         <Icon className="h-8 w-8 text-primary group-hover:scale-110 transition-transform" />
-        <span className="text-xs text-center text-muted-foreground group-hover:text-primary">{title}</span>
+        <span className="text-xs text-center text-muted-foreground group-hover:text-primary-dark font-medium">{title}</span>
       </div>
     );
   
@@ -247,29 +247,32 @@ export default function Homepage() {
       </header>
 
       <main className="flex-grow container mx-auto px-4 py-12">
-        <div className="text-center mb-16">
+        <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">{texts.pageTitle}</h1>
           <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">{texts.pageDescription}</p>
         </div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="bg-card p-6 rounded-xl border shadow-sm">
-            <h2 className="text-xl font-semibold mb-6 text-center text-foreground">{texts.pdfEditMenu}</h2>
-            <div className="grid grid-cols-3 gap-y-6 gap-x-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-12">
+          {/* Left Column: PDF Editing Tools */}
+          <div className="flex flex-col items-center">
+            <h2 className="text-xl font-semibold mb-6 text-foreground">{texts.pdfEditMenu}</h2>
+            <div className="grid grid-cols-3 gap-y-6 gap-x-4 w-full">
               {pdfEditingTools.map(tool => <FeatureIcon key={tool.key} {...tool} />)}
             </div>
           </div>
 
-          <div className="bg-card p-6 rounded-xl border shadow-sm">
-            <h2 className="text-xl font-semibold mb-6 text-center text-foreground">{texts.convertFromPdf}</h2>
-            <div className="grid grid-cols-3 gap-y-6 gap-x-4">
+          {/* Middle Column: Convert from PDF */}
+          <div className="flex flex-col items-center">
+            <h2 className="text-xl font-semibold mb-6 text-foreground">{texts.convertFromPdf}</h2>
+            <div className="grid grid-cols-3 gap-y-6 gap-x-4 w-full">
               {convertFromPdfTools.map(tool => <FeatureIcon key={tool.key} {...tool} />)}
             </div>
           </div>
 
-          <div className="bg-card p-6 rounded-xl border shadow-sm">
-            <h2 className="text-xl font-semibold mb-6 text-center text-foreground">{texts.convertToPdf}</h2>
-            <div className="grid grid-cols-3 gap-y-6 gap-x-4">
+          {/* Right Column: Convert to PDF */}
+          <div className="flex flex-col items-center">
+            <h2 className="text-xl font-semibold mb-6 text-foreground">{texts.convertToPdf}</h2>
+            <div className="grid grid-cols-3 gap-y-6 gap-x-4 w-full">
               {convertToPdfTools.map(tool => <FeatureIcon key={tool.key} {...tool} />)}
             </div>
           </div>

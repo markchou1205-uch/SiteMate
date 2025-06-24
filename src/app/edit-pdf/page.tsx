@@ -1950,7 +1950,7 @@ export default function PdfEditorPage() {
       const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 min timeout
   
       try {
-        const response = await fetch("https://pdfsolution.dpdns.org/upload", {
+        const response = await fetch("https://pdfsolution.dpdns.org/batch-upload", {
             method: 'POST',
             body: formData,
             signal: controller.signal

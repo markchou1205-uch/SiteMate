@@ -42,7 +42,7 @@ const translations = {
     jpgToPdf: 'JPG to Image',
     pdfToWord: 'PDF to WORD',
     pdfToExcel: 'PDF to EXCEL',
-    pdfToPpt: 'PPT to PDF',
+    pdfToPpt: 'PDF to PPT',
     pdfToHtml: 'PDF to HTML',
     pdfToJpg: 'PDF to Image',
     pdfToOcr: 'PDF with OCR',
@@ -76,7 +76,7 @@ const translations = {
     jpgToPdf: 'JPG 轉 PDF',
     pdfToWord: 'PDF 轉 WORD',
     pdfToExcel: 'PDF 轉 EXCEL',
-    pdfToPpt: 'PPT 轉 PDF',
+    pdfToPpt: 'PDF 轉 PPT',
     pdfToHtml: 'PDF 轉 HTML',
     pdfToJpg: 'PDF 轉圖片',
     pdfToOcr: 'PDF 光學掃描(OCR)',
@@ -104,29 +104,24 @@ const convertFromPdfTools = [
 ];
 
 const convertToPdfTools = [
-    { key: 'wordToPdf', titleKey: 'wordToPdf', href: '#', icon: FileText, placeholder: true },
-    { key: 'excelToPdf', titleKey: 'excelToPdf', href: '#', icon: FileSpreadsheet, placeholder: true },
-    { key: 'pptToPdf', titleKey: 'pptToPdf', href: '#', icon: LucidePresentation, placeholder: true },
-    { key: 'htmlToPdf', titleKey: 'htmlToPdf', href: '#', icon: Code, placeholder: true },
-    { key: 'jpgToPdf', titleKey: 'jpgToPdf', href: '#', icon: FileImage, placeholder: true },
+    { key: 'wordToPdf', titleKey: 'wordToPdf', href: '/word-to-pdf', icon: FileText },
+    { key: 'excelToPdf', titleKey: 'excelToPdf', href: '/excel-to-pdf', icon: FileSpreadsheet },
+    { key: 'pptToPdf', titleKey: 'pptToPdf', href: '/ppt-to-pdf', icon: LucidePresentation },
+    { key: 'htmlToPdf', titleKey: 'htmlToPdf', href: '/html-to-pdf', icon: Code },
+    { key: 'jpgToPdf', titleKey: 'jpgToPdf', href: '/jpg-to-pdf', icon: FileImage },
 ];
 
-const FeatureIcon = ({ href, icon: Icon, titleKey, placeholder }: { href: string; icon: React.ElementType; titleKey: string; placeholder?: boolean }) => {
+const FeatureIcon = ({ href, icon: Icon, titleKey }: { href: string; icon: React.ElementType; titleKey: string; }) => {
     const texts = translations['zh']; // Or use dynamic language state
     const title = texts[titleKey as keyof typeof texts];
     const content = (
       <div 
         className="flex flex-col items-center justify-center p-2 space-y-2 rounded-lg hover:bg-accent/10 transition-colors h-24 group"
-        onClick={placeholder ? () => alert(`${title} is coming soon!`) : undefined}
       >
         <Icon className="h-8 w-8 text-primary group-hover:scale-110 transition-transform" />
         <span className="text-xs text-center text-muted-foreground group-hover:text-primary-dark font-medium">{title}</span>
       </div>
     );
-  
-    if (placeholder) {
-      return <div className="cursor-pointer">{content}</div>;
-    }
   
     return <Link href={href}>{content}</Link>;
 };
@@ -193,13 +188,6 @@ export default function Homepage() {
     toast({ title: texts.logout, description: currentLanguage === 'zh' ? "您已成功登出。" : "You have been logged out successfully." });
   };
 
-  const handlePlaceholderClick = (featureName: string) => {
-    toast({
-        title: texts.comingSoon,
-        description: `${featureName} ${texts.featureNotImplemented}`
-    });
-  };
-
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <header className="p-0 border-b bg-card sticky top-0 z-40 flex-shrink-0">
@@ -224,11 +212,11 @@ export default function Homepage() {
                             <MenubarSub>
                                 <MenubarSubTrigger><FileUp className="mr-2 h-4 w-4" />{texts.convertToPdf}</MenubarSubTrigger>
                                 <MenubarSubContent>
-                                    <MenubarItem onClick={() => handlePlaceholderClick(texts.wordToPdf)}><FileText className="mr-2 h-4 w-4" />{texts.wordToPdf}</MenubarItem>
-                                    <MenubarItem onClick={() => handlePlaceholderClick(texts.excelToPdf)}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.excelToPdf}</MenubarItem>
-                                    <MenubarItem onClick={() => handlePlaceholderClick(texts.pptToPdf)}><LucidePresentation className="mr-2 h-4 w-4" />{texts.pptToPdf}</MenubarItem>
-                                    <MenubarItem onClick={() => handlePlaceholderClick(texts.htmlToPdf)}><Code className="mr-2 h-4 w-4" />{texts.htmlToPdf}</MenubarItem>
-                                    <MenubarItem onClick={() => handlePlaceholderClick(texts.jpgToPdf)}><FileImage className="mr-2 h-4 w-4" />{texts.jpgToPdf}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/word-to-pdf')}><FileText className="mr-2 h-4 w-4" />{texts.wordToPdf}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/excel-to-pdf')}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.excelToPdf}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/ppt-to-pdf')}><LucidePresentation className="mr-2 h-4 w-4" />{texts.pptToPdf}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/html-to-pdf')}><Code className="mr-2 h-4 w-4" />{texts.htmlToPdf}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/jpg-to-pdf')}><FileImage className="mr-2 h-4 w-4" />{texts.jpgToPdf}</MenubarItem>
                                 </MenubarSubContent>
                             </MenubarSub>
                             <MenubarSub>

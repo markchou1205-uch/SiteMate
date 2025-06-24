@@ -235,14 +235,16 @@ export default function WordToPdfPage() {
 
     setIsLoading(true);
     const formData = new FormData();
-    const apiUrl = "https://pdfsolution.dpdns.org/convert_to_pdf";
+    let endpoint = "";
 
-    if (selectedFiles.length > 1) {
+    if (selectedFiles.length === 1) {
+      formData.append("file", selectedFiles[0]);
+      endpoint = "https://pdfsolution.dpdns.org/convert_to_pdf";
+    } else {
       selectedFiles.forEach(file => {
         formData.append("files", file);
       });
-    } else {
-      formData.append("file", selectedFiles[0]);
+      endpoint = "https://pdfsolution.dpdns.org/batch_upload";
     }
 
     formData.append("format", format);
@@ -251,7 +253,7 @@ export default function WordToPdfPage() {
     const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
 
     try {
-      const response = await fetch(apiUrl, {
+      const response = await fetch(endpoint, {
         method: 'POST',
         body: formData,
         signal: controller.signal

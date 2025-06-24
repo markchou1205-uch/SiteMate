@@ -77,7 +77,7 @@ const translations = {
     wordToPdf: 'WORD to PDF',
     excelToPdf: 'EXCEL to PDF',
     pptToPdf: 'PPT to PDF',
-    htmlToPdf: 'HTML to HTML',
+    htmlToPdf: 'HTML to PDF',
     jpgToPdf: 'JPG to Image',
     pdfToWord: 'PDF to WORD',
     pdfToExcel: 'PDF to EXCEL',
@@ -86,6 +86,8 @@ const translations = {
     pdfToJpg: 'PDF to Image',
     pdfToOcr: 'PDF with OCR',
     proMode: 'Professional Mode',
+    dailyLimitTitle: 'Daily Limit Reached',
+    dailyLimitDescription: 'Your free uses for today have been exhausted. Please register or come back tomorrow.',
   },
   zh: {
     pageTitle: '合併 PDF 檔案',
@@ -148,6 +150,8 @@ const translations = {
     pdfToJpg: 'PDF轉圖片',
     pdfToOcr: 'PDF光學掃描(OCR)',
     proMode: '專業模式',
+    dailyLimitTitle: '每日次數已用完',
+    dailyLimitDescription: '您今日的免費使用次數已用完，請註冊或明天再來試。',
   },
 };
 
@@ -211,6 +215,9 @@ export default function MergePdfPage() {
   const [pendingInsertFile, setPendingInsertFile] = useState<File | null>(null);
   const [insertPosition, setInsertPosition] = useState<'before' | 'after'>('after');
   
+  const [isGuestLimitModalOpen, setIsGuestLimitModalOpen] = useState(false);
+  const [guestLimitModalContent, setGuestLimitModalContent] = useState({ title: '', description: '' });
+
   const pdfUploadRef = useRef<HTMLInputElement>(null);
   const insertPdfRef = useRef<HTMLInputElement>(null);
   const sortableContainerRef = useRef<HTMLDivElement>(null);
@@ -224,6 +231,14 @@ export default function MergePdfPage() {
     if (typeof window !== 'undefined') {
       const loggedInStatus = localStorage.getItem('isLoggedIn') === 'true';
       setIsLoggedIn(loggedInStatus);
+      
+      const today = new Date().toISOString().split('T')[0];
+      const lastUsed = localStorage.getItem('pdfLastUsed');
+      if (lastUsed !== today) {
+        localStorage.setItem('pdfDailyCount', '5');
+        localStorage.setItem('pdfConvertCount', '1');
+        localStorage.setItem('pdfLastUsed', today);
+      }
     }
   }, []);
 
@@ -245,6 +260,42 @@ export default function MergePdfPage() {
         description: `${featureName} ${texts.featureNotImplemented}`
     });
   };
+
+  const checkAndDecrementQuota = useCallback((quotaType: 'daily' | 'convert'): boolean => {
+      if (isLoggedIn || typeof window === 'undefined') {
+        return true; // Logged-in users are not subject to this limit
+      }
+
+      const today = new Date().toISOString().split('T')[0];
+      const lastUsed = localStorage.getItem('pdfLastUsed');
+
+      if (lastUsed !== today) {
+        localStorage.setItem('pdfDailyCount', '5');
+        localStorage.setItem('pdfConvertCount', '1');
+        localStorage.setItem('pdfLastUsed', today);
+      }
+      
+      const key = quotaType === 'daily' ? 'pdfDailyCount' : 'pdfConvertCount';
+      const limit = quotaType === 'daily' ? 5 : 1;
+      let currentCount = parseInt(localStorage.getItem(key) || String(limit), 10);
+
+      if (isNaN(currentCount)) {
+          currentCount = limit;
+      }
+
+      if (currentCount <= 0) {
+        setGuestLimitModalContent({
+          title: texts.dailyLimitTitle,
+          description: texts.dailyLimitDescription,
+        });
+        setIsGuestLimitModalOpen(true);
+        return false;
+      }
+
+      localStorage.setItem(key, String(currentCount - 1));
+      return true;
+  }, [isLoggedIn, texts]);
+
 
   const processPdfFile = async (file: File): Promise<PageObject[]> => {
     setLoadingMessage(`${texts.loadingMessage} ${file.name}...`);
@@ -349,6 +400,11 @@ export default function MergePdfPage() {
         toast({ title: texts.noPagesError, variant: "destructive" });
         return;
     }
+
+    if (!checkAndDecrementQuota('daily')) {
+        return;
+    }
+
     setIsDownloading(true);
     try {
         const pdfDocOut = await PDFLibDocument.create();
@@ -417,6 +473,21 @@ export default function MergePdfPage() {
           <p className="text-white text-lg">{isLoading ? loadingMessage : texts.downloadingMessage}</p>
         </div>
       )}
+
+      <AlertDialog open={isGuestLimitModalOpen} onOpenChange={setIsGuestLimitModalOpen}>
+        <AlertDialogContent>
+            <ShadAlertDialogHeader>
+            <ShadAlertDialogTitle>{guestLimitModalContent.title}</ShadAlertDialogTitle>
+            <AlertDialogDescription>
+                {guestLimitModalContent.description}
+            </AlertDialogDescription>
+            </ShadAlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel>{texts.cancel}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => router.push('/login')}>{texts.login}</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={isInsertConfirmOpen} onOpenChange={setIsInsertConfirmOpen}>
         <AlertDialogContent>
@@ -600,5 +671,4 @@ export default function MergePdfPage() {
     </div>
   )
 }
-
     

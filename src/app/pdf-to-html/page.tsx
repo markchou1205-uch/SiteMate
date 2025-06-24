@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useToast } from "@/hooks/use-toast";
@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarSub, MenubarSubContent, MenubarSubTrigger, MenubarTrigger } from "@/components/ui/menubar";
 import { Loader2, Upload, Scissors, Download, FilePlus, LogIn, LogOut, UserCircle, MenuSquare, ArrowRightLeft, Edit, FileUp, ListOrdered, Trash2, Combine, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText, Sparkles } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader as ShadAlertDialogHeader, AlertDialogTitle as ShadAlertDialogTitle } from "@/components/ui/alert-dialog";
 
 const translations = {
   en: {
@@ -44,7 +45,7 @@ const translations = {
     wordToPdf: 'WORD to PDF',
     excelToPdf: 'EXCEL to PDF',
     pptToPdf: 'PPT to PDF',
-    htmlToPdf: 'HTML to HTML',
+    htmlToPdf: 'HTML to PDF',
     jpgToPdf: 'JPG to Image',
     pdfToWord: 'PDF to WORD',
     pdfToExcel: 'PDF to EXCEL',
@@ -56,6 +57,10 @@ const translations = {
     invalidFileError: 'Invalid File Detected',
     invalidFileErrorDesc: 'The selected file was not a valid PDF.',
     proMode: 'Professional Mode',
+    cancel: 'Cancel',
+    confirm: 'Confirm',
+    convertLimitTitle: 'Conversion Limit Reached',
+    convertLimitDescription: 'Your free conversion for today has been used. Register to get 3 conversions daily.',
   },
   zh: {
     pageTitle: 'PDF 轉 HTML',
@@ -101,6 +106,10 @@ const translations = {
     invalidFileError: '偵測到無效檔案',
     invalidFileErrorDesc: '選取的檔案不是有效的 PDF。',
     proMode: '專業模式',
+    cancel: '取消',
+    confirm: '確認',
+    convertLimitTitle: '轉檔次數已用完',
+    convertLimitDescription: '您今日的免費轉檔次數已用完，註冊即可獲得每日 3 次轉換。',
   },
 };
 
@@ -114,6 +123,8 @@ export default function PdfToHtmlPage() {
   
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGuestLimitModalOpen, setIsGuestLimitModalOpen] = useState(false);
+  const [guestLimitModalContent, setGuestLimitModalContent] = useState({ title: '', description: '' });
   
   const fileUploadRef = useRef<HTMLInputElement>(null);
   const format = 'html'; // Hardcoded format
@@ -126,6 +137,14 @@ export default function PdfToHtmlPage() {
     if (typeof window !== 'undefined') {
       const loggedInStatus = localStorage.getItem('isLoggedIn') === 'true';
       setIsLoggedIn(loggedInStatus);
+      
+      const today = new Date().toISOString().split('T')[0];
+      const lastUsed = localStorage.getItem('pdfLastUsed');
+      if (lastUsed !== today) {
+        localStorage.setItem('pdfDailyCount', '5');
+        localStorage.setItem('pdfConvertCount', '1');
+        localStorage.setItem('pdfLastUsed', today);
+      }
     }
   }, []);
 
@@ -148,6 +167,35 @@ export default function PdfToHtmlPage() {
     });
   };
 
+  const checkAndDecrementQuota = useCallback((): boolean => {
+      if (isLoggedIn || typeof window === 'undefined') {
+        return true;
+      }
+      const today = new Date().toISOString().split('T')[0];
+      const lastUsed = localStorage.getItem('pdfLastUsed');
+      if (lastUsed !== today) {
+        localStorage.setItem('pdfDailyCount', '5');
+        localStorage.setItem('pdfConvertCount', '1');
+        localStorage.setItem('pdfLastUsed', today);
+      }
+      const key = 'pdfConvertCount';
+      let currentCount = parseInt(localStorage.getItem(key) || '1', 10);
+      if (isNaN(currentCount)) {
+          currentCount = 1;
+      }
+      if (currentCount <= 0) {
+        setGuestLimitModalContent({
+          title: texts.convertLimitTitle,
+          description: texts.convertLimitDescription
+        });
+        setIsGuestLimitModalOpen(true);
+        return false;
+      }
+      localStorage.setItem(key, String(currentCount - 1));
+      return true;
+  }, [isLoggedIn, texts]);
+
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -165,6 +213,10 @@ export default function PdfToHtmlPage() {
     if (!selectedFile) {
         toast({ title: texts.conversionError, description: texts.noFileSelected, variant: 'destructive'});
         return;
+    }
+
+    if (!checkAndDecrementQuota()) {
+      return;
     }
 
     setIsLoading(true);
@@ -236,6 +288,21 @@ export default function PdfToHtmlPage() {
           <p className="text-white text-lg">{texts.convertingMessage}</p>
         </div>
       )}
+
+      <AlertDialog open={isGuestLimitModalOpen} onOpenChange={setIsGuestLimitModalOpen}>
+        <AlertDialogContent>
+            <ShadAlertDialogHeader>
+            <ShadAlertDialogTitle>{guestLimitModalContent.title}</ShadAlertDialogTitle>
+            <AlertDialogDescription>
+                {guestLimitModalContent.description}
+            </AlertDialogDescription>
+            </ShadAlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel>{texts.cancel}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => router.push('/login')}>{texts.login}</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <header className="p-0 border-b bg-card sticky top-0 z-40 flex-shrink-0">
         <div className="container mx-auto flex justify-between items-center h-16">
@@ -354,5 +421,4 @@ export default function PdfToHtmlPage() {
     </div>
   )
 }
-
     

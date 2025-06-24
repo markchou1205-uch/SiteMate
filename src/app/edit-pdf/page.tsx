@@ -159,8 +159,6 @@ const translations = {
         previewOf: 'Preview of Page',
         dropFileHere: 'Drop PDF file here or click to upload',
         dropInsertFileHere: 'Drop PDF here or click to select for insertion',
-        downloadLimitTitle: 'Download Limit Reached',
-        downloadLimitDescription: 'You have reached your daily download limit (3 downloads). Please log in or upgrade for unlimited downloads.',
         loggedInAs: 'Logged in as User',
         login: 'Login',
         logout: 'Logout',
@@ -275,6 +273,10 @@ const translations = {
         status_converting: 'Converting...',
         status_done: 'Done!',
         status_error: 'Error',
+        dailyLimitTitle: 'Daily Limit Reached',
+        dailyLimitDescription: 'Your free uses for today have been exhausted. Please register or come back tomorrow.',
+        convertLimitTitle: 'Conversion Limit Reached',
+        convertLimitDescription: 'Your free conversion for today has been used. Register to get 3 conversions daily.',
     },
     zh: {
         pageTitle: 'PDF 編輯器 (專業模式)',
@@ -340,8 +342,6 @@ const translations = {
         previewOf: '預覽頁面',
         dropFileHere: '拖放 PDF 檔案至此或點擊上傳',
         dropInsertFileHere: '拖放 PDF 至此或點擊選擇以插入',
-        downloadLimitTitle: '已達下載上限',
-        downloadLimitDescription: '您已達到每日下載上限（3次）。請登入或升級以享受無限下載。',
         loggedInAs: '已登入為使用者',
         login: '登入',
         logout: '登出',
@@ -456,10 +456,12 @@ const translations = {
         status_converting: '轉換中...',
         status_done: '完成！',
         status_error: '錯誤',
+        dailyLimitTitle: '每日次數已用完',
+        dailyLimitDescription: '您今日的免費使用次數已用完，請註冊或明天再來試。',
+        convertLimitTitle: '轉檔次數已用完',
+        convertLimitDescription: '您今日的免費轉檔次數已用完，註冊即可獲得每日 3 次轉換。',
     }
 };
-
-const DAILY_DOWNLOAD_LIMIT = 3;
 
 type PageNumberPosition = 'bottom-left' | 'bottom-center' | 'bottom-right' | 'top-left' | 'top-center' | 'top-right';
 
@@ -473,12 +475,12 @@ const pageNumberPositions: {value: PageNumberPosition, labelKey: keyof typeof tr
 ];
 
 const formatOptions = [
-  { value: 'word', labelKey: 'pdfToWord' },
-  { value: 'excel', labelKey: 'pdfToExcel' },
-  { value: 'ppt', labelKey: 'pdfToPpt' },
-  { value: 'html', labelKey: 'pdfToHtml' },
-  { value: 'image', labelKey: 'pdfToJpg' },
-  { value: 'ocr', labelKey: 'pdfToOcr' },
+  { value: 'word', labelKey: 'pdfToWord', extension: 'docx' },
+  { value: 'excel', labelKey: 'pdfToExcel', extension: 'xlsx' },
+  { value: 'ppt', labelKey: 'pdfToPpt', extension: 'pptx' },
+  { value: 'html', labelKey: 'pdfToHtml', extension: 'html' },
+  { value: 'image', labelKey: 'pdfToJpg', extension: 'zip' },
+  { value: 'ocr', labelKey: 'pdfToOcr', extension: 'pdf' },
 ] as const;
 
 type UploadStatus = {
@@ -783,7 +785,8 @@ export default function PdfEditorPage() {
   const dragStartRef = useRef({ x: 0, y: 0, initialLeft: 0, initialTop: 0, initialWidth: 0, initialHeight: 0 });
   const isDraggingRef = useRef(false);
 
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [isGuestLimitModalOpen, setIsGuestLimitModalOpen] = useState(false);
+  const [guestLimitModalContent, setGuestLimitModalContent] = useState({ title: '', description: '' });
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const [pageNumberingConfig, setPageNumberingConfig] = useState({
@@ -826,20 +829,13 @@ export default function PdfEditorPage() {
       const loggedInStatus = localStorage.getItem('isLoggedIn') === 'true';
       setIsLoggedIn(loggedInStatus);
 
+      // Initialize daily quotas if it's a new day
       const today = new Date().toISOString().split('T')[0];
-      let downloadInfoString = localStorage.getItem('PdfSolutionDownloadInfo');
-      if (downloadInfoString) {
-        let downloadInfo = JSON.parse(downloadInfoString);
-        if (downloadInfo.date !== today) {
-          localStorage.removeItem('PdfSolutionDownloadInfo');
-        }
-      }
-      let wordConversionInfoString = localStorage.getItem('PdfSolutionWordConversionInfo');
-      if (wordConversionInfoString) {
-        let wordInfo = JSON.parse(wordConversionInfoString);
-        if (wordInfo.date !== today) {
-            localStorage.removeItem('PdfSolutionWordConversionInfo');
-        }
+      const lastUsed = localStorage.getItem('pdfLastUsed');
+      if (lastUsed !== today) {
+        localStorage.setItem('pdfDailyCount', '5');
+        localStorage.setItem('pdfConvertCount', '1');
+        localStorage.setItem('pdfLastUsed', today);
       }
     }
   }, []);
@@ -981,6 +977,41 @@ export default function PdfEditorPage() {
         description: `${featureName} ${texts.featureNotImplemented}`
     });
   };
+
+  const checkAndDecrementQuota = useCallback((quotaType: 'daily' | 'convert'): boolean => {
+      if (isLoggedIn || typeof window === 'undefined') {
+        return true; // Logged-in users are not subject to this limit
+      }
+
+      const today = new Date().toISOString().split('T')[0];
+      const lastUsed = localStorage.getItem('pdfLastUsed');
+
+      if (lastUsed !== today) {
+        localStorage.setItem('pdfDailyCount', '5');
+        localStorage.setItem('pdfConvertCount', '1');
+        localStorage.setItem('pdfLastUsed', today);
+      }
+      
+      const key = quotaType === 'daily' ? 'pdfDailyCount' : 'pdfConvertCount';
+      const limit = quotaType === 'daily' ? 5 : 1;
+      let currentCount = parseInt(localStorage.getItem(key) || String(limit), 10);
+
+      if (isNaN(currentCount)) {
+          currentCount = limit;
+      }
+
+      if (currentCount <= 0) {
+        setGuestLimitModalContent({
+          title: quotaType === 'daily' ? texts.dailyLimitTitle : texts.convertLimitTitle,
+          description: quotaType === 'daily' ? texts.dailyLimitDescription : texts.convertLimitDescription
+        });
+        setIsGuestLimitModalOpen(true);
+        return false;
+      }
+
+      localStorage.setItem(key, String(currentCount - 1));
+      return true;
+  }, [isLoggedIn, texts]);
 
 
   const processPdfFile = async (file: File) => {
@@ -1126,21 +1157,8 @@ export default function PdfEditorPage() {
       return;
     }
 
-    if (!isLoggedIn && typeof window !== 'undefined') {
-      const today = new Date().toISOString().split('T')[0];
-      let downloadInfoString = localStorage.getItem('PdfSolutionDownloadInfo');
-      let downloadInfo = downloadInfoString ? JSON.parse(downloadInfoString) : { count: 0, date: today };
-
-      if (downloadInfo.date !== today) {
-        downloadInfo = { count: 0, date: today };
-      }
-
-      if (downloadInfo.count >= DAILY_DOWNLOAD_LIMIT) {
-        setShowPaymentModal(true);
+    if (!checkAndDecrementQuota('daily')) {
         return;
-      }
-      downloadInfo.count++;
-      localStorage.setItem('PdfSolutionDownloadInfo', JSON.stringify(downloadInfo));
     }
 
     setIsDownloading(true);
@@ -1856,6 +1874,9 @@ export default function PdfEditorPage() {
     const convertSingleFile = async (file: File) => {
         setUploadStatuses(prev => ({ ...prev, [file.name]: { status: 'uploading', progress: 25 } }));
         
+        console.log("File name:", file.name);
+        console.log("File type:", file.type);
+
         const formData = new FormData();
         const blob = new Blob([file], { type: 'application/pdf' });
         formData.append("file", blob, file.name);
@@ -1882,6 +1903,9 @@ export default function PdfEditorPage() {
                 if (match && match[1]) {
                     downloadFilename = match[1];
                 }
+            } else {
+                 const fallbackExtension = formatOptions.find(opt => opt.value === targetFormat)?.extension || 'bin';
+                 downloadFilename = file.name.replace(/\.pdf$/i, `.${fallbackExtension}`);
             }
             
             const url = window.URL.createObjectURL(resBlob);
@@ -1906,6 +1930,10 @@ export default function PdfEditorPage() {
       if (batchFiles.length === 0) {
           toast({ title: texts.conversionError, description: texts.noFilesSelected, variant: 'destructive'});
           return;
+      }
+      
+      if (!checkAndDecrementQuota('convert')) {
+        return;
       }
   
       setIsConverting(true);
@@ -1945,12 +1973,12 @@ export default function PdfEditorPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
+      <AlertDialog open={isGuestLimitModalOpen} onOpenChange={setIsGuestLimitModalOpen}>
         <AlertDialogContent>
             <ShadAlertDialogHeader>
-            <ShadAlertDialogTitle>{texts.downloadLimitTitle}</ShadAlertDialogTitle>
+            <ShadAlertDialogTitle>{guestLimitModalContent.title}</ShadAlertDialogTitle>
             <AlertDialogDescription>
-                {texts.downloadLimitDescription}
+                {guestLimitModalContent.description}
             </AlertDialogDescription>
             </ShadAlertDialogHeader>
             <AlertDialogFooter>

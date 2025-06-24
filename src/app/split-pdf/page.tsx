@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -16,6 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Upload, Scissors, Download, FilePlus, LogIn, LogOut, UserCircle, MenuSquare, ArrowRightLeft, Edit, FileUp, ListOrdered, Trash2, Combine, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, CheckSquare, Square, ScanText, Sparkles } from 'lucide-react';
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarSub, MenubarSubContent, MenubarSubTrigger, MenubarTrigger } from "@/components/ui/menubar";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader as ShadAlertDialogHeader, AlertDialogTitle as ShadAlertDialogTitle } from "@/components/ui/alert-dialog";
 
 
 if (typeof window !== 'undefined') {
@@ -62,7 +63,7 @@ const translations = {
     wordToPdf: 'WORD to PDF',
     excelToPdf: 'EXCEL to PDF',
     pptToPdf: 'PPT to PDF',
-    htmlToPdf: 'HTML to HTML',
+    htmlToPdf: 'HTML to PDF',
     jpgToPdf: 'JPG to Image',
     pdfToWord: 'PDF to WORD',
     pdfToExcel: 'PDF to EXCEL',
@@ -74,6 +75,10 @@ const translations = {
     deselectAll: 'Deselect All',
     pagesSelected: 'pages selected',
     proMode: 'Professional Mode',
+    dailyLimitTitle: 'Daily Limit Reached',
+    dailyLimitDescription: 'Your free uses for today have been exhausted. Please register or come back tomorrow.',
+    cancel: 'Cancel',
+    confirm: 'Confirm',
   },
   zh: {
     pageTitle: '拆分 PDF',
@@ -126,6 +131,10 @@ const translations = {
     deselectAll: '取消全選',
     pagesSelected: '頁已選取',
     proMode: '專業模式',
+    dailyLimitTitle: '每日次數已用完',
+    dailyLimitDescription: '您今日的免費使用次數已用完，請註冊或明天再來試。',
+    cancel: '取消',
+    confirm: '確認',
   },
 };
 
@@ -189,6 +198,9 @@ export default function SplitPdfPage() {
   
   const [isLoading, setIsLoading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+
+  const [isGuestLimitModalOpen, setIsGuestLimitModalOpen] = useState(false);
+  const [guestLimitModalContent, setGuestLimitModalContent] = useState({ title: '', description: '' });
   
   const pdfUploadRef = useRef<HTMLInputElement>(null);
 
@@ -200,6 +212,14 @@ export default function SplitPdfPage() {
     if (typeof window !== 'undefined') {
       const loggedInStatus = localStorage.getItem('isLoggedIn') === 'true';
       setIsLoggedIn(loggedInStatus);
+      
+      const today = new Date().toISOString().split('T')[0];
+      const lastUsed = localStorage.getItem('pdfLastUsed');
+      if (lastUsed !== today) {
+        localStorage.setItem('pdfDailyCount', '5');
+        localStorage.setItem('pdfConvertCount', '1');
+        localStorage.setItem('pdfLastUsed', today);
+      }
     }
   }, []);
 
@@ -221,6 +241,41 @@ export default function SplitPdfPage() {
         description: `${featureName} ${texts.featureNotImplemented}`
     });
   };
+
+  const checkAndDecrementQuota = useCallback((quotaType: 'daily' | 'convert'): boolean => {
+      if (isLoggedIn || typeof window === 'undefined') {
+        return true; // Logged-in users are not subject to this limit
+      }
+
+      const today = new Date().toISOString().split('T')[0];
+      const lastUsed = localStorage.getItem('pdfLastUsed');
+
+      if (lastUsed !== today) {
+        localStorage.setItem('pdfDailyCount', '5');
+        localStorage.setItem('pdfConvertCount', '1');
+        localStorage.setItem('pdfLastUsed', today);
+      }
+      
+      const key = quotaType === 'daily' ? 'pdfDailyCount' : 'pdfConvertCount';
+      const limit = quotaType === 'daily' ? 5 : 1;
+      let currentCount = parseInt(localStorage.getItem(key) || String(limit), 10);
+
+      if (isNaN(currentCount)) {
+          currentCount = limit;
+      }
+
+      if (currentCount <= 0) {
+        setGuestLimitModalContent({
+          title: texts.dailyLimitTitle,
+          description: texts.dailyLimitDescription,
+        });
+        setIsGuestLimitModalOpen(true);
+        return false;
+      }
+
+      localStorage.setItem(key, String(currentCount - 1));
+      return true;
+  }, [isLoggedIn, texts]);
 
   const processPdfFile = async (file: File): Promise<PageObject[]> => {
     const arrayBuffer = await file.arrayBuffer();
@@ -290,6 +345,10 @@ export default function SplitPdfPage() {
         toast({ title: texts.noPagesError, variant: "destructive" });
         return;
     }
+    
+    if (!checkAndDecrementQuota('daily')) {
+        return;
+    }
 
     setIsDownloading(true);
     try {
@@ -345,6 +404,21 @@ export default function SplitPdfPage() {
           <p className="text-white text-lg">{isLoading ? (texts.pdfLoadError.split(' ')[0]) : texts.downloadingMessage}</p>
         </div>
       )}
+
+      <AlertDialog open={isGuestLimitModalOpen} onOpenChange={setIsGuestLimitModalOpen}>
+        <AlertDialogContent>
+            <ShadAlertDialogHeader>
+            <ShadAlertDialogTitle>{guestLimitModalContent.title}</ShadAlertDialogTitle>
+            <AlertDialogDescription>
+                {guestLimitModalContent.description}
+            </AlertDialogDescription>
+            </ShadAlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel>{texts.cancel}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => router.push('/login')}>{texts.login}</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <header className="p-0 border-b bg-card sticky top-0 z-40 flex-shrink-0">
         <div className="container mx-auto flex justify-between items-center h-16">
@@ -492,5 +566,4 @@ export default function SplitPdfPage() {
     </div>
   )
 }
-
     

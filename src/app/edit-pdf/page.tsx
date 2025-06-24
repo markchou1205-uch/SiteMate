@@ -1937,12 +1937,16 @@ export default function PdfEditorPage() {
       setUploadStatuses(convertingStatuses);
   
       const formData = new FormData();
-      if (batchFiles.length > 1) {
+      let endpoint = "";
+
+      if (batchFiles.length === 1) {
+        formData.append("file", batchFiles[0]);
+        endpoint = "https://pdfsolution.dpdns.org/upload";
+      } else {
         batchFiles.forEach(file => {
             formData.append("files", file);
         });
-      } else {
-        formData.append("file", batchFiles[0]);
+        endpoint = "https://pdfsolution.dpdns.org/batch-upload";
       }
       formData.append("format", targetFormat);
   
@@ -1950,7 +1954,7 @@ export default function PdfEditorPage() {
       const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 min timeout
   
       try {
-        const response = await fetch("https://pdfsolution.dpdns.org/batch-upload", {
+        const response = await fetch(endpoint, {
             method: 'POST',
             body: formData,
             signal: controller.signal
@@ -1959,11 +1963,12 @@ export default function PdfEditorPage() {
   
         if (!response.ok) {
             let errorMessage = `Conversion failed with status: ${response.status}`;
+            const clonedResponse = response.clone();
             try {
                 const error = await response.json();
                 errorMessage = String(error.error || "An unknown server error occurred.");
             } catch (jsonError) {
-                const errorText = await response.text();
+                const errorText = await clonedResponse.text();
                 errorMessage = `Server error: ${response.status}. Response: ${errorText.substring(0, 100)}`;
             }
             throw new Error(errorMessage);

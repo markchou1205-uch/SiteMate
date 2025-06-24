@@ -243,7 +243,7 @@ export default function PptToPdfPage() {
       selectedFiles.forEach(file => {
         formData.append("files", file);
       });
-      endpoint = "https://pdfsolution.dpdns.org/batch_upload";
+      endpoint = "https://pdfsolution.dpdns.org/batch-upload";
     }
 
     formData.append("format", format);
@@ -261,11 +261,12 @@ export default function PptToPdfPage() {
 
       if (!response.ok) {
         let errorMessage = `Conversion failed with status: ${response.status}`;
+        const clonedResponse = response.clone();
         try {
             const error = await response.json();
             errorMessage = String(error.error || "An unknown server error occurred.");
         } catch (jsonError) {
-            const errorText = await response.text();
+            const errorText = await clonedResponse.text();
             errorMessage = `An unexpected server error occurred: ${response.statusText} (${response.status}) ${errorText}`;
         }
         throw new Error(errorMessage);

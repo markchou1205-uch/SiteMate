@@ -221,8 +221,7 @@ export default function PdfToExcelPage() {
 
     setIsLoading(true);
     const formData = new FormData();
-    const blob = new Blob([selectedFile], { type: 'application/pdf' });
-    formData.append("files", blob, selectedFile.name);
+    formData.append("file", selectedFile);
     formData.append("format", format);
 
     // 檢查 FormData 是否正確建立
@@ -234,7 +233,7 @@ export default function PdfToExcelPage() {
     const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
 
     try {
-      const response = await fetch("https://pdfsolution.dpdns.org/batch-upload", {
+      const response = await fetch("https://pdfsolution.dpdns.org/upload", {
         method: 'POST',
         body: formData,
         signal: controller.signal
@@ -243,11 +242,12 @@ export default function PdfToExcelPage() {
 
       if (!response.ok) {
         let errorMessage = `Conversion failed with status: ${response.status}`;
+        const clonedResponse = response.clone();
         try {
             const error = await response.json();
             errorMessage = String(error.error || "An unknown server error occurred.");
         } catch (e) {
-             const errorText = await response.text();
+             const errorText = await clonedResponse.text();
              errorMessage = `Server error: ${response.status}. Response: ${errorText.substring(0, 100)}`;
         }
         throw new Error(errorMessage);

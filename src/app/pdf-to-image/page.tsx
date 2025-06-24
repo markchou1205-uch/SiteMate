@@ -236,8 +236,14 @@ export default function PdfToImagePage() {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(String(error.error || "Conversion failed. Please check the file or server status."));
+        let errorMessage = `Conversion failed with status: ${response.status}`;
+        try {
+            const error = await response.json();
+            errorMessage = String(error.error || "An unknown server error occurred.");
+        } catch (e) {
+            errorMessage = `An unexpected server error occurred: ${response.statusText} (${response.status})`;
+        }
+        throw new Error(errorMessage);
       }
       
       const resBlob = await response.blob();

@@ -277,6 +277,7 @@ const translations = {
         dailyLimitDescription: 'Your free uses for today have been exhausted. Please register or come back tomorrow.',
         convertLimitTitle: 'Conversion Limit Reached',
         convertLimitDescription: 'Your free conversion for today has been used. Register to get 3 conversions daily.',
+        conversionError: 'Conversion failed',
     },
     zh: {
         pageTitle: 'PDF 編輯器 (專業模式)',
@@ -460,6 +461,7 @@ const translations = {
         dailyLimitDescription: '您今日的免費使用次數已用完，請註冊或明天再來試。',
         convertLimitTitle: '轉檔次數已用完',
         convertLimitDescription: '您今日的免費轉檔次數已用完，註冊即可獲得每日 3 次轉換。',
+        conversionError: '轉換失敗',
     }
 };
 
@@ -1891,8 +1893,14 @@ export default function PdfEditorPage() {
             setUploadStatuses(prev => ({ ...prev, [file.name]: { status: 'converting', progress: 75 } }));
   
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(String(error.error || "Conversion failed."));
+                let errorMessage = `Conversion failed with status: ${response.status}`;
+                try {
+                    const error = await response.json();
+                    errorMessage = String(error.error || "An unknown server error occurred.");
+                } catch (e) {
+                    errorMessage = `An unexpected server error occurred: ${response.statusText} (${response.status})`;
+                }
+                throw new Error(errorMessage);
             }
   
             const resBlob = await response.blob();

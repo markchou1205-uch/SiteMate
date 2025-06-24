@@ -223,6 +223,7 @@ export default function PdfToExcelPage() {
     const formData = new FormData();
     formData.append("file", selectedFile);
     formData.append("format", format);
+    formData.append("output_dir", "./");
 
     // 檢查 FormData 是否正確建立
     for (let pair of formData.entries()) {
@@ -241,14 +242,18 @@ export default function PdfToExcelPage() {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        let errorMessage = `Conversion failed with status: ${response.status}`;
         const clonedResponse = response.clone();
+        let errorMessage = `Conversion failed with status: ${response.status}`;
         try {
             const error = await response.json();
             errorMessage = String(error.error || "An unknown server error occurred.");
         } catch (e) {
-             const errorText = await clonedResponse.text();
-             errorMessage = `Server error: ${response.status}. Response: ${errorText.substring(0, 100)}`;
+             try {
+                const errorText = await clonedResponse.text();
+                errorMessage = `Server error: ${response.status}. Response: ${errorText.substring(0, 100)}`;
+             } catch (textError) {
+                errorMessage = `Server returned an unreadable error with status: ${response.status}`;
+             }
         }
         throw new Error(errorMessage);
       }

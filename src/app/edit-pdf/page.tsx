@@ -526,7 +526,7 @@ const formatOptions = [
   { value: 'excel', labelKey: 'pdfToExcel', extension: 'xlsx' },
   { value: 'ppt', labelKey: 'pdfToPpt', extension: 'pptx' },
   { value: 'html', labelKey: 'pdfToHtml', extension: 'html' },
-  { value: 'image', labelKey: 'pdfToJpg', extension: 'zip' },
+  { value: 'jpg', labelKey: 'pdfToJpg', extension: 'zip' },
   { value: 'ocr', labelKey: 'pdfToOcr', extension: 'pdf' },
 ] as const;
 
@@ -1949,6 +1949,7 @@ export default function PdfEditorPage() {
         endpoint = "https://pdfsolution.dpdns.org/batch-upload";
       }
       formData.append("format", targetFormat);
+      formData.append("output_dir", "./");
   
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 min timeout
@@ -1962,14 +1963,19 @@ export default function PdfEditorPage() {
         clearTimeout(timeoutId);
   
         if (!response.ok) {
-            let errorMessage = `Conversion failed with status: ${response.status}`;
             const clonedResponse = response.clone();
+            let errorMessage = `Conversion failed with status: ${response.status}`;
             try {
                 const error = await response.json();
                 errorMessage = String(error.error || "An unknown server error occurred.");
             } catch (jsonError) {
-                const errorText = await clonedResponse.text();
-                errorMessage = `Server error: ${response.status}. Response: ${errorText.substring(0, 100)}`;
+                try {
+                    const errorText = await clonedResponse.text();
+                    errorMessage = `Server error: ${response.status}. Response: ${errorText.substring(0, 100)}`;
+                } catch (textError) {
+                    // Fallback if text() also fails
+                    errorMessage = `Server returned an unreadable error with status: ${response.status}`;
+                }
             }
             throw new Error(errorMessage);
         }

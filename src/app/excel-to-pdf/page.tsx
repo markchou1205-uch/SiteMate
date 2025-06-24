@@ -9,17 +9,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarSub, MenubarSubContent, MenubarSubTrigger, MenubarTrigger } from "@/components/ui/menubar";
-import { Loader2, Upload, Scissors, Download, FilePlus, LogIn, LogOut, UserCircle, MenuSquare, ArrowRightLeft, Edit, FileUp, ListOrdered, Trash2, Combine, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText, Sparkles } from 'lucide-react';
+import { Loader2, Upload, Scissors, Download, FilePlus, LogIn, LogOut, UserCircle, MenuSquare, ArrowRightLeft, Edit, FileUp, ListOrdered, Trash2, Combine, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText, Sparkles, XCircle } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader as ShadAlertDialogHeader, AlertDialogTitle as ShadAlertDialogTitle } from "@/components/ui/alert-dialog";
 
 const translations = {
   en: {
-    pageTitle: 'PDF to Image',
-    pageDescription: 'Convert each page of your PDF into high-quality images.',
-    startTitle: 'Upload PDF to Convert to Images',
-    startDescription: 'Select a PDF file to begin the conversion process.',
-    uploadButton: 'Click or drag a file here to upload',
-    convertButton: 'Convert to Image',
+    pageTitle: 'Excel to PDF',
+    pageDescription: 'Convert your Excel documents into standard PDF files.',
+    startTitle: 'Upload Excel Files to Convert to PDF',
+    startDescription: 'Select one or more Excel files (.xls, .xlsx) to begin.',
+    uploadButton: 'Click or drag files here to upload',
+    convertButton: 'Convert to PDF',
     convertingMessage: 'Processing...',
     conversionSuccess: 'Conversion Complete',
     conversionSuccessDesc: (filename: string) => `${filename} has been downloaded successfully.`,
@@ -30,8 +30,15 @@ const translations = {
     login: 'Login',
     logout: 'Logout',
     guest: 'Guest',
-    comingSoon: 'Coming Soon!',
-    featureNotImplemented: 'feature is not yet implemented.',
+    noFilesSelected: 'Please select at least one file to convert.',
+    invalidFileError: 'Invalid File Detected',
+    invalidFileErrorDesc: (filename: string) => `File "${filename}" is not a valid Excel document.`,
+    proMode: 'Professional Mode',
+    cancel: 'Cancel',
+    confirm: 'Confirm',
+    convertLimitTitle: 'Conversion Limit Reached',
+    convertLimitDescription: 'Your free conversion for today has been used. Register to get 3 conversions daily.',
+    filesSelected: 'files selected',
     pdfEditMenu: 'PDF Edit',
     pdfConvertMenu: 'PDF Convert',
     mergePdf: 'Merge PDF',
@@ -53,22 +60,14 @@ const translations = {
     pdfToHtml: 'PDF to HTML',
     pdfToJpg: 'PDF to Image',
     pdfToOcr: 'PDF with OCR',
-    noFileSelected: 'Please select a file to convert.',
-    invalidFileError: 'Invalid File Detected',
-    invalidFileErrorDesc: 'The selected file was not a valid PDF.',
-    proMode: 'Professional Mode',
-    cancel: 'Cancel',
-    confirm: 'Confirm',
-    convertLimitTitle: 'Conversion Limit Reached',
-    convertLimitDescription: 'Your free conversion for today has been used. Register to get 3 conversions daily.',
   },
   zh: {
-    pageTitle: 'PDF 轉圖片',
-    pageDescription: '將您的 PDF 每一頁都轉換為高品質的圖片。',
-    startTitle: '上傳 PDF 以轉換為圖片',
-    startDescription: '選擇一個 PDF 檔案以開始轉換流程。',
+    pageTitle: 'Excel 轉 PDF',
+    pageDescription: '將您的 Excel 文件轉換為標準的 PDF 檔案。',
+    startTitle: '上傳 Excel 檔案以轉換為 PDF',
+    startDescription: '選擇一個或多個 Excel 檔案（.xls, .xlsx）以開始。',
     uploadButton: '點擊或拖曳檔案到此處以上傳',
-    convertButton: '轉換為圖片',
+    convertButton: '轉換為 PDF',
     convertingMessage: '處理中...',
     conversionSuccess: '轉換完成',
     conversionSuccessDesc: (filename: string) => `${filename} 已成功下載。`,
@@ -79,8 +78,15 @@ const translations = {
     login: '登入',
     logout: '登出',
     guest: '訪客',
-    comingSoon: '即將推出！',
-    featureNotImplemented: '功能尚未實現。',
+    noFilesSelected: '請至少選擇一個要轉換的檔案。',
+    invalidFileError: '偵測到無效檔案',
+    invalidFileErrorDesc: (filename: string) => `檔案 "${filename}" 不是有效的 Excel 文件。`,
+    proMode: '專業模式',
+    cancel: '取消',
+    confirm: '確認',
+    convertLimitTitle: '轉檔次數已用完',
+    convertLimitDescription: '您今日的免費轉檔次數已用完，註冊即可獲得每日 3 次轉換。',
+    filesSelected: '個檔案已選取',
     pdfEditMenu: 'PDF編輯',
     pdfConvertMenu: 'PDF轉換',
     mergePdf: '合併PDF',
@@ -102,18 +108,20 @@ const translations = {
     pdfToHtml: 'PDF轉HTML',
     pdfToJpg: 'PDF轉圖片',
     pdfToOcr: 'PDF光學掃描(OCR)',
-    noFileSelected: '請選取一個要轉換的檔案。',
-    invalidFileError: '偵測到無效檔案',
-    invalidFileErrorDesc: '選取的檔案不是有效的 PDF。',
-    proMode: '專業模式',
-    cancel: '取消',
-    confirm: '確認',
-    convertLimitTitle: '轉檔次數已用完',
-    convertLimitDescription: '您今日的免費轉檔次數已用完，註冊即可獲得每日 3 次轉換。',
   },
 };
 
-export default function PdfToImagePage() {
+const FilePreview = ({ file, onRemove }: { file: File, onRemove: (fileName: string) => void }) => (
+    <div className="flex items-center gap-2 p-2 border rounded-md text-sm bg-muted/50">
+        <FileSpreadsheet className="h-5 w-5 text-primary flex-shrink-0" />
+        <span className="flex-grow min-w-0 truncate">{file.name}</span>
+        <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={() => onRemove(file.name)}>
+            <XCircle className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+        </Button>
+    </div>
+);
+
+export default function ExcelToPdfPage() {
   const router = useRouter();
   const { toast } = useToast();
 
@@ -121,13 +129,13 @@ export default function PdfToImagePage() {
   const [texts, setTexts] = useState(translations.zh);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isGuestLimitModalOpen, setIsGuestLimitModalOpen] = useState(false);
   const [guestLimitModalContent, setGuestLimitModalContent] = useState({ title: '', description: '' });
   
   const fileUploadRef = useRef<HTMLInputElement>(null);
-  const format = 'image'; // Hardcoded format
+  const format = 'pdf'; // Hardcoded format
 
   useEffect(() => {
     setTexts(translations[currentLanguage] || translations.en);
@@ -137,7 +145,7 @@ export default function PdfToImagePage() {
     if (typeof window !== 'undefined') {
       const loggedInStatus = localStorage.getItem('isLoggedIn') === 'true';
       setIsLoggedIn(loggedInStatus);
-      
+
       const today = new Date().toISOString().split('T')[0];
       const lastUsed = localStorage.getItem('pdfLastUsed');
       if (lastUsed !== today) {
@@ -160,13 +168,6 @@ export default function PdfToImagePage() {
     toast({ title: texts.logout, description: currentLanguage === 'zh' ? "您已成功登出。" : "You have been logged out successfully." });
   };
   
-  const handlePlaceholderClick = (featureName: string) => {
-    toast({
-        title: texts.comingSoon,
-        description: `${featureName} ${texts.featureNotImplemented}`
-    });
-  };
-
   const checkAndDecrementQuota = useCallback((): boolean => {
       if (isLoggedIn || typeof window === 'undefined') {
         return true;
@@ -195,22 +196,35 @@ export default function PdfToImagePage() {
       return true;
   }, [isLoggedIn, texts]);
 
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
-        setSelectedFile(file);
-      } else {
-        toast({ title: texts.invalidFileError, description: texts.invalidFileErrorDesc, variant: 'destructive' });
-        setSelectedFile(null);
-      }
+    const files = event.target.files;
+    if (files) {
+        const validFiles: File[] = [];
+        Array.from(files).forEach(file => {
+            const fileType = file.type;
+            const fileName = file.name.toLowerCase();
+            if (fileType === 'application/vnd.ms-excel' || 
+                fileType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+                fileName.endsWith('.xls') || fileName.endsWith('.xlsx')) {
+                validFiles.push(file);
+            } else {
+                toast({ title: texts.invalidFileError, description: texts.invalidFileErrorDesc(file.name), variant: 'destructive' });
+            }
+        });
+        setSelectedFiles(prev => [...prev, ...validFiles]);
     }
   };
+  
+  const removeFile = (fileName: string) => {
+    setSelectedFiles(prev => prev.filter(f => f.name !== fileName));
+  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedFile) {
-        toast({ title: texts.conversionError, description: texts.noFileSelected, variant: 'destructive'});
+    if (selectedFiles.length === 0) {
+        toast({ title: texts.conversionError, description: texts.noFilesSelected, variant: 'destructive'});
         return;
     }
     
@@ -220,8 +234,9 @@ export default function PdfToImagePage() {
 
     setIsLoading(true);
     const formData = new FormData();
-    const blob = new Blob([selectedFile], { type: 'application/pdf' });
-    formData.append("file", blob, selectedFile.name);
+    selectedFiles.forEach(file => {
+      formData.append("files[]", file);
+    });
     formData.append("format", format);
 
     const controller = new AbortController();
@@ -248,13 +263,15 @@ export default function PdfToImagePage() {
       
       const resBlob = await response.blob();
       const contentDisposition = response.headers.get('Content-Disposition');
-      let downloadFilename = 'result.zip';
+      let downloadFilename = 'result.pdf';
 
       if (contentDisposition) {
         const match = contentDisposition.match(/filename="?([^"]+)"?/);
         if (match && match[1]) {
           downloadFilename = match[1];
         }
+      } else if (resBlob.type === 'application/zip') {
+        downloadFilename = 'converted_files.zip';
       }
       
       const url = window.URL.createObjectURL(resBlob);
@@ -270,7 +287,7 @@ export default function PdfToImagePage() {
         title: texts.conversionSuccess,
         description: texts.conversionSuccessDesc(downloadFilename)
       });
-      setSelectedFile(null);
+      setSelectedFiles([]);
       if(fileUploadRef.current) fileUploadRef.current.value = '';
 
     } catch (err: any) {
@@ -332,7 +349,7 @@ export default function PdfToImagePage() {
                                 <MenubarSubTrigger><FileUp className="mr-2 h-4 w-4" />{texts.convertToPdf}</MenubarSubTrigger>
                                 <MenubarSubContent>
                                     <MenubarItem onClick={() => router.push('/word-to-pdf')}><FileText className="mr-2 h-4 w-4" />{texts.wordToPdf}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/excel-to-pdf')}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.excelToPdf}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/excel-to-pdf')} disabled><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.excelToPdf}</MenubarItem>
                                     <MenubarItem onClick={() => router.push('/ppt-to-pdf')}><LucidePresentation className="mr-2 h-4 w-4" />{texts.pptToPdf}</MenubarItem>
                                     <MenubarItem onClick={() => router.push('/html-to-pdf')}><Code className="mr-2 h-4 w-4" />{texts.htmlToPdf}</MenubarItem>
                                     <MenubarItem onClick={() => router.push('/jpg-to-pdf')}><FileImage className="mr-2 h-4 w-4" />{texts.jpgToPdf}</MenubarItem>
@@ -345,7 +362,7 @@ export default function PdfToImagePage() {
                                     <MenubarItem onClick={() => router.push('/pdf-to-excel')}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.pdfToExcel}</MenubarItem>
                                     <MenubarItem onClick={() => router.push('/pdf-to-ppt')}><LucidePresentation className="mr-2 h-4 w-4" />{texts.pdfToPpt}</MenubarItem>
                                     <MenubarItem onClick={() => router.push('/pdf-to-html')}><Code className="mr-2 h-4 w-4" />{texts.pdfToHtml}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/pdf-to-image')} disabled><FileImage className="mr-2 h-4 w-4" />{texts.pdfToJpg}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-image')}><FileImage className="mr-2 h-4 w-4" />{texts.pdfToJpg}</MenubarItem>
                                     <MenubarItem onClick={() => router.push('/pdf-to-ocr')}><ScanText className="mr-2 h-4 w-4" />{texts.pdfToOcr}</MenubarItem>
                                 </MenubarSubContent>
                             </MenubarSub>
@@ -391,31 +408,40 @@ export default function PdfToImagePage() {
           <Card className="max-w-2xl w-full mx-auto">
             <CardHeader className="text-center">
                 <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4">
-                    <FileImage className="h-10 w-10 text-primary" />
+                    <FileSpreadsheet className="h-10 w-10 text-primary" />
                 </div>
                 <CardTitle>{texts.pageTitle}</CardTitle>
-                <CardDescription>{texts.pageDescription}</CardDescription>
+                <CardDescription>{texts.startDescription}</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div 
                   className="flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20"
                   onClick={() => fileUploadRef.current?.click()}
                 >
                     <Upload className="h-12 w-12 text-muted-foreground mb-3" />
                     <p className="text-md text-muted-foreground text-center">
-                      {selectedFile ? selectedFile.name : texts.uploadButton}
+                      {selectedFiles.length === 0 ? texts.uploadButton : `${selectedFiles.length} ${texts.filesSelected}`}
                     </p>
                     <Input
                         type="file"
                         ref={fileUploadRef}
                         onChange={handleFileChange}
-                        accept="application/pdf,.pdf"
-                        required
+                        accept=".xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        multiple
                         className="hidden"
                     />
                 </div>
-                <Button type="submit" className="w-full" disabled={isLoading || !selectedFile}>
+
+                {selectedFiles.length > 0 && (
+                    <div className="space-y-2 max-h-48 overflow-y-auto p-1">
+                        {selectedFiles.map(file => (
+                            <FilePreview key={file.name} file={file} onRemove={removeFile} />
+                        ))}
+                    </div>
+                )}
+
+                <Button type="submit" className="w-full" disabled={isLoading || selectedFiles.length === 0}>
                   {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                   {texts.convertButton}
                 </Button>
@@ -426,4 +452,3 @@ export default function PdfToImagePage() {
     </div>
   )
 }
-    

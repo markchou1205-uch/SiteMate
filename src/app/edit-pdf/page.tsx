@@ -279,6 +279,8 @@ const translations = {
         convertLimitTitle: 'Conversion Limit Reached',
         convertLimitDescription: 'Your free conversion for today has been used. Register to get 3 conversions daily.',
         conversionError: 'Conversion failed',
+        conversionSuccess: 'Conversion successful!',
+        conversionSuccessDesc: (filename: string) => `${filename} has been downloaded successfully.`,
         menuFile: "File",
         menuEdit: "Edit",
         menuPage: "Page",
@@ -483,6 +485,8 @@ const translations = {
         convertLimitTitle: '轉檔次數已用完',
         convertLimitDescription: '您今日的免費轉檔次數已用完，註冊即可獲得每日 3 次轉換。',
         conversionError: '轉換失敗',
+        conversionSuccess: '轉換成功！',
+        conversionSuccessDesc: (filename: string) => `${filename} 已成功下載。`,
         menuFile: "檔案",
         menuEdit: "編輯",
         menuPage: "頁面",
@@ -1913,66 +1917,6 @@ export default function PdfEditorPage() {
           return newStatuses;
       });
     };
-    
-    const convertSingleFile = async (file: File) => {
-        setUploadStatuses(prev => ({ ...prev, [file.name]: { status: 'uploading', progress: 25 } }));
-        
-        console.log("File name:", file.name);
-        console.log("File type:", file.type);
-
-        const formData = new FormData();
-        const blob = new Blob([file], { type: 'application/pdf' });
-        formData.append("file", blob, file.name);
-        formData.append("format", targetFormat);
-  
-        try {
-            const response = await fetch("https://pdfsolution.dpdns.org/convert_to_pdf", {
-                method: 'POST',
-                body: formData,
-            });
-  
-            setUploadStatuses(prev => ({ ...prev, [file.name]: { status: 'converting', progress: 75 } }));
-  
-            if (!response.ok) {
-                let errorMessage = `Conversion failed with status: ${response.status}`;
-                try {
-                    const error = await response.json();
-                    errorMessage = String(error.error || "An unknown server error occurred.");
-                } catch (e) {
-                    errorMessage = `An unexpected server error occurred: ${response.statusText} (${response.status})`;
-                }
-                throw new Error(errorMessage);
-            }
-  
-            const resBlob = await response.blob();
-            const contentDisposition = response.headers.get('Content-Disposition');
-            let downloadFilename = file.name.replace(/\.pdf$/i, `.${targetFormat}`);
-            if (contentDisposition) {
-                const match = contentDisposition.match(/filename="?([^"]+)"?/);
-                if (match && match[1]) {
-                    downloadFilename = match[1];
-                }
-            } else {
-                 const fallbackExtension = formatOptions.find(opt => opt.value === targetFormat)?.extension || 'bin';
-                 downloadFilename = file.name.replace(/\.pdf$/i, `.${fallbackExtension}`);
-            }
-            
-            const url = window.URL.createObjectURL(resBlob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = downloadFilename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-            
-            setUploadStatuses(prev => ({ ...prev, [file.name]: { status: 'done', progress: 100 } }));
-  
-        } catch (err: any) {
-            setUploadStatuses(prev => ({ ...prev, [file.name]: { status: 'error', progress: 0, error: err.message } }));
-            toast({ title: `${file.name}: ${texts.conversionError}`, description: err.message, variant: "destructive" });
-        }
-    };
   
     const handleBatchSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -1986,8 +1930,87 @@ export default function PdfEditorPage() {
       }
   
       setIsConverting(true);
-      await Promise.all(batchFiles.map(file => convertSingleFile(file)));
-      setIsConverting(false);
+      const convertingStatuses: { [fileName: string]: UploadStatus } = {};
+      batchFiles.forEach(file => {
+          convertingStatuses[file.name] = { status: 'converting', progress: 50 };
+      });
+      setUploadStatuses(convertingStatuses);
+  
+      const formData = new FormData();
+      const isBatch = batchFiles.length > 1;
+      const apiUrl = isBatch 
+        ? "https://pdfsolution.dpdns.org/batch_upload"
+        : "https://pdfsolution.dpdns.org/convert_to_pdf";
+
+      if (isBatch) {
+        batchFiles.forEach(file => {
+            formData.append("files", file);
+        });
+      } else {
+        formData.append("file", batchFiles[0]);
+      }
+      formData.append("format", targetFormat);
+  
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 min timeout
+  
+      try {
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            body: formData,
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+  
+        if (!response.ok) {
+            let errorMessage = `Conversion failed with status: ${response.status}`;
+            try {
+                const error = await response.json();
+                errorMessage = String(error.error || "An unknown server error occurred.");
+            } catch (jsonError) {
+                const errorText = await response.text();
+                errorMessage = `Server error: ${response.status}. Response: ${errorText.substring(0, 100)}`;
+            }
+            throw new Error(errorMessage);
+        }
+
+        const resBlob = await response.blob();
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let downloadFilename = `batch_converted.${formatOptions.find(opt => opt.value === targetFormat)?.extension || 'bin'}`;
+        if (contentDisposition) {
+            const match = contentDisposition.match(/filename="?([^"]+)"?/);
+            if (match && match[1]) {
+                downloadFilename = match[1];
+            }
+        }
+        
+        const url = window.URL.createObjectURL(resBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = downloadFilename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        const doneStatuses: { [fileName: string]: UploadStatus } = {};
+        batchFiles.forEach(file => {
+            doneStatuses[file.name] = { status: 'done', progress: 100 };
+        });
+        setUploadStatuses(doneStatuses);
+        toast({ title: texts.conversionSuccess, description: texts.conversionSuccessDesc(downloadFilename)});
+
+      } catch (err: any) {
+        clearTimeout(timeoutId);
+        const errorStatuses: { [fileName: string]: UploadStatus } = {};
+        batchFiles.forEach(file => {
+            errorStatuses[file.name] = { status: 'error', progress: 0, error: err.message };
+        });
+        setUploadStatuses(errorStatuses);
+        toast({ title: texts.conversionError, description: err.message, variant: "destructive" });
+      } finally {
+        setIsConverting(false);
+      }
     };
 
     // --- End Batch Conversion Logic ---
@@ -2499,5 +2522,3 @@ export default function PdfEditorPage() {
     </div>
   );
 }
-
-    

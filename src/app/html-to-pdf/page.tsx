@@ -232,16 +232,26 @@ export default function HtmlToPdfPage() {
 
     setIsLoading(true);
     const formData = new FormData();
-    selectedFiles.forEach(file => {
-      formData.append("file", file);
-    });
+    const isBatch = selectedFiles.length > 1;
+    const apiUrl = isBatch 
+        ? "https://pdfsolution.dpdns.org/batch_upload"
+        : "https://pdfsolution.dpdns.org/convert_to_pdf";
+
+    if (isBatch) {
+        selectedFiles.forEach(file => {
+            formData.append("files", file);
+        });
+    } else {
+        formData.append("file", selectedFiles[0]);
+    }
+    
     formData.append("format", format);
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
 
     try {
-      const response = await fetch("https://pdfsolution.dpdns.org/convert_to_pdf", {
+      const response = await fetch(apiUrl, {
         method: 'POST',
         body: formData,
         signal: controller.signal
@@ -253,7 +263,7 @@ export default function HtmlToPdfPage() {
         try {
             const error = await response.json();
             errorMessage = String(error.error || "An unknown server error occurred.");
-        } catch (e) {
+        } catch (jsonError) {
              const errorText = await response.text();
              errorMessage = `Server error: ${response.status}. Response: ${errorText.substring(0, 100)}`;
         }
@@ -407,7 +417,7 @@ export default function HtmlToPdfPage() {
           <Card className="max-w-2xl w-full mx-auto">
             <CardHeader className="text-center">
                 <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4">
-                    <Code className="h-10 w-10 text-primary" />
+                    <FileUp className="h-10 w-10 text-primary" />
                 </div>
                 <CardTitle>{texts.pageTitle}</CardTitle>
                 <CardDescription>{texts.startDescription}</CardDescription>

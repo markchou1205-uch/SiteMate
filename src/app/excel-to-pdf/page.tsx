@@ -235,7 +235,7 @@ export default function ExcelToPdfPage() {
     setIsLoading(true);
     const formData = new FormData();
     selectedFiles.forEach(file => {
-      formData.append("files[]", file);
+      formData.append("file", file);
     });
     formData.append("format", format);
 

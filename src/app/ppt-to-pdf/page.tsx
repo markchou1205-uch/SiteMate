@@ -235,7 +235,7 @@ export default function PptToPdfPage() {
     setIsLoading(true);
     const formData = new FormData();
     selectedFiles.forEach(file => {
-      formData.append("files[]", file);
+      formData.append("file", file);
     });
     formData.append("format", format);
 
@@ -243,7 +243,7 @@ export default function PptToPdfPage() {
     const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
 
     try {
-      const response = await fetch("https://pdfsolution.dpdns.org/upload", {
+      const response = await fetch("https://pdfsolution.dpdns.org/convert_to_pdf", {
         method: 'POST',
         body: formData,
         signal: controller.signal
@@ -256,7 +256,8 @@ export default function PptToPdfPage() {
             const error = await response.json();
             errorMessage = String(error.error || "An unknown server error occurred.");
         } catch (e) {
-            errorMessage = `An unexpected server error occurred: ${response.statusText} (${response.status})`;
+            const errorText = await response.text();
+            errorMessage = `An unexpected server error occurred: ${response.statusText} (${response.status}) ${errorText}`;
         }
         throw new Error(errorMessage);
       }

@@ -19,7 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, FontSize, Eye, Scissors, LayoutGrid, PanelLeft, FilePlus2, Combine, Type, ImagePlus, Link as LinkIcon, MessageSquarePlus, ZoomIn, ZoomOut, Expand, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Highlighter, ArrowRightLeft, Edit, FileUp, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText, Sparkles, XCircle, File } from 'lucide-react';
+import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, FontSize, Eye, Scissors, LayoutGrid, PanelLeft, FilePlus2, Combine, Type, ImagePlus, Link as LinkIcon, MessageSquarePlus, ZoomIn, ZoomOut, Expand, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Highlighter, ArrowRightLeft, Edit, FileUp, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText, Sparkles, XCircle, File, FolderOpen, Save, Wrench, HelpCircle, PanelTop, Redo, Undo } from 'lucide-react';
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,6 +32,7 @@ import {
   MenubarContent,
   MenubarItem,
   MenubarMenu,
+  MenubarSeparator,
   MenubarSub,
   MenubarSubContent,
   MenubarSubTrigger,
@@ -278,6 +279,26 @@ const translations = {
         convertLimitTitle: 'Conversion Limit Reached',
         convertLimitDescription: 'Your free conversion for today has been used. Register to get 3 conversions daily.',
         conversionError: 'Conversion failed',
+        menuFile: "File",
+        menuEdit: "Edit",
+        menuPage: "Page",
+        menuConvert: "Convert",
+        menuTools: "Tools",
+        menuHelp: "Help",
+        menuFileOpen: "Open File",
+        menuFileNew: "New Document",
+        menuFileSaveAs: "Save As",
+        menuFileBatchConvert: "Batch Conversion",
+        menuEditUndo: "Undo",
+        menuEditRedo: "Redo",
+        menuEditInsertText: "Insert Text",
+        menuEditInsertImage: "Insert Image",
+        menuEditHighlight: "Highlight Area",
+        menuEditInsertLink: "Add/Edit Link",
+        menuPageRotateCW: "Rotate Clockwise",
+        menuPageRotateCCW: "Rotate Counter-Clockwise",
+        menuPageAddBlank: "Add Blank Page",
+        menuPageDelete: "Delete Current Page",
     },
     zh: {
         pageTitle: 'PDF 編輯器 (專業模式)',
@@ -462,6 +483,26 @@ const translations = {
         convertLimitTitle: '轉檔次數已用完',
         convertLimitDescription: '您今日的免費轉檔次數已用完，註冊即可獲得每日 3 次轉換。',
         conversionError: '轉換失敗',
+        menuFile: "檔案",
+        menuEdit: "編輯",
+        menuPage: "頁面",
+        menuConvert: "轉換",
+        menuTools: "工具",
+        menuHelp: "說明",
+        menuFileOpen: "開啟檔案",
+        menuFileNew: "新文件",
+        menuFileSaveAs: "另存新檔",
+        menuFileBatchConvert: "批次轉換",
+        menuEditUndo: "復原",
+        menuEditRedo: "重做",
+        menuEditInsertText: "插入文字",
+        menuEditInsertImage: "插入圖片",
+        menuEditHighlight: "螢光筆",
+        menuEditInsertLink: "新增/編輯連結",
+        menuPageRotateCW: "順時針旋轉",
+        menuPageRotateCCW: "逆時針旋轉",
+        menuPageAddBlank: "新增空白頁",
+        menuPageDelete: "刪除目前頁面",
     }
 };
 
@@ -2011,84 +2052,157 @@ export default function PdfEditorPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <header className="p-0 border-b bg-card sticky top-0 z-40 flex-shrink-0">
-        <div className="container mx-auto flex justify-between items-center h-16">
-            <div className="flex items-center gap-6">
-                <h1 className="text-xl font-bold text-primary flex items-center cursor-pointer" onClick={() => router.push('/')}>
-                    <MenuSquare className="mr-2 h-6 w-6"/> {texts.appTitle}
-                </h1>
-                 <Menubar className="border-none shadow-none bg-transparent">
-                    <MenubarMenu>
-                        <MenubarTrigger><Edit className="mr-2 h-4 w-4" />{texts.pdfEditMenu}</MenubarTrigger>
-                        <MenubarContent>
-                            <MenubarItem onClick={() => router.push('/merge-pdf')}><Combine className="mr-2 h-4 w-4" />{texts.mergePdf}</MenubarItem>
-                            <MenubarItem onClick={() => router.push('/split-pdf')}><Scissors className="mr-2 h-4 w-4" />{texts.splitPdf}</MenubarItem>
-                            <MenubarItem onClick={() => router.push('/edit-pdf')}><ListOrdered className="mr-2 h-4 w-4" />{texts.reorderPdfPages}</MenubarItem>
-                            <MenubarItem onClick={() => router.push('/edit-pdf')}><Droplets className="mr-2 h-4 w-4" />{texts.addWatermark}</MenubarItem>
-                        </MenubarContent>
-                    </MenubarMenu>
-                    <MenubarMenu>
-                        <MenubarTrigger><ArrowRightLeft className="mr-2 h-4 w-4" />{texts.pdfConvertMenu}</MenubarTrigger>
-                        <MenubarContent>
-                            <MenubarSub>
-                                <MenubarSubTrigger><FileUp className="mr-2 h-4 w-4" />{texts.convertToPdf}</MenubarSubTrigger>
-                                <MenubarSubContent>
-                                    <MenubarItem onClick={() => router.push('/word-to-pdf')}><FileText className="mr-2 h-4 w-4" />{texts.wordToPdf}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/excel-to-pdf')}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.excelToPdf}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/ppt-to-pdf')}><LucidePresentation className="mr-2 h-4 w-4" />{texts.pptToPdf}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/html-to-pdf')}><Code className="mr-2 h-4 w-4" />{texts.htmlToPdf}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/jpg-to-pdf')}><FileImage className="mr-2 h-4 w-4" />{texts.jpgToPdf}</MenubarItem>
-                                </MenubarSubContent>
-                            </MenubarSub>
-                            <MenubarSub>
-                                <MenubarSubTrigger><FileMinus className="mr-2 h-4 w-4" />{texts.convertFromPdf}</MenubarSubTrigger>
-                                <MenubarSubContent>
-                                    <MenubarItem onClick={() => router.push('/pdf-to-word')}><FileText className="mr-2 h-4 w-4" />{texts.pdfToWord}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/pdf-to-excel')}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.pdfToExcel}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/pdf-to-ppt')}><LucidePresentation className="mr-2 h-4 w-4" />{texts.pdfToPpt}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/pdf-to-html')}><Code className="mr-2 h-4 w-4" />{texts.pdfToHtml}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/pdf-to-image')}><FileImage className="mr-2 h-4 w-4" />{texts.pdfToJpg}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/pdf-to-ocr')}><ScanText className="mr-2 h-4 w-4" />{texts.pdfToOcr}</MenubarItem>
-                                </MenubarSubContent>
-                            </MenubarSub>
-                        </MenubarContent>
-                    </MenubarMenu>
-                    <MenubarMenu>
-                        <MenubarTrigger onClick={() => router.push('/edit-pdf')} className="text-primary hover:text-primary focus:text-primary ring-1 ring-primary/50">
-                            <Sparkles className="mr-2 h-4 w-4" />
-                            {texts.proMode}
-                        </MenubarTrigger>
-                    </MenubarMenu>
-                </Menubar>
+    <header className="p-0 border-b bg-card sticky top-0 z-40 flex-shrink-0">
+        <Menubar className="rounded-none border-x-0 h-14 px-4 lg:px-6">
+            <div className="flex items-center gap-2">
+                <MenuSquare className="h-6 w-6 text-primary"/>
+                <h1 className="text-lg font-bold">{texts.appTitle}</h1>
             </div>
+            <MenubarMenu>
+                <MenubarTrigger>{texts.menuFile}</MenubarTrigger>
+                <MenubarContent>
+                    <MenubarItem onClick={() => pdfUploadRef.current?.click()}><FolderOpen className="mr-2 h-4 w-4"/>{texts.menuFileOpen}</MenubarItem>
+                    <MenubarItem onClick={() => setPageObjects([])}><FilePlus className="mr-2 h-4 w-4"/>{texts.menuFileNew}</MenubarItem>
+                    <MenubarItem onClick={handleDownloadPdf} disabled={pageObjects.length === 0}><Save className="mr-2 h-4 w-4"/>{texts.menuFileSaveAs}</MenubarItem>
+                    <MenubarSeparator />
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <MenubarItem onSelect={(e) => e.preventDefault()}><Combine className="mr-2 h-4 w-4"/>{texts.menuFileBatchConvert}</MenubarItem>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-96">
+                            <form onSubmit={handleBatchSubmit} className="space-y-4">
+                                <CardTitle>{texts.batchConvert}</CardTitle>
+                                <div>
+                                    <Label htmlFor="targetFormat" className="text-sm font-medium">{texts.selectFormat}</Label>
+                                    <Select value={targetFormat} onValueChange={setTargetFormat} required>
+                                        <SelectTrigger id="targetFormat" className="mt-1">
+                                            <SelectValue placeholder="Select format" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {formatOptions.map(opt => (
+                                                <SelectItem key={opt.value} value={opt.value}>
+                                                    {texts[opt.labelKey]}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div 
+                                className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20"
+                                onClick={() => batchFileUploadRef.current?.click()}
+                                >
+                                    <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                                    <p className="text-xs text-muted-foreground text-center">
+                                    {texts.uploadButton}
+                                    </p>
+                                    <Input
+                                        type="file"
+                                        ref={batchFileUploadRef}
+                                        onChange={handleBatchFileChange}
+                                        accept="application/pdf"
+                                        required
+                                        multiple
+                                        className="hidden"
+                                    />
+                                </div>
+                                {batchFiles.length > 0 && (
+                                    <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
+                                        {batchFiles.map(file => (
+                                            <div key={file.name} className="flex items-center gap-2 p-1.5 border rounded-md text-xs">
+                                                <File className="h-4 w-4 text-primary flex-shrink-0" />
+                                                <div className="flex-grow min-w-0">
+                                                    <p className="font-medium truncate">{file.name}</p>
+                                                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                                                        <span>{texts[`status_${uploadStatuses[file.name]?.status}` as keyof typeof texts] || texts.status_waiting}</span>
+                                                        {uploadStatuses[file.name]?.status === 'error' && (
+                                                            <span className="text-destructive truncate" title={uploadStatuses[file.name]?.error}>- {uploadStatuses[file.name]?.error}</span>
+                                                        )}
+                                                    </div>
+                                                    <Progress value={uploadStatuses[file.name]?.progress || 0} className="h-1 mt-1" />
+                                                </div>
+                                                <Button variant="ghost" size="icon" className="h-5 w-5 flex-shrink-0" onClick={() => removeBatchFile(file.name)} disabled={isConverting}>
+                                                    <XCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                 <Button type="submit" className="w-full" disabled={isConverting || batchFiles.length === 0}>
+                                    {isConverting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                                    {texts.convertButton}
+                                </Button>
+                            </form>
+                        </PopoverContent>
+                    </Popover>
+                </MenubarContent>
+            </MenubarMenu>
+             <MenubarMenu>
+                <MenubarTrigger>{texts.menuEdit}</MenubarTrigger>
+                <MenubarContent>
+                    <MenubarItem onClick={() => handlePlaceholderClick('Undo')}><Undo className="mr-2 h-4 w-4" />{texts.menuEditUndo}</MenubarItem>
+                    <MenubarItem onClick={() => handlePlaceholderClick('Redo')}><Redo className="mr-2 h-4 w-4" />{texts.menuEditRedo}</MenubarItem>
+                    <MenubarSeparator/>
+                    <MenubarItem onClick={handleAddTextAnnotation} disabled={activePageIndex === null}><Type className="mr-2 h-4 w-4"/>{texts.menuEditInsertText}</MenubarItem>
+                    <MenubarItem onClick={() => imageUploadRef.current?.click()} disabled={activePageIndex === null}><ImagePlus className="mr-2 h-4 w-4"/>{texts.menuEditInsertImage}</MenubarItem>
+                    <MenubarItem onClick={handleAddHighlightAnnotation} disabled={activePageIndex === null}><Highlighter className="mr-2 h-4 w-4"/>{texts.menuEditHighlight}</MenubarItem>
+                    <Popover open={isLinkPopoverOpen} onOpenChange={setIsLinkPopoverOpen}>
+                        <PopoverTrigger asChild>
+                            <MenubarItem disabled={!selectedAnnotationId && !selectedImageId} onSelect={(e) => e.preventDefault()} onClick={handleOpenLinkPopover}>
+                                <LinkIcon className="mr-2 h-4 w-4"/>{texts.menuEditInsertLink}
+                            </MenubarItem>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80" side="right" align="start">
+                            {linkPopoverContent}
+                        </PopoverContent>
+                    </Popover>
+                </MenubarContent>
+            </MenubarMenu>
+            <MenubarMenu>
+                <MenubarTrigger>{texts.menuPage}</MenubarTrigger>
+                <MenubarContent>
+                    <MenubarItem onClick={() => handleRotatePage('cw')} disabled={activePageIndex === null}><RotateCw className="mr-2 h-4 w-4" />{texts.menuPageRotateCW}</MenubarItem>
+                    <MenubarItem onClick={() => handleRotatePage('ccw')} disabled={activePageIndex === null}><RotateCcw className="mr-2 h-4 w-4" />{texts.menuPageRotateCCW}</MenubarItem>
+                    <MenubarSeparator />
+                    <MenubarItem onClick={handleAddBlankPage}><FilePlus2 className="mr-2 h-4 w-4"/>{texts.menuPageAddBlank}</MenubarItem>
+                    <MenubarItem onClick={() => { if(activePageIndex !== null) { setPageToDelete(activePageIndex); setIsDeleteConfirmOpen(true); } }} disabled={activePageIndex === null}>
+                        <Trash2 className="mr-2 h-4 w-4 text-destructive"/>
+                        <span className="text-destructive">{texts.menuPageDelete}</span>
+                    </MenubarItem>
+                </MenubarContent>
+            </MenubarMenu>
+             <MenubarMenu>
+                <MenubarTrigger>{texts.menuConvert}</MenubarTrigger>
+                <MenubarContent>
+                    <MenubarSub>
+                        <MenubarSubTrigger><FileMinus className="mr-2 h-4 w-4" />{texts.convertFromPdf}</MenubarSubTrigger>
+                        <MenubarSubContent>
+                            <MenubarItem onClick={() => router.push('/pdf-to-word')}><FileText className="mr-2 h-4 w-4" />{texts.pdfToWord}</MenubarItem>
+                            <MenubarItem onClick={() => router.push('/pdf-to-excel')}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.pdfToExcel}</MenubarItem>
+                            <MenubarItem onClick={() => router.push('/pdf-to-ppt')}><LucidePresentation className="mr-2 h-4 w-4" />{texts.pdfToPpt}</MenubarItem>
+                            <MenubarItem onClick={() => router.push('/pdf-to-html')}><Code className="mr-2 h-4 w-4" />{texts.pdfToHtml}</MenubarItem>
+                            <MenubarItem onClick={() => router.push('/pdf-to-image')}><FileImage className="mr-2 h-4 w-4" />{texts.pdfToJpg}</MenubarItem>
+                            <MenubarItem onClick={() => router.push('/pdf-to-ocr')}><ScanText className="mr-2 h-4 w-4" />{texts.pdfToOcr}</MenubarItem>
+                        </MenubarSubContent>
+                    </MenubarSub>
+                </MenubarContent>
+            </MenubarMenu>
+            <MenubarMenu>
+                <MenubarTrigger>{texts.menuTools}</MenubarTrigger>
+                 <MenubarContent>
+                    <MenubarItem onClick={() => handlePlaceholderClick('Compress')}><Minimize2 className="mr-2 h-4 w-4"/>壓縮</MenubarItem>
+                    <MenubarItem onClick={() => handlePlaceholderClick('Protect')}><ShieldCheck className="mr-2 h-4 w-4"/>加密</MenubarItem>
+                </MenubarContent>
+            </MenubarMenu>
+             <MenubarMenu>
+                <MenubarTrigger>{texts.menuHelp}</MenubarTrigger>
+                <MenubarContent>
+                    <MenubarItem>教學</MenubarItem>
+                    <MenubarItem>聯絡我們</MenubarItem>
+                </MenubarContent>
+            </MenubarMenu>
+        </Menubar>
+    </header>
 
-            <div className="flex items-center gap-4">
-                <div className="flex gap-2">
-                    <Button variant={currentLanguage === 'en' ? "secondary" : "outline"} size="sm" onClick={() => updateLanguage('en')}>English</Button>
-                    <Button variant={currentLanguage === 'zh' ? "secondary" : "outline"} size="sm" onClick={() => updateLanguage('zh')}>中文</Button>
-                </div>
-                {isLoggedIn ? (
-                    <div className="flex items-center gap-2">
-                        <UserCircle className="h-5 w-5 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">{texts.loggedInAs}</span>
-                        <Button variant="outline" size="sm" onClick={handleLogout}>
-                            <LogOut className="mr-2 h-4 w-4"/> {texts.logout}
-                        </Button>
-                    </div>
-                ) : (
-                   <div className="flex items-center gap-2">
-                        <UserCircle className="h-5 w-5 text-muted-foreground" />
-                         <span className="text-sm text-muted-foreground">{texts.guest}</span>
-                        <Link href="/login" passHref>
-                            <Button variant="ghost" size="sm">
-                                <LogIn className="mr-2 h-4 w-4"/> {texts.login}
-                            </Button>
-                        </Link>
-                    </div>
-                )}
-            </div>
-        </div>
-      </header>
 
       <main className="flex-grow flex overflow-hidden relative" onClick={(e) => {
         const target = e.target as HTMLElement;
@@ -2133,6 +2247,14 @@ export default function PdfEditorPage() {
                     ref={pdfUploadRef}
                     className="hidden"
                   />
+                   <Input
+                        type="file"
+                        id="imageUploadInput"
+                        accept="image/*"
+                        onChange={handleImageFileSelected}
+                        ref={imageUploadRef}
+                        className="hidden"
+                    />
                 </CardContent>
               </Card>
             </div>
@@ -2189,7 +2311,7 @@ export default function PdfEditorPage() {
               </div>
           ) : (
             <>
-                <div ref={thumbnailContainerRef} className="w-[13%] border-r bg-card flex-shrink-0 overflow-y-auto p-2 space-y-2">
+                <div ref={thumbnailContainerRef} className="w-[15%] border-r bg-card flex-shrink-0 overflow-y-auto p-2 space-y-2">
                     {pageObjects.map((page, index) => {
                         const isActive = activePageIndex === index;
                         return (
@@ -2371,120 +2493,6 @@ export default function PdfEditorPage() {
                     </div>
                 </div>
 
-                <div className="w-[20%] border-l bg-card flex-shrink-0 p-4 space-y-4 overflow-y-auto">
-                    <Accordion type="single" collapsible defaultValue="item-1" className="w-full">
-                        <AccordionItem value="item-1">
-                            <AccordionTrigger className="text-base font-semibold">{texts.pdfEditingTools}</AccordionTrigger>
-                            <AccordionContent>
-                                <div className="grid grid-cols-2 gap-2 pt-2">
-                                    <ToolbarButton icon={RotateCw} label={texts.toolRotate} onClick={() => handleRotatePage('cw')} disabled={activePageIndex === null}/>
-                                    <ToolbarButton icon={Trash2} label={texts.toolDelete} onClick={() => { if(activePageIndex !== null) { setPageToDelete(activePageIndex); setIsDeleteConfirmOpen(true); } }} disabled={activePageIndex === null}/>
-                                    <ToolbarButton icon={FilePlus2} label={texts.toolAddBlank} onClick={handleAddBlankPage} />
-                                    <ToolbarButton icon={Type} label={texts.toolInsertText} onClick={handleAddTextAnnotation} disabled={activePageIndex === null}/>
-                                    <ToolbarButton icon={ImagePlus} label={texts.toolInsertImage} onClick={() => imageUploadRef.current?.click()} disabled={activePageIndex === null}/>
-                                    <ToolbarButton icon={Highlighter} label={texts.toolHighlight} onClick={handleAddHighlightAnnotation} disabled={activePageIndex === null} />
-                                    <Popover open={isLinkPopoverOpen} onOpenChange={setIsLinkPopoverOpen}>
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant="ghost"
-                                            className="flex flex-col items-center justify-center h-20 w-full text-xs space-y-1"
-                                            disabled={!selectedAnnotationId && !selectedImageId}
-                                            onClick={handleOpenLinkPopover}
-                                        >
-                                            <LinkIcon className="h-6 w-6 text-primary" />
-                                            <span className="text-muted-foreground">{texts.toolInsertLink}</span>
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-80" side="left" align="start">
-                                        {linkPopoverContent}
-                                    </PopoverContent>
-                                    </Popover>
-                                </div>
-                                 <Input
-                                    type="file"
-                                    id="imageUploadInput"
-                                    accept="image/*"
-                                    onChange={handleImageFileSelected}
-                                    ref={imageUploadRef}
-                                    className="hidden"
-                                 />
-                            </AccordionContent>
-                        </AccordionItem>
-                        <AccordionItem value="item-2">
-                            <AccordionTrigger className="text-base font-semibold">{texts.batchConvert}</AccordionTrigger>
-                            <AccordionContent className="pt-4">
-                                <form onSubmit={handleBatchSubmit} className="space-y-4">
-                                     <div>
-                                        <Label htmlFor="targetFormat" className="text-sm font-medium">{texts.selectFormat}</Label>
-                                        <Select value={targetFormat} onValueChange={setTargetFormat} required>
-                                            <SelectTrigger id="targetFormat" className="mt-1">
-                                                <SelectValue placeholder="Select format" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {formatOptions.map(opt => (
-                                                    <SelectItem key={opt.value} value={opt.value}>
-                                                        {texts[opt.labelKey]}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div 
-                                    className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20"
-                                    onClick={() => batchFileUploadRef.current?.click()}
-                                    >
-                                        <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                                        <p className="text-xs text-muted-foreground text-center">
-                                        {texts.uploadButton}
-                                        </p>
-                                        <Input
-                                            type="file"
-                                            ref={batchFileUploadRef}
-                                            onChange={handleBatchFileChange}
-                                            accept="application/pdf"
-                                            required
-                                            multiple
-                                            className="hidden"
-                                        />
-                                    </div>
-                                    {batchFiles.length > 0 && (
-                                        <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
-                                            {batchFiles.map(file => (
-                                                <div key={file.name} className="flex items-center gap-2 p-1.5 border rounded-md text-xs">
-                                                    <File className="h-4 w-4 text-primary flex-shrink-0" />
-                                                    <div className="flex-grow min-w-0">
-                                                        <p className="font-medium truncate">{file.name}</p>
-                                                        <div className="flex items-center gap-1.5 text-muted-foreground">
-                                                            <span>{texts[`status_${uploadStatuses[file.name]?.status}` as keyof typeof texts] || texts.status_waiting}</span>
-                                                            {uploadStatuses[file.name]?.status === 'error' && (
-                                                                <span className="text-destructive truncate" title={uploadStatuses[file.name]?.error}>- {uploadStatuses[file.name]?.error}</span>
-                                                            )}
-                                                        </div>
-                                                        <Progress value={uploadStatuses[file.name]?.progress || 0} className="h-1 mt-1" />
-                                                    </div>
-                                                    <Button variant="ghost" size="icon" className="h-5 w-5 flex-shrink-0" onClick={() => removeBatchFile(file.name)} disabled={isConverting}>
-                                                        <XCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
-                                                    </Button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                     <Button type="submit" className="w-full" disabled={isConverting || batchFiles.length === 0}>
-                                        {isConverting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                                        {texts.convertButton}
-                                    </Button>
-                                </form>
-                            </AccordionContent>
-                        </AccordionItem>
-                    </Accordion>
-                    <Separator />
-                    {pageObjects.length > 0 && (
-                    <Button onClick={handleDownloadPdf} disabled={isDownloading} className="w-full">
-                        <Download className="mr-2 h-4 w-4" />
-                        {texts.downloadPdf}
-                    </Button>
-                    )}
-                </div>
             </>
           )}
       </main>

@@ -229,7 +229,7 @@ export default function PdfToHtmlPage() {
     const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
 
     try {
-      const response = await fetch("https://pdfsolution.dpdns.org/convert_to_pdf", {
+      const response = await fetch("https://pdfsolution.dpdns.org/upload", {
         method: 'POST',
         body: formData,
         signal: controller.signal

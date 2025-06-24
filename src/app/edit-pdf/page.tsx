@@ -1937,12 +1937,7 @@ export default function PdfEditorPage() {
       setUploadStatuses(convertingStatuses);
   
       const formData = new FormData();
-      const isBatch = batchFiles.length > 1;
-      const apiUrl = isBatch 
-        ? "https://pdfsolution.dpdns.org/batch_upload"
-        : "https://pdfsolution.dpdns.org/convert_to_pdf";
-
-      if (isBatch) {
+      if (batchFiles.length > 1) {
         batchFiles.forEach(file => {
             formData.append("files", file);
         });
@@ -1955,7 +1950,7 @@ export default function PdfEditorPage() {
       const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 min timeout
   
       try {
-        const response = await fetch(apiUrl, {
+        const response = await fetch("https://pdfsolution.dpdns.org/upload", {
             method: 'POST',
             body: formData,
             signal: controller.signal

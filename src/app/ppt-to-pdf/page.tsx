@@ -234,19 +234,16 @@ export default function PptToPdfPage() {
 
     setIsLoading(true);
     const formData = new FormData();
-    const isBatch = selectedFiles.length > 1;
-    const apiUrl = isBatch 
-        ? "https://pdfsolution.dpdns.org/batch_upload"
-        : "https://pdfsolution.dpdns.org/convert_to_pdf";
+    const apiUrl = "https://pdfsolution.dpdns.org/convert_to_pdf";
 
-    if (isBatch) {
+    if (selectedFiles.length > 1) {
         selectedFiles.forEach(file => {
-            formData.append("files", file);
+          formData.append("files", file);
         });
     } else {
         formData.append("file", selectedFiles[0]);
     }
-    
+
     formData.append("format", format);
 
     const controller = new AbortController();

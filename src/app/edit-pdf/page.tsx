@@ -1926,7 +1926,7 @@ export default function PdfEditorPage() {
         formData.append("format", targetFormat);
   
         try {
-            const response = await fetch("http://pdfsolution.dpdns.org:5001/upload", {
+            const response = await fetch("https://pdfsolution.dpdns.org/upload", {
                 method: 'POST',
                 body: formData,
             });

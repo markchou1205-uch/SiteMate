@@ -244,7 +244,7 @@ export default function WordToPdfPage() {
     const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
 
     try {
-      const response = await fetch("http://pdfsolution.dpdns.org:5001/upload", {
+      const response = await fetch("https://pdfsolution.dpdns.org/upload", {
         method: 'POST',
         body: formData,
         signal: controller.signal

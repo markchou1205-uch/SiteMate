@@ -229,7 +229,7 @@ export default function PdfToHtmlPage() {
     const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
 
     try {
-      const response = await fetch("https://pdfsolution.dpdns.org/upload", {
+      const response = await fetch("https://pdfsolution.dpdns.org/convert_to_pdf", {
         method: 'POST',
         body: formData,
         signal: controller.signal
@@ -242,7 +242,8 @@ export default function PdfToHtmlPage() {
             const error = await response.json();
             errorMessage = String(error.error || "An unknown server error occurred.");
         } catch (e) {
-            errorMessage = `An unexpected server error occurred: ${response.statusText} (${response.status})`;
+             const errorText = await response.text();
+             errorMessage = `Server error: ${response.status}. Response: ${errorText.substring(0, 100)}`;
         }
         throw new Error(errorMessage);
       }

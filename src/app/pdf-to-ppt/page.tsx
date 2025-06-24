@@ -221,8 +221,13 @@ export default function PdfToPptPage() {
     setIsLoading(true);
     const formData = new FormData();
     const blob = new Blob([selectedFile], { type: 'application/pdf' });
-    formData.append("file", blob, selectedFile.name);
+    formData.append("files", blob, selectedFile.name);
     formData.append("format", format);
+
+    // 檢查 FormData 是否正確建立
+    for (let pair of formData.entries()) {
+      console.log('🧪 FormData:', pair[0], pair[1]);
+    }
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout

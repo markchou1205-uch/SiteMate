@@ -155,7 +155,7 @@ const translations = {
         uploadLabel: 'Select PDF file to edit:',
         deletePages: 'Delete Selected Pages',
         splitPages: 'Split Selected',
-        downloadPdf: 'Download Edited PDF',
+        downloadPdf: 'Save as PDF',
         downloadTxt: 'Download as TXT',
         convertToWord: 'Convert to Word',
         convertingToWord: 'Converting to Word...',
@@ -268,10 +268,10 @@ const translations = {
         toolMerge: 'Merge',
         toolSplit: 'Split',
         toolWatermark: 'Watermark',
-        toolInsertText: 'Insert Text',
-        toolInsertImage: 'Insert Image',
+        toolInsertText: 'Text',
+        toolInsertImage: 'Image',
         toolHighlight: 'Highlight',
-        toolInsertLink: 'Insert Link',
+        toolInsertLink: 'Link',
         toolInsertComment: 'Comment',
         zoomIn: 'Zoom In',
         zoomOut: 'Zoom Out',
@@ -342,7 +342,7 @@ const translations = {
         menuTools: "Tools",
         menuHelp: "Help",
         menuFileOpen: "Open File",
-        menuFileNew: "New Document",
+        menuFileNew: "Open New Document",
         insertPdf: "Insert PDF",
         menuFileSaveAs: "Save As",
         menuFileBatchConvert: "Batch Conversion",
@@ -400,13 +400,17 @@ const translations = {
         insertAtEnd: 'Insert at End',
         insertBeforeSelection: 'Insert Before Selection',
         insertAfterSelection: 'Insert After Selection',
+        newDocConfirmTitle: 'Confirm Open New Document',
+        newDocConfirmDescription: 'This will close the current document without saving changes. Are you sure you want to continue?',
+        downloadEditedFile: 'Download Edited File',
+        toolDownload: 'Download',
     },
     zh: {
         pageTitle: 'PDF 編輯器 (專業模式)',
         uploadLabel: '選擇要編輯的 PDF 檔案：',
         deletePages: '刪除選取的頁面',
         splitPages: '拆分選定頁面',
-        downloadPdf: '下載編輯後 PDF',
+        downloadPdf: '另存成PDF',
         downloadTxt: '下載為 TXT 檔案',
         convertToWord: '轉換為 Word',
         convertingToWord: '正在轉換為 Word...',
@@ -593,7 +597,7 @@ const translations = {
         menuTools: "工具",
         menuHelp: "說明",
         menuFileOpen: "開啟檔案",
-        menuFileNew: "新文件",
+        menuFileNew: "開啟新文件",
         insertPdf: "插入PDF",
         menuFileSaveAs: "另存新檔",
         menuFileBatchConvert: "批次轉換",
@@ -651,6 +655,10 @@ const translations = {
         insertAtEnd: '插入至結尾',
         insertBeforeSelection: '插入至選取頁之前',
         insertAfterSelection: '插入至選取頁之後',
+        newDocConfirmTitle: '確認開啟新文件',
+        newDocConfirmDescription: '這將會關閉目前正在編輯的文件，且不會儲存變更。確定要繼續嗎？',
+        downloadEditedFile: '下載編輯後的文件',
+        toolDownload: '下載',
     }
 };
 
@@ -1068,6 +1076,7 @@ export default function PdfEditorPage() {
   const [mainCanvasZoom, setMainCanvasZoom] = useState(1);
 
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isNewDocConfirmOpen, setIsNewDocConfirmOpen] = useState(false);
   const [pageToDelete, setPageToDelete] = useState<number | null>(null);
 
   const [currentLanguage, setCurrentLanguage] = useState<'en' | 'zh'>('zh');
@@ -1684,6 +1693,30 @@ export default function PdfEditorPage() {
       toast({ title: 'Error', description: 'No document to save.' });
       return;
     }
+    if (format === 'pdf') {
+        setIsDownloading(true);
+        setLoadingMessage(texts.generatingFile);
+        try {
+            const pdfBytes = await generatePdfBytes();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = "edited_document.pdf";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            toast({ title: 'Download Successful', description: 'PDF has been saved.' });
+        } catch (err: any) {
+             toast({ title: 'Error generating PDF', description: err.message, variant: "destructive" });
+        } finally {
+            setIsDownloading(false);
+            setLoadingMessage('');
+        }
+        return;
+    }
+
     if (!checkAndDecrementQuota('convert')) return;
 
     setIsDownloading(true);
@@ -2442,6 +2475,22 @@ export default function PdfEditorPage() {
         </div>
       )}
 
+      <AlertDialog open={isNewDocConfirmOpen} onOpenChange={setIsNewDocConfirmOpen}>
+        <AlertDialogContent>
+            <ShadAlertDialogHeader>
+                <ShadAlertDialogTitle>{texts.newDocConfirmTitle}</ShadAlertDialogTitle>
+                <AlertDialogDescription>{texts.newDocConfirmDescription}</AlertDialogDescription>
+            </ShadAlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>{texts.cancel}</AlertDialogCancel>
+                <AlertDialogAction onClick={() => {
+                    pdfUploadRef.current?.click();
+                    setIsNewDocConfirmOpen(false);
+                }}>{texts.confirm}</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog open={isConvertConfirmOpen} onOpenChange={setIsConvertConfirmOpen}>
         <AlertDialogContent>
             <ShadAlertDialogHeader>
@@ -2496,7 +2545,13 @@ export default function PdfEditorPage() {
             <MenubarMenu>
                 <MenubarTrigger>{texts.menuFile}</MenubarTrigger>
                 <MenubarContent>
-                    <MenubarItem onClick={() => pdfUploadRef.current?.click()}><FilePlus className="mr-2 h-4 w-4"/>{texts.menuFileNew}</MenubarItem>
+                    <MenubarItem onClick={() => {
+                        if (pageObjects.length > 0) {
+                            setIsNewDocConfirmOpen(true);
+                        } else {
+                            pdfUploadRef.current?.click();
+                        }
+                    }}><FilePlus className="mr-2 h-4 w-4"/>{texts.menuFileNew}</MenubarItem>
                     <MenubarSub>
                          <MenubarSubTrigger disabled={pageObjects.length > 0}><FolderOpen className="mr-2 h-4 w-4"/>{texts.menuFileOpen}</MenubarSubTrigger>
                          <MenubarSubContent>
@@ -2740,6 +2795,24 @@ export default function PdfEditorPage() {
                 </TooltipTrigger>
                 <TooltipContent side="bottom"><p>{texts.menuPageDelete}</p></TooltipContent>
                 </Tooltip>
+                <DropdownMenu>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" disabled={pageObjects.length === 0}>
+                                    <Download className="h-5 w-5" />
+                                    <span className="text-xs">{texts.toolDownload}</span>
+                                </Button>
+                            </DropdownMenuTrigger>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom"><p>{texts.downloadEditedFile}</p></TooltipContent>
+                    </Tooltip>
+                    <DropdownMenuContent>
+                        {saveAsFormatOptions.map(opt => (
+                            <DropdownMenuItem key={opt.value} onClick={() => handleSaveAsFormat(opt.value)}>{texts[opt.labelKey]}</DropdownMenuItem>
+                        ))}
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </TooltipProvider>
         </div>
         <div className="flex items-center gap-1">

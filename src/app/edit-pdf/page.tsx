@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, FontSize, Eye, Scissors, LayoutGrid, PanelLeft, FilePlus2, Combine, Type, ImagePlus, Link as LinkIcon, MessageSquarePlus, ZoomIn, ZoomOut, Expand, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Highlighter, ArrowRightLeft, Edit, FileUp, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText, Sparkles, XCircle, File, FolderOpen, Save, Wrench, HelpCircle, PanelTop, Redo, Undo, Hand, Square, Circle, Pencil, Printer, SearchIcon, ChevronLeft, ChevronRight, CaseSensitive, MousePointerSquareDashed, Grid, ShieldAlert } from 'lucide-react';
+import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, FontSize, Eye, Scissors, LayoutGrid, PanelLeft, FilePlus2, Combine, Type, ImagePlus, Link as LinkIcon, MessageSquarePlus, ZoomIn, ZoomOut, Expand, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Highlighter, ArrowRightLeft, Edit, FileUp, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText, Sparkles, XCircle, File, FolderOpen, Save, Wrench, HelpCircle, PanelTop, Redo, Undo, Hand, Square, Circle, Pencil, Printer, SearchIcon, ChevronLeft, ChevronRight, CaseSensitive, MousePointerSquareDashed, Grid, ShieldAlert, Layers } from 'lucide-react';
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
@@ -100,7 +100,8 @@ interface HighlightAnnotation {
 interface ShapeAnnotation {
   id: string;
   pageIndex: number;
-  type: 'rect' | 'ellipse' | 'triangle';
+  type: 'rect' | 'ellipse' | 'triangle' | 'scribble';
+  points?: {x: number, y: number}[]; // For scribble
   topRatio: number;
   leftRatio: number;
   widthRatio: number;
@@ -383,6 +384,11 @@ const translations = {
         toolScribble: 'Scribble',
         toolMosaic: 'Mosaic',
         applyToAllPages: 'Apply to All Pages',
+        convertConfirmTitle: "Convert File",
+        convertConfirmDescription: (filename: string) => `"${filename}" will be converted to PDF. Do you want to download it or open it in the editor?`,
+        convertConfirmDownload: 'Download',
+        convertConfirmEdit: 'Open in Editor',
+        convertingToPdf: 'Converting to PDF...',
     },
     zh: {
         pageTitle: 'PDF 編輯器 (專業模式)',
@@ -625,6 +631,11 @@ const translations = {
         toolScribble: '畫筆',
         toolMosaic: '馬賽克',
         applyToAllPages: '套用至所有頁面',
+        convertConfirmTitle: "轉換檔案",
+        convertConfirmDescription: (filename: string) => `將為您轉檔 "${filename}" 為 PDF。請選擇轉檔後要下載至您的電腦還是進入編輯模式？`,
+        convertConfirmDownload: '下載檔案',
+        convertConfirmEdit: '進入編輯模式',
+        convertingToPdf: '正在轉檔為 PDF...',
     }
 };
 
@@ -639,7 +650,8 @@ const pageNumberPositions: {value: PageNumberPosition, labelKey: keyof typeof tr
   { value: 'top-right', labelKey: 'topRight'},
 ];
 
-const formatOptions = [
+const saveAsFormatOptions = [
+  { value: 'pdf', labelKey: 'downloadPdf', extension: 'pdf' },
   { value: 'word', labelKey: 'pdfToWord', extension: 'docx' },
   { value: 'excel', labelKey: 'pdfToExcel', extension: 'xlsx' },
   { value: 'ppt', labelKey: 'pdfToPpt', extension: 'pptx' },
@@ -729,47 +741,6 @@ const PagePreviewItem = React.memo(({
   );
 });
 PagePreviewItem.displayName = 'PagePreviewItem';
-
-const ToolbarButton = ({ icon: Icon, label, onClick, disabled = false, popoverContent, shortLabel }: { icon: React.ElementType, label: string, onClick?: () => void, disabled?: boolean, popoverContent?: React.ReactNode, shortLabel: string }) => {
-    const buttonContent = (
-        <div className="flex flex-col items-center justify-center h-16 w-full space-y-1">
-            <Icon className="h-5 w-5" />
-            <span className="text-xs text-muted-foreground">{shortLabel}</span>
-        </div>
-    );
-    
-    const button = (
-        <TooltipProvider>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button
-                        variant="ghost"
-                        className="h-auto p-1"
-                        onClick={onClick}
-                        disabled={disabled}
-                    >
-                        {buttonContent}
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom"><p>{label}</p></TooltipContent>
-            </Tooltip>
-        </TooltipProvider>
-    );
-
-    if (popoverContent) {
-        return (
-            <Popover>
-                <PopoverTrigger asChild disabled={disabled}>{button}</PopoverTrigger>
-                <PopoverContent className="w-80" side="bottom" align="start">
-                    {popoverContent}
-                </PopoverContent>
-            </Popover>
-        )
-    }
-
-    return button;
-};
-
 
 const fonts = [
   { name: 'Arial', value: 'Helvetica' },
@@ -1117,28 +1088,12 @@ export default function PdfEditorPage() {
   const dragStartRef = useRef({ x: 0, y: 0, initialLeft: 0, initialTop: 0, initialWidth: 0, initialHeight: 0 });
   const isDraggingRef = useRef(false);
 
-  const [isDrawing, setIsDrawing] = useState(false);
-  const drawingCanvasRef = useRef<HTMLCanvasElement>(null);
-  const drawingContextRef = useRef<CanvasRenderingContext2D | null>(null);
-  const drawingPointsRef = useRef<{ x: number, y: number }[]>([]);
-
   const [isGuestLimitModalOpen, setIsGuestLimitModalOpen] = useState(false);
   const [guestLimitModalContent, setGuestLimitModalContent] = useState({ title: '', description: '' });
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  const [pageNumberingConfig, setPageNumberingConfig] = useState({
-    enabled: false,
-    position: 'bottom-center' as PageNumberPosition,
-    start: 1,
-    fontSize: 12,
-    margin: 20,
-    format: '{page} / {total}',
-  });
-
-  const [pdfProtectionConfig, setPdfProtectionConfig] = useState({
-    enabled: false,
-    password: '',
-  });
+  const [isConvertConfirmOpen, setIsConvertConfirmOpen] = useState(false);
+  const [pendingFileToConvert, setPendingFileToConvert] = useState<File | null>(null);
 
   const thumbnailContainerRef = useRef<HTMLDivElement>(null);
   const thumbnailRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -1146,19 +1101,10 @@ export default function PdfEditorPage() {
   const pdfUploadRef = useRef<HTMLInputElement>(null);
   const imageUploadRef = useRef<HTMLInputElement>(null);
   const insertPdfRef = useRef<HTMLInputElement>(null);
+  const convertUploadRef = useRef<HTMLInputElement>(null);
   const sortableInstanceRef = useRef<Sortable | null>(null);
   
   const observerRef = useRef<IntersectionObserver | null>(null);
-
-  // Batch Conversion State
-  const [isBatchPopoverOpen, setIsBatchPopoverOpen] = useState(false);
-  const [batchFiles, setBatchFiles] = useState<File[]>([]);
-  const [targetFormat, setTargetFormat] = useState<string>('word');
-  const [isConverting, setIsConverting] = useState(false);
-  const [currentConvertingFile, setCurrentConvertingFile] = useState('');
-  const [uploadStatuses, setUploadStatuses] = useState<{ [fileName: string]: UploadStatus }>({});
-  const [batchTotalSize, setBatchTotalSize] = useState(0);
-  const batchFileUploadRef = useRef<HTMLInputElement>(null);
 
 
   useEffect(() => {
@@ -1171,11 +1117,6 @@ export default function PdfEditorPage() {
       setIsLoggedIn(loggedInStatus);
     }
   }, []);
-  
-  useEffect(() => {
-      const total = batchFiles.reduce((acc, file) => acc + file.size, 0);
-      setBatchTotalSize(total);
-  }, [batchFiles]);
 
   const createSortableInstance = useCallback((containerRef: React.RefObject<HTMLDivElement>) => {
     if (containerRef.current && !sortableInstanceRef.current) {
@@ -1383,7 +1324,7 @@ export default function PdfEditorPage() {
   }, [isLoggedIn, texts]);
 
 
-  const processPdfFile = async (file: File) => {
+  const processPdfFile = async (file: File): Promise<PageObject[]> => {
     const arrayBuffer = await file.arrayBuffer();
     const pdfDocProxy = await pdfjsLib.getDocument({
       data: arrayBuffer,
@@ -1413,24 +1354,8 @@ export default function PdfEditorPage() {
     setPageTextContents(textContents);
     return loadedPageObjects;
   };
-
-  const handlePdfUpload = async (event: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLDivElement>) => {
-    let file: File | null = null;
-    if ('dataTransfer' in event) {
-        event.preventDefault();
-        event.stopPropagation();
-        if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
-            file = event.dataTransfer.files[0];
-            event.dataTransfer.clearData();
-        }
-    } else {
-        file = event.target.files?.[0] || null;
-    }
-
-    if (!file || !file.type.includes('pdf')) {
-        if (file) toast({ title: texts.loadError, description: currentLanguage === 'zh' ? "無效的檔案類型。請上傳 PDF。" : "Invalid file type. Please upload a PDF.", variant: "destructive" });
-        return;
-    }
+  
+  const loadPdfIntoEditor = async (file: File) => {
     setTextAnnotations([]);
     setImageAnnotations([]);
     setHighlightAnnotations([]);
@@ -1461,6 +1386,26 @@ export default function PdfEditorPage() {
       setLoadingMessage('');
       if (pdfUploadRef.current) pdfUploadRef.current.value = '';
     }
+  }
+
+  const handlePdfUpload = async (event: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLDivElement>) => {
+    let file: File | null = null;
+    if ('dataTransfer' in event) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+            file = event.dataTransfer.files[0];
+            event.dataTransfer.clearData();
+        }
+    } else {
+        file = event.target.files?.[0] || null;
+    }
+
+    if (!file || !file.type.includes('pdf')) {
+        if (file) toast({ title: texts.loadError, description: currentLanguage === 'zh' ? "無效的檔案類型。請上傳 PDF。" : "Invalid file type. Please upload a PDF.", variant: "destructive" });
+        return;
+    }
+    loadPdfIntoEditor(file);
   };
 
   const handleDeletePages = () => {
@@ -1713,77 +1658,12 @@ export default function PdfEditorPage() {
               }
           }
       }
-
-      if (pageNumberingConfig.enabled) {
-          const { width: pnPageWidth, height: pnPageHeight } = pdfLibPage.getSize();
-          const currentPageNum = index + pageNumberingConfig.start;
-          const totalNumPages = pageObjects.length;
-
-          let text = pageNumberingConfig.format
-              .replace('{page}', currentPageNum.toString())
-              .replace('{total}', totalNumPages.toString());
-
-          const textSize = pageNumberingConfig.fontSize;
-          const pnFont = await pdfDocOut.embedFont(StandardFonts.Helvetica);
-          const textWidthNum = pnFont.widthOfTextAtSize(text, textSize);
-          const pnAscent = pnFont.ascender / pnFont.unitsPerEm * textSize;
-
-          let x, y;
-          switch (pageNumberingConfig.position) {
-              case 'top-left': x = pageNumberingConfig.margin; y = pnPageHeight - pageNumberingConfig.margin - pnAscent; break;
-              case 'top-center': x = pnPageWidth / 2 - textWidthNum / 2; y = pnPageHeight - pageNumberingConfig.margin - pnAscent; break;
-              case 'top-right': x = pnPageWidth - pageNumberingConfig.margin - textWidthNum; y = pnPageHeight - pageNumberingConfig.margin - pnAscent; break;
-              case 'bottom-left': x = pageNumberingConfig.margin; y = pageNumberingConfig.margin; break;
-              case 'bottom-center': x = pnPageWidth / 2 - textWidthNum / 2; y = pageNumberingConfig.margin; break;
-              case 'bottom-right': x = pnPageWidth - pageNumberingConfig.margin - textWidthNum; y = pageNumberingConfig.margin; break;
-              default: x = pnPageWidth / 2 - textWidthNum / 2; y = pageNumberingConfig.margin;
-          }
-          pdfLibPage.drawText(text, { x, y, font: pnFont, size: textSize, color: grayscale(0) });
-      }
     }
-
-    if (pdfProtectionConfig.enabled && pdfProtectionConfig.password) {
-      await pdfDocOut.encrypt({
-        userPassword: pdfProtectionConfig.password,
-        ownerPassword: pdfProtectionConfig.password,
-        permissions: {},
-      });
-    }
-
+    
     return await pdfDocOut.save();
   };
 
-  const handleDownloadPdf = async () => {
-    if (pageObjects.length === 0) {
-      toast({ title: texts.downloadPdf, description: texts.noPagesToDownload, variant: "destructive" });
-      return;
-    }
-    if (!checkAndDecrementQuota('daily')) return;
-
-    setIsDownloading(true);
-    setLoadingMessage(texts.generatingFile);
-    try {
-      const pdfBytes = await generatePdfBytes();
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.download = 'PdfSolution_edited.pdf';
-      document.body.appendChild(a);
-      a.href = url;
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      toast({ title: texts.downloadPdf, description: currentLanguage === 'zh' ? "PDF 下載成功！" : "PDF downloaded successfully!" });
-    } catch (err: any) {
-      console.error("Download PDF error:", err);
-      toast({ title: texts.downloadError, description: err.message, variant: "destructive" });
-    } finally {
-      setIsDownloading(false);
-      setLoadingMessage('');
-    }
-  };
-  
-  const handleSaveAsFormat = async (format: 'word' | 'txt') => {
+  const handleSaveAsFormat = async (format: string) => {
     if (pageObjects.length === 0) {
       toast({ title: 'Error', description: 'No document to save.' });
       return;
@@ -1826,7 +1706,8 @@ export default function PdfEditorPage() {
       
       const resBlob = await response.blob();
       const contentDisposition = response.headers.get('Content-Disposition');
-      let downloadFilename = `result.${format === 'word' ? 'docx' : 'txt'}`;
+      const formatOption = saveAsFormatOptions.find(opt => opt.value === format);
+      let downloadFilename = `result.${formatOption?.extension || 'bin'}`;
 
       if (contentDisposition) {
         const match = contentDisposition.match(/filename="?([^"]+)"?/);
@@ -2060,28 +1941,33 @@ export default function PdfEditorPage() {
     };
 
     const handleAddTextAnnotation = () => {
-      if (activePageIndex === null) {
-          toast({ title: texts.toolInsertText, description: texts.noPageSelected, variant: "destructive" });
-          return;
-      }
-      const newAnnotation: TextAnnotation = {
-          id: uuidv4(),
-          pageIndex: activePageIndex,
-          text: texts.textAnnotationSample,
-          topRatio: 0.5,
-          leftRatio: 0.5,
-          widthRatio: 0.3,
-          fontSize: 36,
-          fontFamily: 'Helvetica',
-          bold: false,
-          italic: false,
-          underline: false,
-          color: '#000000',
-          textAlign: 'left',
-      };
-      setTextAnnotations(prev => [...prev, newAnnotation]);
-      setSelectedObject({type: 'text', id: newAnnotation.id});
-      setEditingAnnotationId(null);
+        if (activePageIndex === null || !mainViewContainerRef.current) {
+            toast({ title: texts.toolInsertText, description: texts.noPageSelected, variant: "destructive" });
+            return;
+        }
+
+        const container = mainViewContainerRef.current;
+        const topRatio = (container.scrollTop + container.clientHeight / 2) / container.scrollHeight;
+        const leftRatio = (container.scrollLeft + container.clientWidth / 2) / container.scrollWidth;
+
+        const newAnnotation: TextAnnotation = {
+            id: uuidv4(),
+            pageIndex: activePageIndex,
+            text: texts.textAnnotationSample,
+            topRatio: Math.min(0.8, topRatio) - 0.1, // Adjust to center vertically
+            leftRatio: Math.min(0.8, leftRatio) - 0.15, // Adjust to center horizontally
+            widthRatio: 0.3,
+            fontSize: 36,
+            fontFamily: 'Helvetica',
+            bold: false,
+            italic: false,
+            underline: false,
+            color: '#000000',
+            textAlign: 'left',
+        };
+        setTextAnnotations(prev => [...prev, newAnnotation]);
+        setSelectedObject({type: 'text', id: newAnnotation.id});
+        setEditingAnnotationId(null);
     };
     
     const handleAnnotationChange = (updatedAnnotation: TextAnnotation) => {
@@ -2093,6 +1979,7 @@ export default function PdfEditorPage() {
     const handleDeleteAnnotation = (id: string) => {
         setTextAnnotations(prev => prev.filter(ann => ann.id !== id));
         if (editingAnnotationId === id) setEditingAnnotationId(null);
+        if (selectedObject?.id === id) setSelectedObject(null);
     }
     
     const addImageAnnotation = useCallback((dataUrl: string, pageIndex: number) => {
@@ -2167,6 +2054,7 @@ export default function PdfEditorPage() {
 
     const handleDeleteImageAnnotation = (id: string) => {
         setImageAnnotations(prev => prev.filter(ann => ann.id !== id));
+        if (selectedObject?.id === id) setSelectedObject(null);
     }
     
     const handleAddHighlightAnnotation = () => {
@@ -2186,6 +2074,7 @@ export default function PdfEditorPage() {
 
     const handleDeleteHighlightAnnotation = (id: string) => {
         setHighlightAnnotations(prev => prev.filter(ann => ann.id !== id));
+        if (selectedObject?.id === id) setSelectedObject(null);
     }
 
     const handleAddShapeAnnotation = (type: ShapeAnnotation['type']) => {
@@ -2208,10 +2097,12 @@ export default function PdfEditorPage() {
     
     const handleDeleteShapeAnnotation = (id: string) => {
         setShapeAnnotations(prev => prev.filter(ann => ann.id !== id));
+        if (selectedObject?.id === id) setSelectedObject(null);
     }
     
     const handleDeleteMosaicAnnotation = (id: string) => {
         setMosaicAnnotations(prev => prev.filter(ann => ann.id !== id));
+        if (selectedObject?.id === id) setSelectedObject(null);
     }
 
     const handleSaveSignature = (dataUrl: string) => {
@@ -2246,8 +2137,13 @@ export default function PdfEditorPage() {
     const handleWrapperClick = (type: SelectedObject['type'], id: string, e: React.MouseEvent) => {
         e.stopPropagation();
         if (isDraggingRef.current) return;
-        setSelectedObject({ type, id });
-        if(type !== 'text') setEditingAnnotationId(null);
+        if(selectedObject?.id === id) { // It's already selected, deselect it
+           setSelectedObject(null);
+           if(type === 'text') setEditingAnnotationId(null);
+        } else {
+          setSelectedObject({ type, id });
+          if(type !== 'text') setEditingAnnotationId(null);
+        }
     };
 
     const handleAnnotationDoubleClick = (id: string, e: React.MouseEvent) => {
@@ -2279,7 +2175,6 @@ export default function PdfEditorPage() {
                         handleDeleteMosaicAnnotation(selectedObject.id);
                         break;
                 }
-                setSelectedObject(null);
             }
         };
 
@@ -2400,192 +2295,6 @@ export default function PdfEditorPage() {
         return Math.max(0.1, Math.min(newZoom, 5));
       });
     };
-
-    // --- Batch Conversion Logic ---
-
-    const handleBatchFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const newFiles = event.target.files ? Array.from(event.target.files) : [];
-        if (newFiles.length === 0) return;
-
-        const allFiles = [...batchFiles, ...newFiles];
-        const totalSize = allFiles.reduce((acc, file) => acc + file.size, 0);
-
-        if (allFiles.length > MAX_BATCH_FILES) {
-            toast({ title: texts.tooManyFiles, variant: 'destructive' });
-            return;
-        }
-
-        if (totalSize > MAX_TOTAL_SIZE_BYTES) {
-            toast({ title: texts.totalSizeExceeded(MAX_TOTAL_SIZE_MB), variant: 'destructive' });
-            return;
-        }
-
-        const validFiles = allFiles.filter(file => {
-            if (file.type === 'application/pdf') return true;
-            toast({ title: texts.invalidFileError, variant: 'destructive', description: `${file.name} is not a valid PDF.` });
-            return false;
-        });
-
-        setBatchFiles(validFiles);
-
-        const newStatuses: { [fileName: string]: UploadStatus } = {};
-        validFiles.forEach(file => {
-            newStatuses[file.name] = uploadStatuses[file.name] || { status: 'waiting', progress: 0 };
-        });
-        setUploadStatuses(newStatuses);
-    };
-  
-    const removeBatchFile = (fileName: string) => {
-      setBatchFiles(prev => prev.filter(f => f.name !== fileName));
-      setUploadStatuses(prev => {
-          const newStatuses = {...prev};
-          delete newStatuses[fileName];
-          return newStatuses;
-      });
-    };
-  
-    const handleBatchSubmit = async (e: React.FormEvent) => {
-      e.preventDefault();
-      if (batchFiles.length === 0) {
-          toast({ title: texts.conversionError, description: texts.noFilesSelected, variant: 'destructive'});
-          return;
-      }
-      
-      if (!checkAndDecrementQuota('convert')) {
-        return;
-      }
-  
-      setIsConverting(true);
-      setCurrentConvertingFile(batchFiles[0]?.name || '');
-
-      setUploadStatuses(prev => {
-        const newStatuses: { [fileName: string]: UploadStatus } = {};
-        batchFiles.forEach(file => {
-            newStatuses[file.name] = { status: 'converting', progress: 10 };
-        });
-        return newStatuses;
-      });
-
-      const progressInterval = setInterval(() => {
-          setUploadStatuses(prev => {
-              const newStatuses = {...prev};
-              let allDone = true;
-              Object.keys(newStatuses).forEach(fileName => {
-                  if (newStatuses[fileName].progress < 90) {
-                      newStatuses[fileName].progress += 5;
-                      allDone = false;
-                  }
-              });
-              if (allDone) clearInterval(progressInterval);
-              return newStatuses;
-          });
-      }, 500);
-
-      const cyclingInterval = setInterval(() => {
-        setCurrentConvertingFile(prevFile => {
-            const currentIndex = batchFiles.findIndex(f => f.name === prevFile);
-            const nextIndex = (currentIndex + 1) % batchFiles.length;
-            return batchFiles[nextIndex]?.name || '';
-        });
-      }, 2000);
-  
-      const formData = new FormData();
-      let endpoint = "";
-
-      if (batchFiles.length === 1) {
-          formData.append("file", batchFiles[0]);
-          endpoint = "https://pdfsolution.dpdns.org/upload";
-      } else {
-          batchFiles.forEach(file => {
-              formData.append("file", file);
-          });
-          endpoint = "https://pdfsolution.dpdns.org/batch-upload";
-      }
-      formData.append("format", targetFormat);
-      formData.append("output_dir", "./");
-      
-      for (let pair of formData.entries()) {
-        console.log('🧪 FormData:', pair[0], pair[1]);
-      }
-
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 min timeout
-  
-      try {
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            body: formData,
-            signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        clearInterval(progressInterval);
-        clearInterval(cyclingInterval);
-  
-        if (!response.ok) {
-            const clonedResponse = response.clone();
-            let errorMessage = `Conversion failed with status: ${response.status}`;
-            try {
-                const error = await clonedResponse.json();
-                errorMessage = String(error.error || "An unknown server error occurred.");
-            } catch (jsonError) {
-                try {
-                    const errorText = await clonedResponse.text();
-                    errorMessage = `Server error: ${response.status}. Response: ${errorText.substring(0, 100)}`;
-                } catch (textError) {
-                    errorMessage = `Server returned an unreadable error with status: ${response.status}`;
-                }
-            }
-            throw new Error(errorMessage);
-        }
-
-        const resBlob = await response.blob();
-        const contentDisposition = response.headers.get('Content-Disposition');
-        let downloadFilename = `batch_converted.${formatOptions.find(opt => opt.value === targetFormat)?.extension || 'bin'}`;
-        if (contentDisposition) {
-            const match = contentDisposition.match(/filename="?([^"]+)"?/);
-            if (match && match[1]) {
-                downloadFilename = match[1];
-            }
-        }
-        
-        const url = window.URL.createObjectURL(resBlob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = downloadFilename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-        
-        setUploadStatuses(prev => {
-          const newStatuses: { [fileName: string]: UploadStatus } = {};
-          batchFiles.forEach(file => {
-              newStatuses[file.name] = { status: 'done', progress: 100 };
-          });
-          return newStatuses;
-        });
-        toast({ title: texts.conversionSuccess, description: texts.conversionSuccessDesc(downloadFilename)});
-        
-        setBatchFiles([]);
-        setUploadStatuses({});
-        setIsBatchPopoverOpen(false);
-
-      } catch (err: any) {
-        setUploadStatuses(prev => {
-          const newStatuses: { [fileName: string]: UploadStatus } = {};
-          batchFiles.forEach(file => {
-              newStatuses[file.name] = { status: 'error', progress: 0, error: err.message };
-          });
-          return newStatuses;
-        });
-        toast({ title: texts.conversionError, description: err.message, variant: "destructive" });
-      } finally {
-        clearInterval(progressInterval);
-        clearInterval(cyclingInterval);
-        setIsConverting(false);
-        setCurrentConvertingFile('');
-      }
-    };
     
     const handleInsertFileSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0] || null;
@@ -2631,9 +2340,67 @@ export default function PdfEditorPage() {
         }
     };
 
-  const totalSizeMB = (batchTotalSize / (1024 * 1024)).toFixed(2);
-  const remainingFiles = MAX_BATCH_FILES - batchFiles.length;
-  const remainingMB = Math.max(0, (MAX_TOTAL_SIZE_BYTES - batchTotalSize) / (1024 * 1024));
+    const triggerConvertUpload = (acceptType: string) => {
+        if (convertUploadRef.current) {
+            convertUploadRef.current.accept = acceptType;
+            convertUploadRef.current.click();
+        }
+    };
+
+    const handleConvertFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            setPendingFileToConvert(file);
+            setIsConvertConfirmOpen(true);
+        }
+        if (convertUploadRef.current) convertUploadRef.current.value = '';
+    };
+
+    const startConversionProcess = async (mode: 'download' | 'edit') => {
+        if (!pendingFileToConvert) return;
+
+        setIsConvertConfirmOpen(false);
+        setIsLoading(true);
+        setLoadingMessage(texts.convertingToPdf);
+        
+        const formData = new FormData();
+        formData.append('file', pendingFileToConvert);
+        formData.append('format', 'pdf');
+
+        try {
+            const response = await fetch("https://pdfsolution.dpdns.org/convert_to_pdf", {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) throw new Error('Conversion failed');
+            
+            const blob = await response.blob();
+            const filename = pendingFileToConvert.name.split('.').slice(0, -1).join('.') + '.pdf';
+            const convertedFile = new File([blob], filename, { type: 'application/pdf' });
+
+            if (mode === 'edit') {
+                await loadPdfIntoEditor(convertedFile);
+            } else {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                toast({ title: texts.conversionSuccess, description: texts.conversionSuccessDesc(filename) });
+            }
+        } catch (err: any) {
+            toast({ title: texts.conversionError, description: err.message, variant: "destructive" });
+        } finally {
+            setIsLoading(false);
+            setLoadingMessage('');
+            setPendingFileToConvert(null);
+        }
+    };
+  
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground font-sans">
@@ -2642,8 +2409,7 @@ export default function PdfEditorPage() {
           <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
           <p className="text-white text-lg">
             {isLoading ? loadingMessage :
-             isDownloading ? texts.generatingFile :
-             isConverting ? texts.convertingMessage : ''}
+             isDownloading ? texts.generatingFile : ''}
           </p>
         </div>
       )}
@@ -2660,6 +2426,21 @@ export default function PdfEditorPage() {
             <AlertDialogCancel onClick={() => setPendingInsertFile(null)}>{texts.cancel}</AlertDialogCancel>
             <AlertDialogAction onClick={() => proceedWithInsert()}>{texts.confirm}</AlertDialogAction>
           </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={isConvertConfirmOpen} onOpenChange={setIsConvertConfirmOpen}>
+        <AlertDialogContent>
+            <ShadAlertDialogHeader>
+                <ShadAlertDialogTitle>{texts.convertConfirmTitle}</ShadAlertDialogTitle>
+                <AlertDialogDescription>
+                    {pendingFileToConvert ? texts.convertConfirmDescription(pendingFileToConvert.name) : ''}
+                </AlertDialogDescription>
+            </ShadAlertDialogHeader>
+            <AlertDialogFooter>
+                <Button variant="outline" onClick={() => startConversionProcess('download')}>{texts.convertConfirmDownload}</Button>
+                <Button onClick={() => startConversionProcess('edit')}>{texts.convertConfirmEdit}</Button>
+            </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
@@ -2702,12 +2483,15 @@ export default function PdfEditorPage() {
             <MenubarMenu>
                 <MenubarTrigger>{texts.menuFile}</MenubarTrigger>
                 <MenubarContent>
-                    <MenubarItem onClick={() => pdfUploadRef.current?.click()} disabled={pageObjects.length > 0}>
-                        <FolderOpen className="mr-2 h-4 w-4"/>{texts.menuFileOpen}
-                    </MenubarItem>
-                    <MenubarItem onClick={() => { setPageObjects([]); pdfUploadRef.current?.click(); }}>
-                        <FilePlus className="mr-2 h-4 w-4"/>{texts.menuFileNew}
-                    </MenubarItem>
+                    <MenubarItem onClick={() => pdfUploadRef.current?.click()}><FilePlus className="mr-2 h-4 w-4"/>{texts.menuFileNew}</MenubarItem>
+                    <MenubarSub>
+                         <MenubarSubTrigger disabled={pageObjects.length > 0}><FolderOpen className="mr-2 h-4 w-4"/>{texts.menuFileOpen}</MenubarSubTrigger>
+                         <MenubarSubContent>
+                             <MenubarItem onClick={() => triggerConvertUpload('.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document')}>{texts.wordToPdf}</MenubarItem>
+                             <MenubarItem onClick={() => triggerConvertUpload('.xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')}>{texts.excelToPdf}</MenubarItem>
+                             <MenubarItem onClick={() => triggerConvertUpload('.ppt,.pptx,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation')}>{texts.pptToPdf}</MenubarItem>
+                         </MenubarSubContent>
+                    </MenubarSub>
                     <MenubarItem onClick={() => insertPdfRef.current?.click()} disabled={pageObjects.length === 0}>
                         <FilePlus2 className="mr-2 h-4 w-4" />{texts.menuFileInsert}
                     </MenubarItem>
@@ -2716,94 +2500,11 @@ export default function PdfEditorPage() {
                             <Save className="mr-2 h-4 w-4"/>{texts.menuFileSaveAs}
                         </MenubarSubTrigger>
                         <MenubarSubContent>
-                            <MenubarItem onClick={handleDownloadPdf}>PDF</MenubarItem>
-                            <MenubarItem onClick={() => handleSaveAsFormat('word')}>Word (.docx)</MenubarItem>
-                            <MenubarItem onClick={() => handleSaveAsFormat('txt')}>Text (.txt)</MenubarItem>
+                            {saveAsFormatOptions.map(opt => (
+                                <MenubarItem key={opt.value} onClick={() => handleSaveAsFormat(opt.value)}>{texts[opt.labelKey]}</MenubarItem>
+                            ))}
                         </MenubarSubContent>
                     </MenubarSub>
-                    <MenubarSeparator />
-                    <Popover open={isBatchPopoverOpen} onOpenChange={setIsBatchPopoverOpen}>
-                        <PopoverTrigger asChild>
-                            <MenubarItem onSelect={(e) => e.preventDefault()}><Combine className="mr-2 h-4 w-4"/>{texts.menuFileBatchConvert}</MenubarItem>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-96">
-                            {isConverting ? (
-                                <div className="flex flex-col items-center justify-center space-y-4 my-4">
-                                    <Loader2 className="h-12 w-12 text-primary animate-spin" />
-                                    <p className="text-sm font-medium text-center text-foreground">
-                                        {currentLanguage === 'zh' ? `正在進行 ${currentConvertingFile} 的轉檔作業...` : `Converting ${currentConvertingFile}...`}
-                                    </p>
-                                    <Progress value={uploadStatuses[Object.keys(uploadStatuses)[0]]?.progress || 10} className="w-full" />
-                                </div>
-                            ) : (
-                                <form onSubmit={handleBatchSubmit} className="space-y-4">
-                                    <CardTitle>{texts.batchConvert}</CardTitle>
-                                    <div>
-                                        <Label htmlFor="targetFormat" className="text-sm font-medium">{texts.selectFormat}</Label>
-                                        <Select value={targetFormat} onValueChange={setTargetFormat} required>
-                                            <SelectTrigger id="targetFormat" className="mt-1">
-                                                <SelectValue placeholder="Select format" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {formatOptions.map(opt => (
-                                                    <SelectItem key={opt.value} value={opt.value}>
-                                                        {texts[opt.labelKey]}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded-md space-y-1">
-                                        <p>{texts.planInfo(MAX_BATCH_FILES, MAX_TOTAL_SIZE_MB)}</p>
-                                        <p>{texts.usageInfo(batchFiles.length, totalSizeMB, remainingFiles, remainingMB.toFixed(2))}</p>
-                                    </div>
-                                    <div 
-                                    className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20"
-                                    onClick={() => batchFileUploadRef.current?.click()}
-                                    >
-                                        <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                                        <p className="text-xs text-muted-foreground text-center">
-                                        {texts.uploadButton}
-                                        </p>
-                                        <Input
-                                            type="file"
-                                            ref={batchFileUploadRef}
-                                            onChange={handleBatchFileChange}
-                                            accept="application/pdf"
-                                            multiple
-                                            className="hidden"
-                                        />
-                                    </div>
-                                    {batchFiles.length > 0 && (
-                                        <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
-                                            {batchFiles.map(file => (
-                                                <div key={file.name} className="flex items-center gap-2 p-1.5 border rounded-md text-xs">
-                                                    <File className="h-4 w-4 text-primary flex-shrink-0" />
-                                                    <div className="flex-grow min-w-0">
-                                                        <p className="font-medium truncate">{file.name}</p>
-                                                        <div className="flex items-center gap-1.5 text-muted-foreground">
-                                                            <span>{texts[`status_${uploadStatuses[file.name]?.status}` as keyof typeof texts] || texts.status_waiting}</span>
-                                                            {uploadStatuses[file.name]?.status === 'error' && (
-                                                                <span className="text-destructive truncate" title={uploadStatuses[file.name]?.error}>- {uploadStatuses[file.name]?.error}</span>
-                                                            )}
-                                                        </div>
-                                                        <Progress value={uploadStatuses[file.name]?.progress || 0} className="h-1 mt-1" />
-                                                    </div>
-                                                    <Button variant="ghost" size="icon" className="h-5 w-5 flex-shrink-0" onClick={() => removeBatchFile(file.name)} disabled={isConverting}>
-                                                        <XCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
-                                                    </Button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                     <Button type="submit" className="w-full" disabled={isConverting || batchFiles.length === 0}>
-                                        {isConverting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                                        {texts.convertButton}
-                                    </Button>
-                                </form>
-                            )}
-                        </PopoverContent>
-                    </Popover>
                 </MenubarContent>
             </MenubarMenu>
              <MenubarMenu>
@@ -2856,20 +2557,6 @@ export default function PdfEditorPage() {
                     </MenubarSub>
                 </MenubarContent>
             </MenubarMenu>
-            <MenubarMenu>
-                <MenubarTrigger>{texts.menuTools}</MenubarTrigger>
-                 <MenubarContent>
-                    <MenubarItem onClick={() => handlePlaceholderClick('Compress')}><Minimize2 className="mr-2 h-4 w-4"/>壓縮</MenubarItem>
-                    <MenubarItem onClick={() => handlePlaceholderClick('Protect')}><ShieldCheck className="mr-2 h-4 w-4"/>加密</MenubarItem>
-                </MenubarContent>
-            </MenubarMenu>
-             <MenubarMenu>
-                <MenubarTrigger>{texts.menuHelp}</MenubarTrigger>
-                <MenubarContent>
-                    <MenubarItem>教學</MenubarItem>
-                    <MenubarItem>聯絡我們</MenubarItem>
-                </MenubarContent>
-            </MenubarMenu>
         </Menubar>
     </header>
 
@@ -2899,7 +2586,7 @@ export default function PdfEditorPage() {
 
                 <Tooltip>
                 <TooltipTrigger asChild>
-                    <Button variant={activeTool === 'text' ? "secondary" : "ghost"} className="flex flex-col h-auto p-2 space-y-1" onClick={() => setActiveTool('text')} disabled={activePageIndex === null}>
+                    <Button variant={activeTool === 'text' ? "secondary" : "ghost"} className="flex flex-col h-auto p-2 space-y-1" onClick={() => { setActiveTool('text'); handleAddTextAnnotation() }} disabled={activePageIndex === null}>
                         <Type className="h-5 w-5" />
                         <span className="text-xs">{texts.toolInsertText}</span>
                     </Button>
@@ -2926,7 +2613,7 @@ export default function PdfEditorPage() {
                 </Tooltip>
                 <Tooltip>
                 <TooltipTrigger asChild>
-                    <Button variant={activeTool === 'highlight' ? "secondary" : "ghost"} className="flex flex-col h-auto p-2 space-y-1" onClick={() => setActiveTool('highlight')} disabled={activePageIndex === null}>
+                    <Button variant={activeTool === 'highlight' ? "secondary" : "ghost"} className="flex flex-col h-auto p-2 space-y-1" onClick={() => { setActiveTool('highlight'); handleAddHighlightAnnotation(); }} disabled={activePageIndex === null}>
                         <Highlighter className="h-5 w-5" />
                         <span className="text-xs">{texts.toolHighlight}</span>
                     </Button>
@@ -3054,7 +2741,6 @@ export default function PdfEditorPage() {
                     </Tooltip>
                     <PopoverContent side="bottom">
                         <div className="grid gap-4">
-                            {/* Search Component would go here */}
                              <p>Search coming soon</p>
                         </div>
                     </PopoverContent>
@@ -3097,30 +2783,10 @@ export default function PdfEditorPage() {
                     <Upload className="h-12 w-12 text-muted-foreground mb-3" />
                     <p className="text-md text-muted-foreground text-center">{texts.dropFileHere}</p>
                   </div>
-                  <Input
-                    type="file"
-                    id="pdfUploadInput"
-                    accept="application/pdf"
-                    onChange={handlePdfUpload}
-                    ref={pdfUploadRef}
-                    className="hidden"
-                  />
-                   <Input
-                        type="file"
-                        id="imageUploadInput"
-                        accept="image/*"
-                        onChange={handleImageFileSelected}
-                        ref={imageUploadRef}
-                        className="hidden"
-                    />
-                    <Input
-                        type="file"
-                        id="insertPdfInput"
-                        accept="application/pdf"
-                        onChange={handleInsertFileSelected}
-                        ref={insertPdfRef}
-                        className="hidden"
-                    />
+                  <Input type="file" id="pdfUploadInput" accept="application/pdf" onChange={handlePdfUpload} ref={pdfUploadRef} className="hidden" />
+                  <Input type="file" id="imageUploadInput" accept="image/*" onChange={handleImageFileSelected} ref={imageUploadRef} className="hidden" />
+                  <Input type="file" id="insertPdfInput" accept="application/pdf" onChange={handleInsertFileSelected} ref={insertPdfRef} className="hidden" />
+                  <Input type="file" id="convertUploadInput" onChange={handleConvertFileSelect} ref={convertUploadRef} className="hidden" />
                 </CardContent>
               </Card>
             </div>
@@ -3395,12 +3061,3 @@ export default function PdfEditorPage() {
     </div>
   );
 }
-
-
-
-    
-
-    
-
-
-      

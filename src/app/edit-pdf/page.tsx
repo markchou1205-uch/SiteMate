@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -14,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader as ShadAlertDialogHeader, AlertDialogTitle as ShadAlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -2238,22 +2237,22 @@ export default function PdfEditorPage() {
         toast({ title: 'Success', description: 'Signature applied to all pages.' });
     };
 
-    const handleDeselectAll = () => {
-      setSelectedObject(null);
-      setEditingAnnotationId(null);
+    const handleDeselectAll = (e: React.MouseEvent<HTMLDivElement>) => {
+      // Only deselect if the click is on the container itself, not on a child annotation
+      if (e.target === e.currentTarget) {
+          setSelectedObject(null);
+          setEditingAnnotationId(null);
+      }
     }
     
     const handleAnnotationSelect = (type: SelectedObject['type'], id: string, e: React.MouseEvent) => {
       e.stopPropagation();
       if (isDraggingRef.current) return;
-      
-      // If the same text annotation is clicked again, do nothing (wait for double click)
-      if (selectedObject?.type === 'text' && selectedObject.id === id && !editingAnnotationId) {
-          return;
-      }
+
+      if (editingAnnotationId === id) return;
       
       setSelectedObject({ type, id });
-      setEditingAnnotationId(null); // Always exit edit mode on single click
+      setEditingAnnotationId(null);
     }
     
     const handleTextAnnotationDoubleClick = (id: string, e: React.MouseEvent) => {
@@ -2595,7 +2594,7 @@ export default function PdfEditorPage() {
     <header className="p-0 border-b bg-card sticky top-0 z-40 flex-shrink-0 h-14">
         <Menubar className="rounded-none border-x-0 h-full px-4 lg:px-6">
             <div className="flex items-center gap-2">
-                <MenuSquare className="h-6 w-6 text-primary"/>
+                <MenuSquare className="mr-2 h-6 w-6"/>
                 <h1 className="text-lg font-bold">{texts.appTitle}</h1>
             </div>
             <MenubarMenu>
@@ -2717,13 +2716,13 @@ export default function PdfEditorPage() {
                  <Separator orientation="vertical" className="h-10 mx-2" />
 
                 <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={handleUndo} disabled={historyIndex <= 0}>
-                           <Undo className="h-5 w-5" />
-                           <span className="text-xs">{texts.menuEditUndo}</span>
-                       </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom"><p>{texts.menuEditUndo}</p></TooltipContent>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={handleUndo} disabled={historyIndex <= 0}>
+                       <Undo className="h-5 w-5" />
+                       <span className="text-xs">{texts.menuEditUndo}</span>
+                   </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom"><p>{texts.menuEditUndo}</p></TooltipContent>
                 </Tooltip>
                 <Tooltip>
                     <TooltipTrigger asChild>

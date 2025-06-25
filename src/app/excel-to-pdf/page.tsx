@@ -11,6 +11,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarSub, MenubarSubContent, MenubarSubTrigger, MenubarTrigger } from "@/components/ui/menubar";
 import { Loader2, Upload, Scissors, Download, FilePlus, LogIn, LogOut, UserCircle, MenuSquare, ArrowRightLeft, Edit, FileUp, ListOrdered, Trash2, Combine, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText, Sparkles, XCircle, Star } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader as ShadAlertDialogHeader, AlertDialogTitle as ShadAlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Progress } from '@/components/ui/progress';
+
+const MAX_BATCH_FILES = 10;
+type UploadStatus = {
+    status: 'waiting' | 'uploading' | 'converting' | 'done' | 'error';
+    progress: number;
+    error?: string;
+};
 
 const translations = {
   en: {
@@ -19,6 +27,7 @@ const translations = {
     startTitle: 'Upload Excel File to Convert to PDF',
     startDescription: 'Select an Excel file (.xls, .xlsx) to begin.',
     uploadButton: 'Click or drag a file here to upload',
+    uploadHint: (isLoggedIn: boolean) => `Max file size: ${isLoggedIn ? '5MB' : '3MB'}. Single file only.`,
     convertButton: 'Convert to PDF',
     convertingMessage: 'Processing...',
     conversionSuccess: 'Conversion Complete',
@@ -39,7 +48,7 @@ const translations = {
     confirm: 'Confirm',
     convertLimitTitle: 'Conversion Limit Reached',
     convertLimitDescription: 'Your free conversion for today has been used. Register to get 3 conversions daily.',
-    filesSelected: 'file selected',
+    filesSelected: 'file(s) selected',
     pdfEditMenu: 'PDF Edit',
     pdfConvertMenu: 'PDF Convert',
     mergePdf: 'Merge PDF',
@@ -63,19 +72,26 @@ const translations = {
     pdfToOcr: 'PDF with OCR',
     upgradePromptTitle: "Tired of one-by-one? Files too large?",
     upgradePromptDescription: "Try our 'Batch Convert' and 'Extended File Size' services to save your precious time!",
-    enableBatchMode: "Enable Batch Convert",
+    enableBatchMode: "Increase file size limit or batch convert",
     batchModalTitle: "Upgrade to Batch Conversion",
     batchModalDescription: "Process up to 10 files at once and unlock premium features. Choose a plan to get started.",
     upgrade: "Upgrade Now",
     featureNotAvailable: "Feature Not Available",
     featureNotAvailableForGuests: "This feature is not available for guest users. Please log in to use it.",
+    tooManyFiles: 'You can only select up to 10 files at a time.',
+    status_waiting: 'Waiting',
+    status_uploading: 'Uploading...',
+    status_converting: 'Converting...',
+    status_done: 'Done!',
+    status_error: 'Error',
   },
   zh: {
     pageTitle: 'Excel 轉 PDF',
     pageDescription: '將您的 Excel 文件轉換為標準的 PDF 檔案。',
     startTitle: '上傳 Excel 檔案以轉換為 PDF',
     startDescription: '選擇一個 Excel 檔案（.xls, .xlsx）以開始。',
-    uploadButton: '點擊或拖曳檔案到此處以上傳',
+    uploadButton: '點擊或拖曳檔案到此處',
+    uploadHint: (isLoggedIn: boolean) => `檔案大小上限：${isLoggedIn ? '5MB' : '3MB'}。僅限單一檔案。`,
     convertButton: '轉換為 PDF',
     convertingMessage: '處理中...',
     conversionSuccess: '轉換完成',
@@ -120,12 +136,18 @@ const translations = {
     pdfToOcr: 'PDF光學掃描(OCR)',
     upgradePromptTitle: "一件一件傳很麻煩嗎？文件太大嗎？",
     upgradePromptDescription: "來試試「批次轉檔」及「擴充檔案」服務來節省您的寶貴時間！",
-    enableBatchMode: "啟用批次轉檔",
+    enableBatchMode: "提升檔案大小限制或批次轉檔",
     batchModalTitle: "升級至批次轉換",
     batchModalDescription: "一次處理最多 10 個檔案並解鎖高階功能。選擇一個方案立即開始。",
     upgrade: "立即升級",
     featureNotAvailable: "功能無法使用",
     featureNotAvailableForGuests: "此功能不適用於訪客。請登入後使用。",
+    tooManyFiles: '一次最多只能選擇 10 個檔案。',
+    status_waiting: '等待中',
+    status_uploading: '上傳中...',
+    status_converting: '轉換中...',
+    status_done: '完成！',
+    status_error: '錯誤',
   },
 };
 
@@ -141,10 +163,16 @@ export default function ExcelToPdfPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGuestLimitModalOpen, setIsGuestLimitModalOpen] = useState(false);
   const [guestLimitModalContent, setGuestLimitModalContent] = useState({ title: '', description: '' });
-  const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
   
+  // Batch Conversion State
+  const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
+  const [batchFiles, setBatchFiles] = useState<File[]>([]);
+  const [isConverting, setIsConverting] = useState(false);
+  const [uploadStatuses, setUploadStatuses] = useState<{ [fileName: string]: UploadStatus }>({});
+
   const fileUploadRef = useRef<HTMLInputElement>(null);
-  const format = 'pdf'; // Hardcoded format
+  const batchFileUploadRef = useRef<HTMLInputElement>(null);
+  const format = 'pdf';
 
   useEffect(() => {
     setTexts(translations[currentLanguage] || translations.en);
@@ -290,6 +318,126 @@ export default function ExcelToPdfPage() {
     }
   };
 
+  const handleBatchFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newFiles = event.target.files ? Array.from(event.target.files) : [];
+    if (newFiles.length === 0) return;
+
+    const allFiles = [...batchFiles, ...newFiles];
+
+    if (allFiles.length > MAX_BATCH_FILES) {
+        toast({ title: texts.tooManyFiles, variant: 'destructive' });
+        return;
+    }
+    
+    setBatchFiles(allFiles);
+
+    const newStatuses: { [fileName: string]: UploadStatus } = {};
+    allFiles.forEach(file => {
+        newStatuses[file.name] = uploadStatuses[file.name] || { status: 'waiting', progress: 0 };
+    });
+    setUploadStatuses(newStatuses);
+  };
+  
+  const removeBatchFile = (fileName: string) => {
+    setBatchFiles(prev => prev.filter(f => f.name !== fileName));
+    setUploadStatuses(prev => {
+        const newStatuses = {...prev};
+        delete newStatuses[fileName];
+        return newStatuses;
+    });
+  };
+
+  const handleBatchSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (batchFiles.length === 0) {
+        toast({ title: texts.conversionError, description: texts.noFilesSelected, variant: 'destructive'});
+        return;
+    }
+    
+    setIsConverting(true);
+    setUploadStatuses(prev => {
+      const newStatuses: { [fileName: string]: UploadStatus } = {};
+      batchFiles.forEach(file => {
+          newStatuses[file.name] = { status: 'converting', progress: 50 };
+      });
+      return newStatuses;
+    });
+
+    const formData = new FormData();
+    let endpoint = "";
+
+    if (batchFiles.length === 1) {
+      formData.append("file", batchFiles[0]);
+      endpoint = "https://pdfsolution.dpdns.org/convert_single_to_pdf";
+    } else {
+      batchFiles.forEach(file => {
+        formData.append("files", file);
+      });
+      endpoint = "https://pdfsolution.dpdns.org/batch_upload";
+    }
+    formData.append("format", format);
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 120000);
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        body: formData,
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const clonedResponse = response.clone();
+        let errorMessage = `Conversion failed with status: ${response.status}`;
+        try {
+            const error = await clonedResponse.json();
+            errorMessage = String(error.error || "An unknown server error occurred.");
+        } catch (jsonError) {
+             const errorText = await response.text();
+             errorMessage = `Server error: ${response.status}. Response: ${errorText.substring(0, 100)}`;
+        }
+        throw new Error(errorMessage);
+      }
+      
+      const resBlob = await response.blob();
+      let downloadFilename = 'converted_files.zip';
+      
+      const url = window.URL.createObjectURL(resBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = downloadFilename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      setUploadStatuses(prev => {
+        const newStatuses: { [fileName: string]: UploadStatus } = {};
+        batchFiles.forEach(file => {
+            newStatuses[file.name] = { status: 'done', progress: 100 };
+        });
+        return newStatuses;
+      });
+      toast({ title: texts.conversionSuccess, description: texts.conversionSuccessDesc(downloadFilename)});
+      setBatchFiles([]);
+
+    } catch (err: any) {
+      clearTimeout(timeoutId);
+      setUploadStatuses(prev => {
+        const newStatuses: { [fileName: string]: UploadStatus } = {};
+        batchFiles.forEach(file => {
+            newStatuses[file.name] = { status: 'error', progress: 0, error: err.message };
+        });
+        return newStatuses;
+      });
+      toast({ title: texts.conversionError, description: err.message, variant: "destructive" });
+    } finally {
+      setIsConverting(false);
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen bg-background">
       {isLoading && (
@@ -315,18 +463,57 @@ export default function ExcelToPdfPage() {
       </AlertDialog>
       
       <AlertDialog open={isBatchModalOpen} onOpenChange={setIsBatchModalOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-2xl">
             <ShadAlertDialogHeader>
                 <ShadAlertDialogTitle>{texts.batchModalTitle}</ShadAlertDialogTitle>
                 <AlertDialogDescription>{texts.batchModalDescription}</AlertDialogDescription>
             </ShadAlertDialogHeader>
-            <div className="py-4">
-                <div className="flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20">
-                    <Upload className="h-12 w-12 text-muted-foreground mb-3" />
-                    <p className="text-md text-muted-foreground text-center">Click or drag up to 10 files</p>
+            <form onSubmit={handleBatchSubmit} className="space-y-4">
+                <div 
+                className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20"
+                onClick={() => batchFileUploadRef.current?.click()}
+                >
+                    <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                    <p className="text-xs text-muted-foreground text-center">
+                      Click or drag up to {MAX_BATCH_FILES} files here
+                    </p>
+                    <Input
+                        type="file"
+                        ref={batchFileUploadRef}
+                        onChange={handleBatchFileChange}
+                        accept=".xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        multiple
+                        className="hidden"
+                    />
                 </div>
-            </div>
-            <AlertDialogFooter>
+                {batchFiles.length > 0 && (
+                    <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
+                        {batchFiles.map(file => (
+                            <div key={file.name} className="flex items-center gap-2 p-1.5 border rounded-md text-xs">
+                                <FileSpreadsheet className="h-4 w-4 text-primary flex-shrink-0" />
+                                <div className="flex-grow min-w-0">
+                                    <p className="font-medium truncate">{file.name}</p>
+                                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                                        <span>{texts[`status_${uploadStatuses[file.name]?.status}` as keyof typeof texts] || texts.status_waiting}</span>
+                                        {uploadStatuses[file.name]?.status === 'error' && (
+                                            <span className="text-destructive truncate" title={uploadStatuses[file.name]?.error}>- {uploadStatuses[file.name]?.error}</span>
+                                        )}
+                                    </div>
+                                    <Progress value={uploadStatuses[file.name]?.progress || 0} className="h-1 mt-1" />
+                                </div>
+                                <Button variant="ghost" size="icon" className="h-5 w-5 flex-shrink-0" onClick={() => removeBatchFile(file.name)} disabled={isConverting}>
+                                    <XCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                                </Button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+                 <Button type="submit" className="w-full" disabled={isConverting || batchFiles.length === 0}>
+                    {isConverting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                    {texts.convertButton}
+                </Button>
+            </form>
+            <AlertDialogFooter className="mt-4">
                 <AlertDialogCancel>{texts.cancel}</AlertDialogCancel>
                 <AlertDialogAction>{texts.upgrade}</AlertDialogAction>
             </AlertDialogFooter>
@@ -431,6 +618,7 @@ export default function ExcelToPdfPage() {
                       <p className="text-md text-muted-foreground text-center">
                         {selectedFile ? selectedFile.name : texts.uploadButton}
                       </p>
+                      <p className="text-xs text-muted-foreground mt-2">{texts.uploadHint(isLoggedIn)}</p>
                       <Input
                           type="file"
                           ref={fileUploadRef}
@@ -448,14 +636,30 @@ export default function ExcelToPdfPage() {
               </CardContent>
             </Card>
 
-            <Card className="w-full border-primary/20 bg-primary/5">
-              <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2"><Star className="text-yellow-500" />{texts.upgradePromptTitle}</CardTitle>
-                  <CardDescription>{texts.upgradePromptDescription}</CardDescription>
-              </CardHeader>
-              <CardFooter>
-                  <Button onClick={() => setIsBatchModalOpen(true)}>{texts.enableBatchMode}</Button>
-              </CardFooter>
+            <Card className="w-full border-destructive/20 bg-destructive/5">
+                <CardContent className="p-4 flex items-center justify-between gap-4">
+                    <div>
+                        <CardTitle className="text-lg flex items-center gap-2 text-destructive">
+                            <Star className="text-yellow-500" />
+                            {texts.upgradePromptTitle}
+                        </CardTitle>
+                        <CardDescription className="mt-1">
+                            {texts.upgradePromptDescription}
+                        </CardDescription>
+                    </div>
+                    <Button 
+                        onClick={() => setIsBatchModalOpen(true)} 
+                        variant="destructive" 
+                        size="lg" 
+                        className="shrink-0"
+                    >
+                        <span className="flex items-baseline gap-1.5 font-normal">
+                            <span className="text-base font-semibold">提升檔案大小限制</span>
+                            <span className="text-sm">或</span>
+                            <span className="text-base font-semibold">批次轉檔</span>
+                        </span>
+                    </Button>
+                </CardContent>
             </Card>
         </div>
       </main>

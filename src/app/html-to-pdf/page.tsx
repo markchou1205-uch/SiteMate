@@ -272,7 +272,7 @@ export default function HtmlToPdfPage() {
     const timeoutId = setTimeout(() => controller.abort(), 60000);
 
     try {
-      const response = await fetch("https://pdfsolution.dpdns.org/convert_single_to_pdf", {
+      const response = await fetch("https://pdfsolution.dpdns.org/convert_to_pdf", {
         method: 'POST',
         body: formData,
         signal: controller.signal
@@ -387,10 +387,10 @@ export default function HtmlToPdfPage() {
 
     if (batchFiles.length === 1) {
       formData.append("file", batchFiles[0]);
-      endpoint = "https://pdfsolution.dpdns.org/convert_single_to_pdf";
+      endpoint = "https://pdfsolution.dpdns.org/convert_to_pdf";
     } else {
       batchFiles.forEach(file => {
-        formData.append("files", file);
+        formData.append("file", file);
       });
       endpoint = "https://pdfsolution.dpdns.org/batch-upload";
     }

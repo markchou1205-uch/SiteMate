@@ -1962,13 +1962,17 @@ export default function PdfEditorPage() {
           endpoint = "https://pdfsolution.dpdns.org/upload";
       } else {
           batchFiles.forEach(file => {
-              formData.append("files", file);
+              formData.append("file", file);
           });
           endpoint = "https://pdfsolution.dpdns.org/batch-upload";
       }
       formData.append("format", targetFormat);
       formData.append("output_dir", "./");
       
+      for (let pair of formData.entries()) {
+        console.log('🧪 FormData:', pair[0], pair[1]);
+      }
+
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 min timeout
   

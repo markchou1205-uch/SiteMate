@@ -274,7 +274,7 @@ export default function ExcelToPdfPage() {
     const timeoutId = setTimeout(() => controller.abort(), 60000);
 
     try {
-      const response = await fetch("https://pdfsolution.dpdns.org/convert_single_to_pdf", {
+      const response = await fetch("https://pdfsolution.dpdns.org/convert_to_pdf", {
         method: 'POST',
         body: formData,
         signal: controller.signal
@@ -288,8 +288,12 @@ export default function ExcelToPdfPage() {
             const error = await clonedResponse.json();
             errorMessage = String(error.error || "An unknown server error occurred.");
         } catch (jsonError) {
-             const errorText = await response.text();
-             errorMessage = `Server error: ${response.status}. Response: ${errorText.substring(0, 100)}`;
+             try {
+                 const errorText = await clonedResponse.text();
+                 errorMessage = `Server error: ${response.status}. Response: ${errorText.substring(0, 100)}`;
+             } catch (textError) {
+                errorMessage = `Server returned an unreadable error with status: ${response.status}`;
+             }
         }
         throw new Error(errorMessage);
       }
@@ -344,12 +348,12 @@ export default function ExcelToPdfPage() {
         toast({ title: texts.tooManyFiles, variant: 'destructive' });
         return;
     }
-
+    
     if (totalSize > MAX_TOTAL_SIZE_BYTES) {
         toast({ title: texts.totalSizeExceeded(MAX_TOTAL_SIZE_MB), variant: 'destructive' });
         return;
     }
-    
+
     setBatchFiles(allFiles);
 
     const newStatuses: { [fileName: string]: UploadStatus } = {};
@@ -389,10 +393,10 @@ export default function ExcelToPdfPage() {
 
     if (batchFiles.length === 1) {
       formData.append("file", batchFiles[0]);
-      endpoint = "https://pdfsolution.dpdns.org/convert_single_to_pdf";
+      endpoint = "https://pdfsolution.dpdns.org/convert_to_pdf";
     } else {
       batchFiles.forEach(file => {
-        formData.append("files", file);
+        formData.append("file", file);
       });
       endpoint = "https://pdfsolution.dpdns.org/batch-upload";
     }

@@ -225,7 +225,6 @@ export default function PdfToExcelPage() {
     formData.append("format", format);
     formData.append("output_dir", "./");
 
-    // 檢查 FormData 是否正確建立
     for (let pair of formData.entries()) {
       console.log('🧪 FormData:', pair[0], pair[1]);
     }
@@ -245,7 +244,7 @@ export default function PdfToExcelPage() {
         const clonedResponse = response.clone();
         let errorMessage = `Conversion failed with status: ${response.status}`;
         try {
-            const error = await response.json();
+            const error = await clonedResponse.json();
             errorMessage = String(error.error || "An unknown server error occurred.");
         } catch (e) {
              try {
@@ -438,4 +437,3 @@ export default function PdfToExcelPage() {
     </div>
   )
 }
-    

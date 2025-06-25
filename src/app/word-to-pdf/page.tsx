@@ -257,7 +257,7 @@ export default function WordToPdfPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedFile) {
-        toast({ title: texts.conversionError, description: texts.noFileSelected, variant: 'destructive'});
+        toast({ title: texts.conversionError, description: texts.noFilesSelected, variant: 'destructive'});
         return;
     }
     
@@ -275,7 +275,7 @@ export default function WordToPdfPage() {
     const timeoutId = setTimeout(() => controller.abort(), 60000);
 
     try {
-      const response = await fetch("https://pdfsolution.dpdns.org/convert_single_to_pdf", {
+      const response = await fetch("https://pdfsolution.dpdns.org/convert_to_pdf", {
         method: 'POST',
         body: formData,
         signal: controller.signal
@@ -286,10 +286,10 @@ export default function WordToPdfPage() {
         const clonedResponse = response.clone();
         let errorMessage = `Conversion failed with status: ${response.status}`;
         try {
-            const error = await response.json();
+            const error = await clonedResponse.json();
             errorMessage = String(error.error || "An unknown server error occurred.");
         } catch (e) {
-             const errorText = await clonedResponse.text();
+             const errorText = await response.text();
              errorMessage = `Server error: ${response.status}. Response: ${errorText.substring(0, 100)}`;
         }
         throw new Error(errorMessage);
@@ -392,10 +392,10 @@ export default function WordToPdfPage() {
 
     if (batchFiles.length === 1) {
       formData.append("file", batchFiles[0]);
-      endpoint = "https://pdfsolution.dpdns.org/convert_single_to_pdf";
+      endpoint = "https://pdfsolution.dpdns.org/convert_to_pdf";
     } else {
       batchFiles.forEach(file => {
-        formData.append("files", file);
+        formData.append("file", file);
       });
       endpoint = "https://pdfsolution.dpdns.org/batch-upload";
     }

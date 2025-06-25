@@ -30,6 +30,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Menubar,
   MenubarContent,
   MenubarItem,
@@ -336,7 +343,7 @@ const translations = {
         menuHelp: "Help",
         menuFileOpen: "Open File",
         menuFileNew: "New Document",
-        menuFileInsert: "Insert File",
+        insertPdf: "Insert PDF",
         menuFileSaveAs: "Save As",
         menuFileBatchConvert: "Batch Conversion",
         menuEditUndo: "Undo",
@@ -358,8 +365,8 @@ const translations = {
         toolShape: 'Shape',
         toolSignature: 'Sign',
         toolHand: 'Pan',
-        toolShapeShort: '圖形',
-        toolSignatureShort: '簽名',
+        toolShapeShort: 'Shape',
+        toolSignatureShort: 'Sign',
         toolPrint: 'Print',
         toolSearch: 'Search',
         toolSearchDoc: 'Search Document',
@@ -388,6 +395,11 @@ const translations = {
         convertConfirmDownload: 'Download',
         convertConfirmEdit: 'Open in Editor',
         convertingToPdf: 'Converting to PDF...',
+        toolInsertFile: 'Insert PDF',
+        insertAtStart: 'Insert at Beginning',
+        insertAtEnd: 'Insert at End',
+        insertBeforeSelection: 'Insert Before Selection',
+        insertAfterSelection: 'Insert After Selection',
     },
     zh: {
         pageTitle: 'PDF 編輯器 (專業模式)',
@@ -582,7 +594,7 @@ const translations = {
         menuHelp: "說明",
         menuFileOpen: "開啟檔案",
         menuFileNew: "新文件",
-        menuFileInsert: "插入文件",
+        insertPdf: "插入PDF",
         menuFileSaveAs: "另存新檔",
         menuFileBatchConvert: "批次轉換",
         menuEditUndo: "復原",
@@ -634,6 +646,11 @@ const translations = {
         convertConfirmDownload: '下載檔案',
         convertConfirmEdit: '進入編輯模式',
         convertingToPdf: '正在轉檔為 PDF...',
+        toolInsertFile: '插入PDF',
+        insertAtStart: '插入至開頭',
+        insertAtEnd: '插入至結尾',
+        insertBeforeSelection: '插入至選取頁之前',
+        insertAfterSelection: '插入至選取頁之後',
     }
 };
 
@@ -1059,9 +1076,6 @@ export default function PdfEditorPage() {
   const [loadingMessage, setLoadingMessage] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
   
-  const [isInsertConfirmOpen, setIsInsertConfirmOpen] = useState(false);
-  const [pendingInsertFile, setPendingInsertFile] = useState<File | null>(null);
-  
   const [textAnnotations, setTextAnnotations] = useState<TextAnnotation[]>([]);
   const [imageAnnotations, setImageAnnotations] = useState<ImageAnnotation[]>([]);
   const [highlightAnnotations, setHighlightAnnotations] = useState<HighlightAnnotation[]>([]);
@@ -1103,6 +1117,7 @@ export default function PdfEditorPage() {
   const sortableInstanceRef = useRef<Sortable | null>(null);
   
   const observerRef = useRef<IntersectionObserver | null>(null);
+  const insertionTargetRef = useRef<'start' | 'end' | 'before' | 'after'>('end');
 
   const [isScribbling, setIsScribbling] = useState(false);
   const scribblePointsRef = useRef<{x: number, y: number}[]>([]);
@@ -2298,30 +2313,43 @@ export default function PdfEditorPage() {
       });
     };
     
+    const handleInitiateInsert = (target: 'start' | 'end' | 'before' | 'after') => {
+      insertionTargetRef.current = target;
+      insertPdfRef.current?.click();
+    };
+
     const handleInsertFileSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0] || null;
         if (!file || !file.type.includes('pdf')) {
             if(file) toast({ title: 'Invalid file', description: currentLanguage === 'zh' ? '請選擇一個有效的 PDF 檔案。' : 'Please select a valid PDF file.', variant: "destructive" });
             return;
         }
-
-        setPendingInsertFile(file);
-        if (activePageIndex === null) {
-            setIsInsertConfirmOpen(true);
-        } else {
-            proceedWithInsert(file);
-        }
+        proceedWithInsert(file);
     };
 
-    const proceedWithInsert = async (fileToInsert?: File) => {
-        const file = fileToInsert || pendingInsertFile;
-        if (!file) return;
-
+    const proceedWithInsert = async (fileToInsert: File) => {
         setIsLoading(true);
         setLoadingMessage(texts.insertingPdf);
         try {
-            const newPages = await processPdfFile(file);
-            const insertAtIndex = activePageIndex === null ? pageObjects.length : activePageIndex + 1;
+            const newPages = await processPdfFile(fileToInsert);
+            let insertAtIndex: number;
+
+            switch (insertionTargetRef.current) {
+                case 'start':
+                    insertAtIndex = 0;
+                    break;
+                case 'end':
+                    insertAtIndex = pageObjects.length;
+                    break;
+                case 'before':
+                    insertAtIndex = activePageIndex ?? 0;
+                    break;
+                case 'after':
+                    insertAtIndex = (activePageIndex ?? pageObjects.length - 1) + 1;
+                    break;
+                default:
+                    insertAtIndex = pageObjects.length;
+            }
             
             setPageObjects(prev => {
                 const newArray = [...prev];
@@ -2329,15 +2357,13 @@ export default function PdfEditorPage() {
                 return newArray;
             });
             
-            toast({ title: "Insert Success", description: currentLanguage === 'zh' ? `${file.name} 已成功插入。` : `${file.name} has been inserted.` });
+            toast({ title: "Insert Success", description: currentLanguage === 'zh' ? `${fileToInsert.name} 已成功插入。` : `${fileToInsert.name} has been inserted.` });
 
         } catch (err: any) {
             toast({ title: texts.insertError, description: err.message, variant: "destructive" });
         } finally {
             setIsLoading(false);
             setLoadingMessage('');
-            setPendingInsertFile(null);
-            setIsInsertConfirmOpen(false);
             if (insertPdfRef.current) insertPdfRef.current.value = '';
         }
     };
@@ -2416,21 +2442,6 @@ export default function PdfEditorPage() {
         </div>
       )}
 
-      <AlertDialog open={isInsertConfirmOpen} onOpenChange={setIsInsertConfirmOpen}>
-        <AlertDialogContent>
-          <ShadAlertDialogHeader>
-            <ShadAlertDialogTitle>{texts.insertConfirmTitle}</ShadAlertDialogTitle>
-            <AlertDialogDescription>
-              {texts.insertConfirmDescription}
-            </AlertDialogDescription>
-          </ShadAlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setPendingInsertFile(null)}>{texts.cancel}</AlertDialogCancel>
-            <AlertDialogAction onClick={() => proceedWithInsert()}>{texts.confirm}</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       <AlertDialog open={isConvertConfirmOpen} onOpenChange={setIsConvertConfirmOpen}>
         <AlertDialogContent>
             <ShadAlertDialogHeader>
@@ -2494,9 +2505,18 @@ export default function PdfEditorPage() {
                              <MenubarItem onClick={() => triggerConvertUpload('.ppt,.pptx,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation')}>{texts.pptToPdf}</MenubarItem>
                          </MenubarSubContent>
                     </MenubarSub>
-                    <MenubarItem onClick={() => insertPdfRef.current?.click()} disabled={pageObjects.length === 0}>
-                        <FilePlus2 className="mr-2 h-4 w-4" />{texts.menuFileInsert}
-                    </MenubarItem>
+                    <MenubarSub>
+                        <MenubarSubTrigger disabled={pageObjects.length === 0}>
+                           <FilePlus2 className="mr-2 h-4 w-4" />{texts.insertPdf}
+                        </MenubarSubTrigger>
+                        <MenubarSubContent>
+                            <MenubarItem onClick={() => handleInitiateInsert('start')}>{texts.insertAtStart}</MenubarItem>
+                            <MenubarItem onClick={() => handleInitiateInsert('end')}>{texts.insertAtEnd}</MenubarItem>
+                            <MenubarSeparator />
+                            <MenubarItem onClick={() => handleInitiateInsert('before')} disabled={activePageIndex === null}>{texts.insertBeforeSelection}</MenubarItem>
+                            <MenubarItem onClick={() => handleInitiateInsert('after')} disabled={activePageIndex === null}>{texts.insertAfterSelection}</MenubarItem>
+                        </MenubarSubContent>
+                    </MenubarSub>
                     <MenubarSub>
                         <MenubarSubTrigger disabled={pageObjects.length === 0}>
                             <Save className="mr-2 h-4 w-4"/>{texts.menuFileSaveAs}
@@ -2604,15 +2624,27 @@ export default function PdfEditorPage() {
                 </TooltipTrigger>
                 <TooltipContent side="bottom"><p>{texts.menuEditInsertImage}</p></TooltipContent>
                 </Tooltip>
-                 <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={() => insertPdfRef.current?.click()} disabled={pageObjects.length === 0}>
-                            <FilePlus2 className="h-5 w-5" />
-                            <span className="text-xs">{currentLanguage === 'zh' ? '插入檔案' : 'Insert File'}</span>
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom"><p>{texts.menuFileInsert}</p></TooltipContent>
-                </Tooltip>
+                <DropdownMenu>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" disabled={pageObjects.length === 0}>
+                                    <FilePlus2 className="h-5 w-5" />
+                                    <span className="text-xs">{texts.toolInsertFile}</span>
+                                </Button>
+                            </DropdownMenuTrigger>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom"><p>{texts.insertPdf}</p></TooltipContent>
+                    </Tooltip>
+                    <DropdownMenuContent>
+                        <DropdownMenuItem onClick={() => handleInitiateInsert('start')}>{texts.insertAtStart}</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleInitiateInsert('end')}>{texts.insertAtEnd}</DropdownMenuItem>
+                        <DropdownMenuSeparator/>
+                        <DropdownMenuItem onClick={() => handleInitiateInsert('before')} disabled={activePageIndex === null}>{texts.insertBeforeSelection}</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleInitiateInsert('after')} disabled={activePageIndex === null}>{texts.insertAfterSelection}</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+
                 <Tooltip>
                 <TooltipTrigger asChild>
                     <Button variant={activeTool === 'highlight' ? "secondary" : "ghost"} className="flex flex-col h-auto p-2 space-y-1" onClick={() => { setActiveTool('highlight'); handleAddHighlightAnnotation(); }} disabled={activePageIndex === null}>

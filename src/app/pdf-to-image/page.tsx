@@ -11,6 +11,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarSub, MenubarSubContent, MenubarSubTrigger, MenubarTrigger } from "@/components/ui/menubar";
 import { Loader2, Upload, Scissors, Download, FilePlus, LogIn, LogOut, UserCircle, MenuSquare, ArrowRightLeft, Edit, FileUp, ListOrdered, Trash2, Combine, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText, Sparkles } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader as ShadAlertDialogHeader, AlertDialogTitle as ShadAlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 
 const translations = {
   en: {
@@ -61,6 +64,8 @@ const translations = {
     confirm: 'Confirm',
     convertLimitTitle: 'Conversion Limit Reached',
     convertLimitDescription: 'Your free conversion for today has been used. Register to get 3 conversions daily.',
+    targetFormat: 'Target Format',
+    selectFormat: 'Select image format',
   },
   zh: {
     pageTitle: 'PDF 轉圖片',
@@ -110,8 +115,12 @@ const translations = {
     confirm: '確認',
     convertLimitTitle: '轉檔次數已用完',
     convertLimitDescription: '您今日的免費轉檔次數已用完，註冊即可獲得每日 3 次轉換。',
+    targetFormat: '目標格式',
+    selectFormat: '選擇圖片格式',
   },
 };
+
+const supportedFormats = ['jpg', 'png', 'webp', 'tiff', 'bmp'];
 
 export default function PdfToImagePage() {
   const router = useRouter();
@@ -123,11 +132,11 @@ export default function PdfToImagePage() {
   
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [imageFormat, setImageFormat] = useState('jpg');
   const [isGuestLimitModalOpen, setIsGuestLimitModalOpen] = useState(false);
   const [guestLimitModalContent, setGuestLimitModalContent] = useState({ title: '', description: '' });
   
   const fileUploadRef = useRef<HTMLInputElement>(null);
-  const format = 'jpg'; // Hardcoded format
 
   useEffect(() => {
     setTexts(translations[currentLanguage] || translations.en);
@@ -221,7 +230,7 @@ export default function PdfToImagePage() {
     setIsLoading(true);
     const formData = new FormData();
     formData.append("file", selectedFile);
-    formData.append("format", format);
+    formData.append("format", imageFormat);
     formData.append("output_dir", "./");
 
     // 檢查 FormData 是否正確建立
@@ -426,6 +435,19 @@ export default function PdfToImagePage() {
                         className="hidden"
                     />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="image-format">{texts.targetFormat}</Label>
+                  <Select value={imageFormat} onValueChange={setImageFormat}>
+                      <SelectTrigger id="image-format" className="w-full">
+                          <SelectValue placeholder={texts.selectFormat} />
+                      </SelectTrigger>
+                      <SelectContent>
+                          {supportedFormats.map(f => (
+                              <SelectItem key={f} value={f}>{f.toUpperCase()}</SelectItem>
+                          ))}
+                      </SelectContent>
+                  </Select>
+                </div>
                 <Button type="submit" className="w-full" disabled={isLoading || !selectedFile}>
                   {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                   {texts.convertButton}
@@ -437,4 +459,6 @@ export default function PdfToImagePage() {
     </div>
   )
 }
+    
+
     

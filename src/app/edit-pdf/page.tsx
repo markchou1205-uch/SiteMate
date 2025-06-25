@@ -1433,6 +1433,34 @@ export default function PdfEditorPage() {
     loadPdfIntoEditor(file);
   };
 
+  const handleConfirmOpenNew = () => {
+    // Reset all document-related states
+    setPageObjects([]);
+    setSelectedPageIds(new Set());
+    setActivePageIndex(null);
+    setTextAnnotations([]);
+    setImageAnnotations([]);
+    setHighlightAnnotations([]);
+    setShapeAnnotations([]);
+    setMosaicAnnotations([]);
+    setSelectedObject(null);
+    setEditingAnnotationId(null);
+    setPageTextContents([]);
+    setHasTextLayer(false);
+    setSearchResults([]);
+    setCurrentSearchResultIndex(-1);
+    setSearchTerm('');
+    // ... any other state
+
+    // Trigger file upload
+    if (pdfUploadRef.current) {
+        pdfUploadRef.current.value = ''; // Important to allow selecting the same file again
+        pdfUploadRef.current.click();
+    }
+    
+    setIsNewDocConfirmOpen(false);
+  };
+
   const handleDeletePages = () => {
     if (selectedPageIds.size === 0) {
         toast({ title: texts.pageManagement, description: texts.noPageSelected, variant: "destructive" });
@@ -2461,7 +2489,6 @@ export default function PdfEditorPage() {
             setPendingFileToConvert(null);
         }
     };
-  
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground font-sans">
@@ -2483,10 +2510,7 @@ export default function PdfEditorPage() {
             </ShadAlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel>{texts.cancel}</AlertDialogCancel>
-                <AlertDialogAction onClick={() => {
-                    pdfUploadRef.current?.click();
-                    setIsNewDocConfirmOpen(false);
-                }}>{texts.confirm}</AlertDialogAction>
+                <AlertDialogAction onClick={handleConfirmOpenNew}>{texts.confirm}</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -2657,6 +2681,26 @@ export default function PdfEditorPage() {
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom"><p>{texts.toolHand}</p></TooltipContent>
+                </Tooltip>
+                 <Separator orientation="vertical" className="h-10 mx-2" />
+
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={() => handlePlaceholderClick('Undo')}>
+                           <Undo className="h-5 w-5" />
+                           <span className="text-xs">{texts.menuEditUndo}</span>
+                       </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom"><p>{texts.menuEditUndo}</p></TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={() => handlePlaceholderClick('Redo')}>
+                           <Redo className="h-5 w-5" />
+                           <span className="text-xs">{texts.menuEditRedo}</span>
+                       </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom"><p>{texts.menuEditRedo}</p></TooltipContent>
                 </Tooltip>
 
                 <Separator orientation="vertical" className="h-10 mx-2" />

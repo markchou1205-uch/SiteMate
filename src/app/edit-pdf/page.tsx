@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader as ShadAlertDialogHeader, AlertDialogTitle as ShadAlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose, DialogDescription } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -342,7 +342,7 @@ const translations = {
         menuTools: "Tools",
         menuHelp: "Help",
         menuFileOpen: "Open File",
-        menuFileNew: "Open New Document",
+        menuFileNew: "Open PDF Document",
         insertPdf: "Insert PDF",
         menuFileSaveAs: "Save As",
         menuFileBatchConvert: "Batch Conversion",
@@ -655,7 +655,7 @@ const translations = {
         insertAtEnd: '插入至結尾',
         insertBeforeSelection: '插入至選取頁之前',
         insertAfterSelection: '插入至選取頁之後',
-        newDocConfirmTitle: '確認開啟PDF文件',
+        newDocConfirmTitle: '確認開啟新文件',
         newDocConfirmDescription: '這將會關閉目前正在編輯的文件，且不會儲存變更。確定要繼續嗎？',
         downloadEditedFile: '下載編輯後的文件',
         toolDownload: '下載',
@@ -2579,7 +2579,7 @@ export default function PdfEditorPage() {
                         if (pageObjects.length > 0) {
                             setIsNewDocConfirmOpen(true);
                         } else {
-                            pdfUploadRef.current?.click();
+                            handleConfirmOpenNew();
                         }
                     }}><FilePlus className="mr-2 h-4 w-4"/>{texts.menuFileNew}</MenubarItem>
                     <MenubarSub>
@@ -2608,7 +2608,7 @@ export default function PdfEditorPage() {
                         </MenubarSubTrigger>
                         <MenubarSubContent>
                             {saveAsFormatOptions.map(opt => (
-                                <MenubarItem key={opt.value} onClick={() => handleSaveAsFormat(opt.value)}>{texts[opt.labelKey]}</MenubarItem>
+                                <MenubarItem key={opt.value} onClick={() => handleSaveAsFormat(opt.value)}>{opt.labelKey === 'downloadPdf' ? texts.downloadPdf : texts[opt.labelKey]}</MenubarItem>
                             ))}
                         </MenubarSubContent>
                     </MenubarSub>

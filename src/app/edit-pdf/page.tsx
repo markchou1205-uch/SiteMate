@@ -335,11 +335,18 @@ const translations = {
         menuPageDelete: "Delete Current Page",
         planInfo: (files: number, size: number) => `Your current plan allows you to upload ${files} files at once, with a total size of up to ${size}MB.`,
         usageInfo: (files: number, size: string, remainingFiles: number, remainingSize: string) => `You have selected ${files} file(s), with a total size of ${size}MB. (You can still upload ${remainingFiles} more files or ${remainingSize}MB).`,
+        toolSelect: 'Select',
+        toolPan: 'Pan',
+        toolText: 'Text',
+        toolImage: 'Image',
+        toolShape: 'Shape',
+        toolSignature: 'Sign',
         toolHand: 'Pan',
-        toolShape: 'Insert Shape',
-        toolSignature: 'Signature',
+        toolShapeShort: 'Shape',
+        toolSignatureShort: 'Sign',
         toolPrint: 'Print',
-        toolSearch: 'Search Document',
+        toolSearch: 'Search',
+        toolSearchDoc: 'Search Document',
         shapeRect: 'Rectangle',
         shapeCircle: 'Circle',
         shapeTriangle: 'Triangle',
@@ -471,15 +478,15 @@ const translations = {
         deletePageConfirmTitle: '刪除頁面？',
         deletePageConfirmDescription: '您確定要刪除此頁面嗎？此操作無法復原。',
         toolRotate: '旋轉',
-        toolDelete: 'Delete',
+        toolDelete: '刪除',
         toolAddBlank: '新增空白',
         toolMerge: '合併',
         toolSplit: '拆分',
         toolWatermark: '浮水印',
-        toolInsertText: '插入文字',
-        toolInsertImage: '插入圖片',
+        toolInsertText: '文字',
+        toolInsertImage: '圖片',
         toolHighlight: '螢光筆',
-        toolInsertLink: '插入連結',
+        toolInsertLink: '連結',
         toolInsertComment: '註解',
         zoomIn: '放大',
         zoomOut: '縮小',
@@ -566,11 +573,18 @@ const translations = {
         menuPageDelete: "刪除目前頁面",
         planInfo: (files: number, size: number) => `您加購的方案為：同時上傳 ${files} 份文件，大小總計不超過 ${size}MB。`,
         usageInfo: (files: number, size: string, remainingFiles: number, remainingSize: string) => `目前您已選擇 ${files} 份文件，大小總計 ${size}MB (尚可上傳 ${remainingFiles} 份文件或 ${remainingSize}MB)`,
-        toolHand: '平移',
-        toolShape: '插入圖形',
+        toolSelect: '選取',
+        toolPan: '平移',
+        toolText: '文字',
+        toolImage: '圖片',
+        toolShape: '圖形',
         toolSignature: '簽名',
+        toolHand: '平移',
+        toolShapeShort: '圖形',
+        toolSignatureShort: '簽名',
         toolPrint: '列印',
-        toolSearch: '搜尋文件',
+        toolSearch: '搜尋',
+        toolSearchDoc: '搜尋文件',
         shapeRect: '方形',
         shapeCircle: '圓形',
         shapeTriangle: '三角形',
@@ -693,24 +707,37 @@ const PagePreviewItem = React.memo(({
 });
 PagePreviewItem.displayName = 'PagePreviewItem';
 
-const ToolbarButton = ({ icon: Icon, label, onClick, disabled = false, popoverContent }: { icon: React.ElementType, label: string, onClick?: () => void, disabled?: boolean, popoverContent?: React.ReactNode }) => {
+const ToolbarButton = ({ icon: Icon, label, onClick, disabled = false, popoverContent, shortLabel }: { icon: React.ElementType, label: string, onClick?: () => void, disabled?: boolean, popoverContent?: React.ReactNode, shortLabel: string }) => {
+    const buttonContent = (
+        <div className="flex flex-col items-center justify-center h-16 w-full space-y-1">
+            <Icon className="h-5 w-5" />
+            <span className="text-xs text-muted-foreground">{shortLabel}</span>
+        </div>
+    );
+    
     const button = (
-        <Button
-            variant="ghost"
-            className="flex flex-col items-center justify-center h-20 w-full text-xs space-y-1"
-            onClick={onClick}
-            disabled={disabled}
-        >
-            <Icon className="h-6 w-6 text-primary" />
-            <span className="text-muted-foreground">{label}</span>
-        </Button>
+        <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        className="h-auto p-1"
+                        onClick={onClick}
+                        disabled={disabled}
+                    >
+                        {buttonContent}
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom"><p>{label}</p></TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
     );
 
     if (popoverContent) {
         return (
             <Popover>
                 <PopoverTrigger asChild disabled={disabled}>{button}</PopoverTrigger>
-                <PopoverContent className="w-80" side="left" align="start">
+                <PopoverContent className="w-80" side="bottom" align="start">
                     {popoverContent}
                 </PopoverContent>
             </Popover>
@@ -719,6 +746,7 @@ const ToolbarButton = ({ icon: Icon, label, onClick, disabled = false, popoverCo
 
     return button;
 };
+
 
 const fonts = [
   { name: 'Arial', value: 'Helvetica' },
@@ -879,6 +907,142 @@ const TriangleIcon = () => (
     </svg>
 )
 
+const ShapeAnnotationComponent = ({ annotation, onDragStart, onResizeStart, onClick, isSelected }: {
+    annotation: ShapeAnnotation;
+    onDragStart: (e: React.MouseEvent, id: string) => void;
+    onResizeStart: (e: React.MouseEvent, id: string) => void;
+    onClick: (e: React.MouseEvent, id: string) => void;
+    isSelected: boolean;
+}) => {
+    const shapeStyle = {
+        fill: annotation.fillColor,
+        stroke: annotation.strokeColor,
+        strokeWidth: annotation.strokeWidth,
+    };
+
+    const wrapperStyle = {
+        left: `${annotation.leftRatio * 100}%`,
+        top: `${annotation.topRatio * 100}%`,
+        width: `${annotation.widthRatio * 100}%`,
+        height: `${annotation.heightRatio * 100}%`,
+        zIndex: 18,
+    };
+
+    return (
+        <div
+            onMouseDown={(e) => onDragStart(e, annotation.id)}
+            onClick={(e) => onClick(e, annotation.id)}
+            className={cn("absolute cursor-grab", isSelected && "border-2 border-dashed border-primary")}
+            style={wrapperStyle}
+        >
+            <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+                {annotation.type === 'rect' && <rect x={0} y={0} width="100" height="100" {...shapeStyle} />}
+                {annotation.type === 'ellipse' && <ellipse cx="50" cy="50" rx="50" ry="50" {...shapeStyle} />}
+                {annotation.type === 'triangle' && <polygon points="50,0 100,100 0,100" {...shapeStyle} />}
+            </svg>
+            {isSelected && (
+                <div
+                    className="absolute -right-1 -bottom-1 w-4 h-4 bg-primary rounded-full border-2 border-white cursor-se-resize"
+                    onMouseDown={(e) => onResizeStart(e, annotation.id)}
+                />
+            )}
+        </div>
+    );
+};
+
+const SignaturePad = ({ onSave, texts }: { onSave: (dataUrl: string) => void, texts: typeof translations.en }) => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [isDrawing, setIsDrawing] = useState(false);
+    const [color, setColor] = useState('#000000');
+    const [strokeWidth, setStrokeWidth] = useState(2);
+    const lastPos = useRef({ x: 0, y: 0 });
+
+    const getMousePos = (canvas: HTMLCanvasElement, evt: React.MouseEvent | MouseEvent) => {
+        const rect = canvas.getBoundingClientRect();
+        return {
+            x: evt.clientX - rect.left,
+            y: evt.clientY - rect.top
+        };
+    };
+
+    const draw = (e: React.MouseEvent | MouseEvent) => {
+        if (!isDrawing || !canvasRef.current) return;
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        const pos = getMousePos(canvas, e);
+        if (ctx) {
+            ctx.beginPath();
+            ctx.moveTo(lastPos.current.x, lastPos.current.y);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = strokeWidth;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+        }
+        lastPos.current = pos;
+    };
+
+    const startDrawing = (e: React.MouseEvent) => {
+        if (!canvasRef.current) return;
+        setIsDrawing(true);
+        lastPos.current = getMousePos(canvasRef.current, e);
+    };
+
+    const stopDrawing = () => {
+        setIsDrawing(false);
+    };
+
+    const clearPad = () => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if(ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    };
+    
+    const handleSave = () => {
+        if (!canvasRef.current) return;
+        onSave(canvasRef.current.toDataURL('image/png'));
+    };
+    
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if(canvas) {
+            // Set canvas size based on its parent container for responsiveness
+            const parent = canvas.parentElement;
+            if(parent) {
+                canvas.width = parent.clientWidth;
+                canvas.height = 300;
+            }
+        }
+    }, [])
+
+    return (
+        <div className="flex flex-col gap-4">
+            <canvas
+                ref={canvasRef}
+                className="w-full bg-muted/50 rounded-md border cursor-crosshair"
+                onMouseDown={startDrawing}
+                onMouseMove={draw}
+                onMouseUp={stopDrawing}
+                onMouseLeave={stopDrawing}
+            />
+            <div className="flex justify-between items-center gap-4">
+                <div className='flex items-center gap-2'>
+                  <Label htmlFor="sig-color">{texts.signatureColor}</Label>
+                  <Input id="sig-color" type="color" value={color} onChange={e => setColor(e.target.value)} className="w-12 h-8 p-1"/>
+                </div>
+                <div className='flex items-center gap-2'>
+                  <Label htmlFor="sig-stroke">{texts.signatureStrokeWidth}</Label>
+                  <Slider id="sig-stroke" min={1} max={10} step={1} value={[strokeWidth]} onValueChange={val => setStrokeWidth(val[0])} className="w-32"/>
+                </div>
+                <Button variant="outline" onClick={clearPad}>{texts.signatureClear}</Button>
+                <Button onClick={handleSave}>{texts.signatureSave}</Button>
+            </div>
+        </div>
+    )
+}
+
+
 export default function PdfEditorPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -925,6 +1089,7 @@ export default function PdfEditorPage() {
   const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false);
 
   const [pageTextContents, setPageTextContents] = useState<PageTextContent[]>([]);
+  const [hasTextLayer, setHasTextLayer] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [currentSearchResultIndex, setCurrentSearchResultIndex] = useState(-1);
   const [searchTerm, setSearchTerm] = useState('');
@@ -1106,6 +1271,38 @@ export default function PdfEditorPage() {
       setMainCanvasZoom(newZoom);
   }, [activePageIndex, pageObjects]);
 
+  // Pan Tool Logic
+    const panState = useRef({ isPanning: false, startX: 0, startY: 0, scrollLeft: 0, scrollTop: 0 });
+
+    const handlePanMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (activeTool !== 'pan' || !mainViewContainerRef.current) return;
+        e.preventDefault();
+        panState.current = {
+            isPanning: true,
+            startX: e.pageX - mainViewContainerRef.current.offsetLeft,
+            startY: e.pageY - mainViewContainerRef.current.offsetTop,
+            scrollLeft: mainViewContainerRef.current.scrollLeft,
+            scrollTop: mainViewContainerRef.current.scrollTop,
+        };
+        mainViewContainerRef.current.style.cursor = 'grabbing';
+    };
+
+    const handlePanMouseUp = () => {
+        panState.current.isPanning = false;
+        if(mainViewContainerRef.current) mainViewContainerRef.current.style.cursor = 'grab';
+    };
+    
+    const handlePanMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (!panState.current.isPanning || !mainViewContainerRef.current) return;
+        e.preventDefault();
+        const x = e.pageX - mainViewContainerRef.current.offsetLeft;
+        const y = e.pageY - mainViewContainerRef.current.offsetTop;
+        const walkX = (x - panState.current.startX);
+        const walkY = (y - panState.current.startY);
+        mainViewContainerRef.current.scrollLeft = panState.current.scrollLeft - walkX;
+        mainViewContainerRef.current.scrollTop = panState.current.scrollTop - walkY;
+    };
+
 
   const updateLanguage = (lang: 'en' | 'zh') => {
     setCurrentLanguage(lang);
@@ -1185,6 +1382,7 @@ export default function PdfEditorPage() {
       loadedPageObjects.push({ id: uuidv4(), sourceCanvas: canvas, rotation: 0 });
 
       const textContent = await page.getTextContent();
+      if(textContent.items.length > 0) setHasTextLayer(true);
       textContents.push({ pageIndex: i - 1, items: textContent.items });
     }
     setPageTextContents(textContents);
@@ -1217,6 +1415,7 @@ export default function PdfEditorPage() {
     setSelectedHighlightId(null);
     setShapeAnnotations([]);
     setSelectedShapeId(null);
+    setHasTextLayer(false);
 
     setIsLoading(true);
     setLoadingMessage(texts.loadingPdf);
@@ -1227,7 +1426,7 @@ export default function PdfEditorPage() {
       setActivePageIndex(0);
       setViewMode('editor');
       
-      setTimeout(() => handleFitToPage(), 100);
+      setTimeout(() => handleFitToWidth(), 100);
 
     } catch (err: any)
     {
@@ -1898,6 +2097,12 @@ export default function PdfEditorPage() {
         if (selectedShapeId === id) setSelectedShapeId(null);
     }
 
+    const handleSaveSignature = (dataUrl: string) => {
+        if(activePageIndex === null) return;
+        addImageAnnotation(dataUrl, activePageIndex);
+        setIsSignatureDialogOpen(false);
+    }
+
 
     const handleAnnotationWrapperClick = (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
@@ -2473,154 +2678,157 @@ export default function PdfEditorPage() {
         </Menubar>
     </header>
 
-    <div className="p-2 border-b bg-card flex items-center justify-center gap-1 sticky top-[56px] z-30">
-        <TooltipProvider>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button variant={activeTool === 'select' ? "secondary" : "ghost"} size="icon" onClick={() => setActiveTool('select')}><MousePointerSquareDashed className="h-5 w-5" /></Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom"><p>Select</p></TooltipContent>
-            </Tooltip>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button variant={activeTool === 'pan' ? "secondary" : "ghost"} size="icon" onClick={() => setActiveTool('pan')}><Hand className="h-5 w-5" /></Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom"><p>{texts.toolHand}</p></TooltipContent>
-            </Tooltip>
-
-            <Separator orientation="vertical" className="h-6 mx-2" />
-
-            {/* Edit Tools */}
-            <Tooltip>
-            <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={() => handlePlaceholderClick('Undo')}><Undo className="h-5 w-5" /></Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom"><p>{texts.menuEditUndo}</p></TooltipContent>
-            </Tooltip>
-            <Tooltip>
-            <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={() => handlePlaceholderClick('Redo')}><Redo className="h-5 w-5" /></Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom"><p>{texts.menuEditRedo}</p></TooltipContent>
-            </Tooltip>
-
-            <Separator orientation="vertical" className="h-6 mx-2" />
-
-            <Tooltip>
-            <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={handleAddTextAnnotation} disabled={activePageIndex === null}><Type className="h-5 w-5" /></Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom"><p>{texts.menuEditInsertText}</p></TooltipContent>
-            </Tooltip>
-            <Tooltip>
-            <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={() => imageUploadRef.current?.click()} disabled={activePageIndex === null}><ImagePlus className="h-5 w-5" /></Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom"><p>{texts.menuEditInsertImage}</p></TooltipContent>
-            </Tooltip>
-            <Tooltip>
-            <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={handleAddHighlightAnnotation} disabled={activePageIndex === null}><Highlighter className="h-5 w-5" /></Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom"><p>{texts.menuEditHighlight}</p></TooltipContent>
-            </Tooltip>
-            <Popover open={isLinkPopoverOpen} onOpenChange={setIsLinkPopoverOpen}>
+    <div className="p-2 border-b bg-card flex items-center justify-between gap-1 sticky top-[56px] z-30">
+        <div className='flex items-center gap-1'>
+            <TooltipProvider>
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <PopoverTrigger asChild>
-                            <Button variant="ghost" size="icon" disabled={!selectedAnnotationId && !selectedImageId} onClick={handleOpenLinkPopover}>
-                                <LinkIcon className="h-5 w-5"/>
-                            </Button>
-                        </PopoverTrigger>
+                        <Button variant={activeTool === 'select' ? "secondary" : "ghost"} className="flex flex-col h-auto p-2 space-y-1" onClick={() => setActiveTool('select')}>
+                            <MousePointerSquareDashed className="h-5 w-5" />
+                            <span className="text-xs">{texts.toolSelect}</span>
+                        </Button>
                     </TooltipTrigger>
-                    <TooltipContent side="bottom"><p>{texts.menuEditInsertLink}</p></TooltipContent>
+                    <TooltipContent side="bottom"><p>Select</p></TooltipContent>
                 </Tooltip>
-                <PopoverContent className="w-80" side="bottom" align="start">
-                    {linkPopoverContent}
-                </PopoverContent>
-            </Popover>
-            <Popover>
                 <Tooltip>
-                    <TooltipTrigger asChild><PopoverTrigger asChild><Button variant="ghost" size="icon" disabled={activePageIndex === null}><Square className="h-5 w-5" /></Button></PopoverTrigger></TooltipTrigger>
-                    <TooltipContent side="bottom"><p>{texts.toolShape}</p></TooltipContent>
+                    <TooltipTrigger asChild>
+                        <Button variant={activeTool === 'pan' ? "secondary" : "ghost"} className="flex flex-col h-auto p-2 space-y-1" onClick={() => setActiveTool('pan')}>
+                            <Hand className="h-5 w-5" />
+                            <span className="text-xs">{texts.toolPan}</span>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom"><p>{texts.toolHand}</p></TooltipContent>
                 </Tooltip>
-                 <PopoverContent className="w-auto p-2 flex gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => handleAddShapeAnnotation('rect')}><Square className="h-5 w-5 text-primary" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleAddShapeAnnotation('ellipse')}><Circle className="h-5 w-5 text-primary" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleAddShapeAnnotation('triangle')}><TriangleIcon /></Button>
-                </PopoverContent>
-            </Popover>
-            <Dialog open={isSignatureDialogOpen} onOpenChange={setIsSignatureDialogOpen}>
+
+                <Separator orientation="vertical" className="h-10 mx-2" />
+
                 <Tooltip>
-                    <TooltipTrigger asChild><DialogTrigger asChild><Button variant="ghost" size="icon" disabled={activePageIndex === null}><Pencil className="h-5 w-5" /></Button></DialogTrigger></TooltipTrigger>
-                    <TooltipContent side="bottom"><p>{texts.toolSignature}</p></TooltipContent>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={handleAddTextAnnotation} disabled={activePageIndex === null}>
+                        <Type className="h-5 w-5" />
+                        <span className="text-xs">{texts.toolInsertText}</span>
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom"><p>{texts.menuEditInsertText}</p></TooltipContent>
                 </Tooltip>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{texts.signaturePadTitle}</DialogTitle>
-                        <DialogDescription>{texts.signaturePadDescription}</DialogDescription>
-                    </DialogHeader>
-                    {/* Signature Pad Component would go here */}
-                    <DialogFooter>
-                        <DialogClose asChild><Button variant="secondary">{texts.cancel}</Button></DialogClose>
-                        <Button onClick={() => { /* logic to save signature */ setIsSignatureDialogOpen(false); }}>{texts.signatureSave}</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            <Separator orientation="vertical" className="h-6 mx-2" />
-            
-            <Tooltip>
-                <TooltipTrigger asChild><Button variant="ghost" size="icon" onClick={() => window.print()}><Printer className="h-5 w-5" /></Button></TooltipTrigger>
-                <TooltipContent side="bottom"><p>{texts.toolPrint}</p></TooltipContent>
-            </Tooltip>
-            
-            <Popover>
                 <Tooltip>
-                    <TooltipTrigger asChild><PopoverTrigger asChild><Button variant="ghost" size="icon"><SearchIcon className="h-5 w-5" /></Button></PopoverTrigger></TooltipTrigger>
-                    <TooltipContent side="bottom"><p>{texts.toolSearch}</p></TooltipContent>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={() => imageUploadRef.current?.click()} disabled={activePageIndex === null}>
+                        <ImagePlus className="h-5 w-5" />
+                        <span className="text-xs">{texts.toolInsertImage}</span>
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom"><p>{texts.menuEditInsertImage}</p></TooltipContent>
                 </Tooltip>
-                <PopoverContent side="bottom">
-                    <div className="grid gap-4">
-                        {/* Search Component would go here */}
-                    </div>
-                </PopoverContent>
-            </Popover>
-            
+                <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={handleAddHighlightAnnotation} disabled={activePageIndex === null}>
+                        <Highlighter className="h-5 w-5" />
+                        <span className="text-xs">{texts.toolHighlight}</span>
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom"><p>{texts.menuEditHighlight}</p></TooltipContent>
+                </Tooltip>
+                <Popover>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <PopoverTrigger asChild>
+                                <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" disabled={activePageIndex === null}>
+                                    <Square className="h-5 w-5" />
+                                    <span className="text-xs">{texts.toolShapeShort}</span>
+                                </Button>
+                            </PopoverTrigger>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom"><p>{texts.toolShape}</p></TooltipContent>
+                    </Tooltip>
+                     <PopoverContent className="w-auto p-2 flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => handleAddShapeAnnotation('rect')}><Square className="h-5 w-5 text-primary" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleAddShapeAnnotation('ellipse')}><Circle className="h-5 w-5 text-primary" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleAddShapeAnnotation('triangle')}><TriangleIcon /></Button>
+                    </PopoverContent>
+                </Popover>
+                <Dialog open={isSignatureDialogOpen} onOpenChange={setIsSignatureDialogOpen}>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <DialogTrigger asChild>
+                                <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" disabled={activePageIndex === null}>
+                                    <Pencil className="h-5 w-5" />
+                                    <span className="text-xs">{texts.toolSignatureShort}</span>
+                                </Button>
+                            </DialogTrigger>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom"><p>{texts.toolSignature}</p></TooltipContent>
+                    </Tooltip>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>{texts.signaturePadTitle}</DialogTitle>
+                            <DialogDescription>{texts.signaturePadDescription}</DialogDescription>
+                        </DialogHeader>
+                        <SignaturePad onSave={handleSaveSignature} texts={texts}/>
+                    </DialogContent>
+                </Dialog>
 
-            <Separator orientation="vertical" className="h-6 mx-2" />
+                <Separator orientation="vertical" className="h-10 mx-2" />
 
-            {/* Page Tools */}
-            <Tooltip>
-            <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={() => handleRotatePage('cw')} disabled={activePageIndex === null}><RotateCw className="h-5 w-5" /></Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom"><p>{texts.menuPageRotateCW}</p></TooltipContent>
-            </Tooltip>
-            <Tooltip>
-            <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={() => handleRotatePage('ccw')} disabled={activePageIndex === null}><RotateCcw className="h-5 w-5" /></Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom"><p>{texts.menuPageRotateCCW}</p></TooltipContent>
-            </Tooltip>
-            
-            <Separator orientation="vertical" className="h-6 mx-2" />
-            
-            <Tooltip>
-            <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={handleAddBlankPage}><FilePlus2 className="h-5 w-5" /></Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom"><p>{texts.menuPageAddBlank}</p></TooltipContent>
-            </Tooltip>
-            <Tooltip>
-            <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={() => { if(activePageIndex !== null) { setPageToDelete(activePageIndex); setIsDeleteConfirmOpen(true); } }} disabled={activePageIndex === null}>
-                    <Trash2 className="h-5 w-5 text-destructive"/>
-                </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom"><p>{texts.menuPageDelete}</p></TooltipContent>
-            </Tooltip>
-        </TooltipProvider>
+                <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={() => handleRotatePage('ccw')} disabled={activePageIndex === null}>
+                        <RotateCcw className="h-5 w-5" />
+                        <span className="text-xs">{texts.toolRotate}</span>
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom"><p>{texts.menuPageRotateCCW}</p></TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={handleAddBlankPage}>
+                        <FilePlus2 className="h-5 w-5" />
+                        <span className="text-xs">{texts.toolAddBlank}</span>
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom"><p>{texts.menuPageAddBlank}</p></TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={() => { if(activePageIndex !== null) { setPageToDelete(activePageIndex); setIsDeleteConfirmOpen(true); } }} disabled={activePageIndex === null}>
+                        <Trash2 className="h-5 w-5 text-destructive"/>
+                        <span className="text-xs text-destructive">{texts.toolDelete}</span>
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom"><p>{texts.menuPageDelete}</p></TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+        </div>
+        <div className="flex items-center gap-1">
+             <TooltipProvider>
+                 <Tooltip>
+                    <TooltipTrigger asChild><Button variant="ghost" size="icon" onClick={() => window.print()}><Printer className="h-5 w-5" /></Button></TooltipTrigger>
+                    <TooltipContent side="bottom"><p>{texts.toolPrint}</p></TooltipContent>
+                </Tooltip>
+                <Popover>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <PopoverTrigger asChild>
+                                 <Button variant="ghost" size="icon" onClick={() => {
+                                     if (!hasTextLayer) {
+                                         toast({title: texts.searchNoResults, description: texts.noTextInPdf, variant: 'destructive'})
+                                     }
+                                 }} disabled={!hasTextLayer}>
+                                     <SearchIcon className="h-5 w-5" />
+                                 </Button>
+                             </PopoverTrigger>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom"><p>{texts.toolSearchDoc}</p></TooltipContent>
+                    </Tooltip>
+                    <PopoverContent side="bottom">
+                        <div className="grid gap-4">
+                            {/* Search Component would go here */}
+                             <p>Search coming soon</p>
+                        </div>
+                    </PopoverContent>
+                </Popover>
+            </TooltipProvider>
+        </div>
     </div>
 
 
@@ -2764,7 +2972,13 @@ export default function PdfEditorPage() {
                     })}
                 </div>
 
-                <div ref={mainViewContainerRef} className={cn("flex-grow bg-muted/30 overflow-y-auto flex flex-col items-center p-4 space-y-4 relative", activeTool === 'pan' && 'cursor-grab')}>
+                <div ref={mainViewContainerRef} 
+                    className={cn("flex-grow bg-muted/30 overflow-auto flex flex-col items-center p-4 space-y-4 relative", activeTool === 'pan' && 'cursor-grab')}
+                    onMouseDown={handlePanMouseDown}
+                    onMouseMove={handlePanMouseMove}
+                    onMouseUp={handlePanMouseUp}
+                    onMouseLeave={handlePanMouseUp}
+                >
                     {pageObjects.map((page, index) => {
                         const {sourceCanvas, rotation} = page;
                         
@@ -2776,7 +2990,8 @@ export default function PdfEditorPage() {
                                 className="shadow-lg bg-white relative my-2 main-page-container" 
                                 style={{
                                     width: (rotation % 180 !== 0 ? sourceCanvas.height : sourceCanvas.width) * mainCanvasZoom,
-                                    height: (rotation % 180 !== 0 ? sourceCanvas.width : sourceCanvas.height) * mainCanvasZoom
+                                    height: (rotation % 180 !== 0 ? sourceCanvas.width : sourceCanvas.height) * mainCanvasZoom,
+                                    flexShrink: 0
                                 }}
                             >
                                 <canvas
@@ -2844,6 +3059,19 @@ export default function PdfEditorPage() {
                                         )}
                                     </div>
                                 ))}
+                                {shapeAnnotations.filter(ann => ann.pageIndex === index).map(ann => (
+                                    <ShapeAnnotationComponent
+                                        key={ann.id}
+                                        annotation={ann}
+                                        isSelected={selectedShapeId === ann.id}
+                                        onDragStart={(e, id) => handleDragMouseDown(e, 'shape', id)}
+                                        onResizeStart={(e, id) => handleDragMouseDown(e, 'shape-resize', id)}
+                                        onClick={(e, id) => {
+                                            e.stopPropagation();
+                                            if(!isDraggingRef.current) setSelectedShapeId(id);
+                                        }}
+                                    />
+                                ))}
                                 {imageAnnotations.filter(ann => ann.pageIndex === index).map(ann => (
                                     <div
                                         key={ann.id}
@@ -2908,7 +3136,7 @@ export default function PdfEditorPage() {
                         <Button variant="ghost" size="icon" onClick={() => handleZoom('out')} title={texts.zoomOut}><ZoomOut className="h-5 w-5" /></Button>
                         <div className="w-20 text-center text-sm font-medium tabular-nums text-foreground" title="Current zoom">{`${Math.round(mainCanvasZoom * 100)}%`}</div>
                         <Button variant="ghost" size="icon" onClick={() => handleZoom('in')} title={texts.zoomIn}><ZoomIn className="h-5 w-5" /></Button>
-                        <Separator orientation="vertical" className="h-6 mx-1" />
+                         <Separator orientation="vertical" className="h-6 mx-1" />
                         <Button variant="ghost" size="icon" onClick={handleFitToPage} title={texts.fitToPage}><Expand className="h-5 w-5" /></Button>
                         <Button variant="ghost" size="icon" onClick={handleFitToWidth} title={texts.fitToWidth}><Columns className="h-5 w-5" /></Button>
                          <Separator orientation="vertical" className="h-6 mx-1" />
@@ -2923,3 +3151,6 @@ export default function PdfEditorPage() {
   );
 }
 
+
+
+    

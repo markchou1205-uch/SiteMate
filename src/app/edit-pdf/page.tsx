@@ -27,6 +27,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Toggle } from "@/components/ui/toggle";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Progress } from "@/components/ui/progress";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Menubar,
   MenubarContent,
@@ -2145,8 +2146,8 @@ export default function PdfEditorPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-    <header className="p-0 border-b bg-card sticky top-0 z-40 flex-shrink-0">
-        <Menubar className="rounded-none border-x-0 h-14 px-4 lg:px-6">
+    <header className="p-0 border-b bg-card sticky top-0 z-40 flex-shrink-0 h-14">
+        <Menubar className="rounded-none border-x-0 h-full px-4 lg:px-6">
             <div className="flex items-center gap-2">
                 <MenuSquare className="h-6 w-6 text-primary"/>
                 <h1 className="text-lg font-bold">{texts.appTitle}</h1>
@@ -2308,6 +2309,93 @@ export default function PdfEditorPage() {
             </MenubarMenu>
         </Menubar>
     </header>
+
+    <div className="p-2 border-b bg-card flex items-center justify-center gap-1 sticky top-[56px] z-30">
+        <TooltipProvider>
+            {/* Edit Tools */}
+            <Tooltip>
+            <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" onClick={() => handlePlaceholderClick('Undo')}><Undo className="h-5 w-5" /></Button>
+            </TooltipTrigger>
+            <TooltipContent><p>{texts.menuEditUndo}</p></TooltipContent>
+            </Tooltip>
+            <Tooltip>
+            <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" onClick={() => handlePlaceholderClick('Redo')}><Redo className="h-5 w-5" /></Button>
+            </TooltipTrigger>
+            <TooltipContent><p>{texts.menuEditRedo}</p></TooltipContent>
+            </Tooltip>
+
+            <Separator orientation="vertical" className="h-6 mx-2" />
+
+            <Tooltip>
+            <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" onClick={handleAddTextAnnotation} disabled={activePageIndex === null}><Type className="h-5 w-5" /></Button>
+            </TooltipTrigger>
+            <TooltipContent><p>{texts.menuEditInsertText}</p></TooltipContent>
+            </Tooltip>
+            <Tooltip>
+            <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" onClick={() => imageUploadRef.current?.click()} disabled={activePageIndex === null}><ImagePlus className="h-5 w-5" /></Button>
+            </TooltipTrigger>
+            <TooltipContent><p>{texts.menuEditInsertImage}</p></TooltipContent>
+            </Tooltip>
+            <Tooltip>
+            <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" onClick={handleAddHighlightAnnotation} disabled={activePageIndex === null}><Highlighter className="h-5 w-5" /></Button>
+            </TooltipTrigger>
+            <TooltipContent><p>{texts.menuEditHighlight}</p></TooltipContent>
+            </Tooltip>
+            <Popover open={isLinkPopoverOpen} onOpenChange={setIsLinkPopoverOpen}>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <PopoverTrigger asChild>
+                            <Button variant="ghost" size="icon" disabled={!selectedAnnotationId && !selectedImageId} onClick={handleOpenLinkPopover}>
+                                <LinkIcon className="h-5 w-5"/>
+                            </Button>
+                        </PopoverTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent><p>{texts.menuEditInsertLink}</p></TooltipContent>
+                </Tooltip>
+                <PopoverContent className="w-80" side="bottom" align="start">
+                    {linkPopoverContent}
+                </PopoverContent>
+            </Popover>
+
+            <Separator orientation="vertical" className="h-6 mx-2" />
+
+            {/* Page Tools */}
+            <Tooltip>
+            <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" onClick={() => handleRotatePage('cw')} disabled={activePageIndex === null}><RotateCw className="h-5 w-5" /></Button>
+            </TooltipTrigger>
+            <TooltipContent><p>{texts.menuPageRotateCW}</p></TooltipContent>
+            </Tooltip>
+            <Tooltip>
+            <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" onClick={() => handleRotatePage('ccw')} disabled={activePageIndex === null}><RotateCcw className="h-5 w-5" /></Button>
+            </TooltipTrigger>
+            <TooltipContent><p>{texts.menuPageRotateCCW}</p></TooltipContent>
+            </Tooltip>
+            
+            <Separator orientation="vertical" className="h-6 mx-2" />
+            
+            <Tooltip>
+            <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" onClick={handleAddBlankPage}><FilePlus2 className="h-5 w-5" /></Button>
+            </TooltipTrigger>
+            <TooltipContent><p>{texts.menuPageAddBlank}</p></TooltipContent>
+            </Tooltip>
+            <Tooltip>
+            <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" onClick={() => { if(activePageIndex !== null) { setPageToDelete(activePageIndex); setIsDeleteConfirmOpen(true); } }} disabled={activePageIndex === null}>
+                    <Trash2 className="h-5 w-5 text-destructive"/>
+                </Button>
+            </TooltipTrigger>
+            <TooltipContent><p>{texts.menuPageDelete}</p></TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
+    </div>
 
 
       <main className="flex-grow flex overflow-hidden relative" onClick={(e) => {

@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader as ShadAlertDialogHeader, AlertDialogTitle as ShadAlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader as ShadAlertDialogHeader, AlertDialogTitle as ShadAlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose, DialogDescription } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -321,6 +321,7 @@ const translations = {
         menuHelp: "Help",
         menuFileOpen: "Open File",
         menuFileNew: "New Document",
+        menuFileInsert: "Insert File",
         menuFileSaveAs: "Save As",
         menuFileBatchConvert: "Batch Conversion",
         menuEditUndo: "Undo",
@@ -559,6 +560,7 @@ const translations = {
         menuHelp: "說明",
         menuFileOpen: "開啟檔案",
         menuFileNew: "新文件",
+        menuFileInsert: "插入文件",
         menuFileSaveAs: "另存新檔",
         menuFileBatchConvert: "批次轉換",
         menuEditUndo: "復原",
@@ -1121,6 +1123,7 @@ export default function PdfEditorPage() {
 
   const pdfUploadRef = useRef<HTMLInputElement>(null);
   const imageUploadRef = useRef<HTMLInputElement>(null);
+  const insertPdfRef = useRef<HTMLInputElement>(null);
   const sortableInstanceRef = useRef<Sortable | null>(null);
   
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -1504,213 +1507,207 @@ export default function PdfEditorPage() {
     return await pdfDoc.embedFont(font);
   };
 
+  const generatePdfBytes = async (): Promise<Uint8Array> => {
+    const pdfDocOut = await PDFLibDocument.create();
+
+    for (const [index, pageObj] of pageObjects.entries()) {
+      const { sourceCanvas, rotation } = pageObj;
+
+      const tempRenderCanvas = document.createElement('canvas');
+      const tempCtx = tempRenderCanvas.getContext('2d');
+      if (!tempCtx) continue;
+
+      const rad = rotation * Math.PI / 180;
+
+      if (rotation % 180 !== 0) {
+        tempRenderCanvas.width = sourceCanvas.height;
+        tempRenderCanvas.height = sourceCanvas.width;
+      } else {
+        tempRenderCanvas.width = sourceCanvas.width;
+        tempRenderCanvas.height = sourceCanvas.height;
+      }
+
+      tempCtx.translate(tempRenderCanvas.width / 2, tempRenderCanvas.height / 2);
+      tempCtx.rotate(rad);
+      tempCtx.drawImage(sourceCanvas, -sourceCanvas.width / 2, -sourceCanvas.height / 2, sourceCanvas.width, sourceCanvas.height);
+
+      const imgDataUrl = tempRenderCanvas.toDataURL('image/png');
+      const pngImage = await pdfDocOut.embedPng(imgDataUrl);
+
+      const pdfLibPage = pdfDocOut.addPage([tempRenderCanvas.width, tempRenderCanvas.height]);
+      pdfLibPage.drawImage(pngImage, { x: 0, y: 0, width: tempRenderCanvas.width, height: tempRenderCanvas.height });
+
+      const { width: pageWidth, height: pageHeight } = pdfLibPage.getSize();
+
+      for (const annotation of highlightAnnotations.filter(a => a.pageIndex === index)) {
+          const { r, g, b, a } = parseRgba(annotation.color);
+          pdfLibPage.drawRectangle({
+              x: annotation.leftRatio * pageWidth,
+              y: pageHeight - (annotation.topRatio * pageHeight) - (annotation.heightRatio * pageHeight),
+              width: annotation.widthRatio * pageWidth,
+              height: annotation.heightRatio * pageHeight,
+              color: rgb(r, g, b),
+              opacity: a,
+              blendMode: BlendMode.Multiply,
+          });
+      }
+      
+      for (const annotation of shapeAnnotations.filter(a => a.pageIndex === index)) {
+          const x = annotation.leftRatio * pageWidth;
+          const y = pageHeight - (annotation.topRatio * pageHeight) - (annotation.heightRatio * pageHeight);
+          const width = annotation.widthRatio * pageWidth;
+          const height = annotation.heightRatio * pageHeight;
+          const { r: fillR, g: fillG, b: fillB } = hexToRgb(annotation.fillColor);
+          const { r: strokeR, g: strokeG, b: strokeB } = hexToRgb(annotation.strokeColor);
+
+          if (annotation.type === 'rect') {
+              pdfLibPage.drawRectangle({ x, y, width, height, color: rgb(fillR, fillG, fillB), borderColor: rgb(strokeR, strokeG, strokeB), borderWidth: annotation.strokeWidth });
+          } else if (annotation.type === 'ellipse') {
+              pdfLibPage.drawEllipse({ x: x + width/2, y: y + height/2, xScale: width/2, yScale: height/2, color: rgb(fillR, fillG, fillB), borderColor: rgb(strokeR, strokeG, strokeB), borderWidth: annotation.strokeWidth });
+          } else if (annotation.type === 'triangle') {
+               const points = [ {x: x + width / 2, y: y + height}, {x: x, y}, {x: x + width, y} ];
+               pdfLibPage.drawPolygon({ points, color: rgb(fillR, fillG, fillB), borderColor: rgb(strokeR, strokeG, strokeB), borderWidth: annotation.strokeWidth });
+          }
+      }
+
+      for (const annotation of imageAnnotations.filter(a => a.pageIndex === index)) {
+          let embeddedImage;
+          if (annotation.dataUrl.startsWith('data:image/png')) {
+              embeddedImage = await pdfDocOut.embedPng(annotation.dataUrl);
+          } else if (annotation.dataUrl.startsWith('data:image/jpeg')) {
+              embeddedImage = await pdfDocOut.embedJpg(annotation.dataUrl);
+          } else {
+              continue;
+          }
+
+          const imgX = annotation.leftRatio * pageWidth;
+          const imgHeight = annotation.heightRatio * pageHeight;
+          const imgY = pageHeight - (annotation.topRatio * pageHeight) - imgHeight;
+          const imgWidth = annotation.widthRatio * pageWidth;
+          
+          pdfLibPage.drawImage(embeddedImage, { x: imgX, y: imgY, width: imgWidth, height: imgHeight });
+
+          if (annotation.link) {
+              const linkRect = { x: imgX, y: imgY, width: imgWidth, height: imgHeight };
+              if(annotation.link.type === 'url') {
+                  pdfLibPage.addURIAnnotation(linkRect, annotation.link.value);
+              } else if (annotation.link.type === 'page') {
+                  const targetPageNum = parseInt(annotation.link.value, 10);
+                  if (!isNaN(targetPageNum) && targetPageNum > 0 && targetPageNum <= pdfDocOut.getPageCount()) {
+                     const targetPage = pdfDocOut.getPages()[targetPageNum - 1];
+                     pdfLibPage.addLinkAnnotation(linkRect, targetPage);
+                  }
+              }
+          }
+      }
+      
+      for (const annotation of textAnnotations.filter(a => a.pageIndex === index)) {
+          const font = await getPdfFont(pdfDocOut, annotation);
+          const { r, g, b } = hexToRgb(annotation.color);
+          const boxWidth = annotation.widthRatio * pageWidth;
+
+          const textLayout = layoutMultilineText(annotation.text, {
+              font,
+              bounds: { width: boxWidth, height: Infinity },
+              fontSize: annotation.fontSize,
+              lineHeight: annotation.fontSize * 1.2,
+              alignment: annotation.textAlign === 'left' ? 0 : annotation.textAlign === 'center' ? 1 : 2,
+          });
+
+          const textHeight = textLayout.lines.length * annotation.fontSize * 1.2;
+          const x = annotation.leftRatio * pageWidth;
+          const y = pageHeight - (annotation.topRatio * pageHeight);
+
+          pdfLibPage.pushGraphicsState();
+          pdfLibPage.drawText(textLayout.lines.map(l => l.text).join('\n'), {
+              x,
+              y: y - font.ascent * (annotation.fontSize / font.unitsPerEm), // Adjust for baseline
+              font,
+              size: annotation.fontSize,
+              color: rgb(r, g, b),
+              lineHeight: annotation.fontSize * 1.2,
+              maxWidth: boxWidth,
+              wordBreaks: [' '],
+          });
+
+          if (annotation.underline) {
+            const textWidth = font.widthOfTextAtSize(textLayout.lines.map(l=>l.text).join('\n'), annotation.fontSize);
+            textLayout.lines.forEach((line, i) => {
+                const lineY = y - (font.ascent * (annotation.fontSize / font.unitsPerEm)) - (i * annotation.fontSize * 1.2) - 2;
+                 pdfLibPage.drawLine({
+                    start: { x: x, y: lineY },
+                    end: { x: x + line.width, y: lineY },
+                    thickness: 0.5,
+                    color: rgb(r, g, b)
+                });
+            });
+          }
+          pdfLibPage.popGraphicsState();
+
+          if (annotation.link) {
+              const linkRect = { x, y: y - textHeight, width: boxWidth, height: textHeight };
+              if(annotation.link.type === 'url') {
+                  pdfLibPage.addURIAnnotation(linkRect, annotation.link.value);
+              } else if (annotation.link.type === 'page') {
+                  const targetPageNum = parseInt(annotation.link.value, 10);
+                  if (!isNaN(targetPageNum) && targetPageNum > 0 && targetPageNum <= pdfDocOut.getPageCount()) {
+                     const targetPage = pdfDocOut.getPages()[targetPageNum - 1];
+                     pdfLibPage.addLinkAnnotation(linkRect, targetPage);
+                  }
+              }
+          }
+      }
+
+      if (pageNumberingConfig.enabled) {
+          const { width: pnPageWidth, height: pnPageHeight } = pdfLibPage.getSize();
+          const currentPageNum = index + pageNumberingConfig.start;
+          const totalNumPages = pageObjects.length;
+
+          let text = pageNumberingConfig.format
+              .replace('{page}', currentPageNum.toString())
+              .replace('{total}', totalNumPages.toString());
+
+          const textSize = pageNumberingConfig.fontSize;
+          const pnFont = await pdfDocOut.embedFont(StandardFonts.Helvetica);
+          const textWidthNum = pnFont.widthOfTextAtSize(text, textSize);
+          const pnAscent = pnFont.ascender / pnFont.unitsPerEm * textSize;
+
+          let x, y;
+          switch (pageNumberingConfig.position) {
+              case 'top-left': x = pageNumberingConfig.margin; y = pnPageHeight - pageNumberingConfig.margin - pnAscent; break;
+              case 'top-center': x = pnPageWidth / 2 - textWidthNum / 2; y = pnPageHeight - pageNumberingConfig.margin - pnAscent; break;
+              case 'top-right': x = pnPageWidth - pageNumberingConfig.margin - textWidthNum; y = pnPageHeight - pageNumberingConfig.margin - pnAscent; break;
+              case 'bottom-left': x = pageNumberingConfig.margin; y = pageNumberingConfig.margin; break;
+              case 'bottom-center': x = pnPageWidth / 2 - textWidthNum / 2; y = pageNumberingConfig.margin; break;
+              case 'bottom-right': x = pnPageWidth - pageNumberingConfig.margin - textWidthNum; y = pageNumberingConfig.margin; break;
+              default: x = pnPageWidth / 2 - textWidthNum / 2; y = pageNumberingConfig.margin;
+          }
+          pdfLibPage.drawText(text, { x, y, font: pnFont, size: textSize, color: grayscale(0) });
+      }
+    }
+
+    if (pdfProtectionConfig.enabled && pdfProtectionConfig.password) {
+      await pdfDocOut.encrypt({
+        userPassword: pdfProtectionConfig.password,
+        ownerPassword: pdfProtectionConfig.password,
+        permissions: {},
+      });
+    }
+
+    return await pdfDocOut.save();
+  };
 
   const handleDownloadPdf = async () => {
     if (pageObjects.length === 0) {
       toast({ title: texts.downloadPdf, description: texts.noPagesToDownload, variant: "destructive" });
       return;
     }
-
-    if (!checkAndDecrementQuota('daily')) {
-        return;
-    }
+    if (!checkAndDecrementQuota('daily')) return;
 
     setIsDownloading(true);
     setLoadingMessage(texts.generatingFile);
     try {
-      await new Promise(resolve => setTimeout(resolve, 100));
-      const pdfDocOut = await PDFLibDocument.create();
-
-      for (const [index, pageObj] of pageObjects.entries()) {
-        const { sourceCanvas, rotation } = pageObj;
-
-        const tempRenderCanvas = document.createElement('canvas');
-        const tempCtx = tempRenderCanvas.getContext('2d');
-        if (!tempCtx) continue;
-
-        const rad = rotation * Math.PI / 180;
-
-        if (rotation % 180 !== 0) {
-          tempRenderCanvas.width = sourceCanvas.height;
-          tempRenderCanvas.height = sourceCanvas.width;
-        } else {
-          tempRenderCanvas.width = sourceCanvas.width;
-          tempRenderCanvas.height = sourceCanvas.height;
-        }
-
-        tempCtx.translate(tempRenderCanvas.width / 2, tempRenderCanvas.height / 2);
-        tempCtx.rotate(rad);
-        tempCtx.drawImage(sourceCanvas, -sourceCanvas.width / 2, -sourceCanvas.height / 2, sourceCanvas.width, sourceCanvas.height);
-
-        const imgDataUrl = tempRenderCanvas.toDataURL('image/png');
-        const pngImage = await pdfDocOut.embedPng(imgDataUrl);
-
-        const pdfLibPage = pdfDocOut.addPage([tempRenderCanvas.width, tempRenderCanvas.height]);
-        pdfLibPage.drawImage(pngImage, { x: 0, y: 0, width: tempRenderCanvas.width, height: tempRenderCanvas.height });
-
-        const { width: pageWidth, height: pageHeight } = pdfLibPage.getSize();
-
-        // Draw highlights first so they are under other elements
-        for (const annotation of highlightAnnotations.filter(a => a.pageIndex === index)) {
-            const { r, g, b, a } = parseRgba(annotation.color);
-            pdfLibPage.drawRectangle({
-                x: annotation.leftRatio * pageWidth,
-                y: pageHeight - (annotation.topRatio * pageHeight) - (annotation.heightRatio * pageHeight),
-                width: annotation.widthRatio * pageWidth,
-                height: annotation.heightRatio * pageHeight,
-                color: rgb(r, g, b),
-                opacity: a,
-                blendMode: BlendMode.Multiply,
-            });
-        }
-        
-        // Draw shapes
-        for (const annotation of shapeAnnotations.filter(a => a.pageIndex === index)) {
-            const x = annotation.leftRatio * pageWidth;
-            const y = pageHeight - (annotation.topRatio * pageHeight) - (annotation.heightRatio * pageHeight);
-            const width = annotation.widthRatio * pageWidth;
-            const height = annotation.heightRatio * pageHeight;
-            const { r: fillR, g: fillG, b: fillB } = hexToRgb(annotation.fillColor);
-            const { r: strokeR, g: strokeG, b: strokeB } = hexToRgb(annotation.strokeColor);
-
-            if (annotation.type === 'rect') {
-                pdfLibPage.drawRectangle({ x, y, width, height, color: rgb(fillR, fillG, fillB), borderColor: rgb(strokeR, strokeG, strokeB), borderWidth: annotation.strokeWidth });
-            } else if (annotation.type === 'ellipse') {
-                pdfLibPage.drawEllipse({ x: x + width/2, y: y + height/2, xScale: width/2, yScale: height/2, color: rgb(fillR, fillG, fillB), borderColor: rgb(strokeR, strokeG, strokeB), borderWidth: annotation.strokeWidth });
-            } else if (annotation.type === 'triangle') {
-                 const points = [ {x: x + width / 2, y: y + height}, {x: x, y}, {x: x + width, y} ];
-                 pdfLibPage.drawPolygon({ points, color: rgb(fillR, fillG, fillB), borderColor: rgb(strokeR, strokeG, strokeB), borderWidth: annotation.strokeWidth });
-            }
-        }
-
-
-        // Apply Image Annotations
-        for (const annotation of imageAnnotations.filter(a => a.pageIndex === index)) {
-            let embeddedImage;
-            if (annotation.dataUrl.startsWith('data:image/png')) {
-                embeddedImage = await pdfDocOut.embedPng(annotation.dataUrl);
-            } else if (annotation.dataUrl.startsWith('data:image/jpeg')) {
-                embeddedImage = await pdfDocOut.embedJpg(annotation.dataUrl);
-            } else {
-                continue;
-            }
-
-            const imgX = annotation.leftRatio * pageWidth;
-            const imgHeight = annotation.heightRatio * pageHeight;
-            const imgY = pageHeight - (annotation.topRatio * pageHeight) - imgHeight;
-            const imgWidth = annotation.widthRatio * pageWidth;
-            
-            pdfLibPage.drawImage(embeddedImage, { x: imgX, y: imgY, width: imgWidth, height: imgHeight });
-
-            if (annotation.link) {
-                const linkRect = { x: imgX, y: imgY, width: imgWidth, height: imgHeight };
-                if(annotation.link.type === 'url') {
-                    pdfLibPage.addURIAnnotation(linkRect, annotation.link.value);
-                } else if (annotation.link.type === 'page') {
-                    const targetPageNum = parseInt(annotation.link.value, 10);
-                    if (!isNaN(targetPageNum) && targetPageNum > 0 && targetPageNum <= pdfDocOut.getPageCount()) {
-                       const targetPage = pdfDocOut.getPages()[targetPageNum - 1];
-                       pdfLibPage.addLinkAnnotation(linkRect, targetPage);
-                    }
-                }
-            }
-        }
-        
-        // Apply Text Annotations
-        for (const annotation of textAnnotations.filter(a => a.pageIndex === index)) {
-            const font = await getPdfFont(pdfDocOut, annotation);
-            const { r, g, b } = hexToRgb(annotation.color);
-            const boxWidth = annotation.widthRatio * pageWidth;
-
-            const textLayout = layoutMultilineText(annotation.text, {
-                font,
-                bounds: { width: boxWidth, height: Infinity },
-                fontSize: annotation.fontSize,
-                lineHeight: annotation.fontSize * 1.2,
-                alignment: annotation.textAlign === 'left' ? 0 : annotation.textAlign === 'center' ? 1 : 2,
-            });
-
-            const textHeight = textLayout.lines.length * annotation.fontSize * 1.2;
-            const x = annotation.leftRatio * pageWidth;
-            const y = pageHeight - (annotation.topRatio * pageHeight);
-
-            pdfLibPage.pushGraphicsState();
-            pdfLibPage.drawText(textLayout.lines.map(l => l.text).join('\n'), {
-                x,
-                y: y - font.ascent * (annotation.fontSize / font.unitsPerEm), // Adjust for baseline
-                font,
-                size: annotation.fontSize,
-                color: rgb(r, g, b),
-                lineHeight: annotation.fontSize * 1.2,
-                maxWidth: boxWidth,
-                wordBreaks: [' '],
-            });
-
-            if (annotation.underline) {
-              const textWidth = font.widthOfTextAtSize(textLayout.lines.map(l=>l.text).join('\n'), annotation.fontSize);
-              textLayout.lines.forEach((line, i) => {
-                  const lineY = y - (font.ascent * (annotation.fontSize / font.unitsPerEm)) - (i * annotation.fontSize * 1.2) - 2;
-                   pdfLibPage.drawLine({
-                      start: { x: x, y: lineY },
-                      end: { x: x + line.width, y: lineY },
-                      thickness: 0.5,
-                      color: rgb(r, g, b)
-                  });
-              });
-            }
-            pdfLibPage.popGraphicsState();
-
-            if (annotation.link) {
-                const linkRect = { x, y: y - textHeight, width: boxWidth, height: textHeight };
-                if(annotation.link.type === 'url') {
-                    pdfLibPage.addURIAnnotation(linkRect, annotation.link.value);
-                } else if (annotation.link.type === 'page') {
-                    const targetPageNum = parseInt(annotation.link.value, 10);
-                    if (!isNaN(targetPageNum) && targetPageNum > 0 && targetPageNum <= pdfDocOut.getPageCount()) {
-                       const targetPage = pdfDocOut.getPages()[targetPageNum - 1];
-                       pdfLibPage.addLinkAnnotation(linkRect, targetPage);
-                    }
-                }
-            }
-        }
-
-        if (pageNumberingConfig.enabled) {
-            const { width: pnPageWidth, height: pnPageHeight } = pdfLibPage.getSize();
-            const currentPageNum = index + pageNumberingConfig.start;
-            const totalNumPages = pageObjects.length;
-
-            let text = pageNumberingConfig.format
-                .replace('{page}', currentPageNum.toString())
-                .replace('{total}', totalNumPages.toString());
-
-            const textSize = pageNumberingConfig.fontSize;
-            const pnFont = await pdfDocOut.embedFont(StandardFonts.Helvetica);
-            const textWidthNum = pnFont.widthOfTextAtSize(text, textSize);
-            const pnAscent = pnFont.ascender / pnFont.unitsPerEm * textSize;
-
-            let x, y;
-            switch (pageNumberingConfig.position) {
-                case 'top-left': x = pageNumberingConfig.margin; y = pnPageHeight - pageNumberingConfig.margin - pnAscent; break;
-                case 'top-center': x = pnPageWidth / 2 - textWidthNum / 2; y = pnPageHeight - pageNumberingConfig.margin - pnAscent; break;
-                case 'top-right': x = pnPageWidth - pageNumberingConfig.margin - textWidthNum; y = pnPageHeight - pageNumberingConfig.margin - pnAscent; break;
-                case 'bottom-left': x = pageNumberingConfig.margin; y = pageNumberingConfig.margin; break;
-                case 'bottom-center': x = pnPageWidth / 2 - textWidthNum / 2; y = pageNumberingConfig.margin; break;
-                case 'bottom-right': x = pnPageWidth - pageNumberingConfig.margin - textWidthNum; y = pageNumberingConfig.margin; break;
-                default: x = pnPageWidth / 2 - textWidthNum / 2; y = pageNumberingConfig.margin;
-            }
-            pdfLibPage.drawText(text, { x, y, font: pnFont, size: textSize, color: grayscale(0) });
-        }
-      }
-
-      if (pdfProtectionConfig.enabled && pdfProtectionConfig.password) {
-        await pdfDocOut.encrypt({
-          userPassword: pdfProtectionConfig.password,
-          ownerPassword: pdfProtectionConfig.password,
-          permissions: {},
-        });
-      }
-
-      const pdfBytes = await pdfDocOut.save();
+      const pdfBytes = await generatePdfBytes();
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -1729,6 +1726,78 @@ export default function PdfEditorPage() {
       setLoadingMessage('');
     }
   };
+  
+  const handleSaveAsFormat = async (format: 'word' | 'txt') => {
+    if (pageObjects.length === 0) {
+      toast({ title: 'Error', description: 'No document to save.' });
+      return;
+    }
+    if (!checkAndDecrementQuota('convert')) return;
+
+    setIsDownloading(true);
+    setLoadingMessage(`Converting to ${format.toUpperCase()}...`);
+
+    try {
+      const pdfBytes = await generatePdfBytes();
+      const pdfFile = new File([pdfBytes], "edited_document.pdf", { type: "application/pdf" });
+
+      const formData = new FormData();
+      formData.append("file", pdfFile);
+      formData.append("format", format);
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 min timeout
+
+      const response = await fetch("https://pdfsolution.dpdns.org/upload", {
+          method: 'POST',
+          body: formData,
+          signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const clonedResponse = response.clone();
+        let errorMessage = `Conversion failed with status: ${response.status}`;
+        try {
+            const error = await clonedResponse.json();
+            errorMessage = String(error.error || "An unknown server error occurred.");
+        } catch (e) {
+             const errorText = await response.text();
+             errorMessage = `Server error: ${response.status}. Response: ${errorText.substring(0, 100)}`;
+        }
+        throw new Error(errorMessage);
+      }
+      
+      const resBlob = await response.blob();
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let downloadFilename = `result.${format === 'word' ? 'docx' : 'txt'}`;
+
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (match && match[1]) {
+          downloadFilename = match[1];
+        }
+      }
+
+      const url = window.URL.createObjectURL(resBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = downloadFilename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      toast({ title: 'Download Successful', description: `${downloadFilename} has been saved.` });
+
+    } catch (err: any) {
+      toast({ title: `Error converting to ${format.toUpperCase()}`, description: err.message, variant: "destructive" });
+    } finally {
+      setIsDownloading(false);
+      setLoadingMessage('');
+    }
+  };
+
 
   const commonDragEvents = {
     onDragOver: (e: React.DragEvent<HTMLDivElement>) => {
@@ -2447,9 +2516,51 @@ export default function PdfEditorPage() {
         setCurrentConvertingFile('');
       }
     };
+    
+    const handleInsertFileSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0] || null;
+        if (!file || !file.type.includes('pdf')) {
+            if(file) toast({ title: texts.invalidFileError, description: currentLanguage === 'zh' ? '請選擇一個有效的 PDF 檔案。' : 'Please select a valid PDF file.', variant: "destructive" });
+            return;
+        }
 
-    // --- End Batch Conversion Logic ---
-  
+        setPendingInsertFile(file);
+        if (activePageIndex === null) {
+            setIsInsertConfirmOpen(true);
+        } else {
+            proceedWithInsert(file);
+        }
+    };
+
+    const proceedWithInsert = async (fileToInsert?: File) => {
+        const file = fileToInsert || pendingInsertFile;
+        if (!file) return;
+
+        setIsLoading(true);
+        setLoadingMessage(texts.insertingPdf);
+        try {
+            const newPages = await processPdfFile(file);
+            const insertAtIndex = activePageIndex === null ? pageObjects.length : activePageIndex + 1;
+            
+            setPageObjects(prev => {
+                const newArray = [...prev];
+                newArray.splice(insertAtIndex, 0, ...newPages);
+                return newArray;
+            });
+            
+            toast({ title: "Insert Success", description: currentLanguage === 'zh' ? `${file.name} 已成功插入。` : `${file.name} has been inserted.` });
+
+        } catch (err: any) {
+            toast({ title: texts.insertError, description: err.message, variant: "destructive" });
+        } finally {
+            setIsLoading(false);
+            setLoadingMessage('');
+            setPendingInsertFile(null);
+            setIsInsertConfirmOpen(false);
+            if (insertPdfRef.current) insertPdfRef.current.value = '';
+        }
+    };
+
   const totalSizeMB = (batchTotalSize / (1024 * 1024)).toFixed(2);
   const remainingFiles = MAX_BATCH_FILES - batchFiles.length;
   const remainingMB = Math.max(0, (MAX_TOTAL_SIZE_BYTES - batchTotalSize) / (1024 * 1024));
@@ -2477,9 +2588,7 @@ export default function PdfEditorPage() {
           </ShadAlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setPendingInsertFile(null)}>{texts.cancel}</AlertDialogCancel>
-            <AlertDialogAction onClick={() => {
-                // This is a placeholder as the insert functionality is not fully implemented
-            }}>{texts.confirm}</AlertDialogAction>
+            <AlertDialogAction onClick={() => proceedWithInsert()}>{texts.confirm}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -2523,9 +2632,25 @@ export default function PdfEditorPage() {
             <MenubarMenu>
                 <MenubarTrigger>{texts.menuFile}</MenubarTrigger>
                 <MenubarContent>
-                    <MenubarItem onClick={() => pdfUploadRef.current?.click()}><FolderOpen className="mr-2 h-4 w-4"/>{texts.menuFileOpen}</MenubarItem>
-                    <MenubarItem onClick={() => setPageObjects([])}><FilePlus className="mr-2 h-4 w-4"/>{texts.menuFileNew}</MenubarItem>
-                    <MenubarItem onClick={handleDownloadPdf} disabled={pageObjects.length === 0}><Save className="mr-2 h-4 w-4"/>{texts.menuFileSaveAs}</MenubarItem>
+                    <MenubarItem onClick={() => pdfUploadRef.current?.click()} disabled={pageObjects.length > 0}>
+                        <FolderOpen className="mr-2 h-4 w-4"/>{texts.menuFileOpen}
+                    </MenubarItem>
+                    <MenubarItem onClick={() => { setPageObjects([]); pdfUploadRef.current?.click(); }}>
+                        <FilePlus className="mr-2 h-4 w-4"/>{texts.menuFileNew}
+                    </MenubarItem>
+                    <MenubarItem onClick={() => insertPdfRef.current?.click()} disabled={pageObjects.length === 0}>
+                        <FilePlus2 className="mr-2 h-4 w-4" />{texts.menuFileInsert}
+                    </MenubarItem>
+                    <MenubarSub>
+                        <MenubarSubTrigger disabled={pageObjects.length === 0}>
+                            <Save className="mr-2 h-4 w-4"/>{texts.menuFileSaveAs}
+                        </MenubarSubTrigger>
+                        <MenubarSubContent>
+                            <MenubarItem onClick={handleDownloadPdf}>PDF</MenubarItem>
+                            <MenubarItem onClick={() => handleSaveAsFormat('word')}>Word (.docx)</MenubarItem>
+                            <MenubarItem onClick={() => handleSaveAsFormat('txt')}>Text (.txt)</MenubarItem>
+                        </MenubarSubContent>
+                    </MenubarSub>
                     <MenubarSeparator />
                     <Popover open={isBatchPopoverOpen} onOpenChange={setIsBatchPopoverOpen}>
                         <PopoverTrigger asChild>
@@ -2683,7 +2808,7 @@ export default function PdfEditorPage() {
             <TooltipProvider>
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <Button variant={activeTool === 'select' ? "secondary" : "ghost"} className="flex flex-col h-auto p-2 space-y-1" onClick={() => setActiveTool('select')}>
+                         <Button variant={activeTool === 'select' ? "secondary" : "ghost"} className="flex flex-col h-auto p-2 space-y-1" onClick={() => setActiveTool('select')}>
                             <MousePointerSquareDashed className="h-5 w-5" />
                             <span className="text-xs">{texts.toolSelect}</span>
                         </Button>
@@ -2719,6 +2844,15 @@ export default function PdfEditorPage() {
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom"><p>{texts.menuEditInsertImage}</p></TooltipContent>
+                </Tooltip>
+                 <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={() => insertPdfRef.current?.click()} disabled={pageObjects.length === 0}>
+                            <FilePlus2 className="h-5 w-5" />
+                            <span className="text-xs">{currentLanguage === 'zh' ? '插入檔案' : 'Insert File'}</span>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom"><p>{texts.menuFileInsert}</p></TooltipContent>
                 </Tooltip>
                 <Tooltip>
                 <TooltipTrigger asChild>
@@ -2882,6 +3016,14 @@ export default function PdfEditorPage() {
                         accept="image/*"
                         onChange={handleImageFileSelected}
                         ref={imageUploadRef}
+                        className="hidden"
+                    />
+                    <Input
+                        type="file"
+                        id="insertPdfInput"
+                        accept="application/pdf"
+                        onChange={handleInsertFileSelected}
+                        ref={insertPdfRef}
                         className="hidden"
                     />
                 </CardContent>
@@ -3152,5 +3294,7 @@ export default function PdfEditorPage() {
 }
 
 
+
+    
 
     

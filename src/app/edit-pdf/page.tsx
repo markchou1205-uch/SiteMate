@@ -13,8 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader as ShadAlertDialogHeader, AlertDialogTitle as ShadAlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription as ShadAlertDialogDescription, AlertDialogFooter, AlertDialogHeader as ShadAlertDialogHeader, AlertDialogTitle as ShadAlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -383,8 +383,8 @@ const translations = {
         toolPan: 'Pan',
         toolText: 'Text',
         toolImage: 'Image',
-        toolShape: 'Shape',
-        toolSignature: 'Sign',
+        toolShape: 'Sign',
+        toolSignature: 'Shape',
         toolHand: 'Pan',
         toolShapeShort: 'Shape',
         toolSignatureShort: 'Sign',
@@ -1911,8 +1911,8 @@ export default function PdfEditorPage() {
           y: event.clientY,
           initialLeft: initialItemState.leftRatio * containerRect.width,
           initialTop: initialItemState.topRatio * containerRect.height,
-          initialWidth: 'widthRatio' in initialItemState ? initialItemState.widthRatio * containerRect.width : 0,
-          initialHeight: 'heightRatio' in initialItemState ? initialItemState.heightRatio * containerRect.height : 0
+          initialWidth: initialItemState.widthRatio * containerRect.width,
+          initialHeight: initialItemState.heightRatio * containerRect.height
       };
       
       const tempStateRef: React.MutableRefObject<Partial<EditorState>> = { current: {} };
@@ -2529,7 +2529,7 @@ export default function PdfEditorPage() {
         <AlertDialogContent>
             <ShadAlertDialogHeader>
                 <ShadAlertDialogTitle>{texts.newDocConfirmTitle}</ShadAlertDialogTitle>
-                <AlertDialogDescription>{texts.newDocConfirmDescription}</AlertDialogDescription>
+                <ShadAlertDialogDescription>{texts.newDocConfirmDescription}</ShadAlertDialogDescription>
             </ShadAlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel>{texts.cancel}</AlertDialogCancel>
@@ -2542,9 +2542,9 @@ export default function PdfEditorPage() {
         <AlertDialogContent>
             <ShadAlertDialogHeader>
                 <ShadAlertDialogTitle>{texts.convertConfirmTitle}</ShadAlertDialogTitle>
-                <AlertDialogDescription>
+                <ShadAlertDialogDescription>
                     {pendingFileToConvert ? texts.convertConfirmDescription(pendingFileToConvert.name) : ''}
-                </AlertDialogDescription>
+                </ShadAlertDialogDescription>
             </ShadAlertDialogHeader>
             <AlertDialogFooter>
                 <Button variant="outline" onClick={() => startConversionProcess('download')}>{texts.convertConfirmDownload}</Button>
@@ -2557,9 +2557,9 @@ export default function PdfEditorPage() {
         <AlertDialogContent>
             <ShadAlertDialogHeader>
             <ShadAlertDialogTitle>{guestLimitModalContent.title}</ShadAlertDialogTitle>
-            <AlertDialogDescription>
+            <ShadAlertDialogDescription>
                 {guestLimitModalContent.description}
-            </AlertDialogDescription>
+            </ShadAlertDialogDescription>
             </ShadAlertDialogHeader>
             <AlertDialogFooter>
             <AlertDialogCancel>{texts.cancel}</AlertDialogCancel>
@@ -2572,9 +2572,9 @@ export default function PdfEditorPage() {
         <AlertDialogContent>
             <ShadAlertDialogHeader>
             <ShadAlertDialogTitle>{texts.deletePageConfirmTitle}</ShadAlertDialogTitle>
-            <AlertDialogDescription>
+            <ShadAlertDialogDescription>
                 {pageToDelete !== null ? texts.deletePageConfirmDescription : `${currentLanguage === 'zh' ? `您確定要刪除選取的 ${selectedPageIds.size} 個頁面嗎?` : `Are you sure you want to delete the ${selectedPageIds.size} selected pages?` }`}
-            </AlertDialogDescription>
+            </ShadAlertDialogDescription>
             </ShadAlertDialogHeader>
             <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setPageToDelete(null)}>{texts.cancel}</AlertDialogCancel>
@@ -3231,5 +3231,3 @@ export default function PdfEditorPage() {
     </div>
   );
 }
-
-    

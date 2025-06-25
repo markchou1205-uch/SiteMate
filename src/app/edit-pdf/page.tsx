@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -13,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader as ShadAlertDialogHeader, AlertDialogTitle as ShadAlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -620,7 +621,7 @@ const translations = {
         menuFileOpen: "開啟檔案",
         menuFileNew: "開啟PDF文件",
         insertPdf: "插入PDF",
-        menuFileSaveAs: "另存為PDF",
+        menuFileSaveAs: "另存成PDF",
         menuFileBatchConvert: "批次轉換",
         menuEditUndo: "復原",
         menuEditRedo: "重做",
@@ -1134,8 +1135,6 @@ export default function PdfEditorPage() {
 
   const [isGuestLimitModalOpen, setIsGuestLimitModalOpen] = useState(false);
   const [guestLimitModalContent, setGuestLimitModalContent] = useState({ title: '', description: '' });
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
   const [isConvertConfirmOpen, setIsConvertConfirmOpen] = useState(false);
   const [pendingFileToConvert, setPendingFileToConvert] = useState<File | null>(null);
 
@@ -2238,7 +2237,6 @@ export default function PdfEditorPage() {
     };
 
     const handleDeselectAll = (e: React.MouseEvent<HTMLDivElement>) => {
-      // Only deselect if the click is on the container itself, not on a child annotation
       if (e.target === e.currentTarget) {
           setSelectedObject(null);
           setEditingAnnotationId(null);
@@ -2247,12 +2245,11 @@ export default function PdfEditorPage() {
     
     const handleAnnotationSelect = (type: SelectedObject['type'], id: string, e: React.MouseEvent) => {
       e.stopPropagation();
-      if (isDraggingRef.current) return;
-
-      if (editingAnnotationId === id) return;
       
+      if (isDraggingRef.current || editingAnnotationId === id) return;
+
       setSelectedObject({ type, id });
-      setEditingAnnotationId(null);
+      setEditingAnnotationId(null); // Ensure we are not in edit mode
     }
     
     const handleTextAnnotationDoubleClick = (id: string, e: React.MouseEvent) => {

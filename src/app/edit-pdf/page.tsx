@@ -268,6 +268,7 @@ const translations = {
         convertingMessage: 'Converting...',
         noFilesSelected: 'Please select files to convert.',
         tooManyFiles: 'You can only select up to 10 files at a time.',
+        totalSizeExceeded: (size: number) => `Total file size cannot exceed ${size}MB.`,
         invalidFileError: 'Some files were not valid PDFs and were removed.',
         status_waiting: 'Waiting',
         status_uploading: 'Uploading...',
@@ -301,6 +302,8 @@ const translations = {
         menuPageRotateCCW: "Rotate Counter-Clockwise",
         menuPageAddBlank: "Add Blank Page",
         menuPageDelete: "Delete Current Page",
+        planInfo: (files: number, size: number) => `Your current plan allows you to upload ${files} files at once, with a total size of up to ${size}MB.`,
+        usageInfo: (files: number, size: string, remainingFiles: number, remainingSize: string) => `You have selected ${files} file(s), with a total size of ${size}MB. (You can still upload ${remainingFiles} more files or ${remainingSize}MB).`
     },
     zh: {
         pageTitle: 'PDF 編輯器 (專業模式)',
@@ -474,6 +477,7 @@ const translations = {
         convertingMessage: '轉換中...',
         noFilesSelected: '請選擇要轉換的檔案。',
         tooManyFiles: '一次最多只能選擇 10 個檔案。',
+        totalSizeExceeded: (size: number) => `總檔案大小不能超過 ${size}MB。`,
         invalidFileError: '部分檔案不是有效的 PDF，已被移除。',
         status_waiting: '等待中',
         status_uploading: '上傳中...',
@@ -507,6 +511,8 @@ const translations = {
         menuPageRotateCCW: "逆時針旋轉",
         menuPageAddBlank: "新增空白頁",
         menuPageDelete: "刪除目前頁面",
+        planInfo: (files: number, size: number) => `您加購的方案為：同時上傳 ${files} 份文件，大小總計不超過 ${size}MB。`,
+        usageInfo: (files: number, size: string, remainingFiles: number, remainingSize: string) => `目前您已選擇 ${files} 份文件，大小總計 ${size}MB (尚可上傳 ${remainingFiles} 份文件或 ${remainingSize}MB)`
     }
 };
 
@@ -536,7 +542,10 @@ type UploadStatus = {
     error?: string;
 };
 
-const MAX_FILES = 10;
+const MAX_BATCH_FILES = 10;
+const MAX_TOTAL_SIZE_MB = 50;
+const MAX_TOTAL_SIZE_BYTES = MAX_TOTAL_SIZE_MB * 1024 * 1024;
+
 
 interface PagePreviewItemProps {
   pageObj: PageObject;
@@ -864,6 +873,7 @@ export default function PdfEditorPage() {
   const [targetFormat, setTargetFormat] = useState<string>('word');
   const [isConverting, setIsConverting] = useState(false);
   const [uploadStatuses, setUploadStatuses] = useState<{ [fileName: string]: UploadStatus }>({});
+  const [batchTotalSize, setBatchTotalSize] = useState(0);
   const batchFileUploadRef = useRef<HTMLInputElement>(null);
 
 
@@ -877,6 +887,11 @@ export default function PdfEditorPage() {
       setIsLoggedIn(loggedInStatus);
     }
   }, []);
+  
+  useEffect(() => {
+      const total = batchFiles.reduce((acc, file) => acc + file.size, 0);
+      setBatchTotalSize(total);
+  }, [batchFiles]);
 
   const createSortableInstance = useCallback((containerRef: React.RefObject<HTMLDivElement>) => {
     if (containerRef.current && !sortableInstanceRef.current) {
@@ -1883,9 +1898,15 @@ export default function PdfEditorPage() {
         if (newFiles.length === 0) return;
 
         const allFiles = [...batchFiles, ...newFiles];
+        const totalSize = allFiles.reduce((acc, file) => acc + file.size, 0);
 
-        if (allFiles.length > MAX_FILES) {
+        if (allFiles.length > MAX_BATCH_FILES) {
             toast({ title: texts.tooManyFiles, variant: 'destructive' });
+            return;
+        }
+
+        if (totalSize > MAX_TOTAL_SIZE_BYTES) {
+            toast({ title: texts.totalSizeExceeded(MAX_TOTAL_SIZE_MB), variant: 'destructive' });
             return;
         }
 
@@ -1938,14 +1959,15 @@ export default function PdfEditorPage() {
 
       if (batchFiles.length === 1) {
           formData.append("file", batchFiles[0]);
-          endpoint = "https://pdfsolution.dpdns.org/convert_single_to_pdf";
+          endpoint = "https://pdfsolution.dpdns.org/upload";
       } else {
           batchFiles.forEach(file => {
               formData.append("files", file);
           });
-          endpoint = "https://pdfsolution.dpdns.org/convert_to_pdf";
+          endpoint = "https://pdfsolution.dpdns.org/batch-upload";
       }
       formData.append("format", targetFormat);
+      formData.append("output_dir", "./");
       
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 min timeout
@@ -1965,8 +1987,12 @@ export default function PdfEditorPage() {
                 const error = await clonedResponse.json();
                 errorMessage = String(error.error || "An unknown server error occurred.");
             } catch (jsonError) {
-                const errorText = await response.text();
-                errorMessage = `Server error: ${response.status}. Response: ${errorText.substring(0, 100)}`;
+                try {
+                    const errorText = await clonedResponse.text();
+                    errorMessage = `Server error: ${response.status}. Response: ${errorText.substring(0, 100)}`;
+                } catch (textError) {
+                    errorMessage = `Server returned an unreadable error with status: ${response.status}`;
+                }
             }
             throw new Error(errorMessage);
         }
@@ -2015,6 +2041,10 @@ export default function PdfEditorPage() {
     };
 
     // --- End Batch Conversion Logic ---
+  
+  const totalSizeMB = (batchTotalSize / (1024 * 1024)).toFixed(2);
+  const remainingFiles = MAX_BATCH_FILES - batchFiles.length;
+  const remainingMB = Math.max(0, (MAX_TOTAL_SIZE_BYTES - batchTotalSize) / (1024 * 1024));
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground font-sans">
@@ -2111,6 +2141,10 @@ export default function PdfEditorPage() {
                                         </SelectContent>
                                     </Select>
                                 </div>
+                                <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded-md space-y-1">
+                                    <p>{texts.planInfo(MAX_BATCH_FILES, MAX_TOTAL_SIZE_MB)}</p>
+                                    <p>{texts.usageInfo(batchFiles.length, totalSizeMB, remainingFiles, remainingMB.toFixed(2))}</p>
+                                </div>
                                 <div 
                                 className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20"
                                 onClick={() => batchFileUploadRef.current?.click()}
@@ -2124,7 +2158,6 @@ export default function PdfEditorPage() {
                                         ref={batchFileUploadRef}
                                         onChange={handleBatchFileChange}
                                         accept="application/pdf"
-                                        required
                                         multiple
                                         className="hidden"
                                     />

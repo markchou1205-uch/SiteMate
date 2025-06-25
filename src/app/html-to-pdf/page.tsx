@@ -14,6 +14,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Progress } from '@/components/ui/progress';
 
 const MAX_BATCH_FILES = 10;
+const MAX_TOTAL_SIZE_MB = 50;
+const MAX_TOTAL_SIZE_BYTES = MAX_TOTAL_SIZE_MB * 1024 * 1024;
+
 type UploadStatus = {
     status: 'waiting' | 'uploading' | 'converting' | 'done' | 'error';
     progress: number;
@@ -79,11 +82,14 @@ const translations = {
     featureNotAvailable: "Feature Not Available",
     featureNotAvailableForGuests: "This feature is not available for guest users. Please log in to use it.",
     tooManyFiles: 'You can only select up to 10 files at a time.',
+    totalSizeExceeded: (size: number) => `Total file size cannot exceed ${size}MB.`,
     status_waiting: 'Waiting',
     status_uploading: 'Uploading...',
     status_converting: 'Converting...',
     status_done: 'Done!',
     status_error: 'Error',
+    planInfo: (files: number, size: number) => `Your current plan allows you to upload ${files} files at once, with a total size of up to ${size}MB.`,
+    usageInfo: (files: number, size: string, remainingFiles: number, remainingSize: string) => `You have selected ${files} file(s), with a total size of ${size}MB. (You can still upload ${remainingFiles} more files or ${remainingSize}MB).`
   },
   zh: {
     pageTitle: 'HTML 轉 PDF',
@@ -143,11 +149,14 @@ const translations = {
     featureNotAvailable: "功能無法使用",
     featureNotAvailableForGuests: "此功能不適用於訪客。請登入後使用。",
     tooManyFiles: '一次最多只能選擇 10 個檔案。',
+    totalSizeExceeded: (size: number) => `總檔案大小不能超過 ${size}MB。`,
     status_waiting: '等待中',
     status_uploading: '上傳中...',
     status_converting: '轉換中...',
     status_done: '完成！',
     status_error: '錯誤',
+    planInfo: (files: number, size: number) => `您加購的方案為：同時上傳 ${files} 份文件，大小總計不超過 ${size}MB。`,
+    usageInfo: (files: number, size: string, remainingFiles: number, remainingSize: string) => `目前您已選擇 ${files} 份文件，大小總計 ${size}MB (尚可上傳 ${remainingFiles} 份文件或 ${remainingSize}MB)`
   },
 };
 
@@ -169,6 +178,7 @@ export default function HtmlToPdfPage() {
   const [batchFiles, setBatchFiles] = useState<File[]>([]);
   const [isConverting, setIsConverting] = useState(false);
   const [uploadStatuses, setUploadStatuses] = useState<{ [fileName: string]: UploadStatus }>({});
+  const [batchTotalSize, setBatchTotalSize] = useState(0);
 
   const fileUploadRef = useRef<HTMLInputElement>(null);
   const batchFileUploadRef = useRef<HTMLInputElement>(null);
@@ -184,6 +194,11 @@ export default function HtmlToPdfPage() {
       setIsLoggedIn(loggedInStatus);
     }
   }, []);
+  
+  useEffect(() => {
+      const total = batchFiles.reduce((acc, file) => acc + file.size, 0);
+      setBatchTotalSize(total);
+  }, [batchFiles]);
 
   const updateLanguage = (lang: 'en' | 'zh') => {
     setCurrentLanguage(lang);
@@ -321,12 +336,18 @@ export default function HtmlToPdfPage() {
     if (newFiles.length === 0) return;
 
     const allFiles = [...batchFiles, ...newFiles];
+    const totalSize = allFiles.reduce((acc, file) => acc + file.size, 0);
 
     if (allFiles.length > MAX_BATCH_FILES) {
         toast({ title: texts.tooManyFiles, variant: 'destructive' });
         return;
     }
     
+    if (totalSize > MAX_TOTAL_SIZE_BYTES) {
+        toast({ title: texts.totalSizeExceeded(MAX_TOTAL_SIZE_MB), variant: 'destructive' });
+        return;
+    }
+
     setBatchFiles(allFiles);
 
     const newStatuses: { [fileName: string]: UploadStatus } = {};
@@ -371,7 +392,7 @@ export default function HtmlToPdfPage() {
       batchFiles.forEach(file => {
         formData.append("files", file);
       });
-      endpoint = "https://pdfsolution.dpdns.org/batch_upload";
+      endpoint = "https://pdfsolution.dpdns.org/batch-upload";
     }
     formData.append("format", format);
     
@@ -435,6 +456,10 @@ export default function HtmlToPdfPage() {
       setIsConverting(false);
     }
   };
+  
+  const totalSizeMB = (batchTotalSize / (1024 * 1024)).toFixed(2);
+  const remainingFiles = MAX_BATCH_FILES - batchFiles.length;
+  const remainingMB = Math.max(0, (MAX_TOTAL_SIZE_BYTES - batchTotalSize) / (1024 * 1024));
 
   return (
     <div className="flex flex-col h-screen bg-background">
@@ -467,6 +492,10 @@ export default function HtmlToPdfPage() {
                 <AlertDialogDescription>{texts.batchModalDescription}</AlertDialogDescription>
             </ShadAlertDialogHeader>
             <form onSubmit={handleBatchSubmit} className="space-y-4">
+                <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md space-y-1">
+                    <p>{texts.planInfo(MAX_BATCH_FILES, MAX_TOTAL_SIZE_MB)}</p>
+                    <p>{texts.usageInfo(batchFiles.length, totalSizeMB, remainingFiles, remainingMB.toFixed(2))}</p>
+                </div>
                 <div 
                 className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20"
                 onClick={() => batchFileUploadRef.current?.click()}

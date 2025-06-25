@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import * as pdfjsLib from 'pdfjs-dist';
-import { PDFDocument as PDFLibDocument, StandardFonts, rgb, degrees, grayscale, pushGraphicsState, popGraphicsState, setOpacity, layoutMultilineText, PDFFont, BlendMode } from 'pdf-lib';
+import { PDFDocument as PDFLibDocument, StandardFonts, rgb, degrees, grayscale, pushGraphicsState, popGraphicsState, setOpacity, layoutMultilineText, PDFFont, BlendMode, drawText, drawPolygon } from 'pdf-lib';
 import Sortable from 'sortablejs';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -13,13 +13,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader as ShadAlertDialogHeader, AlertDialogTitle as ShadAlertDialogTitle } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader as ShadAlertDialogHeader, AlertDialogTitle as ShadAlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, FontSize, Eye, Scissors, LayoutGrid, PanelLeft, FilePlus2, Combine, Type, ImagePlus, Link as LinkIcon, MessageSquarePlus, ZoomIn, ZoomOut, Expand, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Highlighter, ArrowRightLeft, Edit, FileUp, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText, Sparkles, XCircle, File, FolderOpen, Save, Wrench, HelpCircle, PanelTop, Redo, Undo } from 'lucide-react';
+import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, FontSize, Eye, Scissors, LayoutGrid, PanelLeft, FilePlus2, Combine, Type, ImagePlus, Link as LinkIcon, MessageSquarePlus, ZoomIn, ZoomOut, Expand, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Highlighter, ArrowRightLeft, Edit, FileUp, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText, Sparkles, XCircle, File, FolderOpen, Save, Wrench, HelpCircle, PanelTop, Redo, Undo, Hand, Square, Circle, Pencil, Printer, SearchIcon, ChevronLeft, ChevronRight, CaseSensitive } from 'lucide-react';
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
@@ -95,6 +96,35 @@ interface HighlightAnnotation {
   heightRatio: number;
   color: string;
 }
+
+interface ShapeAnnotation {
+  id: string;
+  pageIndex: number;
+  type: 'rect' | 'ellipse' | 'triangle';
+  topRatio: number;
+  leftRatio: number;
+  widthRatio: number;
+  heightRatio: number;
+  fillColor: string;
+  strokeColor: string;
+  strokeWidth: number;
+}
+
+interface PageTextContent {
+  pageIndex: number;
+  items: any[]; // pdfjs.TextItem[]
+}
+
+interface SearchResult {
+  pageIndex: number;
+  text: string;
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+type Tool = 'select' | 'pan' | 'text' | 'image' | 'highlight' | 'shape' | 'signature';
 
 const translations = {
     en: {
@@ -304,7 +334,29 @@ const translations = {
         menuPageAddBlank: "Add Blank Page",
         menuPageDelete: "Delete Current Page",
         planInfo: (files: number, size: number) => `Your current plan allows you to upload ${files} files at once, with a total size of up to ${size}MB.`,
-        usageInfo: (files: number, size: string, remainingFiles: number, remainingSize: string) => `You have selected ${files} file(s), with a total size of ${size}MB. (You can still upload ${remainingFiles} more files or ${remainingSize}MB).`
+        usageInfo: (files: number, size: string, remainingFiles: number, remainingSize: string) => `You have selected ${files} file(s), with a total size of ${size}MB. (You can still upload ${remainingFiles} more files or ${remainingSize}MB).`,
+        toolHand: 'Pan',
+        toolShape: 'Insert Shape',
+        toolSignature: 'Signature',
+        toolPrint: 'Print',
+        toolSearch: 'Search Document',
+        shapeRect: 'Rectangle',
+        shapeCircle: 'Circle',
+        shapeTriangle: 'Triangle',
+        addSignature: 'Add Signature',
+        signaturePadTitle: 'Create Signature',
+        signaturePadDescription: 'Draw your signature below. Click save when done.',
+        signatureColor: 'Color',
+        signatureStrokeWidth: 'Thickness',
+        signatureClear: 'Clear',
+        signatureSave: 'Save Signature',
+        searchPlaceholder: 'Search document...',
+        searchNext: 'Next',
+        searchPrevious: 'Previous',
+        searchCaseSensitive: 'Case Sensitive',
+        searchResults: (count: number) => `${count} results found.`,
+        searchNoResults: 'No results found.',
+        noTextInPdf: 'This PDF has no text layer. OCR may be needed to enable search.',
     },
     zh: {
         pageTitle: 'PDF 編輯器 (專業模式)',
@@ -513,7 +565,29 @@ const translations = {
         menuPageAddBlank: "新增空白頁",
         menuPageDelete: "刪除目前頁面",
         planInfo: (files: number, size: number) => `您加購的方案為：同時上傳 ${files} 份文件，大小總計不超過 ${size}MB。`,
-        usageInfo: (files: number, size: string, remainingFiles: number, remainingSize: string) => `目前您已選擇 ${files} 份文件，大小總計 ${size}MB (尚可上傳 ${remainingFiles} 份文件或 ${remainingSize}MB)`
+        usageInfo: (files: number, size: string, remainingFiles: number, remainingSize: string) => `目前您已選擇 ${files} 份文件，大小總計 ${size}MB (尚可上傳 ${remainingFiles} 份文件或 ${remainingSize}MB)`,
+        toolHand: '平移',
+        toolShape: '插入圖形',
+        toolSignature: '簽名',
+        toolPrint: '列印',
+        toolSearch: '搜尋文件',
+        shapeRect: '方形',
+        shapeCircle: '圓形',
+        shapeTriangle: '三角形',
+        addSignature: '新增簽名',
+        signaturePadTitle: '建立簽名',
+        signaturePadDescription: '在下方繪製您的簽名，完成後點擊儲存。',
+        signatureColor: '顏色',
+        signatureStrokeWidth: '粗細',
+        signatureClear: '清除',
+        signatureSave: '儲存簽名',
+        searchPlaceholder: '搜尋文件...',
+        searchNext: '下一個',
+        searchPrevious: '上一個',
+        searchCaseSensitive: '區分大小寫',
+        searchResults: (count: number) => `找到 ${count} 個結果。`,
+        searchNoResults: '找不到結果。',
+        noTextInPdf: '此 PDF 不包含文字層。可能需要 OCR 才能啟用搜尋。',
     }
 };
 
@@ -799,6 +873,11 @@ const TextAnnotationComponent = ({
     );
 }
 
+const TriangleIcon = () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5">
+        <path d="M12 2L2 22H22L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+    </svg>
+)
 
 export default function PdfEditorPage() {
   const router = useRouter();
@@ -809,6 +888,7 @@ export default function PdfEditorPage() {
 
   const [activePageIndex, setActivePageIndex] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<'editor' | 'grid'>('editor');
+  const [activeTool, setActiveTool] = useState<Tool>('select');
 
   const mainViewContainerRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -835,9 +915,20 @@ export default function PdfEditorPage() {
 
   const [highlightAnnotations, setHighlightAnnotations] = useState<HighlightAnnotation[]>([]);
   const [selectedHighlightId, setSelectedHighlightId] = useState<string | null>(null);
+
+  const [shapeAnnotations, setShapeAnnotations] = useState<ShapeAnnotation[]>([]);
+  const [selectedShapeId, setSelectedShapeId] = useState<string | null>(null);
   
   const [isLinkPopoverOpen, setIsLinkPopoverOpen] = useState(false);
   const [currentLink, setCurrentLink] = useState<LinkAnnotationDef>({ type: 'url', value: '' });
+
+  const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false);
+
+  const [pageTextContents, setPageTextContents] = useState<PageTextContent[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [currentSearchResultIndex, setCurrentSearchResultIndex] = useState(-1);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isSearchCaseSensitive, setIsSearchCaseSensitive] = useState(false);
 
   const dragStartRef = useRef({ x: 0, y: 0, initialLeft: 0, initialTop: 0, initialWidth: 0, initialHeight: 0 });
   const isDraggingRef = useRef(false);
@@ -979,7 +1070,7 @@ export default function PdfEditorPage() {
   }, [activePageIndex]);
 
 
-  const handleFitPage = useCallback(() => {
+  const handleFitToPage = useCallback(() => {
       if (!mainViewContainerRef.current || pageObjects.length === 0 || activePageIndex === null) return;
       const container = mainViewContainerRef.current;
       const containerWidth = container.clientWidth - 40;
@@ -1080,6 +1171,8 @@ export default function PdfEditorPage() {
 
     const numPages = pdfDocProxy.numPages;
     const loadedPageObjects: PageObject[] = [];
+    const textContents: PageTextContent[] = [];
+
     for (let i = 1; i <= numPages; i++) {
       const page = await pdfDocProxy.getPage(i);
       const viewport = page.getViewport({ scale: 3.0 });
@@ -1090,7 +1183,11 @@ export default function PdfEditorPage() {
       if (!ctx) continue;
       await page.render({ canvasContext: ctx, viewport }).promise;
       loadedPageObjects.push({ id: uuidv4(), sourceCanvas: canvas, rotation: 0 });
+
+      const textContent = await page.getTextContent();
+      textContents.push({ pageIndex: i - 1, items: textContent.items });
     }
+    setPageTextContents(textContents);
     return loadedPageObjects;
   };
 
@@ -1118,6 +1215,8 @@ export default function PdfEditorPage() {
     setSelectedImageId(null);
     setHighlightAnnotations([]);
     setSelectedHighlightId(null);
+    setShapeAnnotations([]);
+    setSelectedShapeId(null);
 
     setIsLoading(true);
     setLoadingMessage(texts.loadingPdf);
@@ -1128,7 +1227,7 @@ export default function PdfEditorPage() {
       setActivePageIndex(0);
       setViewMode('editor');
       
-      setTimeout(() => handleFitPage(), 100);
+      setTimeout(() => handleFitToPage(), 100);
 
     } catch (err: any)
     {
@@ -1265,6 +1364,26 @@ export default function PdfEditorPage() {
                 blendMode: BlendMode.Multiply,
             });
         }
+        
+        // Draw shapes
+        for (const annotation of shapeAnnotations.filter(a => a.pageIndex === index)) {
+            const x = annotation.leftRatio * pageWidth;
+            const y = pageHeight - (annotation.topRatio * pageHeight) - (annotation.heightRatio * pageHeight);
+            const width = annotation.widthRatio * pageWidth;
+            const height = annotation.heightRatio * pageHeight;
+            const { r: fillR, g: fillG, b: fillB } = hexToRgb(annotation.fillColor);
+            const { r: strokeR, g: strokeG, b: strokeB } = hexToRgb(annotation.strokeColor);
+
+            if (annotation.type === 'rect') {
+                pdfLibPage.drawRectangle({ x, y, width, height, color: rgb(fillR, fillG, fillB), borderColor: rgb(strokeR, strokeG, strokeB), borderWidth: annotation.strokeWidth });
+            } else if (annotation.type === 'ellipse') {
+                pdfLibPage.drawEllipse({ x: x + width/2, y: y + height/2, xScale: width/2, yScale: height/2, color: rgb(fillR, fillG, fillB), borderColor: rgb(strokeR, strokeG, strokeB), borderWidth: annotation.strokeWidth });
+            } else if (annotation.type === 'triangle') {
+                 const points = [ {x: x + width / 2, y: y + height}, {x: x, y}, {x: x + width, y} ];
+                 pdfLibPage.drawPolygon({ points, color: rgb(fillR, fillG, fillB), borderColor: rgb(strokeR, strokeG, strokeB), borderWidth: annotation.strokeWidth });
+            }
+        }
+
 
         // Apply Image Annotations
         for (const annotation of imageAnnotations.filter(a => a.pageIndex === index)) {
@@ -1433,13 +1552,13 @@ export default function PdfEditorPage() {
   
   const handleDragMouseDown = (
       event: React.MouseEvent<HTMLElement>,
-      type: 'annotation' | 'image' | 'highlight' | 'image-resize' | 'highlight-resize' | 'annotation-resize',
+      type: 'annotation' | 'image' | 'highlight' | 'shape' | 'image-resize' | 'highlight-resize' | 'annotation-resize' | 'shape-resize',
       id: string
   ) => {
       event.stopPropagation();
 
       const isResize = type.endsWith('-resize');
-      const itemType = type.split('-')[0] as 'annotation' | 'image' | 'highlight';
+      const itemType = type.split('-')[0] as 'annotation' | 'image' | 'highlight' | 'shape';
 
       const draggedElement = event.currentTarget as HTMLElement;
       const containerElement = (draggedElement.closest('.main-page-container')) as HTMLElement;
@@ -1452,6 +1571,7 @@ export default function PdfEditorPage() {
           case 'annotation': initialItemState = textAnnotations.find(a => a.id === id); break;
           case 'image': initialItemState = imageAnnotations.find(a => a.id === id); break;
           case 'highlight': initialItemState = highlightAnnotations.find(a => a.id === id); break;
+          case 'shape': initialItemState = shapeAnnotations.find(a => a.id === id); break;
       }
       
       if (!initialItemState) return;
@@ -1472,33 +1592,44 @@ export default function PdfEditorPage() {
 
           const deltaX = moveEvent.clientX - dragStartRef.current.x;
           const deltaY = moveEvent.clientY - dragStartRef.current.y;
+          
+          let newWidthPx, newHeightPx, newWidthRatio, newHeightRatio;
 
-          if (isResize && 'aspectRatio' in initialItemState && itemType === 'image') {
-              const newWidthPx = dragStartRef.current.initialWidth + deltaX;
-              const newWidthRatio = Math.max(0.05, newWidthPx / containerRect.width);
-              setImageAnnotations(prev => prev.map(ann =>
-                  ann.id === id ? {
-                      ...ann,
-                      widthRatio: newWidthRatio,
-                      heightRatio: newWidthRatio / ann.aspectRatio * (containerRect.width / containerRect.height)
-                  } : ann
-              ));
-          } else if (isResize && itemType === 'highlight') {
-              const newWidthPx = dragStartRef.current.initialWidth + deltaX;
-              const newHeightPx = dragStartRef.current.initialHeight + deltaY;
-              setHighlightAnnotations(prev => prev.map(ann =>
-                  ann.id === id ? {
-                      ...ann,
-                      widthRatio: Math.max(0.01, newWidthPx / containerRect.width),
-                      heightRatio: Math.max(0.01, newHeightPx / containerRect.height)
-                  } : ann
-              ));
-          } else if (isResize && itemType === 'annotation') {
-              const newWidthPx = dragStartRef.current.initialWidth + deltaX;
-              const newWidthRatio = Math.max(0.1, newWidthPx / containerRect.width);
-               setTextAnnotations(prev => prev.map(ann =>
-                  ann.id === id ? { ...ann, widthRatio: newWidthRatio } : ann
-              ));
+          if (isResize) {
+              newWidthPx = dragStartRef.current.initialWidth + deltaX;
+              newHeightPx = dragStartRef.current.initialHeight + deltaY;
+              newWidthRatio = Math.max(0.01, newWidthPx / containerRect.width);
+              newHeightRatio = Math.max(0.01, newHeightPx / containerRect.height);
+
+              switch(itemType) {
+                case 'image':
+                    newWidthRatio = Math.max(0.05, newWidthPx / containerRect.width);
+                    setImageAnnotations(prev => prev.map(ann =>
+                        ann.id === id ? {
+                            ...ann,
+                            widthRatio: newWidthRatio,
+                            heightRatio: newWidthRatio / ann.aspectRatio * (containerRect.width / containerRect.height)
+                        } : ann
+                    ));
+                    break;
+                case 'highlight':
+                case 'shape':
+                    const updater = itemType === 'highlight' ? setHighlightAnnotations : setShapeAnnotations;
+                    updater(prev => prev.map(ann =>
+                        ann.id === id ? {
+                            ...ann,
+                            widthRatio: newWidthRatio,
+                            heightRatio: newHeightRatio
+                        } : ann
+                    ));
+                    break;
+                case 'annotation':
+                     newWidthRatio = Math.max(0.1, newWidthPx / containerRect.width);
+                     setTextAnnotations(prev => prev.map(ann =>
+                        ann.id === id ? { ...ann, widthRatio: newWidthRatio } : ann
+                    ));
+                    break;
+              }
           }
           else { // It's a drag operation
               const newLeftPx = dragStartRef.current.initialLeft + deltaX;
@@ -1516,6 +1647,7 @@ export default function PdfEditorPage() {
                       break;
                   case 'image': setImageAnnotations(prev => prev.map(ann => ann.id === id ? updater(ann) : ann)); break;
                   case 'highlight': setHighlightAnnotations(prev => prev.map(ann => ann.id === id ? updater(ann) : ann)); break;
+                  case 'shape': setShapeAnnotations(prev => prev.map(ann => ann.id === id ? updater(ann) : ann)); break;
               }
           }
       };
@@ -1625,6 +1757,7 @@ export default function PdfEditorPage() {
       setEditingAnnotationId(null);
       setSelectedImageId(null);
       setSelectedHighlightId(null);
+      setSelectedShapeId(null);
     };
     
     const handleAnnotationChange = (updatedAnnotation: TextAnnotation) => {
@@ -1666,6 +1799,7 @@ export default function PdfEditorPage() {
             setSelectedAnnotationId(null);
             setEditingAnnotationId(null);
             setSelectedHighlightId(null);
+            setSelectedShapeId(null);
         };
         img.src = dataUrl;
     }, []);
@@ -1733,12 +1867,37 @@ export default function PdfEditorPage() {
       setSelectedAnnotationId(null);
       setEditingAnnotationId(null);
       setSelectedImageId(null);
+      setSelectedShapeId(null);
     };
 
     const handleDeleteHighlightAnnotation = (id: string) => {
         setHighlightAnnotations(prev => prev.filter(ann => ann.id !== id));
         if (selectedHighlightId === id) setSelectedHighlightId(null);
     }
+
+    const handleAddShapeAnnotation = (type: ShapeAnnotation['type']) => {
+        if(activePageIndex === null) return;
+        const newShape: ShapeAnnotation = {
+            id: uuidv4(),
+            pageIndex: activePageIndex,
+            type,
+            topRatio: 0.4,
+            leftRatio: 0.4,
+            widthRatio: 0.2,
+            heightRatio: 0.2,
+            fillColor: '#3b82f6',
+            strokeColor: '#000000',
+            strokeWidth: 2,
+        };
+        setShapeAnnotations(prev => [...prev, newShape]);
+        setSelectedShapeId(newShape.id);
+    }
+    
+    const handleDeleteShapeAnnotation = (id: string) => {
+        setShapeAnnotations(prev => prev.filter(ann => ann.id !== id));
+        if (selectedShapeId === id) setSelectedShapeId(null);
+    }
+
 
     const handleAnnotationWrapperClick = (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
@@ -1747,6 +1906,7 @@ export default function PdfEditorPage() {
         setSelectedAnnotationId(id);
         setSelectedImageId(null);
         setSelectedHighlightId(null);
+        setSelectedShapeId(null);
     };
 
     const handleAnnotationDoubleClick = (id: string, e: React.MouseEvent) => {
@@ -1767,6 +1927,9 @@ export default function PdfEditorPage() {
                 if (selectedHighlightId) {
                     handleDeleteHighlightAnnotation(selectedHighlightId);
                 }
+                if (selectedShapeId) {
+                    handleDeleteShapeAnnotation(selectedShapeId);
+                }
             }
         };
 
@@ -1776,7 +1939,7 @@ export default function PdfEditorPage() {
             window.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('paste', handlePaste);
         };
-    }, [selectedAnnotationId, editingAnnotationId, selectedImageId, selectedHighlightId, handlePaste]);
+    }, [selectedAnnotationId, editingAnnotationId, selectedImageId, selectedHighlightId, selectedShapeId, handlePaste]);
 
 
     const handleOpenLinkPopover = () => {
@@ -2312,18 +2475,33 @@ export default function PdfEditorPage() {
 
     <div className="p-2 border-b bg-card flex items-center justify-center gap-1 sticky top-[56px] z-30">
         <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant={activeTool === 'select' ? "secondary" : "ghost"} size="icon" onClick={() => setActiveTool('select')}><MousePointerSquare className="h-5 w-5" /></Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom"><p>Select</p></TooltipContent>
+            </Tooltip>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant={activeTool === 'pan' ? "secondary" : "ghost"} size="icon" onClick={() => setActiveTool('pan')}><Hand className="h-5 w-5" /></Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom"><p>{texts.toolHand}</p></TooltipContent>
+            </Tooltip>
+
+            <Separator orientation="vertical" className="h-6 mx-2" />
+
             {/* Edit Tools */}
             <Tooltip>
             <TooltipTrigger asChild>
                 <Button variant="ghost" size="icon" onClick={() => handlePlaceholderClick('Undo')}><Undo className="h-5 w-5" /></Button>
             </TooltipTrigger>
-            <TooltipContent><p>{texts.menuEditUndo}</p></TooltipContent>
+            <TooltipContent side="bottom"><p>{texts.menuEditUndo}</p></TooltipContent>
             </Tooltip>
             <Tooltip>
             <TooltipTrigger asChild>
                 <Button variant="ghost" size="icon" onClick={() => handlePlaceholderClick('Redo')}><Redo className="h-5 w-5" /></Button>
             </TooltipTrigger>
-            <TooltipContent><p>{texts.menuEditRedo}</p></TooltipContent>
+            <TooltipContent side="bottom"><p>{texts.menuEditRedo}</p></TooltipContent>
             </Tooltip>
 
             <Separator orientation="vertical" className="h-6 mx-2" />
@@ -2332,19 +2510,19 @@ export default function PdfEditorPage() {
             <TooltipTrigger asChild>
                 <Button variant="ghost" size="icon" onClick={handleAddTextAnnotation} disabled={activePageIndex === null}><Type className="h-5 w-5" /></Button>
             </TooltipTrigger>
-            <TooltipContent><p>{texts.menuEditInsertText}</p></TooltipContent>
+            <TooltipContent side="bottom"><p>{texts.menuEditInsertText}</p></TooltipContent>
             </Tooltip>
             <Tooltip>
             <TooltipTrigger asChild>
                 <Button variant="ghost" size="icon" onClick={() => imageUploadRef.current?.click()} disabled={activePageIndex === null}><ImagePlus className="h-5 w-5" /></Button>
             </TooltipTrigger>
-            <TooltipContent><p>{texts.menuEditInsertImage}</p></TooltipContent>
+            <TooltipContent side="bottom"><p>{texts.menuEditInsertImage}</p></TooltipContent>
             </Tooltip>
             <Tooltip>
             <TooltipTrigger asChild>
                 <Button variant="ghost" size="icon" onClick={handleAddHighlightAnnotation} disabled={activePageIndex === null}><Highlighter className="h-5 w-5" /></Button>
             </TooltipTrigger>
-            <TooltipContent><p>{texts.menuEditHighlight}</p></TooltipContent>
+            <TooltipContent side="bottom"><p>{texts.menuEditHighlight}</p></TooltipContent>
             </Tooltip>
             <Popover open={isLinkPopoverOpen} onOpenChange={setIsLinkPopoverOpen}>
                 <Tooltip>
@@ -2355,12 +2533,60 @@ export default function PdfEditorPage() {
                             </Button>
                         </PopoverTrigger>
                     </TooltipTrigger>
-                    <TooltipContent><p>{texts.menuEditInsertLink}</p></TooltipContent>
+                    <TooltipContent side="bottom"><p>{texts.menuEditInsertLink}</p></TooltipContent>
                 </Tooltip>
                 <PopoverContent className="w-80" side="bottom" align="start">
                     {linkPopoverContent}
                 </PopoverContent>
             </Popover>
+            <Popover>
+                <Tooltip>
+                    <TooltipTrigger asChild><PopoverTrigger asChild><Button variant="ghost" size="icon" disabled={activePageIndex === null}><Square className="h-5 w-5" /></Button></PopoverTrigger></TooltipTrigger>
+                    <TooltipContent side="bottom"><p>{texts.toolShape}</p></TooltipContent>
+                </Tooltip>
+                 <PopoverContent className="w-auto p-2 flex gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => handleAddShapeAnnotation('rect')}><Square className="h-5 w-5 text-primary" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleAddShapeAnnotation('ellipse')}><Circle className="h-5 w-5 text-primary" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleAddShapeAnnotation('triangle')}><TriangleIcon /></Button>
+                </PopoverContent>
+            </Popover>
+            <Dialog open={isSignatureDialogOpen} onOpenChange={setIsSignatureDialogOpen}>
+                <Tooltip>
+                    <TooltipTrigger asChild><DialogTrigger asChild><Button variant="ghost" size="icon" disabled={activePageIndex === null}><Pencil className="h-5 w-5" /></Button></DialogTrigger></TooltipTrigger>
+                    <TooltipContent side="bottom"><p>{texts.toolSignature}</p></TooltipContent>
+                </Tooltip>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{texts.signaturePadTitle}</DialogTitle>
+                        <DialogDescription>{texts.signaturePadDescription}</DialogDescription>
+                    </DialogHeader>
+                    {/* Signature Pad Component would go here */}
+                    <DialogFooter>
+                        <DialogClose asChild><Button variant="secondary">{texts.cancel}</Button></DialogClose>
+                        <Button onClick={() => { /* logic to save signature */ setIsSignatureDialogOpen(false); }}>{texts.signatureSave}</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Separator orientation="vertical" className="h-6 mx-2" />
+            
+            <Tooltip>
+                <TooltipTrigger asChild><Button variant="ghost" size="icon" onClick={() => window.print()}><Printer className="h-5 w-5" /></Button></TooltipTrigger>
+                <TooltipContent side="bottom"><p>{texts.toolPrint}</p></TooltipContent>
+            </Tooltip>
+            
+            <Popover>
+                <Tooltip>
+                    <TooltipTrigger asChild><PopoverTrigger asChild><Button variant="ghost" size="icon"><SearchIcon className="h-5 w-5" /></Button></PopoverTrigger></TooltipTrigger>
+                    <TooltipContent side="bottom"><p>{texts.toolSearch}</p></TooltipContent>
+                </Tooltip>
+                <PopoverContent side="bottom">
+                    <div className="grid gap-4">
+                        {/* Search Component would go here */}
+                    </div>
+                </PopoverContent>
+            </Popover>
+            
 
             <Separator orientation="vertical" className="h-6 mx-2" />
 
@@ -2369,13 +2595,13 @@ export default function PdfEditorPage() {
             <TooltipTrigger asChild>
                 <Button variant="ghost" size="icon" onClick={() => handleRotatePage('cw')} disabled={activePageIndex === null}><RotateCw className="h-5 w-5" /></Button>
             </TooltipTrigger>
-            <TooltipContent><p>{texts.menuPageRotateCW}</p></TooltipContent>
+            <TooltipContent side="bottom"><p>{texts.menuPageRotateCW}</p></TooltipContent>
             </Tooltip>
             <Tooltip>
             <TooltipTrigger asChild>
                 <Button variant="ghost" size="icon" onClick={() => handleRotatePage('ccw')} disabled={activePageIndex === null}><RotateCcw className="h-5 w-5" /></Button>
             </TooltipTrigger>
-            <TooltipContent><p>{texts.menuPageRotateCCW}</p></TooltipContent>
+            <TooltipContent side="bottom"><p>{texts.menuPageRotateCCW}</p></TooltipContent>
             </Tooltip>
             
             <Separator orientation="vertical" className="h-6 mx-2" />
@@ -2384,7 +2610,7 @@ export default function PdfEditorPage() {
             <TooltipTrigger asChild>
                 <Button variant="ghost" size="icon" onClick={handleAddBlankPage}><FilePlus2 className="h-5 w-5" /></Button>
             </TooltipTrigger>
-            <TooltipContent><p>{texts.menuPageAddBlank}</p></TooltipContent>
+            <TooltipContent side="bottom"><p>{texts.menuPageAddBlank}</p></TooltipContent>
             </Tooltip>
             <Tooltip>
             <TooltipTrigger asChild>
@@ -2392,7 +2618,7 @@ export default function PdfEditorPage() {
                     <Trash2 className="h-5 w-5 text-destructive"/>
                 </Button>
             </TooltipTrigger>
-            <TooltipContent><p>{texts.menuPageDelete}</p></TooltipContent>
+            <TooltipContent side="bottom"><p>{texts.menuPageDelete}</p></TooltipContent>
             </Tooltip>
         </TooltipProvider>
     </div>
@@ -2405,6 +2631,7 @@ export default function PdfEditorPage() {
             setEditingAnnotationId(null);
             setSelectedImageId(null);
             setSelectedHighlightId(null);
+            setSelectedShapeId(null);
         }
       }}>
         {editingAnnotationId && textAnnotations.find(ann => ann.id === editingAnnotationId) && (
@@ -2537,7 +2764,7 @@ export default function PdfEditorPage() {
                     })}
                 </div>
 
-                <div ref={mainViewContainerRef} className="flex-grow bg-muted/30 overflow-y-auto flex flex-col items-center p-4 space-y-4 relative">
+                <div ref={mainViewContainerRef} className={cn("flex-grow bg-muted/30 overflow-y-auto flex flex-col items-center p-4 space-y-4 relative", activeTool === 'pan' && 'cursor-grab')}>
                     {pageObjects.map((page, index) => {
                         const {sourceCanvas, rotation} = page;
                         
@@ -2592,6 +2819,7 @@ export default function PdfEditorPage() {
                                                 setSelectedAnnotationId(null);
                                                 setEditingAnnotationId(null);
                                                 setSelectedImageId(null);
+                                                setSelectedShapeId(null);
                                             }
                                         }}
                                         className={cn(
@@ -2625,6 +2853,7 @@ export default function PdfEditorPage() {
                                             setSelectedAnnotationId(null);
                                             setEditingAnnotationId(null);
                                             setSelectedHighlightId(null);
+                                            setSelectedShapeId(null);
                                             handleDragMouseDown(e, 'image', ann.id);
                                         }}
                                         onClick={(e) => { e.stopPropagation(); setSelectedImageId(ann.id); }}
@@ -2680,7 +2909,7 @@ export default function PdfEditorPage() {
                         <div className="w-20 text-center text-sm font-medium tabular-nums text-foreground" title="Current zoom">{`${Math.round(mainCanvasZoom * 100)}%`}</div>
                         <Button variant="ghost" size="icon" onClick={() => handleZoom('in')} title={texts.zoomIn}><ZoomIn className="h-5 w-5" /></Button>
                         <Separator orientation="vertical" className="h-6 mx-1" />
-                        <Button variant="ghost" size="icon" onClick={handleFitPage} title={texts.fitToPage}><Expand className="h-5 w-5" /></Button>
+                        <Button variant="ghost" size="icon" onClick={handleFitToPage} title={texts.fitToPage}><Expand className="h-5 w-5" /></Button>
                         <Button variant="ghost" size="icon" onClick={handleFitToWidth} title={texts.fitToWidth}><Columns className="h-5 w-5" /></Button>
                          <Separator orientation="vertical" className="h-6 mx-1" />
                         <Button variant="ghost" size="icon" onClick={() => setViewMode('grid')} title={texts.gridMode}><LayoutGrid className="h-5 w-5" /></Button>

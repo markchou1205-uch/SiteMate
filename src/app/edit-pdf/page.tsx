@@ -12,7 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader as ShadAlertDialogHeader, AlertDialogTitle as ShadAlertDialogTitle } from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -263,11 +263,11 @@ const translations = {
         batchConvert: 'Batch Conversion',
         selectFormat: 'Select Target Format',
         uploadAreaTitle: 'Upload PDF Files for Batch Conversion',
-        uploadButton: 'Click or drag up to 5 files here',
+        uploadButton: 'Click or drag up to 10 files here',
         convertButton: 'Convert All Files',
         convertingMessage: 'Converting...',
         noFilesSelected: 'Please select files to convert.',
-        tooManyFiles: 'You can only select up to 5 files at a time.',
+        tooManyFiles: 'You can only select up to 10 files at a time.',
         invalidFileError: 'Some files were not valid PDFs and were removed.',
         status_waiting: 'Waiting',
         status_uploading: 'Uploading...',
@@ -469,11 +469,11 @@ const translations = {
         batchConvert: '批次轉換',
         selectFormat: '選擇目標格式',
         uploadAreaTitle: '上傳 PDF 檔案以進行批次轉換',
-        uploadButton: '點擊或拖曳最多 5 個檔案到此處',
+        uploadButton: '點擊或拖曳最多 10 個檔案到此處',
         convertButton: '轉換所有檔案',
         convertingMessage: '轉換中...',
         noFilesSelected: '請選擇要轉換的檔案。',
-        tooManyFiles: '一次最多只能選擇 5 個檔案。',
+        tooManyFiles: '一次最多只能選擇 10 個檔案。',
         invalidFileError: '部分檔案不是有效的 PDF，已被移除。',
         status_waiting: '等待中',
         status_uploading: '上傳中...',
@@ -536,7 +536,7 @@ type UploadStatus = {
     error?: string;
 };
 
-const MAX_FILES = 5;
+const MAX_FILES = 10;
 
 interface PagePreviewItemProps {
   pageObj: PageObject;
@@ -875,15 +875,6 @@ export default function PdfEditorPage() {
     if (typeof window !== 'undefined') {
       const loggedInStatus = localStorage.getItem('isLoggedIn') === 'true';
       setIsLoggedIn(loggedInStatus);
-
-      // Initialize daily quotas if it's a new day
-      const today = new Date().toISOString().split('T')[0];
-      const lastUsed = localStorage.getItem('pdfLastUsed');
-      if (lastUsed !== today) {
-        localStorage.setItem('pdfDailyCount', '5');
-        localStorage.setItem('pdfConvertCount', '1');
-        localStorage.setItem('pdfLastUsed', today);
-      }
     }
   }, []);
 
@@ -1888,25 +1879,29 @@ export default function PdfEditorPage() {
     // --- Batch Conversion Logic ---
 
     const handleBatchFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      const files = event.target.files;
-      if (!files) return;
-  
-      if (files.length > MAX_FILES) {
-          toast({ title: texts.tooManyFiles, variant: 'destructive' });
-          return;
-      }
-  
-      const validFiles = Array.from(files).filter(file => file.type === 'application/pdf');
-      if (validFiles.length !== files.length) {
-          toast({ title: texts.invalidFileError, variant: 'destructive' });
-      }
-  
-      setBatchFiles(validFiles);
-      const initialStatuses: { [fileName: string]: UploadStatus } = {};
-      validFiles.forEach(file => {
-          initialStatuses[file.name] = { status: 'waiting', progress: 0 };
-      });
-      setUploadStatuses(initialStatuses);
+        const newFiles = event.target.files ? Array.from(event.target.files) : [];
+        if (newFiles.length === 0) return;
+
+        const allFiles = [...batchFiles, ...newFiles];
+
+        if (allFiles.length > MAX_FILES) {
+            toast({ title: texts.tooManyFiles, variant: 'destructive' });
+            return;
+        }
+
+        const validFiles = allFiles.filter(file => {
+            if (file.type === 'application/pdf') return true;
+            toast({ title: texts.invalidFileError, variant: 'destructive', description: `${file.name} is not a valid PDF.` });
+            return false;
+        });
+
+        setBatchFiles(validFiles);
+
+        const newStatuses: { [fileName: string]: UploadStatus } = {};
+        validFiles.forEach(file => {
+            newStatuses[file.name] = uploadStatuses[file.name] || { status: 'waiting', progress: 0 };
+        });
+        setUploadStatuses(newStatuses);
     };
   
     const removeBatchFile = (fileName: string) => {
@@ -1930,27 +1925,28 @@ export default function PdfEditorPage() {
       }
   
       setIsConverting(true);
-      const convertingStatuses: { [fileName: string]: UploadStatus } = {};
-      batchFiles.forEach(file => {
-          convertingStatuses[file.name] = { status: 'converting', progress: 50 };
+      setUploadStatuses(prev => {
+        const newStatuses: { [fileName: string]: UploadStatus } = {};
+        batchFiles.forEach(file => {
+            newStatuses[file.name] = { status: 'converting', progress: 50 };
+        });
+        return newStatuses;
       });
-      setUploadStatuses(convertingStatuses);
   
       const formData = new FormData();
       let endpoint = "";
 
       if (batchFiles.length === 1) {
-        formData.append("file", batchFiles[0]);
-        endpoint = "https://pdfsolution.dpdns.org/upload";
+          formData.append("file", batchFiles[0]);
+          endpoint = "https://pdfsolution.dpdns.org/convert_single_to_pdf";
       } else {
-        batchFiles.forEach(file => {
-            formData.append("files", file);
-        });
-        endpoint = "https://pdfsolution.dpdns.org/batch-upload";
+          batchFiles.forEach(file => {
+              formData.append("files", file);
+          });
+          endpoint = "https://pdfsolution.dpdns.org/convert_to_pdf";
       }
       formData.append("format", targetFormat);
-      formData.append("output_dir", "./");
-  
+      
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 min timeout
   
@@ -1966,16 +1962,11 @@ export default function PdfEditorPage() {
             const clonedResponse = response.clone();
             let errorMessage = `Conversion failed with status: ${response.status}`;
             try {
-                const error = await response.json();
+                const error = await clonedResponse.json();
                 errorMessage = String(error.error || "An unknown server error occurred.");
             } catch (jsonError) {
-                try {
-                    const errorText = await clonedResponse.text();
-                    errorMessage = `Server error: ${response.status}. Response: ${errorText.substring(0, 100)}`;
-                } catch (textError) {
-                    // Fallback if text() also fails
-                    errorMessage = `Server returned an unreadable error with status: ${response.status}`;
-                }
+                const errorText = await response.text();
+                errorMessage = `Server error: ${response.status}. Response: ${errorText.substring(0, 100)}`;
             }
             throw new Error(errorMessage);
         }
@@ -1999,20 +1990,24 @@ export default function PdfEditorPage() {
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
         
-        const doneStatuses: { [fileName: string]: UploadStatus } = {};
-        batchFiles.forEach(file => {
-            doneStatuses[file.name] = { status: 'done', progress: 100 };
+        setUploadStatuses(prev => {
+          const newStatuses: { [fileName: string]: UploadStatus } = {};
+          batchFiles.forEach(file => {
+              newStatuses[file.name] = { status: 'done', progress: 100 };
+          });
+          return newStatuses;
         });
-        setUploadStatuses(doneStatuses);
         toast({ title: texts.conversionSuccess, description: texts.conversionSuccessDesc(downloadFilename)});
 
       } catch (err: any) {
         clearTimeout(timeoutId);
-        const errorStatuses: { [fileName: string]: UploadStatus } = {};
-        batchFiles.forEach(file => {
-            errorStatuses[file.name] = { status: 'error', progress: 0, error: err.message };
+        setUploadStatuses(prev => {
+          const newStatuses: { [fileName: string]: UploadStatus } = {};
+          batchFiles.forEach(file => {
+              newStatuses[file.name] = { status: 'error', progress: 0, error: err.message };
+          });
+          return newStatuses;
         });
-        setUploadStatuses(errorStatuses);
         toast({ title: texts.conversionError, description: err.message, variant: "destructive" });
       } finally {
         setIsConverting(false);

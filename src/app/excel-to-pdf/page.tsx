@@ -7,20 +7,27 @@ import Link from 'next/link';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarSub, MenubarSubContent, MenubarSubTrigger, MenubarTrigger } from "@/components/ui/menubar";
 import { Loader2, Upload, Scissors, Download, FilePlus, LogIn, LogOut, UserCircle, MenuSquare, ArrowRightLeft, Edit, FileUp, ListOrdered, Trash2, Combine, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText, Sparkles, XCircle, Star } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader as ShadAlertDialogHeader, AlertDialogTitle as ShadAlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Progress } from '@/components/ui/progress';
-
-const MAX_BATCH_FILES = 10;
-const MAX_TOTAL_SIZE_MB = 50;
-const MAX_TOTAL_SIZE_BYTES = MAX_TOTAL_SIZE_MB * 1024 * 1024;
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { cn } from '@/lib/utils';
 
 type UploadStatus = {
     status: 'waiting' | 'uploading' | 'converting' | 'done' | 'error';
     progress: number;
     error?: string;
+};
+
+type PlanDetails = {
+  maxFiles: number;
+  maxSizeMb: number;
+  cost: number;
+  name: string;
 };
 
 const translations = {
@@ -29,7 +36,7 @@ const translations = {
     pageDescription: 'Convert your Excel documents into standard PDF files.',
     startTitle: 'Upload Excel File to Convert to PDF',
     startDescription: 'Select an Excel file (.xls, .xlsx) to begin.',
-    uploadButton: 'Click or drag a file here to upload',
+    uploadButton: 'Click or drag a file here',
     uploadHint: (isLoggedIn: boolean) => `Max file size: ${isLoggedIn ? '5MB' : '3MB'}. Single file only.`,
     convertButton: 'Convert to PDF',
     convertingMessage: 'Processing...',
@@ -76,7 +83,7 @@ const translations = {
     upgradePromptTitle: "Tired of one-by-one? Files too large?",
     upgradePromptDescription: "Try our 'Batch Convert' and 'Extended File Size' services to save your precious time!",
     enableBatchMode: "還不夠嗎？點我再升級",
-    batchModalTitle: "Upgrade to Batch Conversion",
+    batchModalTitle: "批次轉檔",
     batchModalDescription: "Process up to 10 files at once and unlock premium features. Choose a plan to get started.",
     upgrade: "Upgrade Now",
     featureNotAvailable: "Feature Not Available",
@@ -88,8 +95,8 @@ const translations = {
     status_converting: 'Converting...',
     status_done: 'Done!',
     status_error: 'Error',
-    planInfo: (files: number, size: number) => `Your current plan allows you to upload ${files} files at once, with a total size of up to ${size}MB.`,
-    usageInfo: (files: number, size: string, remainingFiles: number, remainingSize: string) => `You have selected ${files} file(s), with a total size of ${size}MB. (You can still upload ${remainingFiles} more files or ${remainingSize}MB).`
+    planInfo: (files: number, size: number) => `您加購的方案為：同時上傳 ${files} 份文件，大小總計不超過 ${size}MB。`,
+    usageInfo: (files: number, size: string, remainingFiles: number, remainingSize: string) => `目前您已選擇 ${files} 份文件，大小總計 ${size}MB (尚可上傳 ${remainingFiles} 份文件或 ${remainingSize}MB)`
   },
   zh: {
     pageTitle: 'Excel 轉 PDF',
@@ -142,8 +149,8 @@ const translations = {
     pdfToOcr: 'PDF光學掃描(OCR)',
     upgradePromptTitle: "一件一件傳很麻煩嗎？文件太大嗎？",
     upgradePromptDescription: "來試試「批次轉檔」及「擴充檔案」服務來節省您的寶貴時間！",
-    enableBatchMode: "還不夠嗎？點我再升級",
-    batchModalTitle: "升級至批次轉換",
+    enableBatchMode: "提升檔案大小限制或批次轉檔",
+    batchModalTitle: "批次轉檔",
     batchModalDescription: "一次處理最多 10 個檔案並解鎖高階功能。選擇一個方案立即開始。",
     upgrade: "立即升級",
     featureNotAvailable: "功能無法使用",
@@ -173,8 +180,14 @@ export default function ExcelToPdfPage() {
   const [isGuestLimitModalOpen, setIsGuestLimitModalOpen] = useState(false);
   const [guestLimitModalContent, setGuestLimitModalContent] = useState({ title: '', description: '' });
   
-  // Batch Conversion State
+  // Batch & Upgrade Flow State
+  const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<'A' | 'B' | 'C' | null>(null);
+  const [extraMb, setExtraMb] = useState(0);
+  const [finalPlanDetails, setFinalPlanDetails] = useState<PlanDetails | null>(null);
+
   const [batchFiles, setBatchFiles] = useState<File[]>([]);
   const [isConverting, setIsConverting] = useState(false);
   const [currentConvertingFile, setCurrentConvertingFile] = useState('');
@@ -289,12 +302,8 @@ export default function ExcelToPdfPage() {
             const error = await clonedResponse.json();
             errorMessage = String(error.error || "An unknown server error occurred.");
         } catch (jsonError) {
-             try {
-                 const errorText = await clonedResponse.text();
-                 errorMessage = `Server error: ${response.status}. Response: ${errorText.substring(0, 100)}`;
-             } catch (textError) {
-                errorMessage = `Server returned an unreadable error with status: ${response.status}`;
-             }
+             const errorText = await response.text();
+             errorMessage = `Server error: ${response.status}. Response: ${errorText.substring(0, 100)}`;
         }
         throw new Error(errorMessage);
       }
@@ -339,19 +348,20 @@ export default function ExcelToPdfPage() {
   };
 
   const handleBatchFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!finalPlanDetails) return;
     const newFiles = event.target.files ? Array.from(event.target.files) : [];
     if (newFiles.length === 0) return;
 
     const allFiles = [...batchFiles, ...newFiles];
     const totalSize = allFiles.reduce((acc, file) => acc + file.size, 0);
 
-    if (allFiles.length > MAX_BATCH_FILES) {
+    if (allFiles.length > finalPlanDetails.maxFiles) {
         toast({ title: texts.tooManyFiles, variant: 'destructive' });
         return;
     }
     
-    if (totalSize > MAX_TOTAL_SIZE_BYTES) {
-        toast({ title: texts.totalSizeExceeded(MAX_TOTAL_SIZE_MB), variant: 'destructive' });
+    if (totalSize > finalPlanDetails.maxSizeMb * 1024 * 1024) {
+        toast({ title: texts.totalSizeExceeded(finalPlanDetails.maxSizeMb), variant: 'destructive' });
         return;
     }
 
@@ -395,7 +405,7 @@ export default function ExcelToPdfPage() {
             const newStatuses = {...prev};
             let allDone = true;
             Object.keys(newStatuses).forEach(fileName => {
-                if (newStatuses[fileName].progress < 90) {
+                if (newStatuses[fileName].status === 'converting' && newStatuses[fileName].progress < 90) {
                     newStatuses[fileName].progress += 5;
                     allDone = false;
                 }
@@ -446,12 +456,8 @@ export default function ExcelToPdfPage() {
             const error = await clonedResponse.json();
             errorMessage = String(error.error || "An unknown server error occurred.");
         } catch (jsonError) {
-             try {
-                 const errorText = await clonedResponse.text();
-                 errorMessage = `Server error: ${response.status}. Response: ${errorText.substring(0, 100)}`;
-             } catch (textError) {
-                errorMessage = `Server returned an unreadable error with status: ${response.status}`;
-             }
+             const errorText = await response.text();
+             errorMessage = `Server error: ${response.status}. Response: ${errorText.substring(0, 100)}`;
         }
         throw new Error(errorMessage);
       }
@@ -501,10 +507,44 @@ export default function ExcelToPdfPage() {
       setCurrentConvertingFile('');
     }
   };
+
+  const handleOpenPricing = () => {
+    if (!isLoggedIn) {
+      toast({title: texts.featureNotAvailable, description: texts.featureNotAvailableForGuests, variant: 'destructive'});
+      return;
+    }
+    setIsPricingModalOpen(true);
+  };
   
-  const totalSizeMB = (batchTotalSize / (1024 * 1024)).toFixed(2);
-  const remainingFiles = MAX_BATCH_FILES - batchFiles.length;
-  const remainingMB = Math.max(0, (MAX_TOTAL_SIZE_BYTES - batchTotalSize) / (1024 * 1024));
+  const handlePlanSelection = () => {
+    if (!selectedPlan) return;
+    let details: PlanDetails;
+    if (selectedPlan === 'A') {
+      details = { maxFiles: 10, maxSizeMb: 20, cost: 39, name: '方案A' };
+    } else if (selectedPlan === 'B') {
+       if(extraMb <= 0 || extraMb > 79) {
+         toast({title: "錯誤", description: "加購容量必須介於 1MB 到 79MB 之間。"});
+         return;
+       }
+       const totalSize = 20 + extraMb;
+       details = { maxFiles: 10, maxSizeMb: totalSize, cost: 39 + (extraMb * 2), name: `方案B (+${extraMb}MB)` };
+    } else { // Plan C
+        toast({title: "聯絡客服", description: "選擇 C 方案請直接與客服人員聯繫。"});
+        return;
+    }
+    setFinalPlanDetails(details);
+    setIsPricingModalOpen(false);
+    setIsPaymentModalOpen(true);
+  };
+
+  const handlePaymentConfirm = () => {
+    setIsPaymentModalOpen(false);
+    setIsBatchModalOpen(true);
+  };
+
+  const totalBatchSizeMB = (batchTotalSize / (1024 * 1024)).toFixed(2);
+  const remainingFiles = finalPlanDetails ? finalPlanDetails.maxFiles - batchFiles.length : 0;
+  const remainingMB = finalPlanDetails ? Math.max(0, (finalPlanDetails.maxSizeMb * 1024 * 1024 - batchTotalSize) / (1024 * 1024)) : 0;
 
   return (
     <div className="flex flex-col h-screen bg-background">
@@ -529,12 +569,100 @@ export default function ExcelToPdfPage() {
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      
+
+      <AlertDialog open={isPricingModalOpen} onOpenChange={setIsPricingModalOpen}>
+        <AlertDialogContent className="max-w-2xl">
+          <ShadAlertDialogHeader>
+            <ShadAlertDialogTitle>選擇您的升級方案</ShadAlertDialogTitle>
+            <AlertDialogDescription>
+              選擇最適合您需求的方案，即可開始批次轉檔。
+            </AlertDialogDescription>
+          </ShadAlertDialogHeader>
+          <RadioGroup value={selectedPlan || undefined} onValueChange={(val: 'A' | 'B' | 'C') => setSelectedPlan(val)}>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[50px]"></TableHead>
+                  <TableHead>方案</TableHead>
+                  <TableHead>方案內容</TableHead>
+                  <TableHead className="text-right">費用</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow className={cn("cursor-pointer", selectedPlan === 'A' && "bg-muted")}>
+                  <TableCell><RadioGroupItem value="A" id="plan-a" /></TableCell>
+                  <TableCell className="font-medium">方案A</TableCell>
+                  <TableCell>最多10件，檔案大小合計20MB以內</TableCell>
+                  <TableCell className="text-right">39元</TableCell>
+                </TableRow>
+                <TableRow className={cn("cursor-pointer", selectedPlan === 'B' && "bg-muted")}>
+                  <TableCell><RadioGroupItem value="B" id="plan-b" /></TableCell>
+                  <TableCell className="font-medium">方案B</TableCell>
+                  <TableCell>最多10件，檔案大小合計超過20MB以上</TableCell>
+                  <TableCell className="text-right">每MB 2元</TableCell>
+                </TableRow>
+                 <TableRow className={cn("cursor-pointer", selectedPlan === 'C' && "bg-muted")}>
+                  <TableCell><RadioGroupItem value="C" id="plan-c" /></TableCell>
+                  <TableCell className="font-medium">方案C</TableCell>
+                  <TableCell>最多10件，檔案大小合計100MB(含)以上</TableCell>
+                  <TableCell className="text-right">請洽客服</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </RadioGroup>
+          {selectedPlan === 'B' && (
+              <div className="pt-4 space-y-2">
+                <Label htmlFor="extra-mb">加購容量 (1-79MB)</Label>
+                <div className="flex items-center gap-2">
+                  <span>20MB +</span>
+                  <Input 
+                    id="extra-mb"
+                    type="number"
+                    value={extraMb}
+                    onChange={(e) => setExtraMb(Math.max(0, Math.min(79, parseInt(e.target.value) || 0)))}
+                    className="w-20"
+                    max={79}
+                    min={1}
+                  />
+                  <span>MB =</span>
+                  <span className="font-bold text-lg text-primary">{39 + (extraMb * 2)}元</span>
+                </div>
+              </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={handlePlanSelection} disabled={!selectedPlan}>送出</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
+          <AlertDialogContent>
+              <ShadAlertDialogHeader>
+                  <ShadAlertDialogTitle>模擬付款</ShadAlertDialogTitle>
+                   <AlertDialogDescription>
+                      這是模擬的金流頁面。請確認您的方案。
+                  </AlertDialogDescription>
+              </ShadAlertDialogHeader>
+              {finalPlanDetails && (
+                  <div className="p-4 bg-muted rounded-md">
+                      <p><strong>方案:</strong> {finalPlanDetails.name}</p>
+                      <p><strong>費用:</strong> {finalPlanDetails.cost}元</p>
+                      <p><strong>檔案上限:</strong> {finalPlanDetails.maxFiles} 件</p>
+                      <p><strong>容量上限:</strong> {finalPlanDetails.maxSizeMb} MB</p>
+                  </div>
+              )}
+              <AlertDialogFooter>
+                  <AlertDialogCancel>返回</AlertDialogCancel>
+                  <AlertDialogAction onClick={handlePaymentConfirm}>確認付款</AlertDialogAction>
+              </AlertDialogFooter>
+          </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog open={isBatchModalOpen} onOpenChange={setIsBatchModalOpen}>
         <AlertDialogContent className="max-w-2xl">
             <ShadAlertDialogHeader>
                 <ShadAlertDialogTitle>{texts.batchModalTitle}</ShadAlertDialogTitle>
-                <AlertDialogDescription>{texts.batchModalDescription}</AlertDialogDescription>
             </ShadAlertDialogHeader>
             {isConverting ? (
                <div className="flex flex-col items-center justify-center space-y-4 my-8">
@@ -546,17 +674,19 @@ export default function ExcelToPdfPage() {
                </div>
             ) : (
                 <form onSubmit={handleBatchSubmit} className="space-y-4">
-                    <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md space-y-1">
-                        <p>{texts.planInfo(MAX_BATCH_FILES, MAX_TOTAL_SIZE_MB)}</p>
-                        <p>{texts.usageInfo(batchFiles.length, totalSizeMB, remainingFiles, remainingMB.toFixed(2))}</p>
-                    </div>
+                    {finalPlanDetails && (
+                      <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md space-y-1">
+                          <p>{texts.planInfo(finalPlanDetails.maxFiles, finalPlanDetails.maxSizeMb)}</p>
+                          <p>{texts.usageInfo(batchFiles.length, totalBatchSizeMB, remainingFiles, remainingMB.toFixed(2))}</p>
+                      </div>
+                    )}
                     <div 
                     className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20"
                     onClick={() => batchFileUploadRef.current?.click()}
                     >
                         <Upload className="h-8 w-8 text-muted-foreground mb-2" />
                         <p className="text-xs text-muted-foreground text-center">
-                          Click or drag up to {MAX_BATCH_FILES} files here
+                          Click or drag up to {finalPlanDetails?.maxFiles || 10} files here
                         </p>
                         <Input
                             type="file"
@@ -597,7 +727,6 @@ export default function ExcelToPdfPage() {
             )}
             <AlertDialogFooter className="mt-4">
                 <AlertDialogCancel>{texts.cancel}</AlertDialogCancel>
-                <AlertDialogAction>{texts.upgrade}</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -720,7 +849,7 @@ export default function ExcelToPdfPage() {
 
             <Card className="w-full border-destructive/20 bg-destructive/5">
                 <CardContent className="p-4 flex items-center justify-between gap-4">
-                    <div className="space-y-1">
+                    <div className="flex flex-col items-start gap-1">
                         <CardTitle className="text-lg flex items-center gap-2 text-destructive">
                             <Star className="text-yellow-500" />
                             {texts.upgradePromptTitle}
@@ -729,19 +858,10 @@ export default function ExcelToPdfPage() {
                             {texts.upgradePromptDescription}
                         </CardDescription>
                     </div>
-                    <Button 
-                        onClick={() => {
-                          if (!isLoggedIn) {
-                            toast({title: texts.featureNotAvailable, description: texts.featureNotAvailableForGuests, variant: 'destructive'});
-                            return;
-                          }
-                          setIsBatchModalOpen(true)
-                        }} 
-                        variant="destructive" 
-                        size="lg" 
-                        className="shrink-0"
-                    >
-                        {texts.enableBatchMode}
+                    <Button onClick={handleOpenPricing} variant="destructive" size="lg" className="shrink-0">
+                       <span className="text-lg font-bold">提升檔案大小限制</span>
+                       <span className="mx-2">或</span>
+                       <span className="text-lg font-bold">批次轉檔</span>
                     </Button>
                 </CardContent>
             </Card>

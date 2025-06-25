@@ -367,16 +367,24 @@ export default function WordToPdfPage() {
     });
 
     const formData = new FormData();
-    batchFiles.forEach(file => {
-      formData.append("file", file);
-    });
+    let endpoint = "";
+
+    if (batchFiles.length === 1) {
+      formData.append("file", batchFiles[0]);
+      endpoint = "https://pdfsolution.dpdns.org/convert_single_to_pdf";
+    } else {
+      batchFiles.forEach(file => {
+        formData.append("files", file);
+      });
+      endpoint = "https://pdfsolution.dpdns.org/batch_upload";
+    }
     formData.append("format", format);
     
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 120000);
 
     try {
-      const response = await fetch("https://pdfsolution.dpdns.org/convert_to_pdf", {
+      const response = await fetch(endpoint, {
         method: 'POST',
         body: formData,
         signal: controller.signal
@@ -633,16 +641,30 @@ export default function WordToPdfPage() {
               </CardContent>
             </Card>
 
-            <Card className="w-full border-primary/20 bg-primary/5">
-              <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2"><Star className="text-yellow-500" />{texts.upgradePromptTitle}</CardTitle>
-              </CardHeader>
-              <CardFooter className="flex items-center justify-between p-4">
-                  <p className="text-sm text-muted-foreground pr-4">{texts.upgradePromptDescription}</p>
-                  <Button onClick={() => setIsBatchModalOpen(true)} size="lg">
-                      {texts.enableBatchMode}
-                  </Button>
-              </CardFooter>
+            <Card className="w-full border-destructive/20 bg-destructive/5">
+                <CardContent className="p-4 flex items-center justify-between gap-4">
+                    <div>
+                        <CardTitle className="text-lg flex items-center gap-2 text-destructive">
+                            <Star className="text-yellow-500" />
+                            {texts.upgradePromptTitle}
+                        </CardTitle>
+                        <CardDescription className="mt-1">
+                            {texts.upgradePromptDescription}
+                        </CardDescription>
+                    </div>
+                    <Button 
+                        onClick={() => setIsBatchModalOpen(true)} 
+                        variant="destructive" 
+                        size="lg" 
+                        className="shrink-0"
+                    >
+                        <span className="flex items-baseline gap-1.5 font-normal">
+                            <span className="text-base font-semibold">提升檔案大小限制</span>
+                            <span className="text-sm">或</span>
+                            <span className="text-base font-semibold">批次轉檔</span>
+                        </span>
+                    </Button>
+                </CardContent>
             </Card>
         </div>
       </main>

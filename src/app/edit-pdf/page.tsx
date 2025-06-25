@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader as ShadAlertDialogHeader, AlertDialogTitle as ShadAlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -107,8 +107,7 @@ interface HighlightAnnotation {
 interface ShapeAnnotation {
   id: string;
   pageIndex: number;
-  type: 'rect' | 'ellipse' | 'triangle' | 'scribble';
-  points?: {x: number, y: number}[]; // For scribble
+  type: 'rect' | 'ellipse' | 'triangle';
   topRatio: number;
   leftRatio: number;
   widthRatio: number;
@@ -118,6 +117,18 @@ interface ShapeAnnotation {
   strokeWidth: number;
 }
 
+interface ScribbleAnnotation {
+  id: string;
+  pageIndex: number;
+  points: {x: number, y: number}[];
+  color: string;
+  strokeWidth: number;
+  topRatio: number;
+  leftRatio: number;
+  widthRatio: number;
+  heightRatio: number;
+}
+
 interface MosaicAnnotation {
     id: string;
     pageIndex: number;
@@ -125,6 +136,16 @@ interface MosaicAnnotation {
     leftRatio: number;
     widthRatio: number;
     heightRatio: number;
+}
+
+interface EditorState {
+    pageObjects: PageObject[];
+    textAnnotations: TextAnnotation[];
+    imageAnnotations: ImageAnnotation[];
+    highlightAnnotations: HighlightAnnotation[];
+    shapeAnnotations: ShapeAnnotation[];
+    mosaicAnnotations: MosaicAnnotation[];
+    scribbleAnnotations: ScribbleAnnotation[];
 }
 
 interface PageTextContent {
@@ -275,8 +296,8 @@ const translations = {
         toolInsertComment: 'Comment',
         zoomIn: 'Zoom In',
         zoomOut: 'Zoom Out',
-        fitToWidth: 'Fit to Width',
-        fitToPage: 'Fit to Page',
+        fitToWidth: 'Fit Width',
+        fitToPage: 'Fit Page',
         textAnnotationSample: 'Sample Text',
         noImageForInsertion: 'No image selected for insertion.',
         imageInsertSuccess: 'Image inserted successfully.',
@@ -402,7 +423,7 @@ const translations = {
         insertAfterSelection: 'Insert After Selection',
         newDocConfirmTitle: 'Confirm Open New Document',
         newDocConfirmDescription: 'This will close the current document without saving changes. Are you sure you want to continue?',
-        downloadEditedFile: 'Download Edited File',
+        downloadEditedFile: 'Download',
         toolDownload: 'Download',
     },
     zh: {
@@ -599,7 +620,7 @@ const translations = {
         menuFileOpen: "開啟檔案",
         menuFileNew: "開啟PDF文件",
         insertPdf: "插入PDF",
-        menuFileSaveAs: "另存新檔",
+        menuFileSaveAs: "另存為PDF",
         menuFileBatchConvert: "批次轉換",
         menuEditUndo: "復原",
         menuEditRedo: "重做",
@@ -657,7 +678,7 @@ const translations = {
         insertAfterSelection: '插入至選取頁之後',
         newDocConfirmTitle: '確認開啟新文件',
         newDocConfirmDescription: '這將會關閉目前正在編輯的文件，且不會儲存變更。確定要繼續嗎？',
-        downloadEditedFile: '下載編輯後的文件',
+        downloadEditedFile: '下載',
         toolDownload: '下載',
     }
 };
@@ -1024,7 +1045,6 @@ const SignaturePad = ({ onSave, texts }: { onSave: (dataUrl: string) => void, te
     useEffect(() => {
         const canvas = canvasRef.current;
         if(canvas) {
-            // Set canvas size based on its parent container for responsiveness
             const parent = canvas.parentElement;
             if(parent) {
                 canvas.width = parent.clientWidth;
@@ -1059,12 +1079,25 @@ const SignaturePad = ({ onSave, texts }: { onSave: (dataUrl: string) => void, te
     )
 }
 
+const initialEditorState: EditorState = {
+  pageObjects: [],
+  textAnnotations: [],
+  imageAnnotations: [],
+  highlightAnnotations: [],
+  shapeAnnotations: [],
+  mosaicAnnotations: [],
+  scribbleAnnotations: [],
+};
+
 
 export default function PdfEditorPage() {
   const router = useRouter();
   const { toast } = useToast();
+  
+  const [editorState, setEditorState] = useState<EditorState>(initialEditorState);
+  const [history, setHistory] = useState<EditorState[]>([initialEditorState]);
+  const [historyIndex, setHistoryIndex] = useState(0);
 
-  const [pageObjects, setPageObjects] = useState<PageObject[]>([]);
   const [selectedPageIds, setSelectedPageIds] = useState<Set<string>>(new Set());
 
   const [activePageIndex, setActivePageIndex] = useState<number | null>(null);
@@ -1084,12 +1117,6 @@ export default function PdfEditorPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
-  
-  const [textAnnotations, setTextAnnotations] = useState<TextAnnotation[]>([]);
-  const [imageAnnotations, setImageAnnotations] = useState<ImageAnnotation[]>([]);
-  const [highlightAnnotations, setHighlightAnnotations] = useState<HighlightAnnotation[]>([]);
-  const [shapeAnnotations, setShapeAnnotations] = useState<ShapeAnnotation[]>([]);
-  const [mosaicAnnotations, setMosaicAnnotations] = useState<MosaicAnnotation[]>([]);
   
   const [selectedObject, setSelectedObject] = useState<SelectedObject>(null);
   const [editingAnnotationId, setEditingAnnotationId] = useState<string | null>(null);
@@ -1130,6 +1157,45 @@ export default function PdfEditorPage() {
 
   const [isScribbling, setIsScribbling] = useState(false);
   const scribblePointsRef = useRef<{x: number, y: number}[]>([]);
+  const recordNextStateRef = useRef(false);
+
+  // Destructure state for easier access in JSX
+  const { pageObjects, textAnnotations, imageAnnotations, highlightAnnotations, shapeAnnotations, mosaicAnnotations, scribbleAnnotations } = editorState;
+
+  const updateState = useCallback((newPartialState: Partial<EditorState>, isHistoryEvent: boolean = true) => {
+    setEditorState(prevState => ({
+      ...prevState,
+      ...newPartialState,
+    }));
+    if(isHistoryEvent) {
+        recordNextStateRef.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (recordNextStateRef.current) {
+        const newHistory = history.slice(0, historyIndex + 1);
+        setHistory([...newHistory, editorState]);
+        setHistoryIndex(newHistory.length);
+        recordNextStateRef.current = false;
+    }
+  }, [editorState, history, historyIndex]);
+
+  const handleUndo = () => {
+    if (historyIndex > 0) {
+      const newIndex = historyIndex - 1;
+      setHistoryIndex(newIndex);
+      setEditorState(history[newIndex]);
+    }
+  };
+
+  const handleRedo = () => {
+    if (historyIndex < history.length - 1) {
+      const newIndex = historyIndex + 1;
+      setHistoryIndex(newIndex);
+      setEditorState(history[newIndex]);
+    }
+  };
 
 
   useEffect(() => {
@@ -1153,16 +1219,14 @@ export default function PdfEditorPage() {
             onEnd: (evt) => {
                 if (evt.oldIndex === undefined || evt.newIndex === undefined || evt.oldIndex === evt.newIndex) return;
 
-                setPageObjects(prevPageObjects => {
-                    const reorderedPageObjects = Array.from(prevPageObjects);
-                    const [movedItem] = reorderedPageObjects.splice(evt.oldIndex!, 1);
-                    reorderedPageObjects.splice(evt.newIndex!, 0, movedItem);
-                    return reorderedPageObjects;
-                });
+                const reorderedPageObjects = Array.from(pageObjects);
+                const [movedItem] = reorderedPageObjects.splice(evt.oldIndex!, 1);
+                reorderedPageObjects.splice(evt.newIndex!, 0, movedItem);
+                updateState({ pageObjects: reorderedPageObjects });
             }
         });
     }
-  }, []);
+  }, [pageObjects, updateState]);
 
   useEffect(() => {
     if (pageObjects.length > 0 && viewMode === 'editor' && thumbnailContainerRef.current) {
@@ -1306,12 +1370,6 @@ export default function PdfEditorPage() {
     setIsLoggedIn(false);
     toast({ title: texts.logout, description: currentLanguage === 'zh' ? "您已成功登出。" : "You have been logged out successfully." });
   };
-    const handlePlaceholderClick = (featureName: string) => {
-    toast({
-        title: texts.comingSoon,
-        description: `${featureName} ${texts.featureNotImplemented}`
-    });
-  };
 
   const checkAndDecrementQuota = useCallback((quotaType: 'daily' | 'convert'): boolean => {
       if (isLoggedIn || typeof window === 'undefined') {
@@ -1381,20 +1439,19 @@ export default function PdfEditorPage() {
   };
   
   const loadPdfIntoEditor = async (file: File) => {
-    setTextAnnotations([]);
-    setImageAnnotations([]);
-    setHighlightAnnotations([]);
-    setShapeAnnotations([]);
-    setMosaicAnnotations([]);
-    setSelectedObject(null);
-    setEditingAnnotationId(null);
-    setHasTextLayer(false);
-
     setIsLoading(true);
     setLoadingMessage(texts.loadingPdf);
     try {
       const newPageObjects = await processPdfFile(file);
-      setPageObjects(newPageObjects);
+      
+      const newState: EditorState = {
+        ...initialEditorState,
+        pageObjects: newPageObjects,
+      };
+      setEditorState(newState);
+      setHistory([newState]);
+      setHistoryIndex(0);
+
       setSelectedPageIds(new Set());
       setActivePageIndex(0);
       setViewMode('editor');
@@ -1404,7 +1461,9 @@ export default function PdfEditorPage() {
     } catch (err: any)
     {
       toast({ title: texts.loadError, description: err.message, variant: "destructive" });
-      setPageObjects([]);
+      setEditorState(initialEditorState);
+      setHistory([initialEditorState]);
+      setHistoryIndex(0);
       setActivePageIndex(null);
     } finally {
       setIsLoading(false);
@@ -1434,27 +1493,15 @@ export default function PdfEditorPage() {
   };
 
   const handleConfirmOpenNew = () => {
-    // Reset all document-related states
-    setPageObjects([]);
+    setEditorState(initialEditorState);
+    setHistory([initialEditorState]);
+    setHistoryIndex(0);
+    setHasTextLayer(false);
     setSelectedPageIds(new Set());
     setActivePageIndex(null);
-    setTextAnnotations([]);
-    setImageAnnotations([]);
-    setHighlightAnnotations([]);
-    setShapeAnnotations([]);
-    setMosaicAnnotations([]);
-    setSelectedObject(null);
-    setEditingAnnotationId(null);
-    setPageTextContents([]);
-    setHasTextLayer(false);
-    setSearchResults([]);
-    setCurrentSearchResultIndex(-1);
-    setSearchTerm('');
-    // ... any other state
-
-    // Trigger file upload
+    
     if (pdfUploadRef.current) {
-        pdfUploadRef.current.value = ''; // Important to allow selecting the same file again
+        pdfUploadRef.current.value = ''; 
         pdfUploadRef.current.click();
     }
     
@@ -1468,12 +1515,12 @@ export default function PdfEditorPage() {
     }
     const newPages = pageObjects.filter(p => !selectedPageIds.has(p.id));
 
-    setPageObjects(newPages);
+    updateState({ pageObjects: newPages });
     setActivePageIndex(null);
     setSelectedPageIds(new Set());
 
     if (newPages.length === 0) {
-        setPageObjects([]);
+      updateState({ pageObjects: [] });
     }
 
     toast({ title: texts.pageManagement, description: currentLanguage === 'zh' ? "選取的頁面已刪除。" : "Selected pages have been deleted." });
@@ -1602,7 +1649,6 @@ export default function PdfEditorPage() {
           tempMosaicCanvas.width = mosaicWidth;
           tempMosaicCanvas.height = mosaicHeight;
 
-          // Note: Ratios for source canvas are based on its original dimensions, not scaled page dimensions
           tempMosaicCtx.drawImage(
             sourcePageCanvas,
             annotation.leftRatio * sourcePageCanvas.width,
@@ -1834,13 +1880,13 @@ export default function PdfEditorPage() {
   
   const handleDragMouseDown = (
       event: React.MouseEvent<HTMLElement>,
-      type: 'text' | 'image' | 'highlight' | 'shape' | 'mosaic' | 'image-resize' | 'highlight-resize' | 'text-resize' | 'shape-resize' | 'mosaic-resize',
+      type: 'text' | 'image' | 'highlight' | 'shape' | 'mosaic' | 'scribble' | 'image-resize' | 'highlight-resize' | 'text-resize' | 'shape-resize' | 'mosaic-resize' | 'scribble-resize',
       id: string
   ) => {
       event.stopPropagation();
 
       const isResize = type.endsWith('-resize');
-      const itemType = type.split('-')[0] as 'text' | 'image' | 'highlight' | 'shape' | 'mosaic';
+      const itemType = type.split('-')[0] as 'text' | 'image' | 'highlight' | 'shape' | 'mosaic' | 'scribble';
 
       const draggedElement = event.currentTarget as HTMLElement;
       const containerElement = (draggedElement.closest('.main-page-container')) as HTMLElement;
@@ -1855,6 +1901,7 @@ export default function PdfEditorPage() {
           case 'highlight': initialItemState = highlightAnnotations.find(a => a.id === id); break;
           case 'shape': initialItemState = shapeAnnotations.find(a => a.id === id); break;
           case 'mosaic': initialItemState = mosaicAnnotations.find(a => a.id === id); break;
+          case 'scribble': initialItemState = scribbleAnnotations.find(a => a.id === id); break;
       }
       
       if (!initialItemState) return;
@@ -1867,81 +1914,79 @@ export default function PdfEditorPage() {
           initialWidth: 'widthRatio' in initialItemState ? initialItemState.widthRatio * containerRect.width : 0,
           initialHeight: 'heightRatio' in initialItemState ? initialItemState.heightRatio * containerRect.height : 0
       };
+      
+      const tempStateRef: React.MutableRefObject<Partial<EditorState>> = { current: {} };
 
       const handleMouseMove = (moveEvent: MouseEvent) => {
           moveEvent.preventDefault();
           isDraggingRef.current = true;
-          draggedElement.style.cursor = 'grabbing';
 
           const deltaX = moveEvent.clientX - dragStartRef.current.x;
           const deltaY = moveEvent.clientY - dragStartRef.current.y;
           
-          let newWidthPx, newHeightPx, newWidthRatio, newHeightRatio;
-
           if (isResize) {
-              newWidthPx = dragStartRef.current.initialWidth + deltaX;
-              newHeightPx = dragStartRef.current.initialHeight + deltaY;
-              newWidthRatio = Math.max(0.01, newWidthPx / containerRect.width);
-              newHeightRatio = Math.max(0.01, newHeightPx / containerRect.height);
+              const newWidthPx = dragStartRef.current.initialWidth + deltaX;
+              const newHeightPx = dragStartRef.current.initialHeight + deltaY;
+              let newWidthRatio = Math.max(0.01, newWidthPx / containerRect.width);
+              let newHeightRatio = Math.max(0.01, newHeightPx / containerRect.height);
 
               switch(itemType) {
                 case 'image':
+                case 'scribble':
+                    const updater = itemType === 'image' ? setImageAnnotations : setScribbleAnnotations;
+                    const items = itemType === 'image' ? imageAnnotations : scribbleAnnotations;
                     newWidthRatio = Math.max(0.05, newWidthPx / containerRect.width);
-                    setImageAnnotations(prev => prev.map(ann =>
+                    const updatedItems = items.map(ann =>
                         ann.id === id ? {
                             ...ann,
                             widthRatio: newWidthRatio,
                             heightRatio: newWidthRatio / ann.aspectRatio * (containerRect.width / containerRect.height)
                         } : ann
-                    ));
+                    );
+                    tempStateRef.current = itemType === 'image' ? { imageAnnotations: updatedItems } : { scribbleAnnotations: updatedItems as ScribbleAnnotation[] };
                     break;
                 case 'highlight':
                 case 'shape':
                 case 'mosaic':
-                    const updater = itemType === 'highlight' ? setHighlightAnnotations : itemType === 'shape' ? setShapeAnnotations : setMosaicAnnotations;
-                    updater(prev => prev.map(ann =>
-                        ann.id === id ? {
-                            ...ann,
-                            widthRatio: newWidthRatio,
-                            heightRatio: newHeightRatio
-                        } : ann
-                    ) as any);
+                    const itemsToUpdate = itemType === 'highlight' ? highlightAnnotations : itemType === 'shape' ? shapeAnnotations : mosaicAnnotations;
+                    const updatedShapeItems = itemsToUpdate.map(ann =>
+                        ann.id === id ? { ...ann, widthRatio: newWidthRatio, heightRatio: newHeightRatio } : ann
+                    );
+                    tempStateRef.current = itemType === 'highlight' ? { highlightAnnotations: updatedShapeItems } : itemType === 'shape' ? { shapeAnnotations: updatedShapeItems } : { mosaicAnnotations: updatedShapeItems };
                     break;
                 case 'text':
                      newWidthRatio = Math.max(0.1, newWidthPx / containerRect.width);
-                     setTextAnnotations(prev => prev.map(ann =>
-                        ann.id === id ? { ...ann, widthRatio: newWidthRatio } : ann
-                    ));
+                     tempStateRef.current = { textAnnotations: textAnnotations.map(ann => ann.id === id ? { ...ann, widthRatio: newWidthRatio } : ann) };
                     break;
               }
           }
-          else { // It's a drag operation
+          else { // Drag operation
               const newLeftPx = dragStartRef.current.initialLeft + deltaX;
               const newTopPx = dragStartRef.current.initialTop + deltaY;
-
               const newLeftRatio = Math.max(0, Math.min(1, newLeftPx / containerRect.width));
               const newTopRatio = Math.max(0, Math.min(1, newTopPx / containerRect.height));
+              const updater = (prev: any[]) => prev.map(ann => ann.id === id ? { ...ann, leftRatio: newLeftRatio, topRatio: newTopRatio } : ann);
               
-              const updater = (prev: any) => ({ ...prev, topRatio: newTopRatio, leftRatio: newLeftRatio });
-
               switch (itemType) {
-                  case 'text': 
-                      if (editingAnnotationId === id) return;
-                      setTextAnnotations(prev => prev.map(ann => ann.id === id ? updater(ann) : ann)); 
-                      break;
-                  case 'image': setImageAnnotations(prev => prev.map(ann => ann.id === id ? updater(ann) : ann)); break;
-                  case 'highlight': setHighlightAnnotations(prev => prev.map(ann => ann.id === id ? updater(ann) : ann)); break;
-                  case 'shape': setShapeAnnotations(prev => prev.map(ann => ann.id === id ? updater(ann) : ann)); break;
-                  case 'mosaic': setMosaicAnnotations(prev => prev.map(ann => ann.id === id ? updater(ann) : ann)); break;
+                  case 'text': tempStateRef.current = { textAnnotations: updater(textAnnotations) }; break;
+                  case 'image': tempStateRef.current = { imageAnnotations: updater(imageAnnotations) }; break;
+                  case 'highlight': tempStateRef.current = { highlightAnnotations: updater(highlightAnnotations) }; break;
+                  case 'shape': tempStateRef.current = { shapeAnnotations: updater(shapeAnnotations) }; break;
+                  case 'mosaic': tempStateRef.current = { mosaicAnnotations: updater(mosaicAnnotations) }; break;
+                  case 'scribble': tempStateRef.current = { scribbleAnnotations: updater(scribbleAnnotations) }; break;
               }
           }
+          updateState(tempStateRef.current, false); // Update state without creating history event
       };
 
       const handleMouseUp = () => {
           document.removeEventListener('mousemove', handleMouseMove);
           document.removeEventListener('mouseup', handleMouseUp);
-          draggedElement.style.cursor = 'grab';
-
+          
+          if(isDraggingRef.current) {
+            updateState(tempStateRef.current, true); // Record final state in history
+          }
+          
           setTimeout(() => { isDraggingRef.current = false; }, 50);
       };
 
@@ -1971,13 +2016,14 @@ export default function PdfEditorPage() {
 
     const handleRotatePage = (direction: 'cw' | 'ccw') => {
         if (activePageIndex === null) return;
-        setPageObjects(prev => prev.map((page, index) => {
+        const newPageObjects = pageObjects.map((page, index) => {
             if (index === activePageIndex) {
                 const newRotation = (page.rotation + (direction === 'cw' ? 90 : -90) + 360) % 360;
                 return { ...page, rotation: newRotation };
             }
             return page;
-        }));
+        });
+        updateState({ pageObjects: newPageObjects });
     };
 
     const handleAddBlankPage = () => {
@@ -2000,11 +2046,9 @@ export default function PdfEditorPage() {
 
         const insertAt = (activePageIndex === null ? pageObjects.length - 1 : activePageIndex) + 1;
 
-        setPageObjects(prev => {
-            const newPages = [...prev];
-            newPages.splice(insertAt, 0, newPageObject);
-            return newPages;
-        });
+        const newPages = [...pageObjects];
+        newPages.splice(insertAt, 0, newPageObject);
+        updateState({ pageObjects: newPages });
 
         setActivePageIndex(insertAt);
         setSelectedPageIds(new Set([newPageObject.id]));
@@ -2024,15 +2068,16 @@ export default function PdfEditorPage() {
         }
 
         const container = mainViewContainerRef.current;
-        const topRatio = (container.scrollTop + container.clientHeight / 2) / container.scrollHeight;
-        const leftRatio = (container.scrollLeft + container.clientWidth / 2) / container.scrollWidth;
+        const topRatio = (container.scrollTop + container.clientHeight * 0.4) / container.scrollHeight;
+        const leftRatio = (container.scrollLeft + container.clientWidth * 0.4) / container.scrollWidth;
+
 
         const newAnnotation: TextAnnotation = {
             id: uuidv4(),
             pageIndex: activePageIndex,
             text: texts.textAnnotationSample,
-            topRatio: Math.min(0.8, topRatio) - 0.1, // Adjust to center vertically
-            leftRatio: Math.min(0.8, leftRatio) - 0.15, // Adjust to center horizontally
+            topRatio: Math.min(0.8, topRatio),
+            leftRatio: Math.min(0.8, leftRatio),
             widthRatio: 0.3,
             fontSize: 36,
             fontFamily: 'Helvetica',
@@ -2042,21 +2087,27 @@ export default function PdfEditorPage() {
             color: '#000000',
             textAlign: 'left',
         };
-        setTextAnnotations(prev => [...prev, newAnnotation]);
+        updateState({ textAnnotations: [...textAnnotations, newAnnotation] });
         setSelectedObject({type: 'text', id: newAnnotation.id});
         setEditingAnnotationId(null);
     };
     
     const handleAnnotationChange = (updatedAnnotation: TextAnnotation) => {
-      setTextAnnotations(prev => prev.map(ann => 
-          ann.id === updatedAnnotation.id ? updatedAnnotation : ann
-      ));
+        const newAnnotations = textAnnotations.map(ann => ann.id === updatedAnnotation.id ? updatedAnnotation : ann);
+        updateState({ textAnnotations: newAnnotations });
     };
 
     const handleDeleteAnnotation = (id: string) => {
-        setTextAnnotations(prev => prev.filter(ann => ann.id !== id));
-        if (editingAnnotationId === id) setEditingAnnotationId(null);
-        if (selectedObject?.id === id) setSelectedObject(null);
+        const updatedAnnotations = {
+            textAnnotations: textAnnotations.filter(a => a.id !== id),
+            imageAnnotations: imageAnnotations.filter(a => a.id !== id),
+            highlightAnnotations: imageAnnotations.filter(a => a.id !== id),
+            shapeAnnotations: shapeAnnotations.filter(a => a.id !== id),
+            mosaicAnnotations: mosaicAnnotations.filter(a => a.id !== id),
+            scribbleAnnotations: scribbleAnnotations.filter(a => a.id !== id),
+        };
+        updateState(updatedAnnotations);
+        setSelectedObject(null);
     }
     
     const addImageAnnotation = useCallback((dataUrl: string, pageIndex: number) => {
@@ -2081,11 +2132,11 @@ export default function PdfEditorPage() {
                 heightRatio,
                 aspectRatio
             };
-            setImageAnnotations(prev => [...prev, newAnnotation]);
+            updateState({ imageAnnotations: [...imageAnnotations, newAnnotation] });
             setSelectedObject({ type: 'image', id: newAnnotation.id });
         };
         img.src = dataUrl;
-    }, []);
+    }, [updateState, imageAnnotations]);
 
     const handleImageFileSelected = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         if (activePageIndex === null) return;
@@ -2128,11 +2179,6 @@ export default function PdfEditorPage() {
             }
         }
     }, [activePageIndex, addImageAnnotation, texts.imagePasteSuccess]);
-
-    const handleDeleteImageAnnotation = (id: string) => {
-        setImageAnnotations(prev => prev.filter(ann => ann.id !== id));
-        if (selectedObject?.id === id) setSelectedObject(null);
-    }
     
     const handleAddHighlightAnnotation = () => {
       if (activePageIndex === null) return;
@@ -2145,14 +2191,9 @@ export default function PdfEditorPage() {
         heightRatio: 0.05,
         color: 'rgba(255, 255, 0, 0.4)',
       };
-      setHighlightAnnotations(prev => [...prev, newAnnotation]);
+      updateState({ highlightAnnotations: [...highlightAnnotations, newAnnotation] });
       setSelectedObject({type: 'highlight', id: newAnnotation.id});
     };
-
-    const handleDeleteHighlightAnnotation = (id: string) => {
-        setHighlightAnnotations(prev => prev.filter(ann => ann.id !== id));
-        if (selectedObject?.id === id) setSelectedObject(null);
-    }
 
     const handleAddShapeAnnotation = (type: ShapeAnnotation['type']) => {
         if(activePageIndex === null) return;
@@ -2168,20 +2209,10 @@ export default function PdfEditorPage() {
             strokeColor: '#000000',
             strokeWidth: 2,
         };
-        setShapeAnnotations(prev => [...prev, newShape]);
+        updateState({ shapeAnnotations: [...shapeAnnotations, newShape] });
         setSelectedObject({ type: 'shape', id: newShape.id });
     }
     
-    const handleDeleteShapeAnnotation = (id: string) => {
-        setShapeAnnotations(prev => prev.filter(ann => ann.id !== id));
-        if (selectedObject?.id === id) setSelectedObject(null);
-    }
-    
-    const handleDeleteMosaicAnnotation = (id: string) => {
-        setMosaicAnnotations(prev => prev.filter(ann => ann.id !== id));
-        if (selectedObject?.id === id) setSelectedObject(null);
-    }
-
     const handleSaveSignature = (dataUrl: string) => {
         if(activePageIndex === null) return;
         addImageAnnotation(dataUrl, activePageIndex);
@@ -2195,7 +2226,7 @@ export default function PdfEditorPage() {
 
         const newAnnotations: ImageAnnotation[] = [];
         for (let i=0; i < pageObjects.length; i++) {
-            if (i === baseAnnotation.pageIndex) continue; // Skip original page
+            if (i === baseAnnotation.pageIndex) continue; 
             
             const existingAnnotationOnPage = imageAnnotations.find(a => a.pageIndex === i && a.dataUrl === baseAnnotation.dataUrl);
             if (!existingAnnotationOnPage) {
@@ -2207,20 +2238,16 @@ export default function PdfEditorPage() {
             }
         }
         
-        setImageAnnotations(prev => [...prev, ...newAnnotations]);
+        updateState({ imageAnnotations: [...imageAnnotations, ...newAnnotations] });
         toast({ title: 'Success', description: 'Signature applied to all pages.' });
     };
 
     const handleWrapperClick = (type: SelectedObject['type'], id: string, e: React.MouseEvent) => {
         e.stopPropagation();
         if (isDraggingRef.current) return;
-        if(selectedObject?.id === id) { // It's already selected, deselect it
-           setSelectedObject(null);
-           if(type === 'text') setEditingAnnotationId(null);
-        } else {
-          setSelectedObject({ type, id });
-          if(type !== 'text') setEditingAnnotationId(null);
-        }
+        
+        setEditingAnnotationId(null);
+        setSelectedObject({ type, id });
     };
 
     const handleAnnotationDoubleClick = (id: string, e: React.MouseEvent) => {
@@ -2231,28 +2258,16 @@ export default function PdfEditorPage() {
     
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Delete' || e.key === 'Backspace') {
-                if(selectedObject === null) return;
-                
-                switch(selectedObject.type) {
-                    case 'text':
-                        if (editingAnnotationId) return; // Don't delete while editing text
-                        handleDeleteAnnotation(selectedObject.id);
-                        break;
-                    case 'image':
-                    case 'scribble':
-                        handleDeleteImageAnnotation(selectedObject.id);
-                        break;
-                    case 'shape':
-                        handleDeleteShapeAnnotation(selectedObject.id);
-                        break;
-                    case 'highlight':
-                        handleDeleteHighlightAnnotation(selectedObject.id);
-                        break;
-                     case 'mosaic':
-                        handleDeleteMosaicAnnotation(selectedObject.id);
-                        break;
-                }
+            if ((e.key === 'Delete' || e.key === 'Backspace') && selectedObject !== null && editingAnnotationId === null) {
+                handleDeleteAnnotation(selectedObject.id);
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+                e.preventDefault();
+                handleUndo();
+            }
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) {
+                e.preventDefault();
+                handleRedo();
             }
         };
 
@@ -2262,7 +2277,7 @@ export default function PdfEditorPage() {
             window.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('paste', handlePaste);
         };
-    }, [selectedObject, editingAnnotationId, handlePaste]);
+    }, [selectedObject, editingAnnotationId, handlePaste, handleUndo, handleRedo]);
 
 
     const handleOpenLinkPopover = () => {
@@ -2283,13 +2298,9 @@ export default function PdfEditorPage() {
         if (!selectedObject || (selectedObject.type !== 'text' && selectedObject.type !== 'image')) return;
 
         if (selectedObject.type === 'text') {
-            setTextAnnotations(prev => prev.map(ann =>
-                ann.id === selectedObject.id ? { ...ann, link: currentLink } : ann
-            ));
+            updateState({ textAnnotations: textAnnotations.map(ann => ann.id === selectedObject.id ? { ...ann, link: currentLink } : ann) });
         } else {
-            setImageAnnotations(prev => prev.map(ann =>
-                ann.id === selectedObject.id ? { ...ann, link: currentLink } : ann
-            ));
+            updateState({ imageAnnotations: imageAnnotations.map(ann => ann.id === selectedObject.id ? { ...ann, link: currentLink } : ann) });
         }
         setIsLinkPopoverOpen(false);
         toast({ title: texts.linkAttached });
@@ -2299,21 +2310,25 @@ export default function PdfEditorPage() {
         if (!selectedObject || (selectedObject.type !== 'text' && selectedObject.type !== 'image')) return;
 
         if (selectedObject.type === 'text') {
-            setTextAnnotations(prev => prev.map(ann => {
-                if (ann.id === selectedObject!.id) {
-                    const { link, ...rest } = ann;
-                    return rest;
-                }
-                return ann;
-            }));
+            updateState({
+                textAnnotations: textAnnotations.map(ann => {
+                    if (ann.id === selectedObject!.id) {
+                        const { link, ...rest } = ann;
+                        return rest;
+                    }
+                    return ann;
+                })
+            });
         } else {
-            setImageAnnotations(prev => prev.map(ann => {
-                if (ann.id === selectedObject!.id) {
-                    const { link, ...rest } = ann;
-                    return rest;
-                }
-                return ann;
-            }));
+            updateState({
+                imageAnnotations: imageAnnotations.map(ann => {
+                    if (ann.id === selectedObject!.id) {
+                        const { link, ...rest } = ann;
+                        return rest;
+                    }
+                    return ann;
+                })
+            });
         }
         setIsLinkPopoverOpen(false);
         toast({ title: texts.linkRemoved, variant: "destructive" });
@@ -2375,6 +2390,10 @@ export default function PdfEditorPage() {
     };
     
     const handleInitiateInsert = (target: 'start' | 'end' | 'before' | 'after') => {
+      if (pageObjects.length === 0 && (target === 'before' || target === 'after')) {
+          toast({ title: texts.noPageSelected, variant: "destructive" });
+          return;
+      }
       insertionTargetRef.current = target;
       insertPdfRef.current?.click();
     };
@@ -2412,11 +2431,9 @@ export default function PdfEditorPage() {
                     insertAtIndex = pageObjects.length;
             }
             
-            setPageObjects(prev => {
-                const newArray = [...prev];
-                newArray.splice(insertAtIndex, 0, ...newPages);
-                return newArray;
-            });
+            const newPageObjects = [...pageObjects];
+            newPageObjects.splice(insertAtIndex, 0, ...newPages);
+            updateState({ pageObjects: newPageObjects });
             
             toast({ title: "Insert Success", description: currentLanguage === 'zh' ? `${fileToInsert.name} 已成功插入。` : `${fileToInsert.name} has been inserted.` });
 
@@ -2617,8 +2634,8 @@ export default function PdfEditorPage() {
              <MenubarMenu>
                 <MenubarTrigger>{texts.menuEdit}</MenubarTrigger>
                 <MenubarContent>
-                    <MenubarItem onClick={() => handlePlaceholderClick('Undo')}><Undo className="mr-2 h-4 w-4" />{texts.menuEditUndo}</MenubarItem>
-                    <MenubarItem onClick={() => handlePlaceholderClick('Redo')}><Redo className="mr-2 h-4 w-4" />{texts.menuEditRedo}</MenubarItem>
+                    <MenubarItem onClick={handleUndo} disabled={historyIndex <= 0}><Undo className="mr-2 h-4 w-4" />{texts.menuEditUndo}</MenubarItem>
+                    <MenubarItem onClick={handleRedo} disabled={historyIndex >= history.length - 1}><Redo className="mr-2 h-4 w-4" />{texts.menuEditRedo}</MenubarItem>
                     <MenubarSeparator/>
                     <MenubarItem onClick={handleAddTextAnnotation} disabled={activePageIndex === null}><Type className="mr-2 h-4 w-4"/>{texts.menuEditInsertText}</MenubarItem>
                     <MenubarItem onClick={() => imageUploadRef.current?.click()} disabled={activePageIndex === null}><ImagePlus className="mr-2 h-4 w-4"/>{texts.menuEditInsertImage}</MenubarItem>
@@ -2692,7 +2709,7 @@ export default function PdfEditorPage() {
 
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={() => handlePlaceholderClick('Undo')}>
+                        <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={handleUndo} disabled={historyIndex <= 0}>
                            <Undo className="h-5 w-5" />
                            <span className="text-xs">{texts.menuEditUndo}</span>
                        </Button>
@@ -2701,7 +2718,7 @@ export default function PdfEditorPage() {
                 </Tooltip>
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={() => handlePlaceholderClick('Redo')}>
+                        <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={handleRedo} disabled={historyIndex >= history.length - 1}>
                            <Redo className="h-5 w-5" />
                            <span className="text-xs">{texts.menuEditRedo}</span>
                        </Button>
@@ -2715,7 +2732,7 @@ export default function PdfEditorPage() {
                 <TooltipTrigger asChild>
                     <Button variant={activeTool === 'text' ? "secondary" : "ghost"} className="flex flex-col h-auto p-2 space-y-1" onClick={() => { setActiveTool('text'); handleAddTextAnnotation() }} disabled={activePageIndex === null}>
                         <Type className="h-5 w-5" />
-                        <span className="text-xs">{texts.toolInsertText}</span>
+                        <span className="text-xs">{texts.toolText}</span>
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom"><p>{texts.menuEditInsertText}</p></TooltipContent>
@@ -2724,7 +2741,7 @@ export default function PdfEditorPage() {
                 <TooltipTrigger asChild>
                     <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={() => imageUploadRef.current?.click()} disabled={activePageIndex === null}>
                         <ImagePlus className="h-5 w-5" />
-                        <span className="text-xs">{texts.toolInsertImage}</span>
+                        <span className="text-xs">{texts.toolImage}</span>
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom"><p>{texts.menuEditInsertImage}</p></TooltipContent>
@@ -2801,7 +2818,7 @@ export default function PdfEditorPage() {
                             <DialogTrigger asChild>
                                 <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" disabled={activePageIndex === null}>
                                     <Edit3 className="h-5 w-5" />
-                                    <span className="text-xs">{texts.toolSignatureShort}</span>
+                                    <span className="text-xs">{texts.toolSignature}</span>
                                 </Button>
                             </DialogTrigger>
                         </TooltipTrigger>
@@ -3214,3 +3231,5 @@ export default function PdfEditorPage() {
     </div>
   );
 }
+
+    

@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader as ShadAlertDialogHeader, AlertDialogTitle as ShadAlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -597,7 +597,7 @@ const translations = {
         menuTools: "工具",
         menuHelp: "說明",
         menuFileOpen: "開啟檔案",
-        menuFileNew: "開啟新文件",
+        menuFileNew: "開啟PDF文件",
         insertPdf: "插入PDF",
         menuFileSaveAs: "另存新檔",
         menuFileBatchConvert: "批次轉換",
@@ -655,7 +655,7 @@ const translations = {
         insertAtEnd: '插入至結尾',
         insertBeforeSelection: '插入至選取頁之前',
         insertAfterSelection: '插入至選取頁之後',
-        newDocConfirmTitle: '確認開啟新文件',
+        newDocConfirmTitle: '確認開啟PDF文件',
         newDocConfirmDescription: '這將會關閉目前正在編輯的文件，且不會儲存變更。確定要繼續嗎？',
         downloadEditedFile: '下載編輯後的文件',
         toolDownload: '下載',
@@ -2502,6 +2502,12 @@ export default function PdfEditorPage() {
         </div>
       )}
 
+      {/* These inputs need to be in the DOM at all times for their refs to work */}
+      <Input type="file" id="pdfUploadInput" accept="application/pdf" onChange={handlePdfUpload} ref={pdfUploadRef} className="hidden" />
+      <Input type="file" id="imageUploadInput" accept="image/*" onChange={handleImageFileSelected} ref={imageUploadRef} className="hidden" />
+      <Input type="file" id="insertPdfInput" accept="application/pdf" onChange={handleInsertFileSelected} ref={insertPdfRef} className="hidden" />
+      <Input type="file" id="convertUploadInput" onChange={handleConvertFileSelect} ref={convertUploadRef} className="hidden" />
+
       <AlertDialog open={isNewDocConfirmOpen} onOpenChange={setIsNewDocConfirmOpen}>
         <AlertDialogContent>
             <ShadAlertDialogHeader>
@@ -2934,10 +2940,6 @@ export default function PdfEditorPage() {
                     <Upload className="h-12 w-12 text-muted-foreground mb-3" />
                     <p className="text-md text-muted-foreground text-center">{texts.dropFileHere}</p>
                   </div>
-                  <Input type="file" id="pdfUploadInput" accept="application/pdf" onChange={handlePdfUpload} ref={pdfUploadRef} className="hidden" />
-                  <Input type="file" id="imageUploadInput" accept="image/*" onChange={handleImageFileSelected} ref={imageUploadRef} className="hidden" />
-                  <Input type="file" id="insertPdfInput" accept="application/pdf" onChange={handleInsertFileSelected} ref={insertPdfRef} className="hidden" />
-                  <Input type="file" id="convertUploadInput" onChange={handleConvertFileSelect} ref={convertUploadRef} className="hidden" />
                 </CardContent>
               </Card>
             </div>

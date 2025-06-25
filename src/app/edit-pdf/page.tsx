@@ -13,8 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription as ShadAlertDialogDescription, AlertDialogFooter, AlertDialogHeader as ShadAlertDialogHeader, AlertDialogTitle as ShadAlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader as ShadAlertDialogHeader, AlertDialogTitle as ShadAlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -127,6 +127,7 @@ interface ScribbleAnnotation {
   leftRatio: number;
   widthRatio: number;
   heightRatio: number;
+  aspectRatio: number;
 }
 
 interface MosaicAnnotation {
@@ -1929,7 +1930,6 @@ export default function PdfEditorPage() {
               switch(itemType) {
                 case 'image':
                 case 'scribble':
-                    const updater = itemType === 'image' ? setImageAnnotations : setScribbleAnnotations;
                     const items = itemType === 'image' ? imageAnnotations : scribbleAnnotations;
                     newWidthRatio = Math.max(0.05, newWidthPx / containerRect.width);
                     const updatedItems = items.map(ann =>
@@ -1948,7 +1948,7 @@ export default function PdfEditorPage() {
                     const updatedShapeItems = itemsToUpdate.map(ann =>
                         ann.id === id ? { ...ann, widthRatio: newWidthRatio, heightRatio: newHeightRatio } : ann
                     );
-                    tempStateRef.current = itemType === 'highlight' ? { highlightAnnotations: updatedShapeItems } : itemType === 'shape' ? { shapeAnnotations: updatedShapeItems } : { mosaicAnnotations: updatedShapeItems };
+                    tempStateRef.current = itemType === 'highlight' ? { highlightAnnotations: updatedShapeItems as any[] } : itemType === 'shape' ? { shapeAnnotations: updatedShapeItems as any[] } : { mosaicAnnotations: updatedShapeItems as any[] };
                     break;
                 case 'text':
                      newWidthRatio = Math.max(0.1, newWidthPx / containerRect.width);
@@ -2090,14 +2090,14 @@ export default function PdfEditorPage() {
     
     const handleAnnotationChange = (updatedAnnotation: TextAnnotation) => {
         const newAnnotations = textAnnotations.map(ann => ann.id === updatedAnnotation.id ? updatedAnnotation : ann);
-        updateState({ textAnnotations: newAnnotations });
+        updateState({ textAnnotations: newAnnotations }, false);
     };
 
     const handleDeleteAnnotation = (id: string) => {
         const updatedAnnotations = {
             textAnnotations: textAnnotations.filter(a => a.id !== id),
             imageAnnotations: imageAnnotations.filter(a => a.id !== id),
-            highlightAnnotations: imageAnnotations.filter(a => a.id !== id),
+            highlightAnnotations: highlightAnnotations.filter(a => a.id !== id),
             shapeAnnotations: shapeAnnotations.filter(a => a.id !== id),
             mosaicAnnotations: mosaicAnnotations.filter(a => a.id !== id),
             scribbleAnnotations: scribbleAnnotations.filter(a => a.id !== id),
@@ -2128,11 +2128,11 @@ export default function PdfEditorPage() {
                 heightRatio,
                 aspectRatio
             };
-            updateState({ imageAnnotations: [...imageAnnotations, newAnnotation] });
+            updateState({ imageAnnotations: [...(editorState.imageAnnotations || []), newAnnotation] });
             setSelectedObject({ type: 'image', id: newAnnotation.id });
         };
         img.src = dataUrl;
-    }, [updateState, imageAnnotations]);
+    }, [updateState, editorState.imageAnnotations]);
 
     const handleImageFileSelected = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         if (activePageIndex === null) return;
@@ -2246,6 +2246,12 @@ export default function PdfEditorPage() {
     const handleAnnotationSelect = (type: SelectedObject['type'], id: string, e: React.MouseEvent) => {
       e.stopPropagation();
       if (isDraggingRef.current) return;
+      
+      // If the same text annotation is clicked again, do nothing (wait for double click)
+      if (selectedObject?.type === 'text' && selectedObject.id === id && !editingAnnotationId) {
+          return;
+      }
+      
       setSelectedObject({ type, id });
       setEditingAnnotationId(null); // Always exit edit mode on single click
     }
@@ -2314,7 +2320,7 @@ export default function PdfEditorPage() {
                 textAnnotations: textAnnotations.map(ann => {
                     if (ann.id === selectedObject!.id) {
                         const { link, ...rest } = ann;
-                        return rest;
+                        return rest as TextAnnotation;
                     }
                     return ann;
                 })
@@ -2324,7 +2330,7 @@ export default function PdfEditorPage() {
                 imageAnnotations: imageAnnotations.map(ann => {
                     if (ann.id === selectedObject!.id) {
                         const { link, ...rest } = ann;
-                        return rest;
+                        return rest as ImageAnnotation;
                     }
                     return ann;
                 })
@@ -2395,7 +2401,10 @@ export default function PdfEditorPage() {
           return;
       }
       insertionTargetRef.current = target;
-      insertPdfRef.current?.click();
+      if (insertPdfRef.current) {
+        insertPdfRef.current.value = '';
+        insertPdfRef.current.click();
+      }
     };
 
     const handleInsertFileSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -2529,7 +2538,7 @@ export default function PdfEditorPage() {
         <AlertDialogContent>
             <ShadAlertDialogHeader>
                 <ShadAlertDialogTitle>{texts.newDocConfirmTitle}</ShadAlertDialogTitle>
-                <ShadAlertDialogDescription>{texts.newDocConfirmDescription}</ShadAlertDialogDescription>
+                <AlertDialogDescription>{texts.newDocConfirmDescription}</AlertDialogDescription>
             </ShadAlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel>{texts.cancel}</AlertDialogCancel>
@@ -2542,9 +2551,9 @@ export default function PdfEditorPage() {
         <AlertDialogContent>
             <ShadAlertDialogHeader>
                 <ShadAlertDialogTitle>{texts.convertConfirmTitle}</ShadAlertDialogTitle>
-                <ShadAlertDialogDescription>
+                <AlertDialogDescription>
                     {pendingFileToConvert ? texts.convertConfirmDescription(pendingFileToConvert.name) : ''}
-                </ShadAlertDialogDescription>
+                </AlertDialogDescription>
             </ShadAlertDialogHeader>
             <AlertDialogFooter>
                 <Button variant="outline" onClick={() => startConversionProcess('download')}>{texts.convertConfirmDownload}</Button>
@@ -2557,9 +2566,9 @@ export default function PdfEditorPage() {
         <AlertDialogContent>
             <ShadAlertDialogHeader>
             <ShadAlertDialogTitle>{guestLimitModalContent.title}</ShadAlertDialogTitle>
-            <ShadAlertDialogDescription>
+            <AlertDialogDescription>
                 {guestLimitModalContent.description}
-            </ShadAlertDialogDescription>
+            </AlertDialogDescription>
             </ShadAlertDialogHeader>
             <AlertDialogFooter>
             <AlertDialogCancel>{texts.cancel}</AlertDialogCancel>
@@ -2572,9 +2581,9 @@ export default function PdfEditorPage() {
         <AlertDialogContent>
             <ShadAlertDialogHeader>
             <ShadAlertDialogTitle>{texts.deletePageConfirmTitle}</ShadAlertDialogTitle>
-            <ShadAlertDialogDescription>
+            <AlertDialogDescription>
                 {pageToDelete !== null ? texts.deletePageConfirmDescription : `${currentLanguage === 'zh' ? `您確定要刪除選取的 ${selectedPageIds.size} 個頁面嗎?` : `Are you sure you want to delete the ${selectedPageIds.size} selected pages?` }`}
-            </ShadAlertDialogDescription>
+            </AlertDialogDescription>
             </ShadAlertDialogHeader>
             <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setPageToDelete(null)}>{texts.cancel}</AlertDialogCancel>
@@ -3056,7 +3065,6 @@ export default function PdfEditorPage() {
                                 ref={el => pageRefs.current[index] = el} 
                                 data-page-index={index} 
                                 className="shadow-lg bg-white relative my-2 main-page-container"
-                                onClick={(e) => e.stopPropagation()} 
                                 style={{
                                     width: (rotation % 180 !== 0 ? sourceCanvas.height : sourceCanvas.width) * mainCanvasZoom,
                                     height: (rotation % 180 !== 0 ? sourceCanvas.width : sourceCanvas.height) * mainCanvasZoom,

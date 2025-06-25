@@ -869,9 +869,11 @@ export default function PdfEditorPage() {
   const observerRef = useRef<IntersectionObserver | null>(null);
 
   // Batch Conversion State
+  const [isBatchPopoverOpen, setIsBatchPopoverOpen] = useState(false);
   const [batchFiles, setBatchFiles] = useState<File[]>([]);
   const [targetFormat, setTargetFormat] = useState<string>('word');
   const [isConverting, setIsConverting] = useState(false);
+  const [currentConvertingFile, setCurrentConvertingFile] = useState('');
   const [uploadStatuses, setUploadStatuses] = useState<{ [fileName: string]: UploadStatus }>({});
   const [batchTotalSize, setBatchTotalSize] = useState(0);
   const batchFileUploadRef = useRef<HTMLInputElement>(null);
@@ -1946,13 +1948,38 @@ export default function PdfEditorPage() {
       }
   
       setIsConverting(true);
+      setCurrentConvertingFile(batchFiles[0]?.name || '');
+
       setUploadStatuses(prev => {
         const newStatuses: { [fileName: string]: UploadStatus } = {};
         batchFiles.forEach(file => {
-            newStatuses[file.name] = { status: 'converting', progress: 50 };
+            newStatuses[file.name] = { status: 'converting', progress: 10 };
         });
         return newStatuses;
       });
+
+      const progressInterval = setInterval(() => {
+          setUploadStatuses(prev => {
+              const newStatuses = {...prev};
+              let allDone = true;
+              Object.keys(newStatuses).forEach(fileName => {
+                  if (newStatuses[fileName].progress < 90) {
+                      newStatuses[fileName].progress += 5;
+                      allDone = false;
+                  }
+              });
+              if (allDone) clearInterval(progressInterval);
+              return newStatuses;
+          });
+      }, 500);
+
+      const cyclingInterval = setInterval(() => {
+        setCurrentConvertingFile(prevFile => {
+            const currentIndex = batchFiles.findIndex(f => f.name === prevFile);
+            const nextIndex = (currentIndex + 1) % batchFiles.length;
+            return batchFiles[nextIndex]?.name || '';
+        });
+      }, 2000);
   
       const formData = new FormData();
       let endpoint = "";
@@ -1983,6 +2010,8 @@ export default function PdfEditorPage() {
             signal: controller.signal
         });
         clearTimeout(timeoutId);
+        clearInterval(progressInterval);
+        clearInterval(cyclingInterval);
   
         if (!response.ok) {
             const clonedResponse = response.clone();
@@ -2028,9 +2057,12 @@ export default function PdfEditorPage() {
           return newStatuses;
         });
         toast({ title: texts.conversionSuccess, description: texts.conversionSuccessDesc(downloadFilename)});
+        
+        setBatchFiles([]);
+        setUploadStatuses({});
+        setIsBatchPopoverOpen(false);
 
       } catch (err: any) {
-        clearTimeout(timeoutId);
         setUploadStatuses(prev => {
           const newStatuses: { [fileName: string]: UploadStatus } = {};
           batchFiles.forEach(file => {
@@ -2040,7 +2072,10 @@ export default function PdfEditorPage() {
         });
         toast({ title: texts.conversionError, description: err.message, variant: "destructive" });
       } finally {
+        clearInterval(progressInterval);
+        clearInterval(cyclingInterval);
         setIsConverting(false);
+        setCurrentConvertingFile('');
       }
     };
 
@@ -2052,7 +2087,7 @@ export default function PdfEditorPage() {
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground font-sans">
-      {(isLoading || isDownloading || isConverting) && (
+      {(isLoading || isDownloading) && (
         <div className="fixed inset-0 bg-black/50 z-[100] flex flex-col items-center justify-center">
           <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
           <p className="text-white text-lg">
@@ -2123,76 +2158,86 @@ export default function PdfEditorPage() {
                     <MenubarItem onClick={() => setPageObjects([])}><FilePlus className="mr-2 h-4 w-4"/>{texts.menuFileNew}</MenubarItem>
                     <MenubarItem onClick={handleDownloadPdf} disabled={pageObjects.length === 0}><Save className="mr-2 h-4 w-4"/>{texts.menuFileSaveAs}</MenubarItem>
                     <MenubarSeparator />
-                    <Popover>
+                    <Popover open={isBatchPopoverOpen} onOpenChange={setIsBatchPopoverOpen}>
                         <PopoverTrigger asChild>
                             <MenubarItem onSelect={(e) => e.preventDefault()}><Combine className="mr-2 h-4 w-4"/>{texts.menuFileBatchConvert}</MenubarItem>
                         </PopoverTrigger>
                         <PopoverContent className="w-96">
-                            <form onSubmit={handleBatchSubmit} className="space-y-4">
-                                <CardTitle>{texts.batchConvert}</CardTitle>
-                                <div>
-                                    <Label htmlFor="targetFormat" className="text-sm font-medium">{texts.selectFormat}</Label>
-                                    <Select value={targetFormat} onValueChange={setTargetFormat} required>
-                                        <SelectTrigger id="targetFormat" className="mt-1">
-                                            <SelectValue placeholder="Select format" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {formatOptions.map(opt => (
-                                                <SelectItem key={opt.value} value={opt.value}>
-                                                    {texts[opt.labelKey]}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded-md space-y-1">
-                                    <p>{texts.planInfo(MAX_BATCH_FILES, MAX_TOTAL_SIZE_MB)}</p>
-                                    <p>{texts.usageInfo(batchFiles.length, totalSizeMB, remainingFiles, remainingMB.toFixed(2))}</p>
-                                </div>
-                                <div 
-                                className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20"
-                                onClick={() => batchFileUploadRef.current?.click()}
-                                >
-                                    <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                                    <p className="text-xs text-muted-foreground text-center">
-                                    {texts.uploadButton}
+                            {isConverting ? (
+                                <div className="flex flex-col items-center justify-center space-y-4 my-4">
+                                    <Loader2 className="h-12 w-12 text-primary animate-spin" />
+                                    <p className="text-sm font-medium text-center text-foreground">
+                                        {currentLanguage === 'zh' ? `正在進行 ${currentConvertingFile} 的轉檔作業...` : `Converting ${currentConvertingFile}...`}
                                     </p>
-                                    <Input
-                                        type="file"
-                                        ref={batchFileUploadRef}
-                                        onChange={handleBatchFileChange}
-                                        accept="application/pdf"
-                                        multiple
-                                        className="hidden"
-                                    />
+                                    <Progress value={uploadStatuses[Object.keys(uploadStatuses)[0]]?.progress || 10} className="w-full" />
                                 </div>
-                                {batchFiles.length > 0 && (
-                                    <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
-                                        {batchFiles.map(file => (
-                                            <div key={file.name} className="flex items-center gap-2 p-1.5 border rounded-md text-xs">
-                                                <File className="h-4 w-4 text-primary flex-shrink-0" />
-                                                <div className="flex-grow min-w-0">
-                                                    <p className="font-medium truncate">{file.name}</p>
-                                                    <div className="flex items-center gap-1.5 text-muted-foreground">
-                                                        <span>{texts[`status_${uploadStatuses[file.name]?.status}` as keyof typeof texts] || texts.status_waiting}</span>
-                                                        {uploadStatuses[file.name]?.status === 'error' && (
-                                                            <span className="text-destructive truncate" title={uploadStatuses[file.name]?.error}>- {uploadStatuses[file.name]?.error}</span>
-                                                        )}
-                                                    </div>
-                                                    <Progress value={uploadStatuses[file.name]?.progress || 0} className="h-1 mt-1" />
-                                                </div>
-                                                <Button variant="ghost" size="icon" className="h-5 w-5 flex-shrink-0" onClick={() => removeBatchFile(file.name)} disabled={isConverting}>
-                                                    <XCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
-                                                </Button>
-                                            </div>
-                                        ))}
+                            ) : (
+                                <form onSubmit={handleBatchSubmit} className="space-y-4">
+                                    <CardTitle>{texts.batchConvert}</CardTitle>
+                                    <div>
+                                        <Label htmlFor="targetFormat" className="text-sm font-medium">{texts.selectFormat}</Label>
+                                        <Select value={targetFormat} onValueChange={setTargetFormat} required>
+                                            <SelectTrigger id="targetFormat" className="mt-1">
+                                                <SelectValue placeholder="Select format" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {formatOptions.map(opt => (
+                                                    <SelectItem key={opt.value} value={opt.value}>
+                                                        {texts[opt.labelKey]}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                     </div>
-                                )}
-                                 <Button type="submit" className="w-full" disabled={isConverting || batchFiles.length === 0}>
-                                    {isConverting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                                    {texts.convertButton}
-                                </Button>
-                            </form>
+                                    <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded-md space-y-1">
+                                        <p>{texts.planInfo(MAX_BATCH_FILES, MAX_TOTAL_SIZE_MB)}</p>
+                                        <p>{texts.usageInfo(batchFiles.length, totalSizeMB, remainingFiles, remainingMB.toFixed(2))}</p>
+                                    </div>
+                                    <div 
+                                    className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20"
+                                    onClick={() => batchFileUploadRef.current?.click()}
+                                    >
+                                        <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                                        <p className="text-xs text-muted-foreground text-center">
+                                        {texts.uploadButton}
+                                        </p>
+                                        <Input
+                                            type="file"
+                                            ref={batchFileUploadRef}
+                                            onChange={handleBatchFileChange}
+                                            accept="application/pdf"
+                                            multiple
+                                            className="hidden"
+                                        />
+                                    </div>
+                                    {batchFiles.length > 0 && (
+                                        <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
+                                            {batchFiles.map(file => (
+                                                <div key={file.name} className="flex items-center gap-2 p-1.5 border rounded-md text-xs">
+                                                    <File className="h-4 w-4 text-primary flex-shrink-0" />
+                                                    <div className="flex-grow min-w-0">
+                                                        <p className="font-medium truncate">{file.name}</p>
+                                                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                                                            <span>{texts[`status_${uploadStatuses[file.name]?.status}` as keyof typeof texts] || texts.status_waiting}</span>
+                                                            {uploadStatuses[file.name]?.status === 'error' && (
+                                                                <span className="text-destructive truncate" title={uploadStatuses[file.name]?.error}>- {uploadStatuses[file.name]?.error}</span>
+                                                            )}
+                                                        </div>
+                                                        <Progress value={uploadStatuses[file.name]?.progress || 0} className="h-1 mt-1" />
+                                                    </div>
+                                                    <Button variant="ghost" size="icon" className="h-5 w-5 flex-shrink-0" onClick={() => removeBatchFile(file.name)} disabled={isConverting}>
+                                                        <XCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                                                    </Button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                     <Button type="submit" className="w-full" disabled={isConverting || batchFiles.length === 0}>
+                                        {isConverting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                                        {texts.convertButton}
+                                    </Button>
+                                </form>
+                            )}
                         </PopoverContent>
                     </Popover>
                 </MenubarContent>

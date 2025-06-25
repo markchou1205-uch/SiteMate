@@ -75,7 +75,7 @@ const translations = {
     pdfToOcr: 'PDF with OCR',
     upgradePromptTitle: "Tired of one-by-one? Files too large?",
     upgradePromptDescription: "Try our 'Batch Convert' and 'Extended File Size' services to save your precious time!",
-    enableBatchMode: "Increase file size limit or batch convert",
+    enableBatchMode: "還不夠嗎？點我再升級",
     batchModalTitle: "Upgrade to Batch Conversion",
     batchModalDescription: "Process up to 10 files at once and unlock premium features. Choose a plan to get started.",
     upgrade: "Upgrade Now",
@@ -142,7 +142,7 @@ const translations = {
     pdfToOcr: 'PDF光學掃描(OCR)',
     upgradePromptTitle: "一件一件傳很麻煩嗎？文件太大嗎？",
     upgradePromptDescription: "來試試「批次轉檔」及「擴充檔案」服務來節省您的寶貴時間！",
-    enableBatchMode: "提升檔案大小限制或批次轉檔",
+    enableBatchMode: "還不夠嗎？點我再升級",
     batchModalTitle: "升級至批次轉換",
     batchModalDescription: "一次處理最多 10 個檔案並解鎖高階功能。選擇一個方案立即開始。",
     upgrade: "立即升級",
@@ -177,6 +177,7 @@ export default function HtmlToPdfPage() {
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
   const [batchFiles, setBatchFiles] = useState<File[]>([]);
   const [isConverting, setIsConverting] = useState(false);
+  const [currentConvertingFile, setCurrentConvertingFile] = useState('');
   const [uploadStatuses, setUploadStatuses] = useState<{ [fileName: string]: UploadStatus }>({});
   const [batchTotalSize, setBatchTotalSize] = useState(0);
 
@@ -374,13 +375,37 @@ export default function HtmlToPdfPage() {
     }
     
     setIsConverting(true);
+    setCurrentConvertingFile(batchFiles[0]?.name || '');
     setUploadStatuses(prev => {
       const newStatuses: { [fileName: string]: UploadStatus } = {};
       batchFiles.forEach(file => {
-          newStatuses[file.name] = { status: 'converting', progress: 50 };
+          newStatuses[file.name] = { status: 'converting', progress: 10 };
       });
       return newStatuses;
     });
+
+    const progressInterval = setInterval(() => {
+        setUploadStatuses(prev => {
+            const newStatuses = {...prev};
+            let allDone = true;
+            Object.keys(newStatuses).forEach(fileName => {
+                if (newStatuses[fileName].progress < 90) {
+                    newStatuses[fileName].progress += 5;
+                    allDone = false;
+                }
+            });
+            if (allDone) clearInterval(progressInterval);
+            return newStatuses;
+        });
+    }, 500);
+
+    const cyclingInterval = setInterval(() => {
+      setCurrentConvertingFile(prevFile => {
+          const currentIndex = batchFiles.findIndex(f => f.name === prevFile);
+          const nextIndex = (currentIndex + 1) % batchFiles.length;
+          return batchFiles[nextIndex]?.name || '';
+      });
+    }, 2000);
 
     const formData = new FormData();
     let endpoint = "";
@@ -405,7 +430,8 @@ export default function HtmlToPdfPage() {
         body: formData,
         signal: controller.signal
       });
-      clearTimeout(timeoutId);
+      clearInterval(progressInterval);
+      clearInterval(cyclingInterval);
 
       if (!response.ok) {
         const clonedResponse = response.clone();
@@ -422,6 +448,11 @@ export default function HtmlToPdfPage() {
       
       const resBlob = await response.blob();
       let downloadFilename = 'converted_files.zip';
+      if (response.headers.get('Content-Disposition')) {
+          const contentDisposition = response.headers.get('Content-Disposition');
+          const match = contentDisposition?.match(/filename="?([^"]+)"?/);
+          if (match && match[1]) downloadFilename = match[1];
+      }
       
       const url = window.URL.createObjectURL(resBlob);
       const a = document.createElement('a');
@@ -441,9 +472,10 @@ export default function HtmlToPdfPage() {
       });
       toast({ title: texts.conversionSuccess, description: texts.conversionSuccessDesc(downloadFilename)});
       setBatchFiles([]);
+      setUploadStatuses({});
+      setIsBatchModalOpen(false);
 
     } catch (err: any) {
-      clearTimeout(timeoutId);
       setUploadStatuses(prev => {
         const newStatuses: { [fileName: string]: UploadStatus } = {};
         batchFiles.forEach(file => {
@@ -453,7 +485,10 @@ export default function HtmlToPdfPage() {
       });
       toast({ title: texts.conversionError, description: err.message, variant: "destructive" });
     } finally {
+      clearInterval(progressInterval);
+      clearInterval(cyclingInterval);
       setIsConverting(false);
+      setCurrentConvertingFile('');
     }
   };
   
@@ -491,55 +526,65 @@ export default function HtmlToPdfPage() {
                 <ShadAlertDialogTitle>{texts.batchModalTitle}</ShadAlertDialogTitle>
                 <AlertDialogDescription>{texts.batchModalDescription}</AlertDialogDescription>
             </ShadAlertDialogHeader>
-            <form onSubmit={handleBatchSubmit} className="space-y-4">
-                <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md space-y-1">
-                    <p>{texts.planInfo(MAX_BATCH_FILES, MAX_TOTAL_SIZE_MB)}</p>
-                    <p>{texts.usageInfo(batchFiles.length, totalSizeMB, remainingFiles, remainingMB.toFixed(2))}</p>
-                </div>
-                <div 
-                className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20"
-                onClick={() => batchFileUploadRef.current?.click()}
-                >
-                    <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                    <p className="text-xs text-muted-foreground text-center">
-                      Click or drag up to {MAX_BATCH_FILES} files here
-                    </p>
-                    <Input
-                        type="file"
-                        ref={batchFileUploadRef}
-                        onChange={handleBatchFileChange}
-                        accept=".html,.htm,text/html"
-                        multiple
-                        className="hidden"
-                    />
-                </div>
-                {batchFiles.length > 0 && (
-                    <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
-                        {batchFiles.map(file => (
-                            <div key={file.name} className="flex items-center gap-2 p-1.5 border rounded-md text-xs">
-                                <Code className="h-4 w-4 text-primary flex-shrink-0" />
-                                <div className="flex-grow min-w-0">
-                                    <p className="font-medium truncate">{file.name}</p>
-                                    <div className="flex items-center gap-1.5 text-muted-foreground">
-                                        <span>{texts[`status_${uploadStatuses[file.name]?.status}` as keyof typeof texts] || texts.status_waiting}</span>
-                                        {uploadStatuses[file.name]?.status === 'error' && (
-                                            <span className="text-destructive truncate" title={uploadStatuses[file.name]?.error}>- {uploadStatuses[file.name]?.error}</span>
-                                        )}
-                                    </div>
-                                    <Progress value={uploadStatuses[file.name]?.progress || 0} className="h-1 mt-1" />
-                                </div>
-                                <Button variant="ghost" size="icon" className="h-5 w-5 flex-shrink-0" onClick={() => removeBatchFile(file.name)} disabled={isConverting}>
-                                    <XCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
-                                </Button>
-                            </div>
-                        ))}
+            {isConverting ? (
+               <div className="flex flex-col items-center justify-center space-y-4 my-8">
+                   <Loader2 className="h-16 w-16 text-primary animate-spin" />
+                   <p className="text-lg font-medium text-foreground">
+                       {currentLanguage === 'zh' ? `正在進行 ${currentConvertingFile} 的轉檔作業...` : `Converting ${currentConvertingFile}...`}
+                   </p>
+                   <Progress value={uploadStatuses[Object.keys(uploadStatuses)[0]]?.progress || 10} className="w-full" />
+               </div>
+            ) : (
+                <form onSubmit={handleBatchSubmit} className="space-y-4">
+                    <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md space-y-1">
+                        <p>{texts.planInfo(MAX_BATCH_FILES, MAX_TOTAL_SIZE_MB)}</p>
+                        <p>{texts.usageInfo(batchFiles.length, totalSizeMB, remainingFiles, remainingMB.toFixed(2))}</p>
                     </div>
-                )}
-                 <Button type="submit" className="w-full" disabled={isConverting || batchFiles.length === 0}>
-                    {isConverting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                    {texts.convertButton}
-                </Button>
-            </form>
+                    <div 
+                    className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20"
+                    onClick={() => batchFileUploadRef.current?.click()}
+                    >
+                        <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                        <p className="text-xs text-muted-foreground text-center">
+                          Click or drag up to {MAX_BATCH_FILES} files here
+                        </p>
+                        <Input
+                            type="file"
+                            ref={batchFileUploadRef}
+                            onChange={handleBatchFileChange}
+                            accept=".html,.htm,text/html"
+                            multiple
+                            className="hidden"
+                        />
+                    </div>
+                    {batchFiles.length > 0 && (
+                        <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
+                            {batchFiles.map(file => (
+                                <div key={file.name} className="flex items-center gap-2 p-1.5 border rounded-md text-xs">
+                                    <Code className="h-4 w-4 text-primary flex-shrink-0" />
+                                    <div className="flex-grow min-w-0">
+                                        <p className="font-medium truncate">{file.name}</p>
+                                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                                            <span>{texts[`status_${uploadStatuses[file.name]?.status}` as keyof typeof texts] || texts.status_waiting}</span>
+                                            {uploadStatuses[file.name]?.status === 'error' && (
+                                                <span className="text-destructive truncate" title={uploadStatuses[file.name]?.error}>- {uploadStatuses[file.name]?.error}</span>
+                                            )}
+                                        </div>
+                                        <Progress value={uploadStatuses[file.name]?.progress || 0} className="h-1 mt-1" />
+                                    </div>
+                                    <Button variant="ghost" size="icon" className="h-5 w-5 flex-shrink-0" onClick={() => removeBatchFile(file.name)} disabled={isConverting}>
+                                        <XCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                     <Button type="submit" className="w-full" disabled={isConverting || batchFiles.length === 0}>
+                        {isConverting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                        {texts.convertButton}
+                    </Button>
+                </form>
+            )}
             <AlertDialogFooter className="mt-4">
                 <AlertDialogCancel>{texts.cancel}</AlertDialogCancel>
                 <AlertDialogAction>{texts.upgrade}</AlertDialogAction>
@@ -665,26 +710,28 @@ export default function HtmlToPdfPage() {
 
             <Card className="w-full border-destructive/20 bg-destructive/5">
                 <CardContent className="p-4 flex items-center justify-between gap-4">
-                    <div>
+                    <div className="space-y-1">
                         <CardTitle className="text-lg flex items-center gap-2 text-destructive">
                             <Star className="text-yellow-500" />
                             {texts.upgradePromptTitle}
                         </CardTitle>
-                        <CardDescription className="mt-1">
+                        <CardDescription>
                             {texts.upgradePromptDescription}
                         </CardDescription>
                     </div>
                     <Button 
-                        onClick={() => setIsBatchModalOpen(true)} 
+                        onClick={() => {
+                          if (!isLoggedIn) {
+                            toast({title: texts.featureNotAvailable, description: texts.featureNotAvailableForGuests, variant: 'destructive'});
+                            return;
+                          }
+                          setIsBatchModalOpen(true)
+                        }} 
                         variant="destructive" 
                         size="lg" 
                         className="shrink-0"
                     >
-                        <span className="flex items-baseline gap-1.5 font-normal">
-                            <span className="text-base font-semibold">提升檔案大小限制</span>
-                            <span className="text-sm">或</span>
-                            <span className="text-base font-semibold">批次轉檔</span>
-                        </span>
+                        {texts.enableBatchMode}
                     </Button>
                 </CardContent>
             </Card>

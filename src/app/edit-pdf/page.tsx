@@ -135,7 +135,7 @@ interface SearchResult {
 }
 
 type SelectedObject = {
-  type: 'text' | 'image' | 'shape' | 'highlight' | 'mosaic';
+  type: 'text' | 'image' | 'shape' | 'highlight' | 'mosaic' | 'scribble';
   id: string;
 } | null;
 
@@ -316,7 +316,6 @@ const translations = {
         noFilesSelected: 'Please select files to convert.',
         tooManyFiles: 'You can only select up to 10 files at a time.',
         totalSizeExceeded: (size: number) => `Total file size cannot exceed ${size}MB.`,
-        invalidFileError: 'Some files were not valid PDFs and were removed.',
         status_waiting: 'Waiting',
         status_uploading: 'Uploading...',
         status_converting: 'Converting...',
@@ -563,7 +562,6 @@ const translations = {
         noFilesSelected: '請選擇要轉換的檔案。',
         tooManyFiles: '一次最多只能選擇 10 個檔案。',
         totalSizeExceeded: (size: number) => `總檔案大小不能超過 ${size}MB。`,
-        invalidFileError: '部分檔案不是有效的 PDF，已被移除。',
         status_waiting: '等待中',
         status_uploading: '上傳中...',
         status_converting: '轉換中...',
@@ -1105,6 +1103,9 @@ export default function PdfEditorPage() {
   const sortableInstanceRef = useRef<Sortable | null>(null);
   
   const observerRef = useRef<IntersectionObserver | null>(null);
+
+  const [isScribbling, setIsScribbling] = useState(false);
+  const scribblePointsRef = useRef<{x: number, y: number}[]>([]);
 
 
   useEffect(() => {
@@ -2163,6 +2164,7 @@ export default function PdfEditorPage() {
                         handleDeleteAnnotation(selectedObject.id);
                         break;
                     case 'image':
+                    case 'scribble':
                         handleDeleteImageAnnotation(selectedObject.id);
                         break;
                     case 'shape':
@@ -2299,7 +2301,7 @@ export default function PdfEditorPage() {
     const handleInsertFileSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0] || null;
         if (!file || !file.type.includes('pdf')) {
-            if(file) toast({ title: texts.invalidFileError, description: currentLanguage === 'zh' ? '請選擇一個有效的 PDF 檔案。' : 'Please select a valid PDF file.', variant: "destructive" });
+            if(file) toast({ title: 'Invalid file', description: currentLanguage === 'zh' ? '請選擇一個有效的 PDF 檔案。' : 'Please select a valid PDF file.', variant: "destructive" });
             return;
         }
 

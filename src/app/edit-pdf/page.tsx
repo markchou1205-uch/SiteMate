@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, FontSize, Eye, Scissors, LayoutGrid, PanelLeft, FilePlus2, Combine, Type, ImagePlus, Link as LinkIcon, MessageSquarePlus, ZoomIn, ZoomOut, Expand, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Highlighter, ArrowRightLeft, Edit, FileUp, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText, Sparkles, XCircle, File, FolderOpen, Save, Wrench, HelpCircle, PanelTop, Redo, Undo, Hand, Square, Circle, Pencil, Printer, SearchIcon, ChevronLeft, ChevronRight, CaseSensitive, MousePointerSquareDashed, Grid, ShieldAlert, Layers, Brush, History } from 'lucide-react';
+import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, Eye, Scissors, LayoutGrid, PanelLeft, FilePlus2, Combine, Type, ImagePlus, Link as LinkIcon, MessageSquarePlus, ZoomIn, ZoomOut, Expand, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Highlighter, ArrowRightLeft, Edit, FileUp, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText, Sparkles, XCircle, File, FolderOpen, Save, Wrench, HelpCircle, PanelTop, Redo, Undo, Hand, Square, Circle, Pencil, Printer, SearchIcon, ChevronLeft, ChevronRight, CaseSensitive, MousePointerSquareDashed, Grid, ShieldAlert, Layers, Brush, History } from 'lucide-react';
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
@@ -1576,7 +1576,7 @@ export default function PdfEditorPage() {
   }, [isLoggedIn, texts]);
 
 
-  const processPdfFile = async (file: File): Promise<{ loadedPageObjects: PageObject[], hasText: boolean }> => {
+  const processPdfFile = async (file: File): Promise<{ loadedPageObjects: PageObject[] }> => {
     const arrayBuffer = await file.arrayBuffer();
     const pdfDocProxy = await pdfjsLib.getDocument({
       data: arrayBuffer,
@@ -1606,7 +1606,7 @@ export default function PdfEditorPage() {
       }
     }
     setHasTextLayer(hasText);
-    return { loadedPageObjects, hasText };
+    return { loadedPageObjects };
   };
 
   const handleExtractText = async () => {
@@ -2634,13 +2634,13 @@ export default function PdfEditorPage() {
       }
     };
 
-    const handleInsertFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleInsertFileSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0] || null;
         if (!file || !file.type.includes('pdf')) {
             if(file) toast({ title: 'Invalid file', description: currentLanguage === 'zh' ? '請選擇一個有效的 PDF 檔案。' : 'Please select a valid PDF file.', variant: "destructive" });
             return;
         }
-        await proceedWithInsert(file);
+        proceedWithInsert(file);
     };
 
     const proceedWithInsert = async (fileToInsert: File) => {
@@ -3124,7 +3124,7 @@ export default function PdfEditorPage() {
                     <Tooltip>
                         <TooltipTrigger asChild>
                              <ToggleGroupItem value="extract-text" className="flex flex-col h-auto p-2 space-y-1" onClick={handleExtractText} disabled={!pdfDoc}>
-                                <FontSize className="h-5 w-5" />
+                                <CaseSensitive className="h-5 w-5" />
                                 <span className="text-xs">{texts.extractTextModeLabel}</span>
                             </ToggleGroupItem>
                         </TooltipTrigger>
@@ -3664,7 +3664,7 @@ export default function PdfEditorPage() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-48">
                     {saveAsFormatOptions.map(opt => (
-                        <DropdownMenuItem key={opt.value} onClick={() => handleDownloadOption(opt.value)}>{opt.labelKey === 'downloadPdf' ? texts.downloadPdf : texts[opt.labelKey]}</DropdownMenuItem>
+                        <DropdownMenuItem key={opt.value} onClick={() => handleDownloadOption(opt.value)}>{texts[opt.labelKey]}</DropdownMenuItem>
                     ))}
                 </DropdownMenuContent>
             </DropdownMenu>

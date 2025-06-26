@@ -619,7 +619,7 @@ const translations = {
         menuConvert: "轉換",
         menuTools: "工具",
         menuHelp: "說明",
-        menuFileOpen: "開啟檔案",
+        menuFileOpen: "開啟PDF文件",
         menuFileNew: "開啟PDF文件",
         insertPdf: "插入PDF",
         menuFileSaveAs: "另存成PDF",

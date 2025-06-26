@@ -121,17 +121,12 @@ interface ShapeAnnotation {
 }
 
 interface ScribbleAnnotation {
-  id: string;
-  type: 'scribble';
-  pageIndex: number;
-  points: {x: number, y: number}[];
-  color: string;
-  strokeWidth: number;
-  topRatio: number;
-  leftRatio: number;
-  widthRatio: number;
-  heightRatio: number;
-  aspectRatio: number;
+    id: string;
+    type: 'scribble';
+    pageIndex: number;
+    points: {xRatio: number, yRatio: number}[];
+    color: string;
+    strokeWidth: number;
 }
 
 interface MosaicAnnotation {
@@ -166,7 +161,7 @@ interface SearchResult {
 }
 
 type Tool = 'select' | 'pan' | 'text' | 'image' | 'highlight' | 'shape' | 'signature' | 'scribble' | 'mosaic';
-type InteractionMode = 'idle' | 'selected' | 'editing' | 'drawing-mosaic';
+type InteractionMode = 'idle' | 'selected' | 'editing' | 'drawing';
 
 const translations = {
     en: {
@@ -824,8 +819,8 @@ const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete }: { a
                         <div className="w-4 h-4 rounded-full" style={{ backgroundColor: annotation.color }} />
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                    <Input type="color" value={annotation.color} onChange={(e) => onAnnotationChange(annotation.id, { color: e.target.value })} className="w-full h-10 p-1 border-0" />
+                <PopoverContent className="w-auto p-2">
+                    <Input type="color" value={annotation.color} onChange={(e) => onAnnotationChange(annotation.id, { color: e.target.value })} className="w-full h-10 border-0" />
                 </PopoverContent>
             </Popover>
             <Separator orientation="vertical" className="h-6" />
@@ -842,17 +837,22 @@ const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete }: { a
     );
 };
 
-const ShapeToolbar = ({ annotation, onAnnotationChange, onDelete }: { annotation: ShapeAnnotation; onAnnotationChange: (id: string, annotation: Partial<ShapeAnnotation>) => void; onDelete: (id: string) => void; }) => {
+const ShapeToolbar = ({ annotation, onAnnotationChange, onDelete }: { annotation: ShapeAnnotation | ScribbleAnnotation; onAnnotationChange: (id: string, annotation: Partial<ShapeAnnotation | ScribbleAnnotation>) => void; onDelete: (id: string) => void; }) => {
+    const isShape = annotation.type !== 'scribble';
+
     return (
         <div className="shape-toolbar bg-card p-2 rounded-lg shadow-lg border flex items-center gap-2 animate-in slide-in-from-top-4 duration-300">
-             <Label>Fill</Label>
-             <Input type="color" value={annotation.fillColor} onChange={(e) => onAnnotationChange(annotation.id, { fillColor: e.target.value })} className="w-10 h-8 p-1"/>
+             {isShape && <Label>Fill</Label>}
+             {isShape && <Input type="color" value={(annotation as ShapeAnnotation).fillColor} onChange={(e) => onAnnotationChange(annotation.id, { fillColor: e.target.value })} className="w-10 h-8 p-1"/>}
+             
              <Label>Stroke</Label>
-             <Input type="color" value={annotation.strokeColor} onChange={(e) => onAnnotationChange(annotation.id, { strokeColor: e.target.value })} className="w-10 h-8 p-1"/>
+             <Input type="color" value={(annotation as any).strokeColor || annotation.color} onChange={(e) => onAnnotationChange(annotation.id, { [isShape ? 'strokeColor' : 'color']: e.target.value })} className="w-10 h-8 p-1"/>
+             
              <Separator orientation="vertical" className="h-6" />
              <Label>Width</Label>
              <Slider min={1} max={20} step={1} value={[annotation.strokeWidth]} onValueChange={val => onAnnotationChange(annotation.id, { strokeWidth: val[0] })} className="w-24"/>
              <Separator orientation="vertical" className="h-6" />
+
              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => onDelete(annotation.id)}>
                 <Trash2 className="h-4 w-4" />
             </Button>
@@ -959,6 +959,13 @@ const TriangleIcon = () => (
     </svg>
 )
 
+const ScribbleIcon = () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5">
+        <path d="M2 12C2 12 4.08333 7.66667 12 8C19.9167 8.33333 22 12 22 12C22 12 19.9167 16.3333 12 16C4.08333 15.6667 2 12 2 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+)
+
+
 const ShapeAnnotationComponent = ({ annotation, onDragStart, onResizeStart, onSelect, isSelected }: {
     annotation: ShapeAnnotation;
     onDragStart: (e: React.MouseEvent, id: string) => void;
@@ -1004,6 +1011,38 @@ const ShapeAnnotationComponent = ({ annotation, onDragStart, onResizeStart, onSe
         </div>
     );
 };
+
+const ScribbleAnnotationComponent = ({ annotation, pageDimensions, onSelect, isSelected }: {
+    annotation: ScribbleAnnotation;
+    pageDimensions: { width: number, height: number};
+    onSelect: (e: React.MouseEvent, id: string) => void;
+    isSelected: boolean;
+}) => {
+    if (!annotation.points || annotation.points.length < 2) return null;
+    
+    const pathData = annotation.points.map((p, i) => {
+        const command = i === 0 ? 'M' : 'L';
+        return `${command} ${p.xRatio * pageDimensions.width} ${p.yRatio * pageDimensions.height}`;
+    }).join(' ');
+    
+    return (
+      <svg
+          onClick={(e) => { e.stopPropagation(); onSelect(e, annotation.id); }}
+          className={cn("absolute top-0 left-0 w-full h-full pointer-events-auto", isSelected && "ring-2 ring-primary ring-dashed")}
+          style={{ zIndex: 19 }}
+      >
+          <path
+              d={pathData}
+              stroke={annotation.color}
+              strokeWidth={annotation.strokeWidth}
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="pointer-events-none"
+          />
+      </svg>
+    )
+}
 
 const SignaturePad = ({ onSave, texts }: { onSave: (dataUrl: string) => void, texts: typeof translations.en }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -1678,6 +1717,20 @@ export default function PdfEditorPage() {
           }
       }
       
+      for (const annotation of pageAnnotations.filter(a => a.type === 'scribble') as ScribbleAnnotation[]) {
+          if (!annotation.points || annotation.points.length < 2) continue;
+          const pathData = annotation.points.map((p, i) => {
+              const command = i === 0 ? 'M' : 'L';
+              return `${command} ${p.xRatio * pageWidth} ${pageHeight - (p.yRatio * pageHeight)}`;
+          }).join(' ');
+
+          const { r, g, b } = hexToRgb(annotation.color);
+          pdfLibPage.drawSvgPath(pathData, {
+              borderColor: rgb(r, g, b),
+              borderWidth: annotation.strokeWidth,
+          });
+      }
+
       for (const annotation of pageAnnotations.filter(a => a.type === 'mosaic') as MosaicAnnotation[]) {
           const mosaicX = annotation.leftRatio * pageWidth;
           const mosaicY = pageHeight - (annotation.topRatio * pageHeight) - (annotation.heightRatio * pageHeight);
@@ -1951,7 +2004,7 @@ export default function PdfEditorPage() {
               let newWidthRatio = Math.max(0.01, newWidthPx / containerRect.width);
               let newHeightRatio = Math.max(0.01, newHeightPx / containerRect.height);
               
-              if (annotation.type === 'image' || annotation.type === 'scribble') {
+              if (annotation.type === 'image') {
                   newWidthRatio = Math.max(0.05, newWidthPx / containerRect.width);
                   updatedAnnotation = { 
                       widthRatio: newWidthRatio, 
@@ -2084,6 +2137,8 @@ export default function PdfEditorPage() {
         };
         addAnnotation(newAnnotation);
         setSelectedAnnotationId(newAnnotation.id);
+        setActiveTool('select');
+        setInteractionMode('selected');
     };
     
     const handleDeleteAnnotation = (id: string) => {
@@ -2257,16 +2312,14 @@ export default function PdfEditorPage() {
     
     useEffect(() => {
         const handleGlobalClick = (e: MouseEvent) => {
-            const clickedInsideCanvas = mainViewContainerRef.current?.contains(e.target as Node);
-            const clickedInsideDownload = downloadButtonRef.current?.contains(e.target as Node);
-            const isToolbarClick = toolbarContainerRef.current?.contains(e.target as Node);
-
-            if (!clickedInsideDownload) {
-                setShowDownloadOptions(false);
-            }
-
-            if (!clickedInsideCanvas && !clickedInsideDownload && !isToolbarClick) {
+            const target = e.target as Node;
+            if (
+                !mainViewContainerRef.current?.contains(target) &&
+                !downloadButtonRef.current?.contains(target) &&
+                !toolbarContainerRef.current?.contains(target)
+            ) {
                 handleDeselectAll();
+                setShowDownloadOptions(false);
             }
         };
 
@@ -2372,13 +2425,14 @@ export default function PdfEditorPage() {
       </div>
     );
     
-    const activeTextAnnotation = interactionMode === 'editing' && selectedAnnotationId
+    const activeTextAnnotation = (interactionMode === 'editing' || interactionMode === 'selected') && selectedAnnotationId
         ? annotations.find(a => a.id === selectedAnnotationId && a.type === 'text') as TextAnnotation | undefined
         : undefined;
 
-    const activeShapeAnnotation = interactionMode === 'selected' && selectedAnnotationId
-        ? annotations.find(a => a.id === selectedAnnotationId && (a.type === 'rect' || a.type === 'ellipse' || a.type === 'triangle')) as ShapeAnnotation | undefined
+    const activeShapeAnnotation = (interactionMode === 'editing' || interactionMode === 'selected') && selectedAnnotationId
+        ? annotations.find(a => a.id === selectedAnnotationId && (a.type === 'rect' || a.type === 'ellipse' || a.type === 'triangle' || a.type === 'scribble')) as ShapeAnnotation | ScribbleAnnotation | undefined
         : undefined;
+
 
     const handleZoom = (direction: 'in' | 'out') => {
       const ZOOM_STEP = 0.1;
@@ -2509,10 +2563,10 @@ export default function PdfEditorPage() {
         }
     };
     
-    // Drawing new annotations (mosaic)
+    // Drawing new annotations
     const handlePageMouseDown = (e: React.MouseEvent<HTMLDivElement>, pageIndex: number) => {
-        if (activeTool !== 'mosaic') return;
-        setInteractionMode('drawing-mosaic');
+        if (activeTool !== 'mosaic' && activeTool !== 'scribble') return;
+        setInteractionMode('drawing');
         
         const container = e.currentTarget;
         const rect = container.getBoundingClientRect();
@@ -2522,14 +2576,24 @@ export default function PdfEditorPage() {
         
         drawingStartRef.current = { pageIndex, startX, startY, id };
         
-        const newAnnotation: MosaicAnnotation = { id, type: 'mosaic', pageIndex, topRatio: startY, leftRatio: startX, widthRatio: 0, heightRatio: 0 };
-        addAnnotation(newAnnotation);
+        if (activeTool === 'mosaic') {
+            const newAnnotation: MosaicAnnotation = { id, type: 'mosaic', pageIndex, topRatio: startY, leftRatio: startX, widthRatio: 0, heightRatio: 0 };
+            addAnnotation(newAnnotation);
+        } else if (activeTool === 'scribble') {
+            const newAnnotation: ScribbleAnnotation = {
+                id, type: 'scribble', pageIndex,
+                points: [{ xRatio: startX, yRatio: startY }],
+                color: '#000000',
+                strokeWidth: 2
+            };
+            addAnnotation(newAnnotation);
+        }
     };
     
     const handleMainViewMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
         handlePanMouseMove(e); // Handle pan if active
 
-        if (interactionMode !== 'drawing-mosaic' || !drawingStartRef.current) return;
+        if (interactionMode !== 'drawing' || !drawingStartRef.current) return;
         
         const { pageIndex, startX, startY, id } = drawingStartRef.current;
         const container = pageRefs.current[pageIndex];
@@ -2540,25 +2604,34 @@ export default function PdfEditorPage() {
         const currentX = (e.clientX - rect.left) / rect.width;
         const currentY = (e.clientY - rect.top) / rect.height;
 
-        const leftRatio = Math.min(startX, currentX);
-        const topRatio = Math.min(startY, currentY);
-        const widthRatio = Math.abs(currentX - startX);
-        const heightRatio = Math.abs(currentY - startY);
-
-        updateAnnotation(id, { leftRatio, topRatio, widthRatio, heightRatio });
+        if (activeTool === 'mosaic') {
+            const leftRatio = Math.min(startX, currentX);
+            const topRatio = Math.min(startY, currentY);
+            const widthRatio = Math.abs(currentX - startX);
+            const heightRatio = Math.abs(currentY - startY);
+            updateAnnotation(id, { leftRatio, topRatio, widthRatio, heightRatio });
+        } else if (activeTool === 'scribble') {
+            const existingAnnotation = annotations.find(a => a.id === id) as ScribbleAnnotation;
+            if (existingAnnotation) {
+                const newPoints = [...existingAnnotation.points, { xRatio: currentX, yRatio: currentY }];
+                updateAnnotation(id, { points: newPoints });
+            }
+        }
     };
     
     const handleMainViewMouseUp = () => {
         handlePanMouseUpAndLeave(); // Handle pan if active
 
-        if (interactionMode === 'drawing-mosaic') {
+        if (interactionMode === 'drawing') {
              if (drawingStartRef.current) {
                 const finalAnnotation = annotations.find(a => a.id === drawingStartRef.current!.id);
-                if(finalAnnotation && ('widthRatio' in finalAnnotation) && (finalAnnotation.widthRatio < 0.01 || finalAnnotation.heightRatio < 0.01)) {
-                    updateState({ annotations: annotations.filter(a => a.id !== drawingStartRef.current!.id) }, false);
-                } else {
-                     recordNextStateRef.current = true;
-                     setEditorState(prev => ({...prev})); // Trigger history
+                if(finalAnnotation) {
+                    if (finalAnnotation.type === 'mosaic' && (finalAnnotation.widthRatio < 0.01 || finalAnnotation.heightRatio < 0.01)) {
+                        updateState({ annotations: annotations.filter(a => a.id !== drawingStartRef.current!.id) }, false);
+                    } else {
+                         recordNextStateRef.current = true;
+                         setEditorState(prev => ({...prev})); // Trigger history
+                    }
                 }
             }
             
@@ -2568,6 +2641,19 @@ export default function PdfEditorPage() {
         }
     };
 
+    const handleAddScribbleAnnotation = () => {
+        if(activePageIndex === null) return;
+        setActiveTool('scribble');
+    }
+
+    useEffect(() => {
+        if (mainViewContainerRef.current) {
+          let cursor = 'default';
+          if (activeTool === 'pan') cursor = 'grab';
+          if (activeTool === 'mosaic' || activeTool === 'scribble') cursor = 'crosshair';
+          mainViewContainerRef.current.style.cursor = cursor;
+        }
+    }, [activeTool]);
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground font-sans">
@@ -2853,17 +2939,9 @@ export default function PdfEditorPage() {
                         <Button variant="ghost" size="icon" onClick={() => handleAddShapeAnnotation('rect')}><Square className="h-5 w-5 text-primary" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => handleAddShapeAnnotation('ellipse')}><Circle className="h-5 w-5 text-primary" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => handleAddShapeAnnotation('triangle')}><TriangleIcon /></Button>
+                        <Button variant="ghost" size="icon" onClick={handleAddScribbleAnnotation}><ScribbleIcon /></Button>
                     </PopoverContent>
                 </Popover>
-                 <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button variant={activeTool === 'scribble' ? "secondary" : "ghost"} className="flex flex-col h-auto p-2 space-y-1" onClick={() => setActiveTool('scribble')} disabled={activePageIndex === null}>
-                            <Pencil className="h-5 w-5" />
-                            <span className="text-xs">{texts.toolScribble}</span>
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom"><p>{texts.toolScribble}</p></TooltipContent>
-                </Tooltip>
                  <Tooltip>
                     <TooltipTrigger asChild>
                         <Button variant={activeTool === 'mosaic' ? "secondary" : "ghost"} className="flex flex-col h-auto p-2 space-y-1" onClick={() => setActiveTool('mosaic')} disabled={activePageIndex === null}>
@@ -2888,7 +2966,7 @@ export default function PdfEditorPage() {
                     <DialogContent>
                         <DialogHeader>
                             <DialogTitle>{texts.signaturePadTitle}</DialogTitle>
-                            <ShadAlertDialogDescription>{texts.signaturePadDescription}</ShadAlertDialogDescription>
+                            <DialogDescription>{texts.signaturePadDescription}</DialogDescription>
                         </DialogHeader>
                         <SignaturePad onSave={handleSaveSignature} texts={texts}/>
                     </DialogContent>
@@ -2969,14 +3047,14 @@ export default function PdfEditorPage() {
 
       <main className="flex-grow flex overflow-hidden relative">
         <div ref={toolbarContainerRef} className="absolute top-2 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2">
-          {activeTextAnnotation && (
+          {interactionMode === 'editing' && activeTextAnnotation && (
               <TextAnnotationToolbar
                   annotation={activeTextAnnotation}
                   onAnnotationChange={updateAnnotation}
                   onDelete={() => handleDeleteAnnotation(activeTextAnnotation.id)}
               />
           )}
-          {activeShapeAnnotation && (
+          {(interactionMode === 'selected' || interactionMode === 'editing') && activeShapeAnnotation && (
               <ShapeToolbar
                   annotation={activeShapeAnnotation}
                   onAnnotationChange={updateAnnotation}
@@ -3092,7 +3170,7 @@ export default function PdfEditorPage() {
                 </div>
 
                 <div ref={mainViewContainerRef} 
-                    className={cn("flex-grow bg-muted/30 overflow-auto flex flex-col items-center p-4 space-y-4 relative", activeTool === 'pan' && 'cursor-grab', activeTool === 'mosaic' && 'cursor-crosshair')}
+                    className={cn("flex-grow bg-muted/30 overflow-auto flex flex-col items-center p-4 space-y-4 relative")}
                     onMouseDown={handlePanMouseDown}
                     onMouseMove={handleMainViewMouseMove}
                     onMouseUp={handleMainViewMouseUp}
@@ -3100,7 +3178,10 @@ export default function PdfEditorPage() {
                 >
                     {pageObjects.map((page, index) => {
                         const {sourceCanvas, rotation} = page;
-                        
+                        const isRotated = rotation % 180 !== 0;
+                        const canvasWidth = isRotated ? sourceCanvas.height : sourceCanvas.width;
+                        const canvasHeight = isRotated ? sourceCanvas.width : sourceCanvas.height;
+
                         return (
                             <div 
                                 key={page.id} 
@@ -3108,8 +3189,8 @@ export default function PdfEditorPage() {
                                 data-page-index={index} 
                                 className="shadow-lg bg-white relative my-2 main-page-container"
                                 style={{
-                                    width: (rotation % 180 !== 0 ? sourceCanvas.height : sourceCanvas.width) * mainCanvasZoom,
-                                    height: (rotation % 180 !== 0 ? sourceCanvas.width : sourceCanvas.height) * mainCanvasZoom,
+                                    width: canvasWidth * mainCanvasZoom,
+                                    height: canvasHeight * mainCanvasZoom,
                                     flexShrink: 0
                                 }}
                                 onMouseDown={(e) => handlePageMouseDown(e, index)}
@@ -3117,10 +3198,6 @@ export default function PdfEditorPage() {
                                 <canvas
                                     ref={canvas => {
                                         if (canvas) {
-                                            const isRotated = rotation % 180 !== 0;
-                                            const canvasWidth = isRotated ? sourceCanvas.height : sourceCanvas.width;
-                                            const canvasHeight = isRotated ? sourceCanvas.width : sourceCanvas.height;
-                                            
                                             canvas.width = canvasWidth;
                                             canvas.height = canvasHeight;
 
@@ -3204,6 +3281,15 @@ export default function PdfEditorPage() {
                                         isSelected={selectedAnnotationId === ann.id}
                                         onDragStart={(e) => handleDragMouseDown(e, ann.id)}
                                         onResizeStart={(e) => handleDragMouseDown(e, ann.id)}
+                                        onSelect={(e) => handleAnnotationSelect(e, ann.id)}
+                                    />
+                                ))}
+                                {scribbleAnnotations.filter(ann => ann.pageIndex === index).map(ann => (
+                                    <ScribbleAnnotationComponent
+                                        key={ann.id}
+                                        annotation={ann}
+                                        pageDimensions={{ width: canvasWidth, height: canvasHeight }}
+                                        isSelected={selectedAnnotationId === ann.id}
                                         onSelect={(e) => handleAnnotationSelect(e, ann.id)}
                                     />
                                 ))}
@@ -3296,5 +3382,3 @@ export default function PdfEditorPage() {
     </div>
   );
 }
-
-    

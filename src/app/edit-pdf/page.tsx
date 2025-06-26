@@ -1114,6 +1114,7 @@ export default function PdfEditorPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   
   const [selectedObject, setSelectedObject] = useState<SelectedObject>(null);
   const [editingAnnotationId, setEditingAnnotationId] = useState<string | null>(null);

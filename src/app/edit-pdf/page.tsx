@@ -658,2956 +658,518 @@ const translations = {
         menuPageAddBlank: "新增空白頁",
         menuPageDelete: "刪除目前頁面",
         planInfo: (files: number, size: number) => `您加購的方案為：同時上傳 ${files} 份文件，大小總計不超過 ${size}MB。`,
-        usageInfo: (files: number, size: string, remainingFiles: number, remainingSize: string) => `目前您已選擇 ${files} 份文件，大小總計 ${size}MB (尚可上傳 ${remainingFiles} 份文件或 ${remainingSize}MB)`,
-        toolSelect: '選取',
-        toolPan: '平移',
-        toolText: '文字',
-        toolImage: '圖片',
-        toolShape: '圖形',
-        toolSignature: '簽名',
-        toolHand: '平移',
-        toolShapeShort: '圖形',
-        toolSignatureShort: '簽名',
-        toolPrint: '列印',
-        toolSearch: '搜尋',
-        toolSearchDoc: '搜尋文件',
-        shapeRect: '方形',
-        shapeCircle: '圓形',
-        shapeTriangle: '三角形',
-        addSignature: '新增簽名',
-        signaturePadTitle: '建立簽名',
-        signaturePadDescription: '在下方繪製您的簽名，完成後點擊儲存。',
-        signatureColor: '顏色',
-        signatureStrokeWidth: '粗細',
-        signatureClear: '清除',
-        signatureSave: '儲存簽名',
-        searchPlaceholder: '搜尋文件...',
-        searchNext: '下一個',
-        searchPrevious: '上一個',
-        searchCaseSensitive: '區分大小寫',
-        searchResults: (count: number) => `找到 ${count} 個結果。`,
-        searchNoResults: '找不到結果。',
-        noTextInPdf: '此 PDF 不包含文字層。可能需要 OCR 才能啟用搜尋。',
-        toolScribble: '畫筆',
-        toolMosaic: '馬賽克',
-        toolTable: '表格',
-        drawTable: '繪製表格',
-        tableConfigTitle: '設定表格',
-        tableConfigDescription: '設定新表格的欄與列數。',
-        tableRows: '列',
-        tableCols: '欄',
-        createTable: '建立表格',
-        applyToAllPages: '套用至所有頁面',
-        convertConfirmTitle: "轉換檔案",
-        convertConfirmDescription: (filename: string) => `將為您轉檔 "${filename}" 為 PDF。請選擇轉檔後要下載至您的電腦還是進入編輯模式？`,
-        convertConfirmDownload: '下載檔案',
-        convertConfirmEdit: '進入編輯模式',
-        toolInsertFile: '插入PDF',
-        insertAtStart: '插入至開頭',
-        insertAtEnd: '插入至結尾',
-        insertBeforeSelection: '插入至選取頁之前',
-        insertAfterSelection: '插入至選取頁之後',
-        newDocConfirmTitle: '確認開啟新文件',
-        newDocConfirmDescription: '這將會關閉目前正在編輯的文件，且不會儲存變更。確定要繼續嗎？',
-        downloadEditedFile: '下載',
-        toolDownload: '下載',
-        actionHistory: '動作歷史',
+        usageInfo: (files: number, size: string, remainingFiles: number, remainingSize: string) => `目前您已選擇 ${files} 份文件，大小總計 ${size}MB (尚可上傳 ${remainingFiles} 份文件或 ${remainingSize}MB)`
     }
 };
-
-type PageNumberPosition = 'bottom-left' | 'bottom-center' | 'bottom-right' | 'top-left' | 'top-center' | 'top-right';
-
-const pageNumberPositions: {value: PageNumberPosition, labelKey: keyof typeof translations.en}[] = [
-  { value: 'bottom-center', labelKey: 'bottomCenter'},
-  { value: 'bottom-left', labelKey: 'bottomLeft'},
-  { value: 'bottom-right', labelKey: 'bottomRight'},
-  { value: 'top-center', labelKey: 'topCenter'},
-  { value: 'top-left', labelKey: 'topLeft'},
-  { value: 'top-right', labelKey: 'topRight'},
-];
-
-const saveAsFormatOptions = [
-  { value: 'pdf', labelKey: 'downloadPdf', extension: 'pdf' },
-  { value: 'word', labelKey: 'pdfToWord', extension: 'docx' },
-  { value: 'excel', labelKey: 'pdfToExcel', extension: 'xlsx' },
-  { value: 'ppt', labelKey: 'pdfToPpt', extension: 'pptx' },
-  { value: 'html', labelKey: 'pdfToHtml', extension: 'html' },
-  { value: 'jpg', labelKey: 'pdfToJpg', extension: 'zip' },
-  { value: 'ocr', labelKey: 'pdfToOcr', extension: 'pdf' },
-] as const;
-
-type UploadStatus = {
-    status: 'waiting' | 'uploading' | 'converting' | 'done' | 'error';
-    progress: number;
-    error?: string;
-};
-
-const MAX_BATCH_FILES = 10;
-const MAX_TOTAL_SIZE_MB = 50;
-const MAX_TOTAL_SIZE_BYTES = MAX_TOTAL_SIZE_MB * 1024 * 1024;
-
-
-const PagePreviewItem = React.memo(({ pageObj, index, isSelected, onClick, onDoubleClick, texts }: {
-  pageObj: PageObject;
-  index: number;
-  isSelected: boolean;
-  onClick: (event: React.MouseEvent) => void;
-  onDoubleClick: () => void;
-  texts: typeof translations.en;
-}) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (canvasRef.current) {
-      const previewDisplayCanvas = canvasRef.current;
-      const previewCtx = previewDisplayCanvas.getContext('2d');
-      if (!previewCtx) return;
-
-      const sourceCanvas = pageObj.sourceCanvas;
-      const rotation = pageObj.rotation;
-      const rad = rotation * Math.PI / 180;
-
-      let rotatedSourceWidth, rotatedSourceHeight;
-      if (rotation % 180 !== 0) {
-        rotatedSourceWidth = sourceCanvas.height;
-        rotatedSourceHeight = sourceCanvas.width;
-      } else {
-        rotatedSourceWidth = sourceCanvas.width;
-        rotatedSourceHeight = sourceCanvas.height;
-      }
-
-      const targetAspectRatio = rotatedSourceWidth / rotatedSourceHeight;
-      const cssDisplayWidth = 120;
-      const cssDisplayHeight = cssDisplayWidth / targetAspectRatio;
-
-      previewDisplayCanvas.width = rotatedSourceWidth;
-      previewDisplayCanvas.height = rotatedSourceHeight;
-
-      previewCtx.save();
-      previewCtx.translate(previewDisplayCanvas.width / 2, previewDisplayCanvas.height / 2);
-      previewCtx.rotate(rad);
-      previewCtx.drawImage(sourceCanvas, -sourceCanvas.width / 2, -sourceCanvas.height / 2, sourceCanvas.width, sourceCanvas.height);
-      previewCtx.restore();
-
-      previewDisplayCanvas.style.width = `${cssDisplayWidth}px`;
-      previewDisplayCanvas.style.height = `${cssDisplayHeight}px`;
-    }
-  }, [pageObj.sourceCanvas, pageObj.rotation]);
-
-  return (
-    <div
-      ref={wrapperRef}
-      className={`page-preview-wrapper p-2 border-2 rounded-lg cursor-pointer transition-all bg-card hover:border-primary ${isSelected ? 'border-primary ring-2 ring-primary' : 'border-transparent'}`}
-      data-id={pageObj.id}
-      data-index={index}
-      onClick={onClick}
-      onDoubleClick={onDoubleClick}
-      style={{ position: 'relative' }}
-    >
-      <canvas ref={canvasRef} className="rounded-md shadow-md" style={{ willReadFrequently: true } as any}></canvas>
-      <div className="text-xs text-muted-foreground mt-1 text-center">
-        {texts.page} {index + 1}
-      </div>
-    </div>
-  );
-});
-PagePreviewItem.displayName = 'PagePreviewItem';
-
-const fonts = [
-  { name: 'Arial', value: 'Helvetica' },
-  { name: 'Times New Roman', value: 'Times-Roman' },
-  { name: 'Courier', value: 'Courier' },
-];
-
-const fontSizes = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72];
-
-const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete, onImageInsert }: { annotation: TextAnnotation; onAnnotationChange: (id: string, annotation: Partial<TextAnnotation>) => void; onDelete: (id: string) => void; onImageInsert: () => void; }) => {
-    return (
-        <div className="text-toolbar bg-card p-2 rounded-lg shadow-lg border flex items-center gap-2 animate-in slide-in-from-top-4 duration-300">
-            <Select value={annotation.fontFamily} onValueChange={(value) => onAnnotationChange(annotation.id, { fontFamily: value })}>
-                <SelectTrigger className="w-[120px] h-8 text-xs">
-                    <SelectValue placeholder="Font" />
-                </SelectTrigger>
-                <SelectContent>
-                    {fonts.map(font => <SelectItem key={font.value} value={font.value} className="text-xs">{font.name}</SelectItem>)}
-                </SelectContent>
-            </Select>
-            <Select value={String(annotation.fontSize)} onValueChange={(value) => onAnnotationChange(annotation.id, { fontSize: Number(value) })}>
-                <SelectTrigger className="w-[60px] h-8 text-xs">
-                    <SelectValue placeholder="Size" />
-                </SelectTrigger>
-                <SelectContent>
-                    {fontSizes.map(size => <SelectItem key={size} value={String(size)} className="text-xs">{size}</SelectItem>)}
-                </SelectContent>
-            </Select>
-            <Separator orientation="vertical" className="h-6" />
-            <Toggle pressed={annotation.bold} onPressedChange={(pressed) => onAnnotationChange(annotation.id, { bold: pressed })}>
-                <Bold className="h-4 w-4" />
-            </Toggle>
-            <Toggle pressed={annotation.italic} onPressedChange={(pressed) => onAnnotationChange(annotation.id, { italic: pressed })}>
-                <Italic className="h-4 w-4" />
-            </Toggle>
-            <Toggle pressed={annotation.underline} onPressedChange={(pressed) => onAnnotationChange(annotation.id, { underline: pressed })}>
-                <Underline className="h-4 w-4" />
-            </Toggle>
-            <Separator orientation="vertical" className="h-6" />
-            <Popover>
-                <PopoverTrigger asChild>
-                    <Button variant="outline" size="icon" className="h-8 w-8">
-                        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: annotation.color }} />
-                    </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-2">
-                    <Input type="color" value={annotation.color} onChange={(e) => { e.stopPropagation(); onAnnotationChange(annotation.id, { color: e.target.value }); }} className="w-14 h-10 p-1 border-0 cursor-pointer"/>
-                </PopoverContent>
-            </Popover>
-             <Separator orientation="vertical" className="h-6" />
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onImageInsert}>
-                <ImagePlus className="h-4 w-4" />
-            </Button>
-            <Separator orientation="vertical" className="h-6" />
-            <ToggleGroup type="single" value={annotation.textAlign} onValueChange={(value: TextAnnotation['textAlign']) => value && onAnnotationChange(annotation.id, { textAlign: value })}>
-                <ToggleGroupItem value="left"><AlignLeft className="h-4 w-4" /></ToggleGroupItem>
-                <ToggleGroupItem value="center"><AlignCenter className="h-4 w-4" /></ToggleGroupItem>
-                <ToggleGroupItem value="right"><AlignRight className="h-4 w-4" /></ToggleGroupItem>
-            </ToggleGroup>
-            <Separator orientation="vertical" className="h-6" />
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => onDelete(annotation.id)}>
-                <Trash2 className="h-4 w-4" />
-            </Button>
-        </div>
-    );
-};
-
-const ShapeToolbar = ({ annotation, onAnnotationChange, onDelete }: { annotation: ShapeAnnotation | ScribbleAnnotation; onAnnotationChange: (id: string, annotation: Partial<ShapeAnnotation | ScribbleAnnotation>) => void; onDelete: (id: string) => void; }) => {
-    const isShape = annotation.type !== 'scribble';
-
-    return (
-        <div className="shape-toolbar bg-card p-2 rounded-lg shadow-lg border flex items-center gap-2 animate-in slide-in-from-top-4 duration-300">
-             {isShape && <Label>Fill</Label>}
-             {isShape && <Input type="color" value={(annotation as ShapeAnnotation).fillColor} onChange={(e) => onAnnotationChange(annotation.id, { fillColor: e.target.value })} className="w-10 h-8 p-1 cursor-pointer"/>}
-             
-             <Label>Stroke</Label>
-             <Input type="color" value={(annotation as any).strokeColor || annotation.color} onChange={(e) => onAnnotationChange(annotation.id, { [isShape ? 'strokeColor' : 'color']: e.target.value })} className="w-10 h-8 p-1 cursor-pointer"/>
-             
-             <Separator orientation="vertical" className="h-6" />
-             <Label>Width</Label>
-             <Slider min={1} max={20} step={1} value={[annotation.strokeWidth]} onValueChange={val => onAnnotationChange(annotation.id, { strokeWidth: val[0] })} className="w-24"/>
-             <Separator orientation="vertical" className="h-6" />
-
-             <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => onDelete(annotation.id)}>
-                <Trash2 className="h-4 w-4" />
-            </Button>
-        </div>
-    );
-}
-
-const TextAnnotationComponent = ({
-    annotation,
-    mainCanvasZoom,
-    isSelected,
-    isEditing,
-    isHovered,
-    onAnnotationChange,
-    onSelect,
-    onEdit,
-    onDragStart,
-    onResizeStart,
-    onHover,
-}: {
-    annotation: TextAnnotation,
-    mainCanvasZoom: number,
-    isSelected: boolean,
-    isEditing: boolean,
-    isHovered: boolean,
-    onAnnotationChange: (id: string, annotation: Partial<TextAnnotation>) => void,
-    onSelect: (e: React.MouseEvent, id: string) => void,
-    onEdit: (e: React.MouseEvent, id: string) => void,
-    onDragStart: (e: React.MouseEvent, id: string) => void,
-    onResizeStart: (e: React.MouseEvent, id: string) => void,
-    onHover: (id: string | null) => void,
-}) => {
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-    useEffect(() => {
-        const textarea = textareaRef.current;
-        if (textarea) {
-            textarea.style.height = 'auto';
-            textarea.style.height = `${textarea.scrollHeight}px`;
-        }
-    }, [annotation.text, annotation.fontSize, annotation.widthRatio, mainCanvasZoom, annotation.fontFamily, annotation.bold, annotation.italic, annotation.textAlign]);
-
-
-    return (
-        <div
-            onMouseDown={(e) => {
-                if (!isEditing) onDragStart(e, annotation.id)
-            }}
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelect(e, annotation.id);
-            }}
-            onDoubleClick={(e) => {
-              e.stopPropagation();
-              onEdit(e, annotation.id);
-            }}
-            onMouseEnter={() => onHover(annotation.id)}
-            onMouseLeave={() => onHover(null)}
-            className={cn(
-                "absolute group/text-annotation",
-                !isEditing && "cursor-grab",
-                (isSelected || isHovered) && !isEditing && "border-2 border-dashed border-primary",
-                isEditing && "border-2 border-solid border-primary",
-                annotation.link && !isEditing && "border-blue-500"
-            )}
-            style={{
-                left: `${annotation.leftRatio * 100}%`,
-                top: `${annotation.topRatio * 100}%`,
-                width: `${annotation.widthRatio * 100}%`,
-                height: 'auto',
-                zIndex: 20,
-            }}
-        >
-           <Textarea
-                ref={textareaRef}
-                value={annotation.text}
-                onChange={(e) => onAnnotationChange(annotation.id, { text: e.target.value })}
-                onClick={(e) => {
-                    if (isEditing) e.stopPropagation();
-                }}
-                disabled={!isEditing}
-                className={cn(
-                    "w-full p-0 bg-transparent border-0 resize-none focus:ring-0 overflow-hidden",
-                    isEditing ? "cursor-text pointer-events-auto" : "pointer-events-none"
-                )}
-                style={{
-                    fontFamily: annotation.fontFamily.includes('Times') ? '"Times New Roman", Times, serif' : annotation.fontFamily,
-                    fontSize: `${annotation.fontSize * mainCanvasZoom}px`,
-                    fontWeight: annotation.bold ? 'bold' : 'normal',
-                    fontStyle: annotation.italic ? 'italic' : 'normal',
-                    textDecoration: annotation.underline ? 'underline' : 'none',
-                    color: annotation.color,
-                    textAlign: annotation.textAlign,
-                    lineHeight: 1.3,
-                }}
-            />
-            {annotation.link && !isEditing && <LinkIcon className="absolute -top-1.5 -right-1.5 h-4 w-4 text-white bg-blue-500 p-0.5 rounded-full" />}
-            {(isSelected || isHovered) && !isEditing && (
-                <div
-                    className="absolute -right-1 -bottom-1 w-4 h-4 bg-primary rounded-full border-2 border-white cursor-se-resize"
-                    onMouseDown={(e) => onResizeStart(e, annotation.id)}
-                />
-            )}
-        </div>
-    );
-}
-
-const TriangleIcon = () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5">
-        <path d="M12 2L2 22H22L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
-    </svg>
-)
-
-const ScribbleIcon = () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5">
-        <path d="M2 12C2 12 4.08333 7.66667 12 8C19.9167 8.33333 22 12 22 12C22 12 19.9167 16.3333 12 16C4.08333 15.6667 2 12 2 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-)
-
-
-const ShapeAnnotationComponent = ({ annotation, onDragStart, onResizeStart, onSelect, isSelected, isHovered, onHover }: {
-    annotation: ShapeAnnotation;
-    onDragStart: (e: React.MouseEvent, id: string) => void;
-    onResizeStart: (e: React.MouseEvent, id: string) => void;
-    onSelect: (e: React.MouseEvent, id: string) => void;
-    isSelected: boolean;
-    isHovered: boolean;
-    onHover: (id: string | null) => void;
-}) => {
-    const shapeStyle = {
-        fill: annotation.fillColor,
-        stroke: annotation.strokeColor,
-        strokeWidth: annotation.strokeWidth,
-    };
-
-    const wrapperStyle = {
-        left: `${annotation.leftRatio * 100}%`,
-        top: `${annotation.topRatio * 100}%`,
-        width: `${annotation.widthRatio * 100}%`,
-        height: `${annotation.heightRatio * 100}%`,
-        zIndex: 18,
-    };
-
-    return (
-        <div
-            onMouseDown={(e) => onDragStart(e, annotation.id)}
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelect(e, annotation.id);
-            }}
-            onMouseEnter={() => onHover(annotation.id)}
-            onMouseLeave={() => onHover(null)}
-            className={cn("absolute cursor-grab", (isSelected || isHovered) && "border-2 border-dashed border-primary")}
-            style={wrapperStyle}
-        >
-            <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
-                {annotation.type === 'rect' && <rect x={0} y={0} width="100" height="100" {...shapeStyle} />}
-                {annotation.type === 'ellipse' && <ellipse cx="50" cy="50" rx="50" ry="50" {...shapeStyle} />}
-                {annotation.type === 'triangle' && <polygon points="50,0 100,100 0,100" {...shapeStyle} />}
-            </svg>
-            {(isSelected || isHovered) && (
-                <div
-                    className="absolute -right-1 -bottom-1 w-4 h-4 bg-primary rounded-full border-2 border-white cursor-se-resize"
-                    onMouseDown={(e) => onResizeStart(e, annotation.id)}
-                />
-            )}
-        </div>
-    );
-};
-
-const ScribbleAnnotationComponent = ({ annotation, pageDimensions, onSelect, isSelected, isHovered, onHover }: {
-    annotation: ScribbleAnnotation;
-    pageDimensions: { width: number, height: number};
-    onSelect: (e: React.MouseEvent, id: string) => void;
-    isSelected: boolean;
-    isHovered: boolean;
-    onHover: (id: string | null) => void;
-}) => {
-    if (!annotation.points || annotation.points.length < 2) return null;
-    
-    const pathData = annotation.points.map((p, i) => {
-        const command = i === 0 ? 'M' : 'L';
-        return `${command} ${p.xRatio * pageDimensions.width} ${p.yRatio * pageDimensions.height}`;
-    }).join(' ');
-    
-    return (
-      <svg
-          onClick={(e) => { e.stopPropagation(); onSelect(e, annotation.id); }}
-          onMouseEnter={() => onHover(annotation.id)}
-          onMouseLeave={() => onHover(null)}
-          className={cn("absolute top-0 left-0 w-full h-full pointer-events-auto", (isSelected || isHovered) && "ring-2 ring-primary ring-dashed")}
-          style={{ zIndex: 19 }}
-      >
-          <path
-              d={pathData}
-              stroke={annotation.color}
-              strokeWidth={annotation.strokeWidth}
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="pointer-events-none"
-          />
-      </svg>
-    )
-}
-
-const TableAnnotationComponent = ({ annotation, onDragStart, onResizeStart, onSelect, isSelected, isHovered, onHover, onDoubleClick }: {
-    annotation: TableAnnotation;
-    onDragStart: (e: React.MouseEvent, id: string) => void;
-    onResizeStart: (e: React.MouseEvent, id: string) => void;
-    onSelect: (e: React.MouseEvent, id: string) => void;
-    onDoubleClick: (e: React.MouseEvent, annotation: TableAnnotation) => void;
-    isSelected: boolean;
-    isHovered: boolean;
-    onHover: (id: string | null) => void;
-}) => {
-    const cellWidth = 100 / annotation.cols;
-    const cellHeight = 100 / annotation.rows;
-
-    return (
-        <div
-            onMouseDown={(e) => onDragStart(e, annotation.id)}
-            onClick={(e) => { e.stopPropagation(); onSelect(e, annotation.id); }}
-            onDoubleClick={(e) => onDoubleClick(e, annotation)}
-            onMouseEnter={() => onHover(annotation.id)}
-            onMouseLeave={() => onHover(null)}
-            className={cn("absolute cursor-grab", (isSelected || isHovered) && "border-2 border-dashed border-primary")}
-            style={{
-                left: `${annotation.leftRatio * 100}%`,
-                top: `${annotation.topRatio * 100}%`,
-                width: `${annotation.widthRatio * 100}%`,
-                height: `${annotation.heightRatio * 100}%`,
-                zIndex: 18,
-            }}
-        >
-            <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
-                {Array.from({ length: annotation.rows + 1 }, (_, i) => (
-                    <line
-                        key={`h-${i}`}
-                        x1="0"
-                        y1={i * cellHeight}
-                        x2="100"
-                        y2={i * cellHeight}
-                        stroke={annotation.strokeColor}
-                        strokeWidth={annotation.strokeWidth / 10}
-                    />
-                ))}
-                {Array.from({ length: annotation.cols + 1 }, (_, i) => (
-                    <line
-                        key={`v-${i}`}
-                        x1={i * cellWidth}
-                        y1="0"
-                        x2={i * cellWidth}
-                        y2="100"
-                        stroke={annotation.strokeColor}
-                        strokeWidth={annotation.strokeWidth / 10}
-                    />
-                ))}
-            </svg>
-            {(isSelected || isHovered) && (
-                <div
-                    className="absolute -right-1 -bottom-1 w-4 h-4 bg-primary rounded-full border-2 border-white cursor-se-resize"
-                    onMouseDown={(e) => onResizeStart(e, annotation.id)}
-                />
-            )}
-        </div>
-    );
-};
-
-const SignaturePad = ({ onSave, texts }: { onSave: (dataUrl: string) => void, texts: typeof translations.en }) => {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [isDrawing, setIsDrawing] = useState(false);
-    const [color, setColor] = useState('#000000');
-    const [strokeWidth, setStrokeWidth] = useState(2);
-    const lastPos = useRef({ x: 0, y: 0 });
-
-    const getMousePos = (canvas: HTMLCanvasElement, evt: React.MouseEvent | MouseEvent) => {
-        const rect = canvas.getBoundingClientRect();
-        return {
-            x: evt.clientX - rect.left,
-            y: evt.clientY - rect.top
-        };
-    };
-
-    const draw = (e: React.MouseEvent | MouseEvent) => {
-        if (!isDrawing || !canvasRef.current) return;
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
-        const pos = getMousePos(canvas, e);
-        if (ctx) {
-            ctx.beginPath();
-            ctx.moveTo(lastPos.current.x, lastPos.current.y);
-            ctx.lineTo(pos.x, pos.y);
-            ctx.strokeStyle = color;
-            ctx.lineWidth = strokeWidth;
-            ctx.lineCap = 'round';
-            ctx.stroke();
-        }
-        lastPos.current = pos;
-    };
-
-    const startDrawing = (e: React.MouseEvent) => {
-        if (!canvasRef.current) return;
-        setIsDrawing(true);
-        lastPos.current = getMousePos(canvasRef.current, e);
-    };
-
-    const stopDrawing = () => {
-        setIsDrawing(false);
-    };
-
-    const clearPad = () => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        if(ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
-    };
-    
-    const handleSave = () => {
-        if (!canvasRef.current) return;
-        onSave(canvasRef.current.toDataURL('image/png'));
-    };
-    
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if(canvas) {
-            const parent = canvas.parentElement;
-            if(parent) {
-                canvas.width = parent.clientWidth;
-                canvas.height = 300;
-            }
-        }
-    }, [])
-
-    return (
-        <div className="flex flex-col gap-4">
-            <canvas
-                ref={canvasRef}
-                className="w-full bg-muted/50 rounded-md border cursor-crosshair"
-                onMouseDown={startDrawing}
-                onMouseMove={draw}
-                onMouseUp={stopDrawing}
-                onMouseLeave={stopDrawing}
-            />
-            <div className="flex justify-between items-center gap-4">
-                <div className='flex items-center gap-2'>
-                  <Label htmlFor="sig-color">{texts.signatureColor}</Label>
-                  <Input id="sig-color" type="color" value={color} onChange={e => setColor(e.target.value)} className="w-12 h-8 p-1"/>
-                </div>
-                <div className='flex items-center gap-2'>
-                  <Label htmlFor="sig-stroke">{texts.signatureStrokeWidth}</Label>
-                  <Slider id="sig-stroke" min={1} max={10} step={1} value={[strokeWidth]} onValueChange={val => setStrokeWidth(val[0])} className="w-32"/>
-                </div>
-                <Button variant="outline" onClick={clearPad}>{texts.signatureClear}</Button>
-                <Button onClick={handleSave}>{texts.signatureSave}</Button>
-            </div>
-        </div>
-    )
-}
-
-const initialEditorState: EditorState = {
-  pageObjects: [],
-  annotations: [],
-};
-
 
 export default function PdfEditorPage() {
-  const router = useRouter();
-  const { toast } = useToast();
+    const router = useRouter();
+    const { toast } = useToast();
   
-  const [editorState, setEditorState] = useState<EditorState>(initialEditorState);
-  const [history, setHistory] = useState<EditorState[]>([initialEditorState]);
-  const [historyIndex, setHistoryIndex] = useState(0);
-
-  const [selectedPageIds, setSelectedPageIds] = useState<Set<string>>(new Set());
-
-  const [activePageIndex, setActivePageIndex] = useState<number | null>(null);
-  const [viewMode, setViewMode] = useState<'editor' | 'grid'>('editor');
+    // Language and login state
+    const [currentLanguage, setCurrentLanguage] = useState<'en' | 'zh'>('zh');
+    const [texts, setTexts] = useState(translations.zh);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
   
-  const [interactionMode, setInteractionMode] = useState<InteractionMode>('idle');
-  const [activeTool, setActiveTool] = useState<Tool>('select');
-  const [drawingShapeType, setDrawingShapeType] = useState<ShapeAnnotation['type'] | null>(null);
-  const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
-  const [hoveredAnnotationId, setHoveredAnnotationId] = useState<string | null>(null);
-
-
-  const mainViewContainerRef = useRef<HTMLDivElement>(null);
-  const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const [mainCanvasZoom, setMainCanvasZoom] = useState(1);
-
-  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
-  const [isNewDocConfirmOpen, setIsNewDocConfirmOpen] = useState(false);
-  const [pageToDelete, setPageToDelete] = useState<number | null>(null);
-
-  const [currentLanguage, setCurrentLanguage] = useState<'en' | 'zh'>('zh');
-  const [texts, setTexts] = useState(translations.zh);
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState('');
+    // PDF and page state
+    const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
+    const [pageCount, setPageCount] = useState(0);
+    const [pageObjects, setPageObjects] = useState<PageObject[]>([]);
+    const [activePageIndex, setActivePageIndex] = useState<number | null>(null);
+    const [viewMode, setViewMode] = useState<'grid' | 'editor'>('editor');
+    
+    // Editor state
+    const [annotations, setAnnotations] = useState<Annotation[]>([]);
+    const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
+    const [activeTool, setActiveTool] = useState<Tool>('select');
+    const [interactionMode, setInteractionMode] = useState<InteractionMode>('idle');
+    const [mainCanvasZoom, setMainCanvasZoom] = useState(1);
+    const [showDownloadOptions, setShowDownloadOptions] = useState(false);
+    const [isDownloading, setIsDownloading] = useState(false);
+    const [downloadProgress, setDownloadProgress] = useState(0);
+    const [tableConfig, setTableConfig] = useState<{rows: number, cols: number} | null>(null);
+    
+    // History (undo/redo)
+    const [history, setHistory] = useState<EditorState[]>([]);
+    const [historyIndex, setHistoryIndex] = useState(-1);
   
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [downloadProgress, setDownloadProgress] = useState(0);
-  const [showDownloadOptions, setShowDownloadOptions] = useState(false);
-  const downloadButtonRef = useRef<HTMLDivElement>(null);
-  const toolbarContainerRef = useRef<HTMLDivElement>(null);
-
-
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+    // Refs
+    const fileUploadRef = useRef<HTMLInputElement>(null);
+    const mainViewContainerRef = useRef<HTMLDivElement>(null);
+    const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
+    const downloadRef = useRef<HTMLDivElement>(null);
+    const toolbarContainerRef = useRef<HTMLDivElement>(null);
+    const isPanningRef = useRef(false);
+    const panStartRef = useRef({ x: 0, y: 0 });
+    const drawingStartRef = useRef<{ pageIndex: number; startX: number; startY: number; id: string } | null>(null);
   
-  const [isLinkPopoverOpen, setIsLinkPopoverOpen] = useState(false);
-  const [currentLink, setCurrentLink] = useState<LinkAnnotationDef>({ type: 'url', value: '' });
+    // Derived state
+    const activeTextAnnotation = (interactionMode === 'editing' && selectedAnnotationId)
+      ? annotations.find(a => a.id === selectedAnnotationId && a.type === 'text') as TextAnnotation | undefined
+      : undefined;
+    const activeShapeAnnotation = (interactionMode === 'selected' && selectedAnnotationId)
+        ? annotations.find(a => a.id === selectedAnnotationId && (a.type === 'rect' || a.type === 'ellipse' || a.type === 'triangle')) as ShapeAnnotation | undefined
+        : undefined;
 
-  const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false);
-  const [isTableConfigDialogOpen, setIsTableConfigDialogOpen] = useState(false);
-  const [tableConfig, setTableConfig] = useState({ rows: 3, cols: 3 });
-
-  const [pageTextContents, setPageTextContents] = useState<PageTextContent[]>([]);
-  const [hasTextLayer, setHasTextLayer] = useState(false);
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [currentSearchResultIndex, setCurrentSearchResultIndex] = useState(-1);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isSearchCaseSensitive, setIsSearchCaseSensitive] = useState(false);
-
-  const dragStartRef = useRef({ x: 0, y: 0, initialLeft: 0, initialTop: 0, initialWidth: 0, initialHeight: 0 });
-  const drawingStartRef = useRef<{ pageIndex: number; startX: number; startY: number; id: string } | null>(null);
-
-  const [isGuestLimitModalOpen, setIsGuestLimitModalOpen] = useState(false);
-  const [guestLimitModalContent, setGuestLimitModalContent] = useState({ title: '', description: '' });
-  const [isConvertConfirmOpen, setIsConvertConfirmOpen] = useState(false);
-  const [pendingFileToConvert, setPendingFileToConvert] = useState<File | null>(null);
-
-  const thumbnailContainerRef = useRef<HTMLDivElement>(null);
-  const thumbnailRefs = useRef<(HTMLDivElement | null)[]>([]);
-
-  const pdfUploadRef = useRef<HTMLInputElement>(null);
-  const imageUploadRef = useRef<HTMLInputElement>(null);
-  const insertPdfRef = useRef<HTMLInputElement>(null);
-  const convertUploadRef = useRef<HTMLInputElement>(null);
-  const sortableInstanceRef = useRef<Sortable | null>(null);
+    // --- Effects ---
   
-  const observerRef = useRef<IntersectionObserver | null>(null);
-  const insertionTargetRef = useRef<'start' | 'end' | 'before' | 'after'>('end');
-
-  // Destructure state for easier access in JSX
-  const { pageObjects, annotations } = editorState;
+    useEffect(() => {
+      setTexts(translations[currentLanguage] || translations.en);
+    }, [currentLanguage]);
   
-  const textAnnotations = annotations.filter(a => a.type === 'text') as TextAnnotation[];
-  const imageAnnotations = annotations.filter(a => a.type === 'image') as ImageAnnotation[];
-  const highlightAnnotations = annotations.filter(a => a.type === 'highlight') as HighlightAnnotation[];
-  const shapeAnnotations = annotations.filter(a => a.type === 'rect' || a.type === 'ellipse' || a.type === 'triangle') as ShapeAnnotation[];
-  const mosaicAnnotations = annotations.filter(a => a.type === 'mosaic') as MosaicAnnotation[];
-  const scribbleAnnotations = annotations.filter(a => a.type === 'scribble') as ScribbleAnnotation[];
-  const tableAnnotations = annotations.filter(a => a.type === 'table') as TableAnnotation[];
-
-  const updateHistory = (newState: EditorState) => {
-    const newHistory = history.slice(0, historyIndex + 1);
-    setHistory([...newHistory, newState]);
-    setHistoryIndex(newHistory.length);
-  };
-  
-  const updateState = useCallback((newPartialState: Partial<EditorState>, recordHistory: boolean = true) => {
-    setEditorState(prevState => {
-      const newState = { ...prevState, ...newPartialState };
-      if (recordHistory) {
-        updateHistory(newState);
+    useEffect(() => {
+      if (typeof window !== 'undefined') {
+        setIsLoggedIn(localStorage.getItem('isLoggedIn') === 'true');
       }
-      return newState;
-    });
-  }, [history, historyIndex]);
+    }, []);
 
-  const addAnnotation = (annotation: Annotation) => {
-    updateState({ annotations: [...annotations, annotation] });
-  };
-  
-  const updateAnnotation = (id: string, updates: Partial<Annotation>) => {
-      updateState({ annotations: annotations.map(ann => (ann.id === id) ? { ...ann, ...updates } : ann) }, false);
-  };
-
-
-  const handleUndo = () => {
-    if (historyIndex > 0) {
-      const newIndex = historyIndex - 1;
-      setHistoryIndex(newIndex);
-      setEditorState(history[newIndex]);
-    }
-  };
-
-  const handleRedo = () => {
-    if (historyIndex < history.length - 1) {
-      const newIndex = historyIndex + 1;
-      setHistoryIndex(newIndex);
-      setEditorState(history[newIndex]);
-    }
-  };
-
-
-  useEffect(() => {
-    setTexts(translations[currentLanguage] || translations.en);
-  }, [currentLanguage]);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const loggedInStatus = localStorage.getItem('isLoggedIn') === 'true';
-      setIsLoggedIn(loggedInStatus);
-    }
-  }, []);
-
-  const createSortableInstance = useCallback((containerRef: React.RefObject<HTMLDivElement>) => {
-    if (containerRef.current && !sortableInstanceRef.current) {
-        sortableInstanceRef.current = Sortable.create(containerRef.current, {
-            animation: 150,
-            ghostClass: 'opacity-50',
-            chosenClass: 'shadow-2xl',
-            dragClass: 'opacity-75',
-            onEnd: (evt) => {
-                if (evt.oldIndex === undefined || evt.newIndex === undefined || evt.oldIndex === evt.newIndex) return;
-                const reorderedPageObjects = Array.from(pageObjects);
-                const [movedItem] = reorderedPageObjects.splice(evt.oldIndex!, 1);
-                reorderedPageObjects.splice(evt.newIndex!, 0, movedItem);
-                updateState({ pageObjects: reorderedPageObjects });
+    // Global click listener to deselect annotations
+    useEffect(() => {
+        const handleGlobalClick = (e: MouseEvent) => {
+            if (
+                !mainViewContainerRef.current?.contains(e.target as Node) &&
+                !downloadRef.current?.contains(e.target as Node) &&
+                !toolbarContainerRef.current?.contains(e.target as Node)
+            ) {
+                setInteractionMode('idle');
+                setSelectedAnnotationId(null);
+                setShowDownloadOptions(false);
             }
-        });
-    }
-  }, [pageObjects, updateState]);
-
-  useEffect(() => {
-    if (pageObjects.length > 0 && viewMode === 'editor' && thumbnailContainerRef.current) {
-        createSortableInstance(thumbnailContainerRef);
-    } else if (pageObjects.length > 0 && viewMode === 'grid' && mainViewContainerRef.current) {
-        createSortableInstance(mainViewContainerRef);
-    } else if (sortableInstanceRef.current) {
-        sortableInstanceRef.current.destroy();
-        sortableInstanceRef.current = null;
-    }
-
-    return () => {
-        if (sortableInstanceRef.current) {
-            sortableInstanceRef.current.destroy();
-            sortableInstanceRef.current = null;
-        }
-    };
-  }, [pageObjects.length, viewMode, createSortableInstance]);
-
-  useEffect(() => {
-    if (observerRef.current) observerRef.current.disconnect();
-  
-    const options = {
-      root: mainViewContainerRef.current,
-      rootMargin: '0px',
-      threshold: 0.5
-    };
-  
-    observerRef.current = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const index = parseInt(entry.target.getAttribute('data-page-index') || '0', 10);
-          setActivePageIndex(index);
-        }
-      });
-    }, options);
-  
-    const { current: observer } = observerRef;
-    const { current: pageElements } = pageRefs;
-  
-    pageElements.forEach(el => {
-      if (el) observer.observe(el);
-    });
-  
-    return () => {
-      if (observer) {
-        pageElements.forEach(el => {
-          if (el) observer.unobserve(el);
-        });
-      }
-    };
-  }, [pageObjects, mainCanvasZoom]);
-  
-  useEffect(() => {
-    if (activePageIndex !== null && thumbnailRefs.current[activePageIndex]) {
-      thumbnailRefs.current[activePageIndex]?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-      });
-    }
-  }, [activePageIndex]);
-
-
-  const handleFitToPage = useCallback(() => {
-      if (!mainViewContainerRef.current || pageObjects.length === 0 || activePageIndex === null) return;
-      const container = mainViewContainerRef.current;
-      const containerWidth = container.clientWidth - 40;
-      const containerHeight = container.clientHeight - 40;
-
-      const activePage = pageObjects[activePageIndex];
-      if (!activePage) return;
-
-      const pageCanvas = activePage.sourceCanvas;
-      const rotation = activePage.rotation;
-
-      let pageRenderWidth = (rotation % 180 !== 0) ? pageCanvas.height : pageCanvas.width;
-      let pageRenderHeight = (rotation % 180 !== 0) ? pageCanvas.width : pageCanvas.height;
-
-      const widthRatio = containerWidth / pageRenderWidth;
-      const heightRatio = containerHeight / pageRenderHeight;
-
-      const newZoom = Math.min(widthRatio, heightRatio);
-      setMainCanvasZoom(newZoom);
-  }, [activePageIndex, pageObjects]);
-
-  const handleFitToWidth = useCallback(() => {
-      if (!mainViewContainerRef.current || pageObjects.length === 0 || activePageIndex === null) return;
-      const containerWidth = mainViewContainerRef.current.clientWidth - 40;
-      const activePage = pageObjects[activePageIndex];
-      if (!activePage) return;
-
-      const pageCanvas = activePage.sourceCanvas;
-      const rotation = activePage.rotation;
-      let pageRenderWidth = (rotation % 180 !== 0) ? pageCanvas.height : pageCanvas.width;
-
-      const newZoom = containerWidth / pageRenderWidth;
-      setMainCanvasZoom(newZoom);
-  }, [activePageIndex, pageObjects]);
-
-  // Pan Tool Logic
-    const panState = useRef({ isPanning: false, startX: 0, startY: 0, scrollLeft: 0, scrollTop: 0 });
-
-    const handlePanMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (activeTool !== 'pan' || !mainViewContainerRef.current) return;
-        e.preventDefault();
-        panState.current = {
-            isPanning: true,
-            startX: e.pageX - mainViewContainerRef.current.offsetLeft,
-            startY: e.pageY - mainViewContainerRef.current.offsetTop,
-            scrollLeft: mainViewContainerRef.current.scrollLeft,
-            scrollTop: mainViewContainerRef.current.scrollTop,
         };
-        mainViewContainerRef.current.style.cursor = 'grabbing';
-    };
+        document.addEventListener('mousedown', handleGlobalClick);
+        return () => document.removeEventListener('mousedown', handleGlobalClick);
+    }, []);
+    
+    // Set cursor style based on the active tool
+    useEffect(() => {
+        if (mainViewContainerRef.current) {
+            let cursor = 'default';
+            if (activeTool === 'pan') cursor = 'grab';
+            if (['shape', 'mosaic', 'scribble', 'table'].includes(activeTool)) cursor = 'crosshair';
+            mainViewContainerRef.current.style.cursor = cursor;
+        }
+    }, [activeTool]);
 
-    const handlePanMouseUpAndLeave = () => {
-        panState.current.isPanning = false;
-        if(mainViewContainerRef.current) mainViewContainerRef.current.style.cursor = activeTool === 'pan' ? 'grab' : 'default';
+    // --- History Management ---
+    const updateHistory = useCallback((newState: EditorState) => {
+        const newHistory = history.slice(0, historyIndex + 1);
+        newHistory.push(newState);
+        setHistory(newHistory);
+        setHistoryIndex(newHistory.length - 1);
+    }, [history, historyIndex]);
+
+    const undo = () => {
+        if (historyIndex > 0) {
+            const newIndex = historyIndex - 1;
+            setHistoryIndex(newIndex);
+            const prevState = history[newIndex];
+            setPageObjects(prevState.pageObjects);
+            setAnnotations(prevState.annotations);
+        }
     };
     
-    const handlePanMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (!panState.current.isPanning || !mainViewContainerRef.current) return;
-        e.preventDefault();
-        const x = e.pageX - mainViewContainerRef.current.offsetLeft;
-        const y = e.pageY - mainViewContainerRef.current.offsetTop;
-        const walkX = (x - panState.current.startX);
-        const walkY = (y - panState.current.startY);
-        mainViewContainerRef.current.scrollLeft = panState.current.scrollLeft - walkX;
-        mainViewContainerRef.current.scrollTop = panState.current.scrollTop - walkY;
+    const redo = () => {
+        if (historyIndex < history.length - 1) {
+            const newIndex = historyIndex + 1;
+            setHistoryIndex(newIndex);
+            const nextState = history[newIndex];
+            setPageObjects(nextState.pageObjects);
+            setAnnotations(nextState.annotations);
+        }
     };
 
-
-  const updateLanguage = (lang: 'en' | 'zh') => {
-    setCurrentLanguage(lang);
-  };
+    // --- Core Functions ---
   
-  const handleLogout = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('isLoggedIn');
-    }
-    setIsLoggedIn(false);
-    toast({ title: texts.logout, description: currentLanguage === 'zh' ? "您已成功登出。" : "You have been logged out successfully." });
-  };
-
-  const checkAndDecrementQuota = useCallback((quotaType: 'daily' | 'convert'): boolean => {
-      if (isLoggedIn) {
-        return true; 
-      }
-
-      const today = new Date().toISOString().split('T')[0];
-      const lastUsed = localStorage.getItem('pdfLastUsed');
-
-      if (lastUsed !== today) {
-        localStorage.setItem('pdfDailyCount', '5');
-        localStorage.setItem('pdfConvertCount', '1');
-        localStorage.setItem('pdfLastUsed', today);
-      }
-      
-      const key = quotaType === 'daily' ? 'pdfDailyCount' : 'pdfConvertCount';
-      const limit = quotaType === 'daily' ? 5 : 1;
-      let currentCount = parseInt(localStorage.getItem(key) || String(limit), 10);
-
-      if (isNaN(currentCount)) {
-          currentCount = limit;
-      }
-
-      if (currentCount <= 0) {
-        setGuestLimitModalContent({
-          title: quotaType === 'daily' ? texts.dailyLimitTitle : texts.convertLimitTitle,
-          description: quotaType === 'daily' ? texts.dailyLimitDescription : texts.convertLimitDescription
-        });
-        setIsGuestLimitModalOpen(true);
-        return false;
-      }
-
-      localStorage.setItem(key, String(currentCount - 1));
-      return true;
-  }, [isLoggedIn, texts]);
-
-
-  const processPdfFile = async (file: File): Promise<{ loadedPageObjects: PageObject[], textContents: PageTextContent[] }> => {
-    const arrayBuffer = await file.arrayBuffer();
-    const pdfDocProxy = await pdfjsLib.getDocument({
-      data: arrayBuffer,
-      cMapUrl: `//cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
-      cMapPacked: true,
-    }).promise;
-
-    const numPages = pdfDocProxy.numPages;
-    const loadedPageObjects: PageObject[] = [];
-    const textContents: PageTextContent[] = [];
-
-    for (let i = 1; i <= numPages; i++) {
-      const page = await pdfDocProxy.getPage(i);
-      const viewport = page.getViewport({ scale: 3.0 });
-      const canvas = document.createElement('canvas');
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) continue;
-      await page.render({ canvasContext: ctx, viewport }).promise;
-      loadedPageObjects.push({ id: uuidv4(), sourceCanvas: canvas, rotation: 0 });
-      
-      const pageTextContent = await page.getTextContent();
-      if(pageTextContent.items.length > 0) setHasTextLayer(true);
-      textContents.push({ pageIndex: i - 1, items: pageTextContent.items });
-    }
-    return { loadedPageObjects, textContents };
-  };
-  
-  const loadPdfIntoEditor = async (file: File) => {
-    setIsLoading(true);
-    setLoadingMessage(texts.loadingPdf);
-    try {
-      const { loadedPageObjects, textContents } = await processPdfFile(file);
-      
-      const newState: EditorState = {
-        pageObjects: loadedPageObjects,
-        annotations: [],
-      };
-      setEditorState(newState);
-      setPageTextContents(textContents);
-      updateHistory(newState);
-
-      setSelectedPageIds(new Set());
-      setActivePageIndex(0);
-      setViewMode('editor');
-      
-      setTimeout(() => handleFitToWidth(), 100);
-
-    } catch (err: any)
-    {
-      toast({ title: texts.loadError, description: err.message, variant: "destructive" });
-      setEditorState(initialEditorState);
-      updateHistory(initialEditorState);
-      setActivePageIndex(null);
-    } finally {
-      setIsLoading(false);
-      setLoadingMessage('');
-      if (pdfUploadRef.current) pdfUploadRef.current.value = '';
-    }
-  }
-
-  const handlePdfUpload = async (event: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLDivElement>) => {
-    let file: File | null = null;
-    if ('dataTransfer' in event) {
-        event.preventDefault();
-        event.stopPropagation();
-        if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
-            file = event.dataTransfer.files[0];
-            event.dataTransfer.clearData();
-        }
-    } else {
-        file = event.target.files?.[0] || null;
-    }
-
-    if (!file || !file.type.includes('pdf')) {
-        if (file) toast({ title: texts.loadError, description: currentLanguage === 'zh' ? "無效的檔案類型。請上傳 PDF。" : "Invalid file type. Please upload a PDF.", variant: "destructive" });
-        return;
-    }
-    loadPdfIntoEditor(file);
-  };
-
-  const handleConfirmOpenNew = () => {
-    const newState = {
-      ...initialEditorState,
-    };
-    setEditorState(newState);
-    setHistory([newState]);
-    setHistoryIndex(0);
-    setHasTextLayer(false);
-    setSelectedPageIds(new Set());
-    setActivePageIndex(null);
-    
-    if (pdfUploadRef.current) {
-        pdfUploadRef.current.value = ''; 
-        pdfUploadRef.current.click();
-    }
-    
-    setIsNewDocConfirmOpen(false);
-  };
-
-  const handleDeletePages = () => {
-    if (selectedPageIds.size === 0) {
-        toast({ title: texts.pageManagement, description: texts.noPageSelected, variant: "destructive" });
-        return;
-    }
-    const newPages = pageObjects.filter(p => !selectedPageIds.has(p.id));
-
-    updateState({ pageObjects: newPages });
-    setActivePageIndex(null);
-    setSelectedPageIds(new Set());
-
-    if (newPages.length === 0) {
-      updateState({ pageObjects: [] });
-    }
-
-    toast({ title: texts.pageManagement, description: currentLanguage === 'zh' ? "選取的頁面已刪除。" : "Selected pages have been deleted." });
-    setPageToDelete(null);
-    setIsDeleteConfirmOpen(false);
-  };
-
-
-  const hexToRgb = (hex: string): { r: number; g: number; b: number } => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result ? {
-      r: parseInt(result[1], 16) / 255,
-      g: parseInt(result[2], 16) / 255,
-      b: parseInt(result[3], 16) / 255
-    } : { r: 0, g: 0, b: 0 };
-  };
-
-  const parseRgba = (rgba: string) => {
-    const result = rgba.match(/(\d+(\.\d+)?)/g);
-    if (!result || result.length < 4) return { r: 0, g: 0, b: 0, a: 1 };
-    return {
-        r: parseInt(result[0]) / 255,
-        g: parseInt(result[1]) / 255,
-        b: parseInt(result[2]) / 255,
-        a: parseFloat(result[3]),
-    };
-  };
-
-  const getPdfFont = async (pdfDoc: PDFLibDocument, annotation: TextAnnotation): Promise<PDFFont> => {
-    const { fontFamily, bold, italic } = annotation;
-    let font = StandardFonts.Helvetica;
-
-    if (fontFamily === 'Helvetica') {
-        if (bold && italic) font = StandardFonts.HelveticaBoldOblique;
-        else if (bold) font = StandardFonts.HelveticaBold;
-        else if (italic) font = StandardFonts.HelveticaOblique;
-        else font = StandardFonts.Helvetica;
-    } else if (fontFamily === 'Times-Roman') {
-        if (bold && italic) font = StandardFonts.TimesRomanBoldItalic;
-        else if (bold) font = StandardFonts.TimesRomanBold;
-        else if (italic) font = StandardFonts.TimesRomanItalic;
-        else font = StandardFonts.TimesRoman;
-    } else if (fontFamily === 'Courier') {
-        if (bold && italic) font = StandardFonts.CourierBoldOblique;
-        else if (bold) font = StandardFonts.CourierBold;
-        else if (italic) font = StandardFonts.CourierOblique;
-        else font = StandardFonts.Courier;
-    }
-    return await pdfDoc.embedFont(font);
-  };
-
-  const generatePdfBytes = async (): Promise<Uint8Array> => {
-    const pdfDocOut = await PDFLibDocument.create();
-
-    for (const [index, pageObj] of pageObjects.entries()) {
-      const { sourceCanvas, rotation } = pageObj;
-
-      const tempRenderCanvas = document.createElement('canvas');
-      const tempCtx = tempRenderCanvas.getContext('2d');
-      if (!tempCtx) continue;
-
-      const rad = rotation * Math.PI / 180;
-
-      if (rotation % 180 !== 0) {
-        tempRenderCanvas.width = sourceCanvas.height;
-        tempRenderCanvas.height = sourceCanvas.width;
-      } else {
-        tempRenderCanvas.width = sourceCanvas.width;
-        tempRenderCanvas.height = sourceCanvas.height;
-      }
-
-      tempCtx.translate(tempRenderCanvas.width / 2, tempRenderCanvas.height / 2);
-      tempCtx.rotate(rad);
-      tempCtx.drawImage(sourceCanvas, -sourceCanvas.width / 2, -sourceCanvas.height / 2, sourceCanvas.width, sourceCanvas.height);
-
-      const imgDataUrl = tempRenderCanvas.toDataURL('image/png');
-      const pngImage = await pdfDocOut.embedPng(imgDataUrl);
-
-      const pdfLibPage = pdfDocOut.addPage([tempRenderCanvas.width, tempRenderCanvas.height]);
-      pdfLibPage.drawImage(pngImage, { x: 0, y: 0, width: tempRenderCanvas.width, height: tempRenderCanvas.height });
-
-      const { width: pageWidth, height: pageHeight } = pdfLibPage.getSize();
-      
-      const pageAnnotations = annotations.filter(a => a.pageIndex === index);
-
-      for (const annotation of pageAnnotations.filter(a => a.type === 'highlight') as HighlightAnnotation[]) {
-          const { r, g, b, a } = parseRgba(annotation.color);
-          pdfLibPage.drawRectangle({
-              x: annotation.leftRatio * pageWidth,
-              y: pageHeight - (annotation.topRatio * pageHeight) - (annotation.heightRatio * pageHeight),
-              width: annotation.widthRatio * pageWidth,
-              height: annotation.heightRatio * pageHeight,
-              color: rgb(r, g, b),
-              opacity: a,
-              blendMode: BlendMode.Multiply,
-          });
-      }
-      
-      for (const annotation of pageAnnotations.filter(a => a.type === 'rect' || a.type === 'ellipse' || a.type === 'triangle') as ShapeAnnotation[]) {
-          const x = annotation.leftRatio * pageWidth;
-          const y = pageHeight - (annotation.topRatio * pageHeight) - (annotation.heightRatio * pageHeight);
-          const width = annotation.widthRatio * pageWidth;
-          const height = annotation.heightRatio * pageHeight;
-          const { r: fillR, g: fillG, b: fillB } = hexToRgb(annotation.fillColor);
-          const { r: strokeR, g: strokeG, b: strokeB } = hexToRgb(annotation.strokeColor);
-
-          if (annotation.type === 'rect') {
-              pdfLibPage.drawRectangle({ x, y, width, height, color: rgb(fillR, fillG, fillB), borderColor: rgb(strokeR, strokeG, strokeB), borderWidth: annotation.strokeWidth });
-          } else if (annotation.type === 'ellipse') {
-              pdfLibPage.drawEllipse({ x: x + width/2, y: y + height/2, xScale: width/2, yScale: height/2, color: rgb(fillR, fillG, fillB), borderColor: rgb(strokeR, strokeG, strokeB), borderWidth: annotation.strokeWidth });
-          } else if (annotation.type === 'triangle') {
-               const points = [ {x: x + width / 2, y: y + height}, {x: x, y}, {x: x + width, y} ];
-               pdfLibPage.drawPolygon({ points, color: rgb(fillR, fillG, fillB), borderColor: rgb(strokeR, strokeG, strokeB), borderWidth: annotation.strokeWidth });
-          }
-      }
-      
-      for (const annotation of pageAnnotations.filter(a => a.type === 'scribble') as ScribbleAnnotation[]) {
-          if (!annotation.points || annotation.points.length < 2) continue;
-          const pathData = annotation.points.map((p, i) => {
-              const command = i === 0 ? 'M' : 'L';
-              return `${command} ${p.xRatio * pageWidth} ${pageHeight - (p.yRatio * pageHeight)}`;
-          }).join(' ');
-
-          const { r, g, b } = hexToRgb(annotation.color);
-          pdfLibPage.drawSvgPath(pathData, {
-              borderColor: rgb(r, g, b),
-              borderWidth: annotation.strokeWidth,
-          });
-      }
-
-      for (const annotation of pageAnnotations.filter(a => a.type === 'mosaic') as MosaicAnnotation[]) {
-          const mosaicX = annotation.leftRatio * pageWidth;
-          const mosaicY = pageHeight - (annotation.topRatio * pageHeight) - (annotation.heightRatio * pageHeight);
-          const mosaicWidth = annotation.widthRatio * pageWidth;
-          const mosaicHeight = annotation.heightRatio * pageHeight;
-
-          const sourcePageCanvas = pageObjects[index].sourceCanvas;
-          const tempMosaicCanvas = document.createElement('canvas');
-          const tempMosaicCtx = tempMosaicCanvas.getContext('2d', { willReadFrequently: true });
-          if (!tempMosaicCtx) continue;
-
-          tempMosaicCanvas.width = mosaicWidth;
-          tempMosaicCanvas.height = mosaicHeight;
-
-          tempMosaicCtx.drawImage(
-            sourcePageCanvas,
-            annotation.leftRatio * sourcePageCanvas.width,
-            annotation.topRatio * sourcePageCanvas.height,
-            annotation.widthRatio * sourcePageCanvas.width,
-            annotation.heightRatio * sourcePageCanvas.height,
-            0, 0, mosaicWidth, mosaicHeight
-          );
-
-          const PIXELATION_LEVEL = 10;
-          const w = tempMosaicCanvas.width / PIXELATION_LEVEL;
-          const h = tempMosaicCanvas.height / PIXELATION_LEVEL;
-          
-          tempMosaicCtx.imageSmoothingEnabled = false;
-          tempMosaicCtx.drawImage(tempMosaicCanvas, 0, 0, w, h);
-          tempMosaicCtx.drawImage(tempMosaicCanvas, 0, 0, w, h, 0, 0, tempMosaicCanvas.width, tempMosaicCanvas.height);
-          
-          const pixelatedImage = await pdfDocOut.embedPng(tempMosaicCanvas.toDataURL());
-          pdfLibPage.drawImage(pixelatedImage, { x: mosaicX, y: mosaicY, width: mosaicWidth, height: mosaicHeight });
-      }
-
-      for (const annotation of pageAnnotations.filter(a => a.type === 'image') as ImageAnnotation[]) {
-          let embeddedImage;
-          if (annotation.dataUrl.startsWith('data:image/png')) {
-              embeddedImage = await pdfDocOut.embedPng(annotation.dataUrl);
-          } else if (annotation.dataUrl.startsWith('data:image/jpeg')) {
-              embeddedImage = await pdfDocOut.embedJpg(annotation.dataUrl);
-          } else {
-              continue;
-          }
-
-          const imgX = annotation.leftRatio * pageWidth;
-          const imgHeight = annotation.heightRatio * pageHeight;
-          const imgY = pageHeight - (annotation.topRatio * pageHeight) - imgHeight;
-          const imgWidth = annotation.widthRatio * pageWidth;
-          
-          pdfLibPage.drawImage(embeddedImage, { x: imgX, y: imgY, width: imgWidth, height: imgHeight });
-
-          if (annotation.link) {
-              const linkRect = { x: imgX, y: imgY, width: imgWidth, height: imgHeight };
-              if(annotation.link.type === 'url') {
-                  pdfLibPage.addURIAnnotation(linkRect, annotation.link.value);
-              } else if (annotation.link.type === 'page') {
-                  const targetPageNum = parseInt(annotation.link.value, 10);
-                  if (!isNaN(targetPageNum) && targetPageNum > 0 && targetPageNum <= pdfDocOut.getPageCount()) {
-                     const targetPage = pdfDocOut.getPages()[targetPageNum - 1];
-                     pdfLibPage.addLinkAnnotation(linkRect, targetPage);
-                  }
-              }
-          }
-      }
-      
-      for (const annotation of pageAnnotations.filter(a => a.type === 'text') as TextAnnotation[]) {
-          const font = await getPdfFont(pdfDocOut, annotation);
-          const { r, g, b } = hexToRgb(annotation.color);
-          const boxWidth = annotation.widthRatio * pageWidth;
-
-          const textLayout = layoutMultilineText(annotation.text, {
-              font,
-              bounds: { width: boxWidth, height: Infinity },
-              fontSize: annotation.fontSize,
-              lineHeight: annotation.fontSize * 1.2,
-              alignment: annotation.textAlign === 'left' ? 0 : annotation.textAlign === 'center' ? 1 : 2,
-          });
-
-          const textHeight = textLayout.lines.length * annotation.fontSize * 1.2;
-          const x = annotation.leftRatio * pageWidth;
-          const y = pageHeight - (annotation.topRatio * pageHeight);
-
-          pdfLibPage.pushGraphicsState();
-          pdfLibPage.drawText(textLayout.lines.map(l => l.text).join('\n'), {
-              x,
-              y: y - font.ascent * (annotation.fontSize / font.unitsPerEm), // Adjust for baseline
-              font,
-              size: annotation.fontSize,
-              color: rgb(r, g, b),
-              lineHeight: annotation.fontSize * 1.2,
-              maxWidth: boxWidth,
-              wordBreaks: [' '],
-          });
-
-          if (annotation.underline) {
-            const textWidth = font.widthOfTextAtSize(textLayout.lines.map(l=>l.text).join('\n'), annotation.fontSize);
-            textLayout.lines.forEach((line, i) => {
-                const lineY = y - (font.ascent * (annotation.fontSize / font.unitsPerEm)) - (i * annotation.fontSize * 1.2) - 2;
-                 pdfLibPage.drawLine({
-                    start: { x: x, y: lineY },
-                    end: { x: x + line.width, y: lineY },
-                    thickness: 0.5,
-                    color: rgb(r, g, b)
-                });
-            });
-          }
-          pdfLibPage.popGraphicsState();
-
-          if (annotation.link) {
-              const linkRect = { x, y: y - textHeight, width: boxWidth, height: textHeight };
-              if(annotation.link.type === 'url') {
-                  pdfLibPage.addURIAnnotation(linkRect, annotation.link.value);
-              } else if (annotation.link.type === 'page') {
-                  const targetPageNum = parseInt(annotation.link.value, 10);
-                  if (!isNaN(targetPageNum) && targetPageNum > 0 && targetPageNum <= pdfDocOut.getPageCount()) {
-                     const targetPage = pdfDocOut.getPages()[targetPageNum - 1];
-                     pdfLibPage.addLinkAnnotation(linkRect, targetPage);
-                  }
-              }
-          }
-      }
-
-      for (const annotation of pageAnnotations.filter(a => a.type === 'table') as TableAnnotation[]) {
-        const { leftRatio, topRatio, widthRatio, heightRatio, rows, cols, strokeColor, strokeWidth } = annotation;
-        const x = leftRatio * pageWidth;
-        const y = pageHeight - (topRatio * pageHeight) - (heightRatio * pageHeight);
-        const width = widthRatio * pageWidth;
-        const height = heightRatio * pageHeight;
-        const { r, g, b } = hexToRgb(strokeColor);
-        const color = rgb(r, g, b);
-        const thickness = strokeWidth;
-
-        // Draw horizontal lines
-        for (let i = 0; i <= rows; i++) {
-          const lineY = y + (i / rows) * height;
-          pdfLibPage.drawLine({ start: { x, y: lineY }, end: { x: x + width, y: lineY }, thickness, color });
-        }
-
-        // Draw vertical lines
-        for (let i = 0; i <= cols; i++) {
-          const lineX = x + (i / cols) * width;
-          pdfLibPage.drawLine({ start: { x: lineX, y }, end: { x: lineX, y: y + height }, thickness, color });
-        }
-      }
-    }
-    
-    return await pdfDocOut.save();
-  };
-
-  const handleDownloadOption = async (format: string) => {
-    setShowDownloadOptions(false);
-    if (pageObjects.length === 0) {
-      toast({ title: 'Error', description: 'No document to save.' });
-      return;
-    }
-
-    if (!checkAndDecrementQuota('convert')) return;
-
-    setIsDownloading(true);
-    setDownloadProgress(0);
-
-    const progressInterval = setInterval(() => {
-        setDownloadProgress(prev => {
-            if (prev >= 95) {
-                clearInterval(progressInterval);
-                return prev;
-            }
-            return prev + 5;
-        });
-    }, 200);
-
-    try {
-        const pdfBytes = await generatePdfBytes();
-        
-        if (format === 'pdf') {
-            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = "edited_document.pdf";
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-            toast({ title: 'Download Successful', description: 'PDF has been saved.' });
-        } else {
-            const pdfFile = new File([pdfBytes], "edited_document.pdf", { type: "application/pdf" });
-            const formData = new FormData();
-            formData.append("file", pdfFile);
-            formData.append("format", format);
-
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 120000); 
-
-            const response = await fetch("https://pdfsolution.dpdns.org/upload", {
-                method: 'POST',
-                body: formData,
-                signal: controller.signal
-            });
-            clearTimeout(timeoutId);
-
-            if (!response.ok) {
-                throw new Error(`Conversion failed with status: ${response.status}`);
-            }
-            
-            const resBlob = await response.blob();
-            const contentDisposition = response.headers.get('Content-Disposition');
-            const formatOption = saveAsFormatOptions.find(opt => opt.value === format);
-            let downloadFilename = `result.${formatOption?.extension || 'bin'}`;
-
-            if (contentDisposition) {
-                const match = contentDisposition.match(/filename="?([^"]+)"?/);
-                if (match && match[1]) downloadFilename = match[1];
-            }
-
-            const url = window.URL.createObjectURL(resBlob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = downloadFilename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-            
-            toast({ title: 'Download Successful', description: `${downloadFilename} has been saved.` });
-        }
-        setDownloadProgress(100);
-        setTimeout(() => setIsDownloading(false), 500);
-
-    } catch (err: any) {
-        toast({ title: `Error processing file`, description: err.message, variant: "destructive" });
-        setIsDownloading(false);
-    } finally {
-        clearInterval(progressInterval);
-    }
-  };
-
-
-  const commonDragEvents = {
-    onDragOver: (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        e.stopPropagation();
-        e.currentTarget.classList.add('border-primary', 'bg-primary/10');
-    },
-    onDragLeave: (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        e.stopPropagation();
-        e.currentTarget.classList.remove('border-primary', 'bg-primary/10');
-    },
-    onDrop: (e: React.DragEvent<HTMLDivElement>, handler: (event: React.DragEvent<HTMLDivElement>) => void) => {
-        e.preventDefault();
-        e.stopPropagation();
-        e.currentTarget.classList.remove('border-primary', 'bg-primary/10');
-        handler(e as any);
-    }
-  };
-  
-  const handleDragMouseDown = (
-      event: React.MouseEvent<HTMLElement>,
-      id: string
-  ) => {
-      event.stopPropagation();
-      const annotation = annotations.find(a => a.id === id);
-      if (!annotation) return;
-
-      const isResize = (event.target as HTMLElement).classList.contains('cursor-se-resize');
-      
-      const containerElement = (event.currentTarget.closest('.main-page-container')) as HTMLElement;
-      if (!containerElement) return;
-
-      const containerRect = containerElement.getBoundingClientRect();
-      
-      dragStartRef.current = {
-          x: event.clientX,
-          y: event.clientY,
-          initialLeft: annotation.leftRatio * containerRect.width,
-          initialTop: annotation.topRatio * containerRect.height,
-          initialWidth: ('widthRatio' in annotation) ? annotation.widthRatio * containerRect.width : 0,
-          initialHeight: ('heightRatio' in annotation) ? annotation.heightRatio * containerRect.height : 0
-      };
-      
-      const handleMouseMove = (moveEvent: MouseEvent) => {
-          moveEvent.preventDefault();
-
-          const deltaX = moveEvent.clientX - dragStartRef.current.x;
-          const deltaY = moveEvent.clientY - dragStartRef.current.y;
-          
-          let updatedAnnotation: Partial<Annotation> = {};
-
-          if (isResize) {
-              const newWidthPx = dragStartRef.current.initialWidth + deltaX;
-              let newHeightPx;
-              
-              if (annotation.type === 'image') {
-                  const newWidthRatio = Math.max(0.05, newWidthPx / containerRect.width);
-                  updatedAnnotation = { 
-                      widthRatio: newWidthRatio, 
-                      heightRatio: newWidthRatio / annotation.aspectRatio * (containerRect.width / containerRect.height)
-                  };
-              } else if ('heightRatio' in annotation) {
-                 newHeightPx = dragStartRef.current.initialHeight + deltaY;
-                 updatedAnnotation = { 
-                    widthRatio: Math.max(0.01, newWidthPx / containerRect.width),
-                    heightRatio: Math.max(0.01, newHeightPx / containerRect.height)
-                 };
-              }
-          }
-          else { // Drag operation
-              const newLeftPx = dragStartRef.current.initialLeft + deltaX;
-              const newTopPx = dragStartRef.current.initialTop + deltaY;
-              
-              const currentWidthRatio = 'widthRatio' in annotation ? annotation.widthRatio : 0;
-              const currentHeightRatio = 'heightRatio' in annotation ? annotation.heightRatio : 0;
-
-              const newLeftRatio = Math.max(0, Math.min(1 - currentWidthRatio, newLeftPx / containerRect.width));
-              const newTopRatio = Math.max(0, Math.min(1 - currentHeightRatio, newTopPx / containerRect.height));
-              updatedAnnotation = { leftRatio: newLeftRatio, topRatio: newTopRatio };
-          }
-          updateAnnotation(id, updatedAnnotation);
-      };
-
-      const handleMouseUp = () => {
-          document.removeEventListener('mousemove', handleMouseMove);
-          document.removeEventListener('mouseup', handleMouseUp);
-          updateState({}, true);
-      };
-
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-  };
-
-
-  const handleThumbnailClick = (index: number, event: React.MouseEvent) => {
-      if (viewMode === 'editor') {
-          setActivePageIndex(index);
-          const targetPage = pageRefs.current[index];
-          if (targetPage) {
-              targetPage.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
-      } else {
-          const clickedId = pageObjects[index].id;
-          const newSelectedPageIds = new Set(selectedPageIds);
-          if (newSelectedPageIds.has(clickedId)) {
-              newSelectedPageIds.delete(clickedId);
-          } else {
-              newSelectedPageIds.add(clickedId);
-          }
-          setSelectedPageIds(newSelectedPageIds);
-      }
-  };
-
-    const handleRotatePage = (direction: 'cw' | 'ccw') => {
-        if (activePageIndex === null) return;
-        const newPageObjects = pageObjects.map((page, index) => {
-            if (index === activePageIndex) {
-                const newRotation = (page.rotation + (direction === 'cw' ? 90 : -90) + 360) % 360;
-                return { ...page, rotation: newRotation };
-            }
-            return page;
-        });
-        updateState({ pageObjects: newPageObjects });
-    };
-
-    const handleAddBlankPage = () => {
-        const blankCanvas = document.createElement('canvas');
-        
-        if (pageObjects.length > 0 && pageObjects[0].sourceCanvas) {
-            blankCanvas.width = pageObjects[0].sourceCanvas.width;
-            blankCanvas.height = pageObjects[0].sourceCanvas.height;
-        } else {
-            blankCanvas.width = 2480; 
-            blankCanvas.height = 3508;
-        }
-
-        const ctx = blankCanvas.getContext('2d');
+    const loadPage = async (pdf: pdfjsLib.PDFDocumentProxy, pageIndex: number): Promise<PageObject> => {
+        const page = await pdf.getPage(pageIndex + 1);
+        const viewport = page.getViewport({ scale: 2.0 });
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext('2d');
         if (ctx) {
-            ctx.fillStyle = 'white';
-            ctx.fillRect(0, 0, blankCanvas.width, blankCanvas.height);
+            await page.render({ canvasContext: ctx, viewport }).promise;
         }
-        const newPageObject: PageObject = { id: uuidv4(), sourceCanvas: blankCanvas, rotation: 0 };
-
-        const insertAt = (activePageIndex === null ? pageObjects.length - 1 : activePageIndex) + 1;
-
-        const newPages = [...pageObjects];
-        newPages.splice(insertAt, 0, newPageObject);
-        updateState({ pageObjects: newPages });
-
-        setActivePageIndex(insertAt);
-        setSelectedPageIds(new Set([newPageObject.id]));
-        
-        setTimeout(() => {
-            const newPageElement = pageRefs.current[insertAt];
-            if (newPageElement) {
-                newPageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        }, 100);
+        return { id: uuidv4(), sourceCanvas: canvas, rotation: 0 };
     };
 
-    const handleAddTextAnnotation = () => {
-        if (activePageIndex === null || !mainViewContainerRef.current) {
-            toast({ title: texts.toolInsertText, description: texts.noPageSelected, variant: "destructive" });
-            return;
+    const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+  
+      setIsLoading(true);
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        setPdfDoc(pdf);
+        const loadedPages = await Promise.all(
+          [...Array(pdf.numPages)].map((_, i) => loadPage(pdf, i))
+        );
+        setPageObjects(loadedPages);
+        setAnnotations([]);
+        setActivePageIndex(0);
+        updateHistory({ pageObjects: loadedPages, annotations: [] });
+      } catch (err: any) {
+        toast({ title: texts.loadError, description: err.message, variant: 'destructive' });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    const updateAnnotation = (id: string, updates: Partial<Annotation>) => {
+        setAnnotations(prev => {
+            const newAnnotations = prev.map(a => (a.id === id ? { ...a, ...updates } : a));
+            updateHistory({ pageObjects, annotations: newAnnotations });
+            return newAnnotations;
+        });
+    };
+
+    // --- Annotation Actions ---
+    const handleAddAnnotation = (type: Tool) => {
+        if (activePageIndex === null) return;
+        const commonProps = { pageIndex: activePageIndex, leftRatio: 0.1, topRatio: 0.1, isUserAction: true, id: uuidv4() };
+
+        let newAnnotation: Annotation | null = null;
+        
+        switch(type) {
+            case 'text':
+                newAnnotation = { ...commonProps, type, text: texts.textAnnotationSample, widthRatio: 0.3, heightRatio: 0.05, fontSize: 12, fontFamily: 'Helvetica', bold: false, italic: false, underline: false, color: '#000000', textAlign: 'left' };
+                break;
+            case 'image':
+                // Trigger file input for image
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            const img = new Image();
+                            img.onload = () => {
+                                const aspectRatio = img.width / img.height;
+                                const imgAnn: ImageAnnotation = { ...commonProps, type, dataUrl: event.target?.result as string, widthRatio: 0.2, heightRatio: 0.2 / aspectRatio, aspectRatio };
+                                setAnnotations(prev => [...prev, imgAnn]);
+                            }
+                            img.src = event.target?.result as string;
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                };
+                input.click();
+                return; // Return early, annotation is added in callback
+            case 'shape':
+                setActiveTool('shape'); // Let user draw the shape
+                return;
+            case 'table':
+                setTableConfig({ rows: 3, cols: 3 }); // Open config dialog
+                return;
         }
 
-        const container = mainViewContainerRef.current;
-        const topRatio = (container.scrollTop + container.clientHeight * 0.4) / container.scrollHeight;
-        const leftRatio = (container.scrollLeft + container.clientWidth * 0.4) / container.scrollWidth;
-
-        const newAnnotation: TextAnnotation = {
-            id: uuidv4(),
-            type: 'text',
-            pageIndex: activePageIndex,
-            text: texts.textAnnotationSample,
-            topRatio: Math.min(0.8, topRatio),
-            leftRatio: Math.min(0.8, leftRatio),
-            widthRatio: 0.2,
-            heightRatio: 0.1,
-            fontSize: 36,
-            fontFamily: 'Helvetica',
-            bold: false,
-            italic: false,
-            underline: false,
-            color: '#000000',
-            textAlign: 'left',
-            isUserAction: true,
-        };
-        addAnnotation(newAnnotation);
-        setSelectedAnnotationId(newAnnotation.id);
-        setActiveTool('select');
-        setInteractionMode('selected');
+        if (newAnnotation) {
+            setAnnotations(prev => {
+                const newAnnotations = [...prev, newAnnotation!];
+                updateHistory({ pageObjects, annotations: newAnnotations });
+                return newAnnotations;
+            });
+            setSelectedAnnotationId(newAnnotation.id);
+            if(type === 'text') setInteractionMode('editing');
+        }
+    };
+    
+    const handleAddShapeAnnotation = (type: 'rect' | 'ellipse' | 'triangle') => {
+        if (activePageIndex === null) return;
+        setActiveTool('shape');
+        // Store the shape type to be drawn
+        drawingStartRef.current = { ...drawingStartRef.current, shapeType: type } as any;
     };
     
     const handleDeleteAnnotation = (id: string) => {
-        updateState({ annotations: annotations.filter(a => a.id !== id) });
+        setAnnotations(prev => {
+            const newAnnotations = prev.filter(a => a.id !== id);
+            updateHistory({ pageObjects, annotations: newAnnotations });
+            return newAnnotations;
+        });
         if (selectedAnnotationId === id) {
             setSelectedAnnotationId(null);
             setInteractionMode('idle');
         }
-    }
-    
-    const addImageAnnotation = useCallback((dataUrl: string, pageIndex: number) => {
-        const img = new window.Image();
-        img.onload = () => {
-            const container = pageRefs.current[pageIndex];
-            if (!container) return;
-            const containerWidth = container.offsetWidth;
-            const containerHeight = container.offsetHeight;
-
-            const aspectRatio = img.width / img.height;
-            let widthRatio = 0.25;
-            let heightRatio = widthRatio / aspectRatio * (containerWidth / containerHeight);
-
-            const newAnnotation: ImageAnnotation = {
-                id: uuidv4(),
-                type: 'image',
-                pageIndex,
-                dataUrl,
-                topRatio: 0.5,
-                leftRatio: 0.5,
-                widthRatio,
-                heightRatio,
-                aspectRatio,
-                isUserAction: true,
-            };
-            addAnnotation(newAnnotation);
-            setSelectedAnnotationId(newAnnotation.id);
-        };
-        img.src = dataUrl;
-    }, [annotations, updateState]);
-
-    const handleImageFileSelected = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-        if (activePageIndex === null) return;
-        const file = event.target.files?.[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const dataUrl = e.target?.result as string;
-            if (dataUrl) {
-                addImageAnnotation(dataUrl, activePageIndex);
-                toast({ title: texts.imageInsertSuccess });
-            }
-        };
-        reader.readAsDataURL(file);
-        if(imageUploadRef.current) imageUploadRef.current.value = '';
-    }, [activePageIndex, addImageAnnotation, texts.imageInsertSuccess]);
-
-    const handlePaste = useCallback((event: ClipboardEvent) => {
-        if (activePageIndex === null) return;
-        const items = event.clipboardData?.items;
-        if (!items) return;
-
-        for (let i = 0; i < items.length; i++) {
-            if (items[i].type.indexOf("image") !== -1) {
-                const file = items[i].getAsFile();
-                if (!file) continue;
-
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const dataUrl = e.target?.result as string;
-                    if (dataUrl) {
-                        addImageAnnotation(dataUrl, activePageIndex);
-                        toast({ title: texts.imagePasteSuccess });
-                    }
-                };
-                reader.readAsDataURL(file);
-                event.preventDefault();
-                return;
-            }
-        }
-    }, [activePageIndex, addImageAnnotation, texts.imagePasteSuccess]);
-    
-    const handleAddHighlightAnnotation = () => {
-      if (activePageIndex === null) return;
-      const newAnnotation: HighlightAnnotation = {
-        id: uuidv4(),
-        type: 'highlight',
-        pageIndex: activePageIndex,
-        topRatio: 0.4,
-        leftRatio: 0.4,
-        widthRatio: 0.2,
-        heightRatio: 0.05,
-        color: 'rgba(255, 255, 0, 0.4)',
-        isUserAction: true,
-      };
-      addAnnotation(newAnnotation);
-      setSelectedAnnotationId(newAnnotation.id);
     };
-
-    const handleAddShape = (type: ShapeAnnotation['type']) => {
-        setActiveTool('shape');
-        setDrawingShapeType(type);
-    }
     
-    const handleSaveSignature = (dataUrl: string) => {
-        if(activePageIndex === null) return;
-        addImageAnnotation(dataUrl, activePageIndex);
-        setIsSignatureDialogOpen(false);
-    }
+    // --- Mouse/Interaction Handlers ---
     
-    const handleApplyImageToAllPages = () => {
-        if(!selectedAnnotationId) return;
-        const baseAnnotation = annotations.find(a => a.id === selectedAnnotationId);
-        if (!baseAnnotation || baseAnnotation.type !== 'image') return;
-
-        const newAnnotations: ImageAnnotation[] = [];
-        for (let i=0; i < pageObjects.length; i++) {
-            if (i === baseAnnotation.pageIndex) continue; 
-            
-            const existingAnnotationOnPage = imageAnnotations.find(a => a.pageIndex === i && a.dataUrl === baseAnnotation.dataUrl);
-            if (!existingAnnotationOnPage) {
-                newAnnotations.push({
-                    ...(baseAnnotation as ImageAnnotation),
-                    id: uuidv4(),
-                    pageIndex: i,
-                });
-            }
-        }
-        
-        updateState({ annotations: [...annotations, ...newAnnotations] });
-        toast({ title: 'Success', description: 'Signature applied to all pages.' });
-    };
-
-    const handleDeselectAll = useCallback(() => {
-        setInteractionMode('idle');
-        setSelectedAnnotationId(null);
-        setEditingAnnotationId(null);
-        setShowDownloadOptions(false);
-    }, []);
-
-    useEffect(() => {
-        const handleGlobalClick = (e: MouseEvent) => {
-            const target = e.target as Node;
-            const isToolbarClick = (e.target as HTMLElement).closest('.text-toolbar, .shape-toolbar');
-
-            if (
-                !mainViewContainerRef.current?.contains(target) &&
-                !downloadButtonRef.current?.contains(target) &&
-                !toolbarContainerRef.current?.contains(target) &&
-                !isToolbarClick
-            ) {
-              handleDeselectAll();
-            }
-        };
-
-        document.addEventListener('mousedown', handleGlobalClick);
-        return () => document.removeEventListener('mousedown', handleGlobalClick);
-    }, [handleDeselectAll]);
-    
-    const handleAnnotationSelect = useCallback((e: React.MouseEvent, id: string) => {
-        e.stopPropagation();
-        if (interactionMode !== 'editing') {
-            setInteractionMode('selected');
-            setSelectedAnnotationId(id);
-        }
-    }, [interactionMode]);
-    
-    const handleTextAnnotationDoubleClick = useCallback((e: React.MouseEvent, id: string) => {
-        e.stopPropagation();
-        const annotation = annotations.find(a => a.id === id);
-        if (annotation && annotation.type === 'text') {
-            setInteractionMode('editing');
-            setSelectedAnnotationId(id);
-        }
-    }, [annotations]);
-    
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if ((e.key === 'Delete' || e.key === 'Backspace') && selectedAnnotationId !== null && interactionMode !== 'editing') {
-                handleDeleteAnnotation(selectedAnnotationId);
-            }
-            if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-                e.preventDefault();
-                handleUndo();
-            }
-            if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) {
-                e.preventDefault();
-                handleRedo();
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        window.addEventListener('paste', handlePaste);
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-            window.removeEventListener('paste', handlePaste);
-        };
-    }, [selectedAnnotationId, interactionMode, handlePaste, handleUndo, handleRedo]);
-
-
-    const handleOpenLinkPopover = () => {
-        if (!selectedAnnotationId) return;
-        const annotation = annotations.find(a => a.id === selectedAnnotationId);
-        if (!annotation || (annotation.type !== 'text' && annotation.type !== 'image')) return;
-
-        if (annotation.link) {
-            setCurrentLink(annotation.link);
-        } else {
-            setCurrentLink({ type: 'url', value: '' });
+    const handlePanMouseDown = (e: React.MouseEvent) => {
+        if (activeTool === 'pan') {
+            isPanningRef.current = true;
+            panStartRef.current = { x: e.clientX, y: e.clientY };
+            if (mainViewContainerRef.current) mainViewContainerRef.current.style.cursor = 'grabbing';
         }
     };
 
-    const handleSaveLink = () => {
-        if (!selectedAnnotationId) return;
-        updateAnnotation(selectedAnnotationId, { link: currentLink });
-        setIsLinkPopoverOpen(false);
-        toast({ title: texts.linkAttached });
-    };
-
-    const handleRemoveLink = () => {
-        if (!selectedAnnotationId) return;
-        const annotation = annotations.find(a => a.id === selectedAnnotationId);
-        if (!annotation) return;
-        const { link, ...rest } = annotation;
-        updateState({ annotations: annotations.map(a => a.id === selectedAnnotationId ? rest : a) });
-        setIsLinkPopoverOpen(false);
-        toast({ title: texts.linkRemoved, variant: "destructive" });
-    };
-
-
-    const linkPopoverContent = (
-      <div className="grid gap-4">
-        <div className="space-y-2">
-          <h4 className="font-medium leading-none">{texts.linkEditTitle}</h4>
-        </div>
-        <div className="grid gap-2">
-          <RadioGroup value={currentLink.type} onValueChange={(type: 'url' | 'page') => setCurrentLink({ ...currentLink, type })}>
-              <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="url" id="r-url" />
-                  <Label htmlFor="r-url">{texts.linkSetUrl}</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="page" id="r-page" />
-                  <Label htmlFor="r-page">{texts.linkSetPage}</Label>
-              </div>
-          </RadioGroup>
-          <div className="mt-2">
-            {currentLink.type === 'url' ? (
-                <Input
-                    id="link-url"
-                    placeholder="https://example.com"
-                    value={currentLink.value}
-                    onChange={(e) => setCurrentLink({ ...currentLink, value: e.target.value })}
-                />
-            ) : (
-                <Input
-                    id="link-page"
-                    type="number"
-                    placeholder="e.g., 5"
-                    min="1"
-                    max={pageObjects.length}
-                    value={currentLink.value}
-                    onChange={(e) => setCurrentLink({ ...currentLink, value: e.target.value })}
-                />
-            )}
-          </div>
-        </div>
-        <div className="flex justify-between">
-            <Button variant="destructive" size="sm" onClick={handleRemoveLink}>{texts.linkRemove}</Button>
-            <Button size="sm" onClick={handleSaveLink}>{texts.linkSave}</Button>
-        </div>
-      </div>
-    );
-    
-    const activeTextAnnotation = (interactionMode === 'editing' || interactionMode === 'selected') && selectedAnnotationId
-        ? annotations.find(a => a.id === selectedAnnotationId && a.type === 'text') as TextAnnotation | undefined
-        : undefined;
-
-    const activeShapeAnnotation = (interactionMode === 'editing' || interactionMode === 'selected') && selectedAnnotationId
-        ? annotations.find(a => a.id === selectedAnnotationId && (a.type === 'rect' || a.type === 'ellipse' || a.type === 'triangle' || a.type === 'scribble')) as ShapeAnnotation | ScribbleAnnotation | undefined
-        : undefined;
-
-
-    const handleZoom = (direction: 'in' | 'out') => {
-      const ZOOM_STEP = 0.1;
-      setMainCanvasZoom(prev => {
-        let newZoom = direction === 'in' ? prev + ZOOM_STEP : prev - ZOOM_STEP;
-        return Math.max(0.1, Math.min(newZoom, 5));
-      });
-    };
-    
-    const handleInitiateInsert = (target: 'start' | 'end' | 'before' | 'after') => {
-      if (pageObjects.length === 0 && (target === 'before' || target === 'after')) {
-          toast({ title: texts.noPageSelected, variant: "destructive" });
-          return;
-      }
-      insertionTargetRef.current = target;
-      if (insertPdfRef.current) {
-        insertPdfRef.current.value = '';
-        insertPdfRef.current.click();
-      }
-    };
-
-    const handleInsertFileSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0] || null;
-        if (!file || !file.type.includes('pdf')) {
-            if(file) toast({ title: 'Invalid file', description: currentLanguage === 'zh' ? '請選擇一個有效的 PDF 檔案。' : 'Please select a valid PDF file.', variant: "destructive" });
-            return;
-        }
-        proceedWithInsert(file);
-    };
-
-    const proceedWithInsert = async (fileToInsert: File) => {
-        setIsLoading(true);
-        setLoadingMessage(texts.insertingPdf);
-        try {
-            const { loadedPageObjects } = await processPdfFile(fileToInsert);
-            let insertAtIndex: number;
-
-            switch (insertionTargetRef.current) {
-                case 'start':
-                    insertAtIndex = 0;
-                    break;
-                case 'end':
-                    insertAtIndex = pageObjects.length;
-                    break;
-                case 'before':
-                    insertAtIndex = activePageIndex ?? 0;
-                    break;
-                case 'after':
-                    insertAtIndex = (activePageIndex ?? pageObjects.length - 1) + 1;
-                    break;
-                default:
-                    insertAtIndex = pageObjects.length;
-            }
-            
-            const newPageObjects = [...pageObjects];
-            newPageObjects.splice(insertAtIndex, 0, ...loadedPageObjects);
-            updateState({ pageObjects: newPageObjects });
-            
-            toast({ title: "Insert Success", description: currentLanguage === 'zh' ? `${fileToInsert.name} 已成功插入。` : `${fileToInsert.name} has been inserted.` });
-
-        } catch (err: any) {
-            toast({ title: texts.insertError, description: err.message, variant: "destructive" });
-        } finally {
-            setIsLoading(false);
-            setLoadingMessage('');
-            if (insertPdfRef.current) insertPdfRef.current.value = '';
+    const handlePanMouseMove = (e: React.MouseEvent) => {
+        if (isPanningRef.current && mainViewContainerRef.current) {
+            const dx = e.clientX - panStartRef.current.x;
+            const dy = e.clientY - panStartRef.current.y;
+            mainViewContainerRef.current.scrollLeft -= dx;
+            mainViewContainerRef.current.scrollTop -= dy;
+            panStartRef.current = { x: e.clientX, y: e.clientY };
         }
     };
 
-    const triggerConvertUpload = (acceptType: string) => {
-        if (convertUploadRef.current) {
-            convertUploadRef.current.accept = acceptType;
-            convertUploadRef.current.click();
-        }
+    const handlePanMouseUpAndLeave = () => {
+        isPanningRef.current = false;
+        if (mainViewContainerRef.current) mainViewContainerRef.current.style.cursor = 'grab';
     };
 
-    const handleConvertFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-            setPendingFileToConvert(file);
-            setIsConvertConfirmOpen(true);
-        }
-        if (convertUploadRef.current) convertUploadRef.current.value = '';
-    };
-
-    const startConversionProcess = async (mode: 'download' | 'edit') => {
-        if (!pendingFileToConvert) return;
-
-        setIsConvertConfirmOpen(false);
-        setIsLoading(true);
-        setLoadingMessage(texts.convertingToPdf);
-        
-        const formData = new FormData();
-        formData.append('file', pendingFileToConvert);
-        formData.append('format', 'pdf');
-
-        try {
-            const response = await fetch("https://pdfsolution.dpdns.org/convert_to_pdf", {
-                method: 'POST',
-                body: formData,
-            });
-
-            if (!response.ok) throw new Error('Conversion failed');
-            
-            const blob = await response.blob();
-            const filename = pendingFileToConvert.name.split('.').slice(0, -1).join('.') + '.pdf';
-            const convertedFile = new File([blob], filename, { type: 'application/pdf' });
-
-            if (mode === 'edit') {
-                await loadPdfIntoEditor(convertedFile);
-            } else {
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
-                toast({ title: texts.conversionSuccess, description: texts.conversionSuccessDesc(filename) });
-            }
-        } catch (err: any) {
-            toast({ title: texts.conversionError, description: err.message, variant: "destructive" });
-        } finally {
-            setIsLoading(false);
-            setLoadingMessage('');
-            setPendingFileToConvert(null);
-        }
-    };
-    
-    // Drawing new annotations
     const handlePageMouseDown = (e: React.MouseEvent<HTMLDivElement>, pageIndex: number) => {
-        if (activeTool === 'select' || activeTool === 'pan' || interactionMode !== 'idle') return;
-
-        const drawingTool = activeTool;
-        let interaction: InteractionMode = 'idle';
-
-        if(drawingTool === 'mosaic') interaction = 'drawing-mosaic';
-        if(drawingTool === 'scribble') interaction = 'drawing-scribble';
-        if(drawingTool === 'table') interaction = 'drawing-table';
-        if(drawingTool === 'shape') interaction = 'drawing-shape';
+        if (!['shape', 'mosaic', 'scribble', 'table'].includes(activeTool)) return;
         
-        if (interaction === 'idle') return;
-        setInteractionMode(interaction);
-        
+        e.stopPropagation();
+        setInteractionMode(`drawing-${activeTool}` as InteractionMode);
+
         const container = e.currentTarget;
         const rect = container.getBoundingClientRect();
-        const startX = (e.clientX - rect.left) / rect.width;
-        const startY = (e.clientY - rect.top) / rect.height;
+        const startX = (e.clientX - rect.left) / mainCanvasZoom;
+        const startY = (e.clientY - rect.top) / mainCanvasZoom;
         const id = uuidv4();
-        
         drawingStartRef.current = { pageIndex, startX, startY, id };
         
-        if (drawingTool === 'mosaic') {
-            const newAnnotation: MosaicAnnotation = { id, type: 'mosaic', pageIndex, topRatio: startY, leftRatio: startX, widthRatio: 0, heightRatio: 0, isUserAction: true };
-            addAnnotation(newAnnotation);
-        } else if (drawingTool === 'scribble') {
-            const newAnnotation: ScribbleAnnotation = {
-                id, type: 'scribble', pageIndex,
-                points: [{ xRatio: startX, yRatio: startY }],
-                color: '#000000',
-                strokeWidth: 2,
-                isUserAction: true
-            };
-            addAnnotation(newAnnotation);
-        } else if (drawingTool === 'table') {
-             const newAnnotation: TableAnnotation = {
-                id, type: 'table', pageIndex,
-                topRatio: startY, leftRatio: startX, widthRatio: 0, heightRatio: 0,
-                rows: tableConfig.rows, cols: tableConfig.cols, cellPadding: 5, strokeColor: '#000000', strokeWidth: 1,
-                cells: Array(tableConfig.rows).fill(0).map(() => Array(tableConfig.cols).fill('')),
-                isUserAction: true
-            };
-            addAnnotation(newAnnotation);
-        } else if (drawingTool === 'shape' && drawingShapeType) {
-            const newAnnotation: ShapeAnnotation = {
-                id, type: drawingShapeType, pageIndex,
-                topRatio: startY, leftRatio: startX, widthRatio: 0, heightRatio: 0,
-                fillColor: '#ffffff', strokeColor: '#000000', strokeWidth: 2, isUserAction: true
-            };
-            addAnnotation(newAnnotation);
+        let newAnnotation: Annotation | null = null;
+        const commonProps = { id, pageIndex, leftRatio: startX / rect.width, topRatio: startY / rect.height, widthRatio: 0, heightRatio: 0, isUserAction: true };
+        
+        if (activeTool === 'shape') {
+            const shapeType = (drawingStartRef.current as any).shapeType || 'rect';
+            newAnnotation = { ...commonProps, type: shapeType, fillColor: '#ffffff', strokeColor: '#000000', strokeWidth: 2 };
+        } else if (activeTool === 'mosaic') {
+            newAnnotation = { ...commonProps, type: 'mosaic' };
+        } else if (activeTool === 'scribble') {
+            newAnnotation = { ...commonProps, type: 'scribble', points: [{xRatio: startX / rect.width, yRatio: startY / rect.height}], color: '#000000', strokeWidth: 2 };
+        } else if (activeTool === 'table' && tableConfig) {
+             newAnnotation = { ...commonProps, type: 'table', rows: tableConfig.rows, cols: tableConfig.cols, cellPadding: 2, strokeColor: '#000000', strokeWidth: 1, cells: Array(tableConfig.rows).fill([]).map(() => Array(tableConfig.cols).fill('')) };
+             setTableConfig(null);
+        }
+
+        if (newAnnotation) {
+            setAnnotations(prev => [...prev, newAnnotation!]);
         }
     };
-    
-    const handleMainViewMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-        handlePanMouseMove(e); // Handle pan if active
 
-        const drawingMode = interactionMode;
-        if (!drawingMode.startsWith('drawing-') || !drawingStartRef.current) return;
+    const handleMainViewMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+        handlePanMouseMove(e);
+        if (!drawingStartRef.current) return;
         
         const { pageIndex, startX, startY, id } = drawingStartRef.current;
-        const container = pageRefs.current[pageIndex];
-        if (!container) return;
-
-        const rect = container.getBoundingClientRect();
+        const pageRef = pageRefs.current[pageIndex];
+        if (!pageRef) return;
         
-        const currentX = (e.clientX - rect.left) / rect.width;
-        const currentY = (e.clientY - rect.top) / rect.height;
-
-        if (drawingMode === 'drawing-mosaic' || drawingMode === 'drawing-table' || drawingMode === 'drawing-shape') {
-            const leftRatio = Math.min(startX, currentX);
-            const topRatio = Math.min(startY, currentY);
-            const widthRatio = Math.abs(currentX - startX);
-            const heightRatio = Math.abs(currentY - startY);
-            updateAnnotation(id, { leftRatio, topRatio, widthRatio, heightRatio });
-        } else if (drawingMode === 'drawing-scribble') {
-            const existingAnnotation = annotations.find(a => a.id === id) as ScribbleAnnotation;
-            if (existingAnnotation) {
-                const newPoints = [...existingAnnotation.points, { xRatio: currentX, yRatio: currentY }];
+        const rect = pageRef.getBoundingClientRect();
+        const currentX = (e.clientX - rect.left) / mainCanvasZoom;
+        const currentY = (e.clientY - rect.top) / mainCanvasZoom;
+        
+        if (interactionMode === 'drawing-scribble') {
+            const currentAnnotation = annotations.find(a => a.id === id) as ScribbleAnnotation;
+            if(currentAnnotation) {
+                const newPoints = [...currentAnnotation.points, { xRatio: currentX / rect.width, yRatio: currentY / rect.height }];
                 updateAnnotation(id, { points: newPoints });
             }
+        } else {
+            const left = Math.min(startX, currentX);
+            const top = Math.min(startY, currentY);
+            const width = Math.abs(currentX - startX);
+            const height = Math.abs(currentY - startY);
+            updateAnnotation(id, { leftRatio: left / rect.width, topRatio: top / rect.height, widthRatio: width / rect.width, heightRatio: height / rect.height });
         }
     };
-    
-    const handleMainViewMouseUp = () => {
-        handlePanMouseUpAndLeave(); // Handle pan if active
 
-        if (interactionMode.startsWith('drawing-')) {
-             if (drawingStartRef.current) {
-                const finalAnnotation = annotations.find(a => a.id === drawingStartRef.current!.id);
-                if(finalAnnotation) {
-                    if ( (finalAnnotation.type === 'mosaic' || finalAnnotation.type === 'table' || finalAnnotation.type === 'rect' || finalAnnotation.type === 'ellipse' || finalAnnotation.type === 'triangle') 
-                          && (finalAnnotation.widthRatio < 0.01 || finalAnnotation.heightRatio < 0.01) ) 
-                    {
-                        updateState({ annotations: annotations.filter(a => a.id !== drawingStartRef.current!.id) }, false);
-                    } else {
-                        updateState({}, true);
-                    }
-                }
-            }
-            
+    const handleMainViewMouseUp = () => {
+        handlePanMouseUpAndLeave();
+        if (drawingStartRef.current) {
             drawingStartRef.current = null;
             setActiveTool('select');
             setInteractionMode('idle');
-            setDrawingShapeType(null);
+            updateHistory({ pageObjects, annotations });
         }
     };
     
-    const handleTableCellDoubleClick = (e: React.MouseEvent, tableAnn: TableAnnotation) => {
-      e.stopPropagation();
-      const svgElement = (e.currentTarget.querySelector('svg'));
-      if(!svgElement) return;
-
-      const rect = svgElement.getBoundingClientRect();
-      const clickX = e.clientX - rect.left;
-      const clickY = e.clientY - rect.top;
-
-      const col = Math.floor(clickX / (rect.width / tableAnn.cols));
-      const row = Math.floor(clickY / (rect.height / tableAnn.rows));
-
-      const id = uuidv4();
-      const newTextAnnotation: TextAnnotation = {
-        id,
-        type: 'text',
-        pageIndex: tableAnn.pageIndex,
-        text: tableAnn.cells[row]?.[col] || '',
-        topRatio: tableAnn.topRatio + (row / tableAnn.rows) * tableAnn.heightRatio,
-        leftRatio: tableAnn.leftRatio + (col / tableAnn.cols) * tableAnn.widthRatio,
-        widthRatio: tableAnn.widthRatio / tableAnn.cols,
-        heightRatio: tableAnn.heightRatio / tableAnn.rows,
-        fontSize: 12,
-        fontFamily: 'Helvetica',
-        bold: false,
-        italic: false,
-        underline: false,
-        color: '#000000',
-        textAlign: 'left',
-        isUserAction: true,
-      };
-      addAnnotation(newTextAnnotation);
-      setInteractionMode('editing');
-      setSelectedAnnotationId(id);
+    const handleAnnotationSelect = (e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        setSelectedAnnotationId(id);
+        setInteractionMode('selected');
+        setActiveTool('select');
+    };
+    
+    const handleTextAnnotationDoubleClick = (e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        setInteractionMode('editing');
+        setSelectedAnnotationId(id);
     };
 
-    useEffect(() => {
-        if (mainViewContainerRef.current) {
-          let cursor = 'default';
-          if (activeTool === 'pan') cursor = 'grab';
-          if (activeTool === 'mosaic' || activeTool === 'scribble' || activeTool === 'table' || activeTool === 'shape') cursor = 'crosshair';
-          mainViewContainerRef.current.style.cursor = cursor;
-        }
-    }, [activeTool]);
+    // --- Component JSX ---
 
-    const handleConfirmCreateTable = () => {
-        if (activePageIndex === null) {
-            toast({ title: texts.noPageSelected, variant: "destructive" });
-        } else {
-            setActiveTool('table');
-        }
-        setIsTableConfigDialogOpen(false);
-    }
-
-  return (
-    <div className="flex flex-col h-screen bg-background text-foreground font-sans">
-      {(isLoading || isDownloading) && (
-        <div className="fixed inset-0 bg-black/50 z-[100] flex flex-col items-center justify-center">
-          <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
-          <p className="text-white text-lg">
-            {isLoading ? loadingMessage : isDownloading ? texts.generatingFile : ''}
-          </p>
-          {isDownloading && <Progress value={downloadProgress} className="w-56 mt-2" />}
-        </div>
-      )}
-
-      <Input type="file" id="pdfUploadInput" accept="application/pdf" onChange={handlePdfUpload} ref={pdfUploadRef} className="hidden" />
-      <Input type="file" id="imageUploadInput" accept="image/*" onChange={handleImageFileSelected} ref={imageUploadRef} className="hidden" />
-      <Input type="file" id="insertPdfInput" accept="application/pdf" onChange={handleInsertFileSelected} ref={insertPdfRef} className="hidden" />
-      <Input type="file" id="convertUploadInput" onChange={handleConvertFileSelect} ref={convertUploadRef} className="hidden" />
-
-      <AlertDialog open={isNewDocConfirmOpen} onOpenChange={setIsNewDocConfirmOpen}>
-        <AlertDialogContent>
-            <ShadAlertDialogHeader>
-                <ShadAlertDialogTitle>{texts.newDocConfirmTitle}</ShadAlertDialogTitle>
-                <ShadAlertDialogDescription>{texts.newDocConfirmDescription}</ShadAlertDialogDescription>
-            </ShadAlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel>{texts.cancel}</AlertDialogCancel>
-                <AlertDialogAction onClick={handleConfirmOpenNew}>{texts.confirm}</AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={isConvertConfirmOpen} onOpenChange={setIsConvertConfirmOpen}>
-        <AlertDialogContent>
-            <ShadAlertDialogHeader>
-                <ShadAlertDialogTitle>{texts.convertConfirmTitle}</ShadAlertDialogTitle>
-                <ShadAlertDialogDescription>
-                    {pendingFileToConvert ? texts.convertConfirmDescription(pendingFileToConvert.name) : ''}
-                </ShadAlertDialogDescription>
-            </ShadAlertDialogHeader>
-            <AlertDialogFooter>
-                <Button variant="outline" onClick={() => startConversionProcess('download')}>{texts.convertConfirmDownload}</Button>
-                <Button onClick={() => startConversionProcess('edit')}>{texts.convertConfirmEdit}</Button>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={isGuestLimitModalOpen} onOpenChange={setIsGuestLimitModalOpen}>
-        <AlertDialogContent>
-            <ShadAlertDialogHeader>
-            <ShadAlertDialogTitle>{guestLimitModalContent.title}</ShadAlertDialogTitle>
-            <ShadAlertDialogDescription>
-                {guestLimitModalContent.description}
-            </ShadAlertDialogDescription>
-            </ShadAlertDialogHeader>
-            <AlertDialogFooter>
-            <AlertDialogCancel>{texts.cancel}</AlertDialogCancel>
-            <AlertDialogAction onClick={() => router.push('/login')}>{texts.login}</AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
-        <AlertDialogContent>
-            <ShadAlertDialogHeader>
-            <ShadAlertDialogTitle>{texts.deletePageConfirmTitle}</ShadAlertDialogTitle>
-            <ShadAlertDialogDescription>
-                {pageToDelete !== null ? texts.deletePageConfirmDescription : `${currentLanguage === 'zh' ? `您確定要刪除選取的 ${selectedPageIds.size} 個頁面嗎?` : `Are you sure you want to delete the ${selectedPageIds.size} selected pages?` }`}
-            </ShadAlertDialogDescription>
-            </ShadAlertDialogHeader>
-            <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setPageToDelete(null)}>{texts.cancel}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeletePages}>{texts.confirm}</AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-      
-      <Dialog open={isTableConfigDialogOpen} onOpenChange={setIsTableConfigDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{texts.tableConfigTitle}</DialogTitle>
-            <ShadAlertDialogDescription>{texts.tableConfigDescription}</ShadAlertDialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="table-rows" className="text-right">{texts.tableRows}</Label>
-              <Input id="table-rows" type="number" value={tableConfig.rows} onChange={(e) => setTableConfig(prev => ({...prev, rows: Math.max(1, parseInt(e.target.value) || 1)}))} className="col-span-3" />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="table-cols" className="text-right">{texts.tableCols}</Label>
-              <Input id="table-cols" type="number" value={tableConfig.cols} onChange={(e) => setTableConfig(prev => ({...prev, cols: Math.max(1, parseInt(e.target.value) || 1)}))} className="col-span-3" />
-            </div>
-          </div>
-          <DialogClose asChild>
-            <Button type="button" onClick={handleConfirmCreateTable}>{texts.createTable}</Button>
-          </DialogClose>
-        </DialogContent>
-      </Dialog>
-
-    <header className="p-0 border-b bg-card sticky top-0 z-40 flex-shrink-0 h-14">
-        <Menubar className="rounded-none border-x-0 h-full px-4 lg:px-6">
-            <div className="flex items-center gap-2">
-                <MenuSquare className="mr-2 h-6 w-6"/>
-                <h1 className="text-lg font-bold">{texts.appTitle}</h1>
-            </div>
-            <MenubarMenu>
-                <MenubarTrigger>{texts.menuFile}</MenubarTrigger>
-                <MenubarContent>
-                    <MenubarItem onClick={() => {
-                        if (pageObjects.length > 0) {
-                            setIsNewDocConfirmOpen(true);
-                        } else {
-                            handleConfirmOpenNew();
-                        }
-                    }}><FilePlus className="mr-2 h-4 w-4"/>{texts.menuFileNew}</MenubarItem>
-                    <MenubarSub>
-                         <MenubarSubTrigger disabled={pageObjects.length > 0}><FolderOpen className="mr-2 h-4 w-4"/>{texts.menuFileOpen}</MenubarSubTrigger>
-                         <MenubarSubContent>
-                             <MenubarItem onClick={() => triggerConvertUpload('.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document')}>{texts.wordToPdf}</MenubarItem>
-                             <MenubarItem onClick={() => triggerConvertUpload('.xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')}>{texts.excelToPdf}</MenubarItem>
-                             <MenubarItem onClick={() => triggerConvertUpload('.ppt,.pptx,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation')}>{texts.pptToPdf}</MenubarItem>
-                         </MenubarSubContent>
-                    </MenubarSub>
-                    <MenubarSub>
-                        <MenubarSubTrigger disabled={pageObjects.length === 0}>
-                           <FilePlus2 className="mr-2 h-4 w-4" />{texts.insertPdf}
-                        </MenubarSubTrigger>
-                        <MenubarSubContent>
-                            <MenubarItem onClick={() => handleInitiateInsert('start')}>{texts.insertAtStart}</MenubarItem>
-                            <MenubarItem onClick={() => handleInitiateInsert('end')}>{texts.insertAtEnd}</MenubarItem>
-                            <MenubarSeparator />
-                            <MenubarItem onClick={() => handleInitiateInsert('before')} disabled={activePageIndex === null}>{texts.insertBeforeSelection}</MenubarItem>
-                            <MenubarItem onClick={() => handleInitiateInsert('after')} disabled={activePageIndex === null}>{texts.insertAfterSelection}</MenubarItem>
-                        </MenubarSubContent>
-                    </MenubarSub>
-                    <MenubarSub>
-                        <MenubarSubTrigger disabled={pageObjects.length === 0}>
-                            <Save className="mr-2 h-4 w-4"/>{texts.menuFileSaveAs}
-                        </MenubarSubTrigger>
-                        <MenubarSubContent>
-                            {saveAsFormatOptions.map(opt => (
-                                <MenubarItem key={opt.value} onClick={() => handleDownloadOption(opt.value)}>{opt.labelKey === 'downloadPdf' ? texts.downloadPdf : texts[opt.labelKey]}</MenubarItem>
-                            ))}
-                        </MenubarSubContent>
-                    </MenubarSub>
-                </MenubarContent>
-            </MenubarMenu>
-             <MenubarMenu>
-                <MenubarTrigger>{texts.menuEdit}</MenubarTrigger>
-                <MenubarContent>
-                    <MenubarItem onClick={handleUndo} disabled={historyIndex <= 0}><Undo className="mr-2 h-4 w-4" />{texts.menuEditUndo}</MenubarItem>
-                    <MenubarItem onClick={handleRedo} disabled={historyIndex >= history.length - 1}><Redo className="mr-2 h-4 w-4" />{texts.menuEditRedo}</MenubarItem>
-                    <MenubarSeparator/>
-                    <MenubarItem onClick={handleAddTextAnnotation} disabled={activePageIndex === null}><Type className="mr-2 h-4 w-4"/>{texts.menuEditInsertText}</MenubarItem>
-                    <MenubarItem onClick={() => imageUploadRef.current?.click()} disabled={activePageIndex === null}><ImagePlus className="mr-2 h-4 w-4"/>{texts.menuEditInsertImage}</MenubarItem>
-                    <MenubarItem onClick={handleAddHighlightAnnotation} disabled={activePageIndex === null}><Highlighter className="mr-2 h-4 w-4"/>{texts.menuEditHighlight}</MenubarItem>
-                    <Popover open={isLinkPopoverOpen} onOpenChange={setIsLinkPopoverOpen}>
-                        <PopoverTrigger asChild>
-                            <MenubarItem disabled={!selectedAnnotationId || !['text', 'image'].includes(annotations.find(a=>a.id === selectedAnnotationId)?.type || '')} onSelect={(e) => e.preventDefault()} onClick={handleOpenLinkPopover}>
-                                <LinkIcon className="mr-2 h-4 w-4"/>{texts.menuEditInsertLink}
-                            </MenubarItem>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-80" side="right" align="start">
-                            {linkPopoverContent}
-                        </PopoverContent>
-                    </Popover>
-                </MenubarContent>
-            </MenubarMenu>
-            <MenubarMenu>
-                <MenubarTrigger>{texts.menuPage}</MenubarTrigger>
-                <MenubarContent>
-                    <MenubarItem onClick={() => handleRotatePage('cw')} disabled={activePageIndex === null}><RotateCw className="mr-2 h-4 w-4" />{texts.menuPageRotateCW}</MenubarItem>
-                    <MenubarItem onClick={() => handleRotatePage('ccw')} disabled={activePageIndex === null}><RotateCcw className="mr-2 h-4 w-4" />{texts.menuPageRotateCCW}</MenubarItem>
-                    <MenubarSeparator />
-                    <MenubarItem onClick={handleAddBlankPage}><FilePlus2 className="mr-2 h-4 w-4"/>{texts.menuPageAddBlank}</MenubarItem>
-                    <MenubarItem onClick={() => { if(activePageIndex !== null) { setPageToDelete(activePageIndex); setIsDeleteConfirmOpen(true); } }} disabled={activePageIndex === null}>
-                        <Trash2 className="mr-2 h-4 w-4 text-destructive"/>
-                        <span className="text-destructive">{texts.menuPageDelete}</span>
-                    </MenubarItem>
-                </MenubarContent>
-            </MenubarMenu>
-             <MenubarMenu>
-                <MenubarTrigger>{texts.menuConvert}</MenubarTrigger>
-                <MenubarContent>
-                    <MenubarSub>
-                        <MenubarSubTrigger><FileMinus className="mr-2 h-4 w-4" />{texts.convertFromPdf}</MenubarSubTrigger>
-                        <MenubarSubContent>
-                            <MenubarItem onClick={() => router.push('/pdf-to-word')}><FileText className="mr-2 h-4 w-4" />{texts.pdfToWord}</MenubarItem>
-                            <MenubarItem onClick={() => router.push('/pdf-to-excel')}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.pdfToExcel}</MenubarItem>
-                            <MenubarItem onClick={() => router.push('/pdf-to-ppt')}><LucidePresentation className="mr-2 h-4 w-4" />{texts.pdfToPpt}</MenubarItem>
-                            <MenubarItem onClick={() => router.push('/pdf-to-html')}><Code className="mr-2 h-4 w-4" />{texts.pdfToHtml}</MenubarItem>
-                            <MenubarItem onClick={() => router.push('/pdf-to-image')}><FileImage className="mr-2 h-4 w-4" />{texts.pdfToJpg}</MenubarItem>
-                            <MenubarItem onClick={() => router.push('/pdf-to-ocr')}><ScanText className="mr-2 h-4 w-4" />{texts.pdfToOcr}</MenubarItem>
-                        </MenubarSubContent>
-                    </MenubarSub>
-                </MenubarContent>
-            </MenubarMenu>
-        </Menubar>
-    </header>
-
-    <div className="p-2 border-b bg-card flex items-center justify-between gap-1 sticky top-[56px] z-30">
-        <div className='flex items-center gap-1'>
-             <TooltipProvider>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                         <Button variant={activeTool === 'select' ? "secondary" : "ghost"} className="flex flex-col h-auto p-2 space-y-1" onClick={() => setActiveTool('select')}>
-                            <MousePointerSquareDashed className="h-5 w-5" />
-                            <span className="text-xs">{texts.toolSelect}</span>
+    // Action History / Layers Panel
+    const ActionHistoryPanel = () => (
+        <div className="w-64 bg-card border-l p-4 overflow-y-auto">
+            <h3 className="text-lg font-semibold mb-2">{texts.actionHistory}</h3>
+            <div className="space-y-2">
+                {annotations.filter(a => a.isUserAction).map(ann => (
+                    <div
+                        key={ann.id}
+                        className={cn("p-2 border rounded-md cursor-pointer flex justify-between items-center", selectedAnnotationId === ann.id && "bg-primary/20 border-primary")}
+                        onClick={() => setSelectedAnnotationId(ann.id)}
+                    >
+                        <span className="text-sm truncate">{ann.type}</span>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => {e.stopPropagation(); handleDeleteAnnotation(ann.id)}}>
+                            <Trash2 className="h-4 w-4 text-destructive"/>
                         </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom"><p>Select</p></TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button variant={activeTool === 'pan' ? "secondary" : "ghost"} className="flex flex-col h-auto p-2 space-y-1" onClick={() => setActiveTool('pan')}>
-                            <Hand className="h-5 w-5" />
-                            <span className="text-xs">{texts.toolPan}</span>
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom"><p>{texts.toolHand}</p></TooltipContent>
-                </Tooltip>
-                 <Separator orientation="vertical" className="h-10 mx-2" />
-
-                <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={handleUndo} disabled={historyIndex <= 0}>
-                       <Undo className="h-5 w-5" />
-                       <span className="text-xs">{texts.menuEditUndo}</span>
-                   </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom"><p>{texts.menuEditUndo}</p></TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={handleRedo} disabled={historyIndex >= history.length - 1}>
-                           <Redo className="h-5 w-5" />
-                           <span className="text-xs">{texts.menuEditRedo}</span>
-                       </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom"><p>{texts.menuEditRedo}</p></TooltipContent>
-                </Tooltip>
-
-                <Separator orientation="vertical" className="h-10 mx-2" />
-
-                <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={handleAddTextAnnotation} disabled={activePageIndex === null}>
-                        <Type className="h-5 w-5" />
-                        <span className="text-xs">{texts.toolText}</span>
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom"><p>{texts.menuEditInsertText}</p></TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={() => imageUploadRef.current?.click()} disabled={activePageIndex === null}>
-                        <ImagePlus className="h-5 w-5" />
-                        <span className="text-xs">{texts.toolImage}</span>
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom"><p>{texts.menuEditInsertImage}</p></TooltipContent>
-                </Tooltip>
-                <DropdownMenu>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" disabled={pageObjects.length === 0}>
-                                    <FilePlus2 className="h-5 w-5" />
-                                    <span className="text-xs">{texts.toolInsertFile}</span>
-                                </Button>
-                            </DropdownMenuTrigger>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom"><p>{texts.insertPdf}</p></TooltipContent>
-                    </Tooltip>
-                    <DropdownMenuContent>
-                        <DropdownMenuItem onClick={() => handleInitiateInsert('start')}>{texts.insertAtStart}</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleInitiateInsert('end')}>{texts.insertAtEnd}</DropdownMenuItem>
-                        <DropdownMenuSeparator/>
-                        <DropdownMenuItem onClick={() => handleInitiateInsert('before')} disabled={activePageIndex === null}>{texts.insertBeforeSelection}</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleInitiateInsert('after')} disabled={activePageIndex === null}>{texts.insertAfterSelection}</DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-
-                <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={handleAddHighlightAnnotation} disabled={activePageIndex === null}>
-                        <Brush className="h-5 w-5" />
-                        <span className="text-xs">{texts.toolHighlight}</span>
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom"><p>{texts.menuEditHighlight}</p></TooltipContent>
-                </Tooltip>
-                <Popover>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <PopoverTrigger asChild>
-                                <Button variant={activeTool === 'shape' ? "secondary" : "ghost"} className="flex flex-col h-auto p-2 space-y-1" disabled={activePageIndex === null}>
-                                    <Square className="h-5 w-5" />
-                                    <span className="text-xs">{texts.toolShapeShort}</span>
-                                </Button>
-                            </PopoverTrigger>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom"><p>{texts.toolShape}</p></TooltipContent>
-                    </Tooltip>
-                     <PopoverContent className="w-auto p-2 flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => handleAddShape('rect')}><Square className="h-5 w-5 text-primary" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleAddShape('ellipse')}><Circle className="h-5 w-5 text-primary" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleAddShape('triangle')}><TriangleIcon /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => setActiveTool('scribble')}><ScribbleIcon /></Button>
-                    </PopoverContent>
-                </Popover>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                      <Button variant={activeTool === 'table' ? "secondary" : "ghost"} className="flex flex-col h-auto p-2 space-y-1" onClick={() => setIsTableConfigDialogOpen(true)} disabled={activePageIndex === null}>
-                          <Grid className="h-5 w-5" />
-                          <span className="text-xs">{texts.toolTable}</span>
-                      </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom"><p>{texts.drawTable}</p></TooltipContent>
-                </Tooltip>
-                 <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button variant={activeTool === 'mosaic' ? "secondary" : "ghost"} className="flex flex-col h-auto p-2 space-y-1" onClick={() => setActiveTool('mosaic')} disabled={activePageIndex === null}>
-                            <ShieldAlert className="h-5 w-5" />
-                            <span className="text-xs">{texts.toolMosaic}</span>
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom"><p>{texts.toolMosaic}</p></TooltipContent>
-                </Tooltip>
-                <Dialog open={isSignatureDialogOpen} onOpenChange={setIsSignatureDialogOpen}>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <DialogTrigger asChild>
-                                <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" disabled={activePageIndex === null}>
-                                    <Edit3 className="h-5 w-5" />
-                                    <span className="text-xs">{texts.toolSignature}</span>
-                                </Button>
-                            </DialogTrigger>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom"><p>{texts.toolSignature}</p></TooltipContent>
-                    </Tooltip>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>{texts.signaturePadTitle}</DialogTitle>
-                            <ShadAlertDialogDescription>{texts.signaturePadDescription}</ShadAlertDialogDescription>
-                        </DialogHeader>
-                        <SignaturePad onSave={handleSaveSignature} texts={texts}/>
-                    </DialogContent>
-                </Dialog>
-
-                <Separator orientation="vertical" className="h-10 mx-2" />
-
-                <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={() => handleRotatePage('ccw')} disabled={activePageIndex === null}>
-                        <RotateCcw className="h-5 w-5" />
-                        <span className="text-xs">{texts.toolRotate}</span>
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom"><p>{texts.menuPageRotateCCW}</p></TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={handleAddBlankPage}>
-                        <FilePlus2 className="h-5 w-5" />
-                        <span className="text-xs">{texts.toolAddBlank}</span>
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom"><p>{texts.menuPageAddBlank}</p></TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={() => { if(activePageIndex !== null) { setPageToDelete(activePageIndex); setIsDeleteConfirmOpen(true); } }} disabled={activePageIndex === null}>
-                        <Trash2 className="h-5 w-5 text-destructive"/>
-                        <span className="text-xs text-destructive">{texts.toolDelete}</span>
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom"><p>{texts.menuPageDelete}</p></TooltipContent>
-                </Tooltip>
-            </TooltipProvider>
-        </div>
-        <div className="flex items-center gap-1">
-             <TooltipProvider>
-                 {selectedAnnotationId && annotations.find(a => a.id === selectedAnnotationId)?.type === 'image' && (
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="outline" size="sm" onClick={handleApplyImageToAllPages}>
-                                <Layers className="mr-2 h-4 w-4" /> {texts.applyToAllPages}
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom"><p>Apply this image/signature to all pages</p></TooltipContent>
-                    </Tooltip>
-                 )}
-                 <Tooltip>
-                    <TooltipTrigger asChild><Button variant="ghost" size="icon" onClick={() => window.print()}><Printer className="h-5 w-5" /></Button></TooltipTrigger>
-                    <TooltipContent side="bottom"><p>{texts.toolPrint}</p></TooltipContent>
-                </Tooltip>
-                <Popover>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <PopoverTrigger asChild>
-                                 <Button variant="ghost" size="icon" onClick={() => {
-                                     if (!hasTextLayer) {
-                                         toast({title: texts.searchNoResults, description: texts.noTextInPdf, variant: 'destructive'})
-                                     }
-                                 }} disabled={!hasTextLayer}>
-                                     <SearchIcon className="h-5 w-5" />
-                                 </Button>
-                             </PopoverTrigger>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom"><p>{texts.toolSearchDoc}</p></TooltipContent>
-                    </Tooltip>
-                    <PopoverContent side="bottom">
-                        <div className="grid gap-4">
-                             <p>Search coming soon</p>
-                        </div>
-                    </PopoverContent>
-                </Popover>
-            </TooltipProvider>
-        </div>
-    </div>
-
-
-      <div className="flex-grow flex overflow-hidden relative">
-        <div ref={toolbarContainerRef} className="absolute top-2 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2">
-          {interactionMode === 'editing' && activeTextAnnotation && (
-              <TextAnnotationToolbar
-                  annotation={activeTextAnnotation}
-                  onAnnotationChange={updateAnnotation}
-                  onDelete={() => handleDeleteAnnotation(activeTextAnnotation.id)}
-                  onImageInsert={() => imageUploadRef.current?.click()}
-              />
-          )}
-          {(interactionMode === 'selected' || interactionMode === 'editing') && activeShapeAnnotation && (
-              <ShapeToolbar
-                  annotation={activeShapeAnnotation}
-                  onAnnotationChange={updateAnnotation}
-                  onDelete={() => handleDeleteAnnotation(activeShapeAnnotation.id)}
-              />
-          )}
-        </div>
-        {pageObjects.length === 0 ? (
-            <div className="flex-grow flex flex-col items-center justify-center p-4 space-y-8">
-              <Card className="w-full max-w-lg shadow-xl">
-                <CardHeader className="text-center">
-                  <Upload className="h-16 w-16 text-primary mx-auto mb-4" />
-                  <CardTitle className="text-2xl font-bold">{texts.startEditingYourPdf}</CardTitle>
-                  <CardDescription>{texts.uploadLabel}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div
-                    className="flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20"
-                    onClick={() => pdfUploadRef.current?.click()}
-                    onDragOver={commonDragEvents.onDragOver}
-                    onDragLeave={commonDragEvents.onDragLeave}
-                    onDrop={(e) => commonDragEvents.onDrop(e, handlePdfUpload)}
-                  >
-                    <Upload className="h-12 w-12 text-muted-foreground mb-3" />
-                    <p className="text-md text-muted-foreground text-center">{texts.dropFileHere}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          ) : (
-            <div className="flex-grow flex overflow-hidden">
-                <div ref={thumbnailContainerRef} className="w-[15%] border-r bg-card flex-shrink-0 overflow-y-auto p-2 space-y-2">
-                    {pageObjects.map((page, index) => {
-                        const isActive = activePageIndex === index;
-                        return (
-                           <div key={page.id}
-                                ref={el => thumbnailRefs.current[index] = el}
-                                data-id={page.id}
-                                onClick={(e) => handleThumbnailClick(index, e)}
-                                className={cn(
-                                    "p-1 rounded-md cursor-pointer border-2",
-                                    isActive ? "border-primary" : "border-transparent"
-                                )}>
-                                <canvas
-                                    ref={canvas => {
-                                        if (canvas) {
-                                            const ctx = canvas.getContext('2d');
-                                            if (!ctx) return;
-                                            const source = page.sourceCanvas;
-                                            const aspectRatio = source.width / source.height;
-                                            canvas.width = 240;
-                                            canvas.height = 240 / aspectRatio;
-                                            ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
-                                        }
-                                    }}
-                                    className="w-full h-auto rounded-sm shadow-md bg-white"
-                                />
-                               <p className='text-center text-xs mt-1 text-muted-foreground'>{texts.page} {index + 1}</p>
-                           </div>
-                        )
-                    })}
-                </div>
-
-                <div ref={mainViewContainerRef} 
-                    className={cn("flex-grow bg-muted/30 overflow-auto flex flex-col items-center p-4 space-y-4 relative")}
-                    onMouseDown={handlePanMouseDown}
-                    onMouseMove={handleMainViewMouseMove}
-                    onMouseUp={handleMainViewMouseUp}
-                >
-                    {pageObjects.map((page, index) => {
-                        const {sourceCanvas, rotation} = page;
-                        const isRotated = rotation % 180 !== 0;
-                        const canvasWidth = isRotated ? sourceCanvas.height : sourceCanvas.width;
-                        const canvasHeight = isRotated ? sourceCanvas.width : sourceCanvas.height;
-
-                        return (
-                            <div 
-                                key={page.id} 
-                                ref={el => pageRefs.current[index] = el} 
-                                data-page-index={index} 
-                                className="shadow-lg bg-white relative my-2 main-page-container"
-                                style={{
-                                    width: canvasWidth * mainCanvasZoom,
-                                    height: canvasHeight * mainCanvasZoom,
-                                    flexShrink: 0
-                                }}
-                                onMouseDown={(e) => handlePageMouseDown(e, index)}
-                            >
-                                <canvas
-                                    ref={canvas => {
-                                        if (canvas) {
-                                            canvas.width = canvasWidth;
-                                            canvas.height = canvasHeight;
-
-                                            const ctx = canvas.getContext('2d');
-                                            if (!ctx) return;
-                                            
-                                            ctx.save();
-                                            ctx.fillStyle = 'white';
-                                            ctx.fillRect(0, 0, canvas.width, canvas.height);
-                                            ctx.restore();
-
-                                            ctx.save();
-                                            ctx.translate(canvas.width / 2, canvas.height / 2);
-                                            ctx.rotate(rotation * Math.PI / 180);
-                                            ctx.drawImage(sourceCanvas, -sourceCanvas.width / 2, -sourceCanvas.height / 2);
-                                            ctx.restore();
-                                            
-                                            canvas.style.width = `${canvasWidth * mainCanvasZoom}px`;
-                                            canvas.style.height = `${canvasHeight * mainCanvasZoom}px`;
-                                        }
-                                    }}
-                                />
-                                {highlightAnnotations.filter(ann => ann.pageIndex === index).map(ann => (
-                                    <div
-                                        key={ann.id}
-                                        onMouseDown={(e) => handleDragMouseDown(e, ann.id)}
-                                        onClick={(e) => { e.stopPropagation(); handleAnnotationSelect(e, ann.id); }}
-                                        className={cn(
-                                            "absolute cursor-grab",
-                                            (selectedAnnotationId === ann.id || hoveredAnnotationId === ann.id) && "border-2 border-dashed border-primary"
-                                        )}
-                                        style={{
-                                            left: `${ann.leftRatio * 100}%`,
-                                            top: `${ann.topRatio * 100}%`,
-                                            width: `${ann.widthRatio * 100}%`,
-                                            height: `${ann.heightRatio * 100}%`,
-                                            backgroundColor: ann.color,
-                                            mixBlendMode: 'multiply',
-                                            zIndex: 15
-                                        }}
-                                        onMouseEnter={() => setHoveredAnnotationId(ann.id)}
-                                        onMouseLeave={() => setHoveredAnnotationId(null)}
-                                    >
-                                        {(selectedAnnotationId === ann.id || hoveredAnnotationId === ann.id) && (
-                                            <div
-                                                className="absolute -right-1 -bottom-1 w-4 h-4 bg-primary rounded-full border-2 border-white cursor-se-resize"
-                                                onMouseDown={(e) => handleDragMouseDown(e, ann.id)}
-                                            />
-                                        )}
-                                    </div>
-                                ))}
-                                {mosaicAnnotations.filter(ann => ann.pageIndex === index).map(ann => (
-                                    <div
-                                        key={ann.id}
-                                        onMouseDown={(e) => handleDragMouseDown(e, ann.id)}
-                                        onClick={(e) => { e.stopPropagation(); handleAnnotationSelect(e, ann.id); }}
-                                        className={cn(
-                                            "absolute cursor-grab",
-                                            (selectedAnnotationId === ann.id || hoveredAnnotationId === ann.id) && "border-2 border-dashed border-primary"
-                                        )}
-                                        style={{
-                                            left: `${ann.leftRatio * 100}%`,
-                                            top: `${ann.topRatio * 100}%`,
-                                            width: `${ann.widthRatio * 100}%`,
-                                            height: `${ann.heightRatio * 100}%`,
-                                            backdropFilter: 'blur(5px)',
-                                            backgroundColor: 'rgba(255, 255, 255, 0.5)',
-                                            zIndex: 25,
-                                        }}
-                                        onMouseEnter={() => setHoveredAnnotationId(ann.id)}
-                                        onMouseLeave={() => setHoveredAnnotationId(null)}
-                                    >
-                                        {(selectedAnnotationId === ann.id || hoveredAnnotationId === ann.id) && (
-                                            <div
-                                                className="absolute -right-1 -bottom-1 w-4 h-4 bg-primary rounded-full border-2 border-white cursor-se-resize"
-                                                onMouseDown={(e) => handleDragMouseDown(e, ann.id)}
-                                            />
-                                        )}
-                                    </div>
-                                ))}
-                                {shapeAnnotations.filter(ann => ann.pageIndex === index).map(ann => (
-                                    <ShapeAnnotationComponent
-                                        key={ann.id}
-                                        annotation={ann}
-                                        isSelected={selectedAnnotationId === ann.id}
-                                        isHovered={hoveredAnnotationId === ann.id}
-                                        onDragStart={(e) => handleDragMouseDown(e, ann.id)}
-                                        onResizeStart={(e) => handleDragMouseDown(e, ann.id)}
-                                        onSelect={(e) => handleAnnotationSelect(e, ann.id)}
-                                        onHover={setHoveredAnnotationId}
-                                    />
-                                ))}
-                                {scribbleAnnotations.filter(ann => ann.pageIndex === index).map(ann => (
-                                    <ScribbleAnnotationComponent
-                                        key={ann.id}
-                                        annotation={ann}
-                                        pageDimensions={{ width: canvasWidth * mainCanvasZoom, height: canvasHeight * mainCanvasZoom }}
-                                        isSelected={selectedAnnotationId === ann.id}
-                                        isHovered={hoveredAnnotationId === ann.id}
-                                        onSelect={(e) => handleAnnotationSelect(e, ann.id)}
-                                        onHover={setHoveredAnnotationId}
-                                    />
-                                ))}
-                                 {tableAnnotations.filter(a => a.pageIndex === index).map(ann => (
-                                    <TableAnnotationComponent
-                                        key={ann.id}
-                                        annotation={ann}
-                                        isSelected={selectedAnnotationId === ann.id}
-                                        isHovered={hoveredAnnotationId === ann.id}
-                                        onDragStart={(e) => handleDragMouseDown(e, ann.id)}
-                                        onResizeStart={(e) => handleDragMouseDown(e, ann.id)}
-                                        onSelect={(e) => handleAnnotationSelect(e, ann.id)}
-                                        onDoubleClick={(e) => handleTableCellDoubleClick(e, ann)}
-                                        onHover={setHoveredAnnotationId}
-                                    />
-                                ))}
-                                {imageAnnotations.filter(ann => ann.pageIndex === index).map(ann => (
-                                    <div
-                                        key={ann.id}
-                                        onMouseDown={(e) => { handleDragMouseDown(e, ann.id); }}
-                                        onClick={(e) => { e.stopPropagation(); handleAnnotationSelect(e, ann.id); }}
-                                        onMouseEnter={() => setHoveredAnnotationId(ann.id)}
-                                        onMouseLeave={() => setHoveredAnnotationId(null)}
-                                        className={cn(
-                                            "absolute cursor-grab",
-                                            (selectedAnnotationId === ann.id || hoveredAnnotationId === ann.id) && "border-2 border-dashed border-primary"
-                                        )}
-                                        style={{
-                                            left: `${ann.leftRatio * 100}%`,
-                                            top: `${ann.topRatio * 100}%`,
-                                            width: `${ann.widthRatio * 100}%`,
-                                            height: `${ann.heightRatio * 100}%`,
-                                            zIndex: 20
-                                        }}
-                                    >
-                                        <img src={ann.dataUrl} className="w-full h-full object-contain pointer-events-none" alt="user content" />
-                                        {(selectedAnnotationId === ann.id || hoveredAnnotationId === ann.id) && (
-                                          <>
-                                            <div
-                                                className="absolute -right-1 -bottom-1 w-4 h-4 bg-primary rounded-full border-2 border-white cursor-se-resize"
-                                                onMouseDown={(e) => handleDragMouseDown(e, ann.id)}
-                                            />
-                                            {ann.link && <LinkIcon className="absolute -top-1 -right-1 h-4 w-4 text-white bg-blue-500 p-0.5 rounded-full" />}
-                                          </>
-                                        )}
-                                    </div>
-                                ))}
-                                {textAnnotations.filter(ann => ann.pageIndex === index).map(ann => (
-                                    <TextAnnotationComponent
-                                        key={ann.id}
-                                        annotation={ann}
-                                        mainCanvasZoom={mainCanvasZoom}
-                                        isSelected={selectedAnnotationId === ann.id}
-                                        isEditing={interactionMode === 'editing' && selectedAnnotationId === ann.id}
-                                        isHovered={hoveredAnnotationId === ann.id}
-                                        onSelect={handleAnnotationSelect}
-                                        onEdit={handleTextAnnotationDoubleClick}
-                                        onAnnotationChange={updateAnnotation}
-                                        onDragStart={(e) => handleDragMouseDown(e, ann.id)}
-                                        onResizeStart={(e) => handleDragMouseDown(e, ann.id)}
-                                        onHover={setHoveredAnnotationId}
-                                    />
-                                ))}
-                            </div>
-                        )
-                    })}
-                    <div className="sticky bottom-4 mx-auto bg-card p-2 rounded-full shadow-lg flex items-center gap-1 border">
-                        <Button variant="ghost" size="icon" onClick={() => handleZoom('out')} title={texts.zoomOut}><ZoomOut className="h-5 w-5" /></Button>
-                        <div className="w-20 text-center text-sm font-medium tabular-nums text-foreground" title="Current zoom">{`${Math.round(mainCanvasZoom * 100)}%`}</div>
-                        <Button variant="ghost" size="icon" onClick={() => handleZoom('in')} title={texts.zoomIn}><ZoomIn className="h-5 w-5" /></Button>
-                         <Separator orientation="vertical" className="h-6 mx-1" />
-                        <Button variant="ghost" size="icon" onClick={handleFitToPage} title={texts.fitToPage}><Expand className="h-5 w-5" /></Button>
-                        <Button variant="ghost" size="icon" onClick={handleFitToWidth} title={texts.fitToWidth}><Columns className="h-5 w-5" /></Button>
-                         <Separator orientation="vertical" className="h-6 mx-1" />
-                        <Button variant="ghost" size="icon" onClick={() => setViewMode('grid')} title={texts.gridMode}><LayoutGrid className="h-5 w-5" /></Button>
                     </div>
-                </div>
-                 <div className="w-64 bg-card border-l p-4 overflow-y-auto">
-                    <h3 className="text-lg font-semibold mb-4 flex items-center"><History className="mr-2 h-5 w-5"/> {texts.actionHistory}</h3>
-                    <div className="space-y-2">
-                        {annotations.filter(a => a.isUserAction).map((ann) => (
-                             <div 
-                                key={ann.id} 
-                                className={cn(
-                                    "p-2 rounded-md border text-sm cursor-pointer hover:bg-muted/50",
-                                    selectedAnnotationId === ann.id && "bg-primary/10 border-primary"
-                                )}
-                                onClick={() => {
-                                  setSelectedAnnotationId(ann.id)
-                                  setInteractionMode('selected');
-                                }}
-                            >
-                               <div className="flex justify-between items-center">
-                                 <span className="font-medium truncate pr-2">
-                                     {ann.type === 'text' ? ann.text.substring(0,20) : ann.type}
-                                 </span>
-                                 <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={(e) => {e.stopPropagation(); handleDeleteAnnotation(ann.id)}}>
-                                    <Trash2 className="h-4 w-4"/>
-                                 </Button>
-                               </div>
-                            </div>
-                        ))}
-                         {annotations.filter(a => a.isUserAction).length === 0 && (
-                            <p className="text-sm text-muted-foreground text-center py-4">No actions yet.</p>
+                ))}
+            </div>
+        </div>
+    );
+    
+    const TriangleIcon = (props: React.SVGProps<SVGSVGElement>) => (
+        <svg viewBox="0 0 100 100" fill="currentColor" {...props}>
+            <polygon points="50,15 100,85 0,85" />
+        </svg>
+    );
+
+    const ScribbleIcon = (props: React.SVGProps<SVGSVGElement>) => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <path d="M21.174 6.812a1 1 0 0 0-3.986-3.986L3 17.25V21h3.75l14.424-14.424zM16 7l5 5"/>
+        </svg>
+    );
+
+    return (
+        <div className="flex flex-col h-screen bg-background text-foreground font-sans">
+            {/* Header and Toolbar */}
+            <header className="p-2 border-b bg-card flex items-center justify-between gap-4 sticky top-0 z-30">
+                 <div className="flex items-center gap-2">
+                    <TooltipProvider>
+                        <Tooltip><TooltipTrigger asChild><Button variant={activeTool === 'select' ? "secondary" : "ghost"} className="h-auto p-2" onClick={() => setActiveTool('select')}><MousePointerSquareDashed className="h-5 w-5" /></Button></TooltipTrigger><TooltipContent><p>Select</p></TooltipContent></Tooltip>
+                        <Tooltip><TooltipTrigger asChild><Button variant={activeTool === 'pan' ? "secondary" : "ghost"} className="h-auto p-2" onClick={() => setActiveTool('pan')}><Hand className="h-5 w-5" /></Button></TooltipTrigger><TooltipContent><p>Pan</p></TooltipContent></Tooltip>
+                    </TooltipProvider>
+                    <Separator orientation="vertical" className="h-6"/>
+                    <TooltipProvider>
+                        <Tooltip><TooltipTrigger asChild><Button variant="ghost" className="h-auto p-2" onClick={() => handleAddAnnotation('text')}><Type className="h-5 w-5" /></Button></TooltipTrigger><TooltipContent><p>Add Text</p></TooltipContent></Tooltip>
+                        <Tooltip><TooltipTrigger asChild><Button variant="ghost" className="h-auto p-2" onClick={() => handleAddAnnotation('image')}><ImageIcon className="h-5 w-5" /></Button></TooltipTrigger><TooltipContent><p>Add Image</p></TooltipContent></Tooltip>
+                         <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant={activeTool === 'shape' ? "secondary" : "ghost"} className="h-auto p-2"><Square className="h-5 w-5" /></Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-1 flex gap-1">
+                                <Button variant="ghost" size="icon" onClick={() => handleAddShapeAnnotation('rect')}><Square className="h-5 w-5"/></Button>
+                                <Button variant="ghost" size="icon" onClick={() => handleAddShapeAnnotation('ellipse')}><Circle className="h-5 w-5"/></Button>
+                                <Button variant="ghost" size="icon" onClick={() => handleAddShapeAnnotation('triangle')}><TriangleIcon className="h-5 w-5"/></Button>
+                                <Button variant="ghost" size="icon" onClick={() => setActiveTool('scribble')}><ScribbleIcon className="h-5 w-5"/></Button>
+                            </PopoverContent>
+                        </Popover>
+                        <Dialog open={!!tableConfig} onOpenChange={(open) => !open && setTableConfig(null)}>
+                            <Tooltip><TooltipTrigger asChild><Button variant={activeTool === 'table' ? "secondary" : "ghost"} className="h-auto p-2" onClick={() => handleAddAnnotation('table')}><Grid className="h-5 w-5" /></Button></TooltipTrigger><TooltipContent><p>Add Table</p></TooltipContent></Tooltip>
+                             <DialogContent>
+                                <DialogHeader><DialogTitle>{texts.tableConfigTitle}</DialogTitle><DialogDescription>{texts.tableConfigDescription}</DialogDescription></DialogHeader>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2"><Label htmlFor="rows">{texts.tableRows}</Label><Input id="rows" type="number" value={tableConfig?.rows} onChange={e => setTableConfig(p => ({...p!, rows: parseInt(e.target.value)}))} /></div>
+                                    <div className="space-y-2"><Label htmlFor="cols">{texts.tableCols}</Label><Input id="cols" type="number" value={tableConfig?.cols} onChange={e => setTableConfig(p => ({...p!, cols: parseInt(e.target.value)}))} /></div>
+                                </div>
+                                <AlertDialogFooter>
+                                    <Button variant="outline" onClick={() => setTableConfig(null)}>{texts.cancel}</Button>
+                                    <Button onClick={() => { setActiveTool('table'); setTableConfig(tableConfig); }}>{texts.createTable}</Button>
+                                </AlertDialogFooter>
+                            </DialogContent>
+                        </Dialog>
+                    </TooltipProvider>
+                 </div>
+                 <div className="flex items-center gap-2">
+                    <Button onClick={undo} disabled={historyIndex <= 0}><Undo className="h-4 w-4 mr-2"/>Undo</Button>
+                    <Button onClick={redo} disabled={historyIndex >= history.length - 1}><Redo className="h-4 w-4 mr-2"/>Redo</Button>
+                    <div ref={downloadRef} className="relative">
+                        <Button onClick={() => setShowDownloadOptions(p => !p)} variant="destructive"><Download className="h-4 w-4 mr-2"/> {texts.downloadEditedFile}</Button>
+                         {showDownloadOptions && (
+                            <Card className="absolute top-full right-0 mt-2 w-48 p-2 z-50">
+                                <Button variant="ghost" className="w-full justify-start">PDF</Button>
+                                <Button variant="ghost" className="w-full justify-start">Word</Button>
+                                <Button variant="ghost" className="w-full justify-start">Image</Button>
+                            </Card>
                         )}
                     </div>
-                </div>
+                 </div>
+            </header>
+
+            <div className="flex flex-grow overflow-hidden">
+                <main className="flex-grow flex flex-col relative">
+                     {/* Toolbars */}
+                     <div ref={toolbarContainerRef} className="absolute top-2 left-1/2 -translate-x-1/2 z-40">
+                        {activeTextAnnotation && interactionMode === 'editing' && (
+                            <Card className="p-2 flex items-center gap-1 shadow-lg text-toolbar">
+                                <Input type="color" value={activeTextAnnotation.color} onChange={(e) => updateAnnotation(activeTextAnnotation.id, { color: e.target.value })} className="w-8 h-8 p-1"/>
+                                <Input type="number" value={activeTextAnnotation.fontSize} onChange={e => updateAnnotation(activeTextAnnotation.id, { fontSize: parseInt(e.target.value)})} className="w-16"/>
+                                <Toggle pressed={activeTextAnnotation.bold} onPressedChange={v => updateAnnotation(activeTextAnnotation.id, { bold: v})}><Bold className="h-4 w-4"/></Toggle>
+                                <Toggle pressed={activeTextAnnotation.italic} onPressedChange={v => updateAnnotation(activeTextAnnotation.id, { italic: v})}><Italic className="h-4 w-4"/></Toggle>
+                                <Toggle pressed={activeTextAnnotation.underline} onPressedChange={v => updateAnnotation(activeTextAnnotation.id, { underline: v})}><Underline className="h-4 w-4"/></Toggle>
+                            </Card>
+                        )}
+                        {activeShapeAnnotation && (
+                             <Card className="p-2 flex items-center gap-1 shadow-lg shape-toolbar">
+                                <Label>Fill:</Label><Input type="color" value={activeShapeAnnotation.fillColor} onChange={e => updateAnnotation(activeShapeAnnotation.id, { fillColor: e.target.value})} className="w-8 h-8 p-1"/>
+                                <Label>Stroke:</Label><Input type="color" value={activeShapeAnnotation.strokeColor} onChange={e => updateAnnotation(activeShapeAnnotation.id, { strokeColor: e.target.value})} className="w-8 h-8 p-1"/>
+                                <Label>Width:</Label><Input type="number" value={activeShapeAnnotation.strokeWidth} onChange={e => updateAnnotation(activeShapeAnnotation.id, { strokeWidth: parseInt(e.target.value)})} className="w-16"/>
+                            </Card>
+                        )}
+                    </div>
+
+                    {/* Main view */}
+                    <div ref={mainViewContainerRef} className="flex-grow bg-muted/30 overflow-auto flex flex-col items-center p-4 space-y-4" onMouseDown={handlePanMouseDown} onMouseMove={handleMainViewMouseMove} onMouseUp={handleMainViewMouseUp} onMouseLeave={handlePanMouseUpAndLeave}>
+                        {pageObjects.length > 0 ? pageObjects.map((page, index) => (
+                             <div
+                                key={page.id}
+                                ref={el => pageRefs.current[index] = el}
+                                className="relative bg-white shadow-lg"
+                                style={{ width: page.sourceCanvas.width * mainCanvasZoom, height: page.sourceCanvas.height * mainCanvasZoom }}
+                                onMouseDown={(e) => handlePageMouseDown(e, index)}
+                             >
+                                <canvas
+                                    className="absolute inset-0 w-full h-full"
+                                    style={{ transform: `rotate(${page.rotation}deg)`}}
+                                    ref={canvas => {
+                                        if (canvas) {
+                                            canvas.width = page.sourceCanvas.width;
+                                            canvas.height = page.sourceCanvas.height;
+                                            const ctx = canvas.getContext('2d');
+                                            ctx?.drawImage(page.sourceCanvas, 0, 0);
+                                        }
+                                    }}
+                                />
+                                {annotations.filter(a => a.pageIndex === index).map(ann => {
+                                    switch(ann.type) {
+                                        // Simplified rendering for brevity. You'd have dedicated components.
+                                        case 'text': return <div key={ann.id} style={{position:'absolute', left: `${ann.leftRatio*100}%`, top: `${ann.topRatio*100}%`, width:`${ann.widthRatio*100}%`, height:`${ann.heightRatio*100}%`}} onDoubleClick={(e) => handleTextAnnotationDoubleClick(e, ann.id)} onMouseDown={e => { e.stopPropagation(); setInteractionMode('selected'); setSelectedAnnotationId(ann.id); }}><Textarea defaultValue={(ann as TextAnnotation).text} readOnly={selectedAnnotationId !== ann.id || interactionMode !== 'editing'} className="bg-transparent border-0 resize-none w-full h-full p-0" style={{color: (ann as TextAnnotation).color, fontSize: `${(ann as TextAnnotation).fontSize * mainCanvasZoom}px`}}/></div>;
+                                        case 'image': return <img key={ann.id} src={(ann as ImageAnnotation).dataUrl} style={{position:'absolute', left: `${ann.leftRatio*100}%`, top: `${ann.topRatio*100}%`, width:`${ann.widthRatio*100}%`, height:`${ann.heightRatio*100}%`}} onMouseDown={e => { e.stopPropagation(); setInteractionMode('selected'); setSelectedAnnotationId(ann.id); }}/>;
+                                        case 'rect':
+                                        case 'ellipse':
+                                        case 'triangle':
+                                             return <div key={ann.id} style={{position:'absolute', left: `${ann.leftRatio*100}%`, top: `${ann.topRatio*100}%`, width:`${ann.widthRatio*100}%`, height:`${ann.heightRatio*100}%`, backgroundColor: (ann as ShapeAnnotation).fillColor, border: `${(ann as ShapeAnnotation).strokeWidth}px solid ${(ann as ShapeAnnotation).strokeColor}`, borderRadius: ann.type === 'ellipse' ? '50%' : 0 }} onMouseDown={e => { e.stopPropagation(); setInteractionMode('selected'); setSelectedAnnotationId(ann.id); }}/>;
+                                        case 'scribble':
+                                            // Implement scribble rendering with SVG/Canvas
+                                            return null;
+                                        default: return null;
+                                    }
+                                })}
+                             </div>
+                        )) : (
+                            <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                                <Upload className="w-16 h-16 text-muted-foreground mb-4" />
+                                <h2 className="text-2xl font-bold">{texts.startEditingYourPdf}</h2>
+                                <p className="text-muted-foreground">{texts.uploadPdfFirst}</p>
+                                <Button className="mt-4" onClick={() => fileUploadRef.current?.click()}>
+                                    <FilePlus className="mr-2 h-4 w-4" /> {texts.uploadLabel}
+                                </Button>
+                                <input type="file" ref={fileUploadRef} onChange={handlePdfUpload} accept="application/pdf" className="hidden" />
+                            </div>
+                        )}
+                    </div>
+                </main>
+                <ActionHistoryPanel />
             </div>
-          )}
-      </div>
-      {pageObjects.length > 0 && (
-        <div ref={downloadButtonRef} className="fixed top-4 right-4 z-50">
-            <DropdownMenu open={showDownloadOptions} onOpenChange={setShowDownloadOptions}>
-                <DropdownMenuTrigger asChild>
-                    <Button
-                        size="lg"
-                        className="w-48 h-14 text-lg rounded-full shadow-2xl bg-red-500 hover:bg-red-600 text-white"
-                    >
-                        <Download className="mr-2 h-5 w-5" />
-                        {texts.toolDownload}
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-48">
-                    {saveAsFormatOptions.map(opt => (
-                        <DropdownMenuItem key={opt.value} onClick={() => handleDownloadOption(opt.value)}>{texts[opt.labelKey]}</DropdownMenuItem>
-                    ))}
-                </DropdownMenuContent>
-            </DropdownMenu>
-            {isDownloading && (
-                <div className="mt-2 w-48 bg-card p-2 rounded-lg shadow-lg border">
-                    <p className="text-sm text-center mb-1">{texts.generatingFile}</p>
-                    <Progress value={downloadProgress} />
-                </div>
-            )}
         </div>
-      )}
-    </div>
-  );
+    );
 }

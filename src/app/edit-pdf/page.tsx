@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader as ShadAlertDialogHeader, AlertDialogTitle as ShadAlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -2238,7 +2238,9 @@ export default function PdfEditorPage() {
     };
 
     const handleDeselectAll = (e: React.MouseEvent<HTMLDivElement>) => {
-      if (e.target === e.currentTarget) {
+      // This condition ensures that clicks on empty areas of the container deselect,
+      // but clicks on children (annotations, etc.) do not.
+      if (e.target === mainViewContainerRef.current) {
           setSelectedObject(null);
           setEditingAnnotationId(null);
       }
@@ -2246,11 +2248,11 @@ export default function PdfEditorPage() {
     
     const handleAnnotationSelect = (type: SelectedObject['type'], id: string, e: React.MouseEvent) => {
       e.stopPropagation();
-      
-      if (isDraggingRef.current || editingAnnotationId === id) return;
+      if (isDraggingRef.current) return;
+      if (editingAnnotationId === id) return;
 
       setSelectedObject({ type, id });
-      setEditingAnnotationId(null); // Ensure we are not in edit mode
+      setEditingAnnotationId(null);
     }
     
     const handleTextAnnotationDoubleClick = (id: string, e: React.MouseEvent) => {

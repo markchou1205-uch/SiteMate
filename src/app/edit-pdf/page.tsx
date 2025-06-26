@@ -790,7 +790,7 @@ const fontSizes = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72]
 
 const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete }: { annotation: TextAnnotation; onAnnotationChange: (id: string, annotation: Partial<TextAnnotation>) => void; onDelete: (id: string) => void; }) => {
     return (
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 bg-card p-2 rounded-lg shadow-lg border flex items-center gap-2 animate-in slide-in-from-top-4 duration-300">
+        <div className="text-toolbar absolute top-2 left-1/2 -translate-x-1/2 z-50 bg-card p-2 rounded-lg shadow-lg border flex items-center gap-2 animate-in slide-in-from-top-4 duration-300">
             <Select value={annotation.fontFamily} onValueChange={(value) => onAnnotationChange(annotation.id, { fontFamily: value })}>
                 <SelectTrigger className="w-[120px] h-8 text-xs">
                     <SelectValue placeholder="Font" />
@@ -844,7 +844,7 @@ const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete }: { a
 
 const ShapeToolbar = ({ annotation, onAnnotationChange, onDelete }: { annotation: ShapeAnnotation; onAnnotationChange: (id: string, annotation: Partial<ShapeAnnotation>) => void; onDelete: (id: string) => void; }) => {
     return (
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 bg-card p-2 rounded-lg shadow-lg border flex items-center gap-2 animate-in slide-in-from-top-4 duration-300">
+        <div className="shape-toolbar absolute top-2 left-1/2 -translate-x-1/2 z-50 bg-card p-2 rounded-lg shadow-lg border flex items-center gap-2 animate-in slide-in-from-top-4 duration-300">
              <Label>Fill</Label>
              <Input type="color" value={annotation.fillColor} onChange={(e) => onAnnotationChange(annotation.id, { fillColor: e.target.value })} className="w-10 h-8 p-1"/>
              <Label>Stroke</Label>
@@ -2255,13 +2255,16 @@ export default function PdfEditorPage() {
     
     useEffect(() => {
         const handleGlobalClick = (e: MouseEvent) => {
-            const mainView = mainViewContainerRef.current;
-            const downloadButton = downloadButtonRef.current;
+            const clickedInsideCanvas = mainViewContainerRef.current?.contains(e.target as Node);
+            const clickedInsideDownload = downloadButtonRef.current?.contains(e.target as Node);
+            const isToolbarClick = (e.target as HTMLElement).closest('.text-toolbar, .shape-toolbar');
 
-            if (mainView && !mainView.contains(e.target as Node) &&
-                downloadButton && !downloadButton.contains(e.target as Node)) {
-                handleDeselectAll();
+            if (!clickedInsideDownload) {
                 setShowDownloadOptions(false);
+            }
+
+            if (!clickedInsideCanvas && !clickedInsideDownload && !isToolbarClick) {
+                handleDeselectAll();
             }
         };
 
@@ -2883,7 +2886,7 @@ export default function PdfEditorPage() {
                     <DialogContent>
                         <DialogHeader>
                             <DialogTitle>{texts.signaturePadTitle}</DialogTitle>
-                            <DialogDescription>{texts.signaturePadDescription}</DialogDescription>
+                            <ShadAlertDialogDescription>{texts.signaturePadDescription}</ShadAlertDialogDescription>
                         </DialogHeader>
                         <SignaturePad onSave={handleSaveSignature} texts={texts}/>
                     </DialogContent>
@@ -3290,3 +3293,6 @@ export default function PdfEditorPage() {
   );
 }
 
+
+
+    

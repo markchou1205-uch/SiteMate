@@ -14,13 +14,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader as ShadAlertDialogHeader, AlertDialogTitle as ShadAlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, FontSize, Eye, Scissors, LayoutGrid, PanelLeft, FilePlus2, Combine, Type, ImagePlus, Link as LinkIcon, MessageSquarePlus, ZoomIn, ZoomOut, Expand, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Highlighter, ArrowRightLeft, Edit, FileUp, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText, Sparkles, XCircle, File, FolderOpen, Save, Wrench, HelpCircle, PanelTop, Redo, Undo, Hand, Square, Circle, Pencil, Printer, SearchIcon, ChevronLeft, ChevronRight, CaseSensitive, MousePointerSquareDashed, Grid, ShieldAlert, Layers } from 'lucide-react';
+import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, FontSize, Eye, Scissors, LayoutGrid, PanelLeft, FilePlus2, Combine, Type, ImagePlus, Link as LinkIcon, MessageSquarePlus, ZoomIn, ZoomOut, Expand, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Highlighter, ArrowRightLeft, Edit, FileUp, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText, Sparkles, XCircle, File, FolderOpen, Save, Wrench, HelpCircle, PanelTop, Redo, Undo, Hand, Square, Circle, Pencil, Printer, SearchIcon, ChevronLeft, ChevronRight, CaseSensitive, MousePointerSquareDashed, Grid, ShieldAlert, Layers, Brush } from 'lucide-react';
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
@@ -170,6 +170,7 @@ type SelectedObject = {
 
 
 type Tool = 'select' | 'pan' | 'text' | 'image' | 'highlight' | 'shape' | 'signature' | 'scribble' | 'mosaic';
+type InteractionMode = 'idle' | 'editing' | 'drawing';
 
 const translations = {
     en: {
@@ -795,10 +796,10 @@ const fonts = [
 
 const fontSizes = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72];
 
-const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete }: { annotation: TextAnnotation; onAnnotationChange: (annotation: TextAnnotation) => void; onDelete: (id: string) => void; }) => {
+const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete }: { annotation: TextAnnotation; onAnnotationChange: (annotation: Partial<TextAnnotation>) => void; onDelete: (id: string) => void; }) => {
     return (
         <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 bg-card p-2 rounded-lg shadow-lg border flex items-center gap-2 animate-in slide-in-from-top-4 duration-300">
-            <Select value={annotation.fontFamily} onValueChange={(value) => onAnnotationChange({ ...annotation, fontFamily: value })}>
+            <Select value={annotation.fontFamily} onValueChange={(value) => onAnnotationChange({ fontFamily: value })}>
                 <SelectTrigger className="w-[120px] h-8 text-xs">
                     <SelectValue placeholder="Font" />
                 </SelectTrigger>
@@ -806,7 +807,7 @@ const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete }: { a
                     {fonts.map(font => <SelectItem key={font.value} value={font.value} className="text-xs">{font.name}</SelectItem>)}
                 </SelectContent>
             </Select>
-            <Select value={String(annotation.fontSize)} onValueChange={(value) => onAnnotationChange({ ...annotation, fontSize: Number(value) })}>
+            <Select value={String(annotation.fontSize)} onValueChange={(value) => onAnnotationChange({ fontSize: Number(value) })}>
                 <SelectTrigger className="w-[60px] h-8 text-xs">
                     <SelectValue placeholder="Size" />
                 </SelectTrigger>
@@ -815,13 +816,13 @@ const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete }: { a
                 </SelectContent>
             </Select>
             <Separator orientation="vertical" className="h-6" />
-            <Toggle pressed={annotation.bold} onPressedChange={(pressed) => onAnnotationChange({ ...annotation, bold: pressed })}>
+            <Toggle pressed={annotation.bold} onPressedChange={(pressed) => onAnnotationChange({ bold: pressed })}>
                 <Bold className="h-4 w-4" />
             </Toggle>
-            <Toggle pressed={annotation.italic} onPressedChange={(pressed) => onAnnotationChange({ ...annotation, italic: pressed })}>
+            <Toggle pressed={annotation.italic} onPressedChange={(pressed) => onAnnotationChange({ italic: pressed })}>
                 <Italic className="h-4 w-4" />
             </Toggle>
-            <Toggle pressed={annotation.underline} onPressedChange={(pressed) => onAnnotationChange({ ...annotation, underline: pressed })}>
+            <Toggle pressed={annotation.underline} onPressedChange={(pressed) => onAnnotationChange({ underline: pressed })}>
                 <Underline className="h-4 w-4" />
             </Toggle>
             <Separator orientation="vertical" className="h-6" />
@@ -832,11 +833,11 @@ const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete }: { a
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
-                    <Input type="color" value={annotation.color} onChange={(e) => onAnnotationChange({ ...annotation, color: e.target.value })} className="w-full h-10 p-1 border-0" />
+                    <Input type="color" value={annotation.color} onChange={(e) => onAnnotationChange({ color: e.target.value })} className="w-full h-10 p-1 border-0" />
                 </PopoverContent>
             </Popover>
             <Separator orientation="vertical" className="h-6" />
-            <ToggleGroup type="single" value={annotation.textAlign} onValueChange={(value: TextAnnotation['textAlign']) => value && onAnnotationChange({ ...annotation, textAlign: value })}>
+            <ToggleGroup type="single" value={annotation.textAlign} onValueChange={(value: TextAnnotation['textAlign']) => value && onAnnotationChange({ textAlign: value })}>
                 <ToggleGroupItem value="left"><AlignLeft className="h-4 w-4" /></ToggleGroupItem>
                 <ToggleGroupItem value="center"><AlignCenter className="h-4 w-4" /></ToggleGroupItem>
                 <ToggleGroupItem value="right"><AlignRight className="h-4 w-4" /></ToggleGroupItem>
@@ -849,14 +850,32 @@ const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete }: { a
     );
 };
 
+const ShapeToolbar = ({ annotation, onAnnotationChange, onDelete }: { annotation: ShapeAnnotation; onAnnotationChange: (annotation: Partial<ShapeAnnotation>) => void; onDelete: (id: string) => void; }) => {
+    return (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 bg-card p-2 rounded-lg shadow-lg border flex items-center gap-2 animate-in slide-in-from-top-4 duration-300">
+             <Label>Fill</Label>
+             <Input type="color" value={annotation.fillColor} onChange={(e) => onAnnotationChange({ fillColor: e.target.value })} className="w-10 h-8 p-1"/>
+             <Label>Stroke</Label>
+             <Input type="color" value={annotation.strokeColor} onChange={(e) => onAnnotationChange({ strokeColor: e.target.value })} className="w-10 h-8 p-1"/>
+             <Separator orientation="vertical" className="h-6" />
+             <Label>Width</Label>
+             <Slider min={1} max={20} step={1} value={[annotation.strokeWidth]} onValueChange={val => onAnnotationChange({ strokeWidth: val[0] })} className="w-24"/>
+             <Separator orientation="vertical" className="h-6" />
+             <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => onDelete(annotation.id)}>
+                <Trash2 className="h-4 w-4" />
+            </Button>
+        </div>
+    );
+}
+
 const TextAnnotationComponent = ({
     annotation,
     mainCanvasZoom,
     isSelected,
     isEditing,
     onAnnotationChange,
-    onSingleClick,
-    onDoubleClick,
+    onSelect,
+    onEdit,
     onDragStart,
     onResizeStart,
 }: {
@@ -865,8 +884,8 @@ const TextAnnotationComponent = ({
     isSelected: boolean,
     isEditing: boolean,
     onAnnotationChange: (annotation: TextAnnotation) => void,
-    onSingleClick: (id: string, e: React.MouseEvent) => void,
-    onDoubleClick: (id: string, e: React.MouseEvent) => void,
+    onSelect: (id: string, e: React.MouseEvent) => void,
+    onEdit: (id: string, e: React.MouseEvent) => void,
     onDragStart: (e: React.MouseEvent, id: string) => void,
     onResizeStart: (e: React.MouseEvent, id: string) => void,
 }) => {
@@ -886,8 +905,14 @@ const TextAnnotationComponent = ({
             onMouseDown={(e) => {
                 if (!isEditing) onDragStart(e, annotation.id)
             }}
-            onClick={(e) => onSingleClick(annotation.id, e)}
-            onDoubleClick={(e) => onDoubleClick(annotation.id, e)}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!isSelected) { onSelect(annotation.id, e); }
+            }}
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              onEdit(annotation.id, e);
+            }}
             className={cn(
                 "absolute group/text-annotation",
                 !isEditing && "cursor-grab",
@@ -942,11 +967,11 @@ const TriangleIcon = () => (
     </svg>
 )
 
-const ShapeAnnotationComponent = ({ annotation, onDragStart, onResizeStart, onClick, isSelected }: {
+const ShapeAnnotationComponent = ({ annotation, onDragStart, onResizeStart, onSelect, isSelected }: {
     annotation: ShapeAnnotation;
     onDragStart: (e: React.MouseEvent, id: string) => void;
     onResizeStart: (e: React.MouseEvent, id: string) => void;
-    onClick: (e: React.MouseEvent, id: string) => void;
+    onSelect: (e: React.MouseEvent, id: string) => void;
     isSelected: boolean;
 }) => {
     const shapeStyle = {
@@ -966,7 +991,10 @@ const ShapeAnnotationComponent = ({ annotation, onDragStart, onResizeStart, onCl
     return (
         <div
             onMouseDown={(e) => onDragStart(e, annotation.id)}
-            onClick={(e) => onClick(e, annotation.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect(e, annotation.id);
+            }}
             className={cn("absolute cursor-grab", isSelected && "border-2 border-dashed border-primary")}
             style={wrapperStyle}
         >
@@ -1100,6 +1128,7 @@ export default function PdfEditorPage() {
   const [activePageIndex, setActivePageIndex] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<'editor' | 'grid'>('editor');
   const [activeTool, setActiveTool] = useState<Tool>('select');
+  const [interactionMode, setInteractionMode] = useState<InteractionMode>('idle');
 
   const mainViewContainerRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -1117,7 +1146,6 @@ export default function PdfEditorPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   
   const [selectedObject, setSelectedObject] = useState<SelectedObject>(null);
-  const [editingAnnotationId, setEditingAnnotationId] = useState<string | null>(null);
   
   const [isLinkPopoverOpen, setIsLinkPopoverOpen] = useState(false);
   const [currentLink, setCurrentLink] = useState<LinkAnnotationDef>({ type: 'url', value: '' });
@@ -1132,7 +1160,7 @@ export default function PdfEditorPage() {
   const [isSearchCaseSensitive, setIsSearchCaseSensitive] = useState(false);
 
   const dragStartRef = useRef({ x: 0, y: 0, initialLeft: 0, initialTop: 0, initialWidth: 0, initialHeight: 0 });
-  const isDraggingRef = useRef(false);
+  const drawingRef = useRef<{ pageIndex: number; startX: number; startY: number; id: string } | null>(null);
 
   const [isGuestLimitModalOpen, setIsGuestLimitModalOpen] = useState(false);
   const [guestLimitModalContent, setGuestLimitModalContent] = useState({ title: '', description: '' });
@@ -1151,7 +1179,6 @@ export default function PdfEditorPage() {
   const observerRef = useRef<IntersectionObserver | null>(null);
   const insertionTargetRef = useRef<'start' | 'end' | 'before' | 'after'>('end');
 
-  const [isScribbling, setIsScribbling] = useState(false);
   const scribblePointsRef = useRef<{x: number, y: number}[]>([]);
   const recordNextStateRef = useRef(false);
 
@@ -1880,6 +1907,7 @@ export default function PdfEditorPage() {
       id: string
   ) => {
       event.stopPropagation();
+      setInteractionMode('idle');
 
       const isResize = type.endsWith('-resize');
       const itemType = type.split('-')[0] as 'text' | 'image' | 'highlight' | 'shape' | 'mosaic' | 'scribble';
@@ -1915,7 +1943,6 @@ export default function PdfEditorPage() {
 
       const handleMouseMove = (moveEvent: MouseEvent) => {
           moveEvent.preventDefault();
-          isDraggingRef.current = true;
 
           const deltaX = moveEvent.clientX - dragStartRef.current.x;
           const deltaY = moveEvent.clientY - dragStartRef.current.y;
@@ -1958,8 +1985,8 @@ export default function PdfEditorPage() {
           else { // Drag operation
               const newLeftPx = dragStartRef.current.initialLeft + deltaX;
               const newTopPx = dragStartRef.current.initialTop + deltaY;
-              const newLeftRatio = Math.max(0, Math.min(1, newLeftPx / containerRect.width));
-              const newTopRatio = Math.max(0, Math.min(1, newTopPx / containerRect.height));
+              const newLeftRatio = Math.max(0, Math.min(1 - initialItemState.widthRatio, newLeftPx / containerRect.width));
+              const newTopRatio = Math.max(0, Math.min(1- initialItemState.heightRatio, newTopPx / containerRect.height));
               const updater = (prev: any[]) => prev.map(ann => ann.id === id ? { ...ann, leftRatio: newLeftRatio, topRatio: newTopRatio } : ann);
               
               switch (itemType) {
@@ -1978,11 +2005,7 @@ export default function PdfEditorPage() {
           document.removeEventListener('mousemove', handleMouseMove);
           document.removeEventListener('mouseup', handleMouseUp);
           
-          if(isDraggingRef.current) {
-            updateState(tempStateRef.current, true); // Record final state in history
-          }
-          
-          setTimeout(() => { isDraggingRef.current = false; }, 50);
+          updateState(tempStateRef.current, true); // Record final state in history
       };
 
       document.addEventListener('mousemove', handleMouseMove);
@@ -2084,13 +2107,31 @@ export default function PdfEditorPage() {
         };
         updateState({ textAnnotations: [...textAnnotations, newAnnotation] });
         setSelectedObject({type: 'text', id: newAnnotation.id});
-        setEditingAnnotationId(null);
+        setInteractionMode('editing');
     };
     
-    const handleAnnotationChange = (updatedAnnotation: TextAnnotation) => {
-        const newAnnotations = textAnnotations.map(ann => ann.id === updatedAnnotation.id ? updatedAnnotation : ann);
-        updateState({ textAnnotations: newAnnotations }, false);
+    const handleAnnotationChange = (id: string, updates: Partial<TextAnnotation | ShapeAnnotation>) => {
+        const annotationType = selectedObject?.type;
+        if (annotationType === 'text') {
+            const newAnnotations = textAnnotations.map(ann => ann.id === id ? { ...ann, ...updates } : ann);
+            updateState({ textAnnotations: newAnnotations }, false); // live update
+        } else if (annotationType === 'shape') {
+            const newAnnotations = shapeAnnotations.map(ann => ann.id === id ? { ...ann, ...updates } : ann);
+            updateState({ shapeAnnotations: newAnnotations }, false); // live update
+        }
     };
+    
+    const handleAnnotationChangeEnd = (id: string, updates: Partial<TextAnnotation | ShapeAnnotation>) => {
+        const annotationType = selectedObject?.type;
+        if (annotationType === 'text') {
+            const newAnnotations = textAnnotations.map(ann => ann.id === id ? { ...ann, ...updates } : ann);
+            updateState({ textAnnotations: newAnnotations }, true); // history update
+        } else if (annotationType === 'shape') {
+            const newAnnotations = shapeAnnotations.map(ann => ann.id === id ? { ...ann, ...updates } : ann);
+            updateState({ shapeAnnotations: newAnnotations }, true); // history update
+        }
+    }
+
 
     const handleDeleteAnnotation = (id: string) => {
         const updatedAnnotations = {
@@ -2237,33 +2278,27 @@ export default function PdfEditorPage() {
         toast({ title: 'Success', description: 'Signature applied to all pages.' });
     };
 
-    const handleDeselectAll = (e: React.MouseEvent<HTMLDivElement>) => {
-      // This condition ensures that clicks on empty areas of the container deselect,
-      // but clicks on children (annotations, etc.) do not.
-      if (e.target === mainViewContainerRef.current) {
+    const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
+      // This is the key logic: if the click target is the container itself, deselect.
+      if (e.target === e.currentTarget) {
           setSelectedObject(null);
-          setEditingAnnotationId(null);
+          setInteractionMode('idle');
       }
     }
     
-    const handleAnnotationSelect = (type: SelectedObject['type'], id: string, e: React.MouseEvent) => {
-      e.stopPropagation();
-      if (isDraggingRef.current) return;
-      if (editingAnnotationId === id) return;
-
+    const handleSelectAnnotation = (type: SelectedObject['type'], id: string) => {
       setSelectedObject({ type, id });
-      setEditingAnnotationId(null);
+      setInteractionMode('idle');
     }
     
-    const handleTextAnnotationDoubleClick = (id: string, e: React.MouseEvent) => {
-      e.stopPropagation();
-      setSelectedObject({type: 'text', id});
-      setEditingAnnotationId(id);
+    const handleEditAnnotation = (type: SelectedObject['type'], id: string) => {
+        setSelectedObject({ type, id });
+        setInteractionMode('editing');
     }
     
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if ((e.key === 'Delete' || e.key === 'Backspace') && selectedObject !== null && editingAnnotationId === null) {
+            if ((e.key === 'Delete' || e.key === 'Backspace') && selectedObject !== null && interactionMode !== 'editing') {
                 handleDeleteAnnotation(selectedObject.id);
             }
             if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
@@ -2282,7 +2317,7 @@ export default function PdfEditorPage() {
             window.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('paste', handlePaste);
         };
-    }, [selectedObject, editingAnnotationId, handlePaste, handleUndo, handleRedo]);
+    }, [selectedObject, interactionMode, handlePaste, handleUndo, handleRedo]);
 
 
     const handleOpenLinkPopover = () => {
@@ -2383,8 +2418,14 @@ export default function PdfEditorPage() {
         </div>
       </div>
     );
+    
+    const editingTextAnnotation = interactionMode === 'editing' && selectedObject?.type === 'text'
+        ? textAnnotations.find(a => a.id === selectedObject.id)
+        : null;
 
-    const editingAnnotation = editingAnnotationId ? textAnnotations.find(ann => ann.id === editingAnnotationId) : null;
+    const selectedShapeAnnotation = selectedObject?.type === 'shape'
+        ? shapeAnnotations.find(a => a.id === selectedObject.id)
+        : null;
 
     const handleZoom = (direction: 'in' | 'out') => {
       const ZOOM_STEP = 0.1;
@@ -2514,6 +2555,64 @@ export default function PdfEditorPage() {
             setPendingFileToConvert(null);
         }
     };
+    
+    // Drawing new annotations (mosaic)
+    const handlePageMouseDown = (e: React.MouseEvent<HTMLDivElement>, pageIndex: number) => {
+        if (activeTool !== 'mosaic' && activeTool !== 'scribble') return;
+
+        const container = e.currentTarget;
+        const rect = container.getBoundingClientRect();
+        const startX = (e.clientX - rect.left) / rect.width;
+        const startY = (e.clientY - rect.top) / rect.height;
+        const id = uuidv4();
+        
+        drawingRef.current = { pageIndex, startX, startY, id };
+        
+        if (activeTool === 'mosaic') {
+            const newAnnotation: MosaicAnnotation = { id, pageIndex, topRatio: startY, leftRatio: startX, widthRatio: 0, heightRatio: 0 };
+            updateState({ mosaicAnnotations: [...mosaicAnnotations, newAnnotation] }, false);
+        }
+    };
+    
+    const handlePageMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (!drawingRef.current) return;
+        
+        const { startX, startY, id } = drawingRef.current;
+        const container = e.currentTarget;
+        const rect = container.getBoundingClientRect();
+        const currentX = (e.clientX - rect.left) / rect.width;
+        const currentY = (e.clientY - rect.top) / rect.height;
+
+        const leftRatio = Math.min(startX, currentX);
+        const topRatio = Math.min(startY, currentY);
+        const widthRatio = Math.abs(currentX - startX);
+        const heightRatio = Math.abs(currentY - startY);
+
+        if (activeTool === 'mosaic') {
+            const newAnnotations = mosaicAnnotations.map(ann => 
+                ann.id === id ? { ...ann, leftRatio, topRatio, widthRatio, heightRatio } : ann
+            );
+            updateState({ mosaicAnnotations: newAnnotations }, false);
+        }
+    };
+    
+    const handlePageMouseUp = () => {
+        if (!drawingRef.current) return;
+        
+        const { id } = drawingRef.current;
+        if (activeTool === 'mosaic') {
+             const finalAnnotation = editorState.mosaicAnnotations.find(a => a.id === id);
+             if (finalAnnotation && (finalAnnotation.widthRatio > 0.01 || finalAnnotation.heightRatio > 0.01)) {
+                updateState({ mosaicAnnotations: editorState.mosaicAnnotations }, true);
+             } else {
+                updateState({ mosaicAnnotations: editorState.mosaicAnnotations.filter(a => a.id !== id) }, false);
+             }
+        }
+        
+        drawingRef.current = null;
+        setActiveTool('select');
+    };
+
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground font-sans">
@@ -2738,7 +2837,7 @@ export default function PdfEditorPage() {
 
                 <Tooltip>
                 <TooltipTrigger asChild>
-                    <Button variant={activeTool === 'text' ? "secondary" : "ghost"} className="flex flex-col h-auto p-2 space-y-1" onClick={() => { setActiveTool('text'); handleAddTextAnnotation() }} disabled={activePageIndex === null}>
+                    <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={handleAddTextAnnotation} disabled={activePageIndex === null}>
                         <Type className="h-5 w-5" />
                         <span className="text-xs">{texts.toolText}</span>
                     </Button>
@@ -2777,8 +2876,8 @@ export default function PdfEditorPage() {
 
                 <Tooltip>
                 <TooltipTrigger asChild>
-                    <Button variant={activeTool === 'highlight' ? "secondary" : "ghost"} className="flex flex-col h-auto p-2 space-y-1" onClick={() => { setActiveTool('highlight'); handleAddHighlightAnnotation(); }} disabled={activePageIndex === null}>
-                        <Highlighter className="h-5 w-5" />
+                    <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={handleAddHighlightAnnotation} disabled={activePageIndex === null}>
+                        <Brush className="h-5 w-5" />
                         <span className="text-xs">{texts.toolHighlight}</span>
                     </Button>
                 </TooltipTrigger>
@@ -2933,11 +3032,18 @@ export default function PdfEditorPage() {
 
 
       <main className="flex-grow flex overflow-hidden relative">
-        {editingAnnotationId && textAnnotations.find(ann => ann.id === editingAnnotationId) && (
+        {editingTextAnnotation && (
             <TextAnnotationToolbar
-                annotation={textAnnotations.find(ann => ann.id === editingAnnotationId)!}
-                onAnnotationChange={handleAnnotationChange}
-                onDelete={() => handleDeleteAnnotation(editingAnnotationId!)}
+                annotation={editingTextAnnotation}
+                onAnnotationChange={(updates) => handleAnnotationChange(editingTextAnnotation.id, updates)}
+                onDelete={() => handleDeleteAnnotation(editingTextAnnotation.id)}
+            />
+        )}
+        {selectedShapeAnnotation && (
+             <ShapeToolbar
+                annotation={selectedShapeAnnotation}
+                onAnnotationChange={(updates) => handleAnnotationChange(selectedShapeAnnotation.id, updates)}
+                onDelete={() => handleDeleteAnnotation(selectedShapeAnnotation.id)}
             />
         )}
         {pageObjects.length === 0 ? (
@@ -3048,12 +3154,12 @@ export default function PdfEditorPage() {
                 </div>
 
                 <div ref={mainViewContainerRef} 
-                    className={cn("flex-grow bg-muted/30 overflow-auto flex flex-col items-center p-4 space-y-4 relative", activeTool === 'pan' && 'cursor-grab')}
+                    className={cn("flex-grow bg-muted/30 overflow-auto flex flex-col items-center p-4 space-y-4 relative", activeTool === 'pan' && 'cursor-grab', (activeTool === 'mosaic' || activeTool === 'scribble') && 'cursor-crosshair')}
                     onMouseDown={handlePanMouseDown}
                     onMouseMove={handlePanMouseMove}
                     onMouseUp={handlePanMouseUp}
                     onMouseLeave={handlePanMouseUp}
-                    onClick={handleDeselectAll}
+                    onClick={handleCanvasClick}
                 >
                     {pageObjects.map((page, index) => {
                         const {sourceCanvas, rotation} = page;
@@ -3069,6 +3175,9 @@ export default function PdfEditorPage() {
                                     height: (rotation % 180 !== 0 ? sourceCanvas.width : sourceCanvas.height) * mainCanvasZoom,
                                     flexShrink: 0
                                 }}
+                                onMouseDown={(e) => handlePageMouseDown(e, index)}
+                                onMouseMove={handlePageMouseMove}
+                                onMouseUp={handlePageMouseUp}
                             >
                                 <canvas
                                     ref={canvas => {
@@ -3103,7 +3212,7 @@ export default function PdfEditorPage() {
                                     <div
                                         key={ann.id}
                                         onMouseDown={(e) => handleDragMouseDown(e, 'highlight', ann.id)}
-                                        onClick={(e) => handleAnnotationSelect('highlight', ann.id, e)}
+                                        onClick={(e) => { e.stopPropagation(); handleSelectAnnotation('highlight', ann.id); }}
                                         className={cn(
                                             "absolute cursor-grab",
                                             selectedObject?.id === ann.id && "border-2 border-dashed border-primary"
@@ -3130,7 +3239,7 @@ export default function PdfEditorPage() {
                                     <div
                                         key={ann.id}
                                         onMouseDown={(e) => handleDragMouseDown(e, 'mosaic', ann.id)}
-                                        onClick={(e) => handleAnnotationSelect('mosaic', ann.id, e)}
+                                        onClick={(e) => { e.stopPropagation(); handleSelectAnnotation('mosaic', ann.id); }}
                                         className={cn(
                                             "absolute cursor-grab",
                                             selectedObject?.id === ann.id && "border-2 border-dashed border-primary"
@@ -3159,7 +3268,7 @@ export default function PdfEditorPage() {
                                         isSelected={selectedObject?.id === ann.id}
                                         onDragStart={(e, id) => handleDragMouseDown(e, 'shape', id)}
                                         onResizeStart={(e, id) => handleDragMouseDown(e, 'shape-resize', id)}
-                                        onClick={(e, id) => handleAnnotationSelect('shape', id, e)}
+                                        onSelect={(e, id) => handleSelectAnnotation('shape', id)}
                                     />
                                 ))}
                                 {imageAnnotations.filter(ann => ann.pageIndex === index).map(ann => (
@@ -3168,7 +3277,7 @@ export default function PdfEditorPage() {
                                         onMouseDown={(e) => {
                                             handleDragMouseDown(e, 'image', ann.id);
                                         }}
-                                        onClick={(e) => handleAnnotationSelect('image', ann.id, e)}
+                                        onClick={(e) => { e.stopPropagation(); handleSelectAnnotation('image', ann.id); }}
                                         className={cn(
                                             "absolute cursor-grab",
                                             selectedObject?.id === ann.id && "border-2 border-dashed border-primary"
@@ -3199,12 +3308,12 @@ export default function PdfEditorPage() {
                                         annotation={ann}
                                         mainCanvasZoom={mainCanvasZoom}
                                         isSelected={selectedObject?.id === ann.id}
-                                        isEditing={editingAnnotationId === ann.id}
-                                        onSingleClick={(id, e) => handleAnnotationSelect('text', id, e)}
-                                        onDoubleClick={(id, e) => handleTextAnnotationDoubleClick(id, e)}
-                                        onAnnotationChange={handleAnnotationChange}
+                                        isEditing={interactionMode === 'editing' && selectedObject?.id === ann.id}
+                                        onSelect={(id, e) => handleSelectAnnotation('text', id)}
+                                        onEdit={(id, e) => handleEditAnnotation('text', id)}
+                                        onAnnotationChange={(updatedAnnotation) => updateState({ textAnnotations: textAnnotations.map(a => a.id === ann.id ? updatedAnnotation : a) }, false)}
                                         onDragStart={(e, id) => {
-                                            if (editingAnnotationId !== id) {
+                                            if (interactionMode !== 'editing') {
                                                 handleDragMouseDown(e, 'text', id);
                                             }
                                         }}

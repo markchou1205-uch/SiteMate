@@ -679,6 +679,7 @@ export default function PdfEditorPage() {
     const [viewMode, setViewMode] = useState<'grid' | 'editor'>('editor');
     
     // Editor state
+    const [isLoading, setIsLoading] = useState(false);
     const [annotations, setAnnotations] = useState<Annotation[]>([]);
     const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
     const [activeTool, setActiveTool] = useState<Tool>('select');
@@ -1041,6 +1042,21 @@ export default function PdfEditorPage() {
 
     return (
         <div className="flex flex-col h-screen bg-background text-foreground font-sans">
+            {isLoading && (
+                <div className="fixed inset-0 bg-black/50 z-[100] flex flex-col items-center justify-center">
+                    <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
+                    <p className="text-white text-lg">{texts.loadingPdf}</p>
+                </div>
+            )}
+             {isDownloading && (
+                <div className="fixed inset-0 bg-black/50 z-[100] flex flex-col items-center justify-center">
+                    <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
+                    <p className="text-white text-lg">{texts.generatingFile}</p>
+                     <div className="w-64 mt-4">
+                        <Progress value={downloadProgress} className="h-2" />
+                    </div>
+                </div>
+            )}
             {/* Header and Toolbar */}
             <header className="p-2 border-b bg-card flex items-center justify-between gap-4 sticky top-0 z-30">
                  <div className="flex items-center gap-2">
@@ -1097,7 +1113,6 @@ export default function PdfEditorPage() {
 
             <div className="flex flex-grow overflow-hidden">
                 <main className="flex-grow flex flex-col relative">
-                     {/* Toolbars */}
                      <div ref={toolbarContainerRef} className="absolute top-2 left-1/2 -translate-x-1/2 z-40">
                         {activeTextAnnotation && interactionMode === 'editing' && (
                             <Card className="p-2 flex items-center gap-1 shadow-lg text-toolbar">
@@ -1173,3 +1188,5 @@ export default function PdfEditorPage() {
         </div>
     );
 }
+
+    

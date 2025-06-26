@@ -65,25 +65,30 @@ interface LinkAnnotationDef {
   value: string; // URL string or page number as a string
 }
 
+interface TextSegment {
+  text: string;
+  color: string;
+  bold: boolean;
+  italic: boolean;
+  underline: boolean;
+}
+
 interface TextAnnotation {
   id: string;
   type: 'text';
   pageIndex: number;
-  text: string;
+  segments: TextSegment[];
   topRatio: number;
   leftRatio: number;
   widthRatio: number;
   heightRatio: number;
   fontSize: number;
   fontFamily: string;
-  bold: boolean;
-  italic: boolean;
-  underline: boolean;
-  color: string;
   textAlign: 'left' | 'center' | 'right';
   link?: LinkAnnotationDef;
   isUserAction?: boolean;
 }
+
 
 interface ImageAnnotation {
     id: string;
@@ -823,6 +828,12 @@ const fonts = [
 const fontSizes = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72];
 
 const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete, onImageInsert }: { annotation: TextAnnotation; onAnnotationChange: (id: string, annotation: Partial<TextAnnotation>) => void; onDelete: (id: string) => void; onImageInsert: () => void; }) => {
+    const handleStyleChange = (style: Partial<TextSegment>) => {
+      onAnnotationChange(annotation.id, {
+        segments: annotation.segments.map(s => ({ ...s, ...style })),
+      });
+    };
+    
     return (
         <div className="text-toolbar bg-card p-2 rounded-lg shadow-lg border flex items-center gap-2 animate-in slide-in-from-top-4 duration-300">
             <Select value={annotation.fontFamily} onValueChange={(value) => onAnnotationChange(annotation.id, { fontFamily: value })}>
@@ -842,24 +853,24 @@ const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete, onIma
                 </SelectContent>
             </Select>
             <Separator orientation="vertical" className="h-6" />
-            <Toggle pressed={annotation.bold} onPressedChange={(pressed) => onAnnotationChange(annotation.id, { bold: pressed })}>
+            <Toggle pressed={annotation.segments[0]?.bold} onPressedChange={(pressed) => handleStyleChange({ bold: pressed })}>
                 <Bold className="h-4 w-4" />
             </Toggle>
-            <Toggle pressed={annotation.italic} onPressedChange={(pressed) => onAnnotationChange(annotation.id, { italic: pressed })}>
+            <Toggle pressed={annotation.segments[0]?.italic} onPressedChange={(pressed) => handleStyleChange({ italic: pressed })}>
                 <Italic className="h-4 w-4" />
             </Toggle>
-            <Toggle pressed={annotation.underline} onPressedChange={(pressed) => onAnnotationChange(annotation.id, { underline: pressed })}>
+            <Toggle pressed={annotation.segments[0]?.underline} onPressedChange={(pressed) => handleStyleChange({ underline: pressed })}>
                 <Underline className="h-4 w-4" />
             </Toggle>
             <Separator orientation="vertical" className="h-6" />
             <Popover>
                 <PopoverTrigger asChild>
                     <Button variant="outline" size="icon" className="h-8 w-8">
-                        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: annotation.color }} />
+                        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: annotation.segments[0]?.color }} />
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0 border-0">
-                    <Input type="color" value={annotation.color} onChange={(e) => onAnnotationChange(annotation.id, { color: e.target.value })} className="w-14 h-10 p-1 border-0 cursor-pointer"/>
+                    <Input type="color" value={annotation.segments[0]?.color} onChange={(e) => handleStyleChange({ color: e.target.value })} className="w-14 h-10 p-1 border-0 cursor-pointer"/>
                 </PopoverContent>
             </Popover>
              <Separator orientation="vertical" className="h-6" />
@@ -932,12 +943,12 @@ const TextAnnotationComponent = ({
 
     useEffect(() => {
         const textarea = textareaRef.current;
-        if (textarea) {
+        if (isEditing && textarea) {
+            textarea.focus();
             textarea.style.height = 'auto';
             textarea.style.height = `${textarea.scrollHeight}px`;
         }
-    }, [annotation.text, annotation.fontSize, annotation.widthRatio, mainCanvasZoom, annotation.fontFamily, annotation.bold, annotation.italic, annotation.textAlign]);
-
+    }, [isEditing, annotation.segments, annotation.fontSize, mainCanvasZoom, annotation.fontFamily]);
 
     return (
         <div
@@ -969,10 +980,16 @@ const TextAnnotationComponent = ({
                 zIndex: 20,
             }}
         >
-           <Textarea
+           {isEditing ? (
+             <Textarea
                 ref={textareaRef}
-                value={annotation.text}
-                onChange={(e) => onAnnotationChange(annotation.id, { text: e.target.value })}
+                value={annotation.segments.map(s => s.text).join('')}
+                onChange={(e) => {
+                    // This is a simplified handler. A real rich text editor would be much more complex.
+                    onAnnotationChange(annotation.id, {
+                      segments: [{ ...annotation.segments[0], text: e.target.value }],
+                    });
+                }}
                 onClick={(e) => {
                     if (isEditing) e.stopPropagation();
                 }}
@@ -984,14 +1001,36 @@ const TextAnnotationComponent = ({
                 style={{
                     fontFamily: annotation.fontFamily.includes('Times') ? '"Times New Roman", Times, serif' : annotation.fontFamily,
                     fontSize: `${annotation.fontSize * mainCanvasZoom}px`,
-                    fontWeight: annotation.bold ? 'bold' : 'normal',
-                    fontStyle: annotation.italic ? 'italic' : 'normal',
-                    textDecoration: annotation.underline ? 'underline' : 'none',
-                    color: annotation.color,
                     textAlign: annotation.textAlign,
                     lineHeight: 1.3,
                 }}
             />
+           ) : (
+             <div
+                className="w-full p-0 bg-transparent pointer-events-none"
+                style={{
+                    fontFamily: annotation.fontFamily.includes('Times') ? '"Times New Roman", Times, serif' : annotation.fontFamily,
+                    fontSize: `${annotation.fontSize * mainCanvasZoom}px`,
+                    textAlign: annotation.textAlign,
+                    lineHeight: 1.3,
+                    wordBreak: 'break-word'
+                }}
+              >
+               {annotation.segments.map((segment, index) => (
+                  <span
+                    key={index}
+                    style={{
+                      fontWeight: segment.bold ? 'bold' : 'normal',
+                      fontStyle: segment.italic ? 'italic' : 'normal',
+                      textDecoration: segment.underline ? 'underline' : 'none',
+                      color: segment.color,
+                    }}
+                  >
+                    {segment.text}
+                  </span>
+               ))}
+              </div>
+           )}
             {annotation.link && !isEditing && <LinkIcon className="absolute -top-1.5 -right-1.5 h-4 w-4 text-white bg-blue-500 p-0.5 rounded-full" />}
             {(isSelected || isHovered) && !isEditing && (
                 <div
@@ -1357,34 +1396,29 @@ export default function PdfEditorPage() {
   const updateState = useCallback((newPartialState: Partial<EditorState>, isHistoryEvent: boolean = true) => {
     setEditorState(prevState => {
       const newState = { ...prevState, ...newPartialState };
+      if (isHistoryEvent) {
+          const newHistory = history.slice(0, historyIndex + 1);
+          setHistory([...newHistory, newState]);
+          setHistoryIndex(newHistory.length);
+      }
       return newState;
     });
-
-    if(isHistoryEvent) {
-        recordNextStateRef.current = true;
-    }
-  }, []);
+  }, [history, historyIndex]);
 
   const addAnnotation = (annotation: Annotation) => {
     updateState({ annotations: [...annotations, annotation] });
   };
   
-  const updateAnnotation = (id: string, updates: Partial<Annotation>) => {
+  const updateAnnotation = useCallback((id: string, updates: Partial<Annotation>) => {
       const newAnnotations = annotations.map(ann => {
           if (ann.id === id) {
               return { ...ann, ...updates };
           }
           return ann;
       });
-      updateState({ annotations: newAnnotations }, false); 
-  };
+      updateState({ annotations: newAnnotations });
+  }, [annotations, updateState]);
 
-
-  const updateHistory = useCallback((newState: EditorState) => {
-    const newHistory = history.slice(0, historyIndex + 1);
-    setHistory([...newHistory, newState]);
-    setHistoryIndex(newHistory.length);
-  }, [history, historyIndex]);
 
   const handleUndo = () => {
     if (historyIndex > 0) {
@@ -1424,18 +1458,14 @@ export default function PdfEditorPage() {
             onEnd: (evt) => {
                 if (evt.oldIndex === undefined || evt.newIndex === undefined || evt.oldIndex === evt.newIndex) return;
                 
-                setEditorState(prev => {
-                    const reorderedPageObjects = Array.from(prev.pageObjects);
-                    const [movedItem] = reorderedPageObjects.splice(evt.oldIndex!, 1);
-                    reorderedPageObjects.splice(evt.newIndex!, 0, movedItem);
-                    const newState = { ...prev, pageObjects: reorderedPageObjects };
-                    updateHistory(newState);
-                    return newState;
-                });
+                const reorderedPageObjects = Array.from(pageObjects);
+                const [movedItem] = reorderedPageObjects.splice(evt.oldIndex!, 1);
+                reorderedPageObjects.splice(evt.newIndex!, 0, movedItem);
+                updateState({ pageObjects: reorderedPageObjects });
             }
         });
     }
-  }, [updateHistory]);
+  }, [pageObjects, updateState]);
 
   useEffect(() => {
     if (pageObjects.length > 0 && viewMode === 'editor' && thumbnailContainerRef.current) {
@@ -1650,7 +1680,8 @@ export default function PdfEditorPage() {
       const { loadedPageObjects } = await processPdfFile(file);
       const newState: EditorState = { pageObjects: loadedPageObjects, annotations: [] };
       setEditorState(newState);
-      updateHistory(newState);
+      setHistory([newState]);
+      setHistoryIndex(0);
       setOriginalAnnotations([]);
       setIsTextExtractionMode(false);
       
@@ -1664,7 +1695,8 @@ export default function PdfEditorPage() {
     {
       toast({ title: texts.loadError, description: err.message, variant: "destructive" });
       setEditorState(initialEditorState);
-      updateHistory(initialEditorState);
+      setHistory([initialEditorState]);
+      setHistoryIndex(0);
       setActivePageIndex(null);
     } finally {
       setIsLoading(false);
@@ -1715,24 +1747,20 @@ export default function PdfEditorPage() {
                     id: uuidv4(),
                     type: 'text',
                     pageIndex: i - 1,
-                    text: item.str,
+                    segments: [{ text: item.str, color: '#000000', bold: item.fontName.toLowerCase().includes('bold'), italic: item.fontName.toLowerCase().includes('italic'), underline: false }],
                     leftRatio: item.transform[4] / viewport.width,
                     topRatio: (viewport.height - item.transform[5] - item.height) / viewport.height,
                     widthRatio: item.width / viewport.width,
                     heightRatio: item.height / viewport.height,
                     fontSize: fontHeight,
                     fontFamily: item.fontName,
-                    bold: item.fontName.toLowerCase().includes('bold'),
-                    italic: item.fontName.toLowerCase().includes('italic'),
-                    underline: false,
-                    color: '#000000',
                     textAlign: 'left',
                     isUserAction: false,
                 });
             });
         }
         setOriginalAnnotations(extractedAnnotations);
-        setEditorState(prev => ({...prev, annotations: [...prev.annotations, ...extractedAnnotations]}));
+        setEditorState(prev => ({...prev, annotations: [...prev.annotations.filter(a => a.isUserAction), ...extractedAnnotations]}));
         setIsTextExtractionMode(true);
         toast({ title: "Text Extracted", description: `Found ${extractedAnnotations.length} text blocks.` });
     } catch (err: any) {
@@ -1759,7 +1787,7 @@ export default function PdfEditorPage() {
 
   const handleConfirmOpenNew = () => {
     setEditorState(initialEditorState);
-    updateHistory(initialEditorState);
+    updateState(initialEditorState);
     setHasTextLayer(false);
     setSelectedPageIds(new Set());
     setActivePageIndex(null);
@@ -1780,26 +1808,22 @@ export default function PdfEditorPage() {
           return;
       }
       
-      setEditorState(prev => {
-          const newPageObjects = prev.pageObjects.filter(p => !selectedPageIds.has(p.id));
-          const oldIndexMap = new Map(prev.pageObjects.map((p, i) => [p.id, i]));
-          const newIndexMap = new Map(newPageObjects.map((p, i) => [p.id, i]));
-          
-          const newAnnotations = prev.annotations
-              .filter(ann => {
-                  const oldPageIndex = oldIndexMap.get(prev.pageObjects[ann.pageIndex]?.id);
-                  return oldPageIndex !== undefined && !selectedPageIds.has(prev.pageObjects[oldPageIndex].id);
-              })
-              .map(ann => {
-                  const newIndex = newIndexMap.get(prev.pageObjects[ann.pageIndex].id);
-                  return { ...ann, pageIndex: newIndex ?? -1 };
-              })
-              .filter(ann => ann.pageIndex !== -1);
-          
-          const newState = { pageObjects: newPageObjects, annotations: newAnnotations };
-          updateHistory(newState);
-          return newState;
-      });
+      const newPageObjects = pageObjects.filter(p => !selectedPageIds.has(p.id));
+      const oldIndexMap = new Map(pageObjects.map((p, i) => [p.id, i]));
+      const newIndexMap = new Map(newPageObjects.map((p, i) => [p.id, i]));
+      
+      const newAnnotations = annotations
+          .filter(ann => {
+              const oldPageIndex = oldIndexMap.get(pageObjects[ann.pageIndex]?.id);
+              return oldPageIndex !== undefined && !selectedPageIds.has(pageObjects[oldPageIndex].id);
+          })
+          .map(ann => {
+              const newIndex = newIndexMap.get(pageObjects[ann.pageIndex].id);
+              return { ...ann, pageIndex: newIndex ?? -1 };
+          })
+          .filter(ann => ann.pageIndex !== -1);
+      
+      updateState({ pageObjects: newPageObjects, annotations: newAnnotations });
       
       setSelectedPageIds(new Set());
       setActivePageIndex(pageObjects.length > 0 ? 0 : null);
@@ -1828,26 +1852,11 @@ export default function PdfEditorPage() {
   };
 
   const getPdfFont = async (pdfDoc: PDFLibDocument, annotation: TextAnnotation): Promise<PDFFont> => {
-    const { fontFamily, bold, italic } = annotation;
-    let font = StandardFonts.Helvetica;
-
-    if (fontFamily === 'Helvetica') {
-        if (bold && italic) font = StandardFonts.HelveticaBoldOblique;
-        else if (bold) font = StandardFonts.HelveticaBold;
-        else if (italic) font = StandardFonts.HelveticaOblique;
-        else font = StandardFonts.Helvetica;
-    } else if (fontFamily === 'Times-Roman') {
-        if (bold && italic) font = StandardFonts.TimesRomanBoldItalic;
-        else if (bold) font = StandardFonts.TimesRomanBold;
-        else if (italic) font = StandardFonts.TimesRomanItalic;
-        else font = StandardFonts.TimesRoman;
-    } else if (fontFamily === 'Courier') {
-        if (bold && italic) font = StandardFonts.CourierBoldOblique;
-        else if (bold) font = StandardFonts.CourierBold;
-        else if (italic) font = StandardFonts.CourierOblique;
-        else font = StandardFonts.Courier;
-    }
-    return await pdfDoc.embedFont(font);
+    // This is a simplification. A real implementation would need to handle font embedding better.
+    const { fontFamily } = annotation;
+    if (fontFamily.includes('Times')) return pdfDoc.embedFont(StandardFonts.TimesRoman);
+    if (fontFamily.includes('Courier')) return pdfDoc.embedFont(StandardFonts.Courier);
+    return pdfDoc.embedFont(StandardFonts.Helvetica);
   };
 
   const generatePdfBytes = async (): Promise<Uint8Array> => {
@@ -1996,60 +2005,34 @@ export default function PdfEditorPage() {
       }
       
       for (const annotation of pageAnnotations.filter(a => a.type === 'text') as TextAnnotation[]) {
-          const font = await getPdfFont(pdfDocOut, annotation);
-          const { r, g, b } = hexToRgb(annotation.color);
-          const boxWidth = annotation.widthRatio * pageWidth;
+        if (!annotation.isUserAction) continue; // Only draw user-added text
+        const font = await getPdfFont(pdfDocOut, annotation);
+        const { r, g, b } = hexToRgb(annotation.segments[0].color);
+        const boxWidth = annotation.widthRatio * pageWidth;
+        const textToDraw = annotation.segments.map(s => s.text).join('');
 
-          const textLayout = layoutMultilineText(annotation.text, {
-              font,
-              bounds: { width: boxWidth, height: Infinity },
-              fontSize: annotation.fontSize,
-              lineHeight: annotation.fontSize * 1.2,
-              alignment: annotation.textAlign === 'left' ? 0 : annotation.textAlign === 'center' ? 1 : 2,
-          });
+        const textLayout = layoutMultilineText(textToDraw, {
+            font,
+            bounds: { width: boxWidth, height: Infinity },
+            fontSize: annotation.fontSize,
+            lineHeight: annotation.fontSize * 1.2,
+        });
 
-          const textHeight = textLayout.lines.length * annotation.fontSize * 1.2;
-          const x = annotation.leftRatio * pageWidth;
-          const y = pageHeight - (annotation.topRatio * pageHeight);
+        const textHeight = textLayout.lines.length * annotation.fontSize * 1.2;
+        const x = annotation.leftRatio * pageWidth;
+        const y = pageHeight - (annotation.topRatio * pageHeight);
 
-          pdfLibPage.pushGraphicsState();
-          pdfLibPage.drawText(textLayout.lines.map(l => l.text).join('\n'), {
-              x,
-              y: y - font.ascent * (annotation.fontSize / font.unitsPerEm), // Adjust for baseline
-              font,
-              size: annotation.fontSize,
-              color: rgb(r, g, b),
-              lineHeight: annotation.fontSize * 1.2,
-              maxWidth: boxWidth,
-              wordBreaks: [' '],
-          });
-
-          if (annotation.underline) {
-            const textWidth = font.widthOfTextAtSize(textLayout.lines.map(l=>l.text).join('\n'), annotation.fontSize);
-            textLayout.lines.forEach((line, i) => {
-                const lineY = y - (font.ascent * (annotation.fontSize / font.unitsPerEm)) - (i * annotation.fontSize * 1.2) - 2;
-                 pdfLibPage.drawLine({
-                    start: { x: x, y: lineY },
-                    end: { x: x + line.width, y: lineY },
-                    thickness: 0.5,
-                    color: rgb(r, g, b)
-                });
-            });
-          }
-          pdfLibPage.popGraphicsState();
-
-          if (annotation.link) {
-              const linkRect = { x, y: y - textHeight, width: boxWidth, height: textHeight };
-              if(annotation.link.type === 'url') {
-                  pdfLibPage.addURIAnnotation(linkRect, annotation.link.value);
-              } else if (annotation.link.type === 'page') {
-                  const targetPageNum = parseInt(annotation.link.value, 10);
-                  if (!isNaN(targetPageNum) && targetPageNum > 0 && targetPageNum <= pdfDocOut.getPageCount()) {
-                     const targetPage = pdfDocOut.getPages()[targetPageNum - 1];
-                     pdfLibPage.addLinkAnnotation(linkRect, targetPage);
-                  }
-              }
-          }
+        pdfLibPage.pushGraphicsState();
+        pdfLibPage.drawText(textLayout.lines.map(l => l.text).join('\n'), {
+            x,
+            y: y - font.ascent * (annotation.fontSize / font.unitsPerEm),
+            font,
+            size: annotation.fontSize,
+            color: rgb(r, g, b),
+            lineHeight: annotation.fontSize * 1.2,
+            maxWidth: boxWidth,
+        });
+        pdfLibPage.popGraphicsState();
       }
 
       for (const annotation of pageAnnotations.filter(a => a.type === 'table') as TableAnnotation[]) {
@@ -2062,13 +2045,11 @@ export default function PdfEditorPage() {
         const color = rgb(r, g, b);
         const thickness = strokeWidth;
 
-        // Draw horizontal lines
         for (let i = 0; i <= rows; i++) {
           const lineY = y + (i / rows) * height;
           pdfLibPage.drawLine({ start: { x, y: lineY }, end: { x: x + width, y: lineY }, thickness, color });
         }
 
-        // Draw vertical lines
         for (let i = 0; i <= cols; i++) {
           const lineX = x + (i / cols) * width;
           pdfLibPage.drawLine({ start: { x: lineX, y }, end: { x: lineX, y: y + height }, thickness, color });
@@ -2285,18 +2266,14 @@ export default function PdfEditorPage() {
     const handleRotatePage = (direction: 'cw' | 'ccw') => {
         if (activePageIndex === null) return;
         
-        setEditorState(prev => {
-            const newPageObjects = prev.pageObjects.map((page, index) => {
-                if (index === activePageIndex) {
-                    const newRotation = (page.rotation + (direction === 'cw' ? 90 : -90) + 360) % 360;
-                    return { ...page, rotation: newRotation };
-                }
-                return page;
-            });
-            const newState = { ...prev, pageObjects: newPageObjects };
-            updateHistory(newState);
-            return newState;
+        const newPageObjects = pageObjects.map((page, index) => {
+            if (index === activePageIndex) {
+                const newRotation = (page.rotation + (direction === 'cw' ? 90 : -90) + 360) % 360;
+                return { ...page, rotation: newRotation };
+            }
+            return page;
         });
+        updateState({ pageObjects: newPageObjects });
     };
 
     const handleAddBlankPage = () => {
@@ -2319,15 +2296,12 @@ export default function PdfEditorPage() {
 
         const insertAt = (activePageIndex === null ? pageObjects.length - 1 : activePageIndex) + 1;
 
-        setEditorState(prev => {
-            const newPages = [...prev.pageObjects];
-            newPages.splice(insertAt, 0, newPageObject);
-            const newState = { ...prev, pageObjects: newPages };
-            updateHistory(newState);
-            setActivePageIndex(insertAt);
-            setSelectedPageIds(new Set([newPageObject.id]));
-            return newState;
-        });
+        const newPages = [...pageObjects];
+        newPages.splice(insertAt, 0, newPageObject);
+        updateState({ pageObjects: newPages });
+        
+        setActivePageIndex(insertAt);
+        setSelectedPageIds(new Set([newPageObject.id]));
         
         setTimeout(() => {
             const newPageElement = pageRefs.current[insertAt];
@@ -2344,57 +2318,39 @@ export default function PdfEditorPage() {
         }
 
         const container = mainViewContainerRef.current;
-        const pageContainer = pageRefs.current[activePageIndex];
-        if (!pageContainer) return;
+        const pageRect = pageRefs.current[activePageIndex]?.getBoundingClientRect();
+        if (!pageRect) return;
 
-        const containerRect = container.getBoundingClientRect();
-        const pageRect = pageContainer.getBoundingClientRect();
-
-        const top = container.scrollTop + containerRect.height / 2 - pageRect.top;
-        const left = container.scrollLeft + containerRect.width / 2 - pageRect.left;
-
-        const topRatio = top / pageRect.height;
-        const leftRatio = left / pageRect.width;
-
+        const top = (container.scrollTop + container.clientHeight / 2) - pageRect.top;
+        const left = (container.scrollLeft + container.clientWidth / 2) - pageRect.left;
+        
         const newAnnotation: TextAnnotation = {
             id: uuidv4(),
             type: 'text',
             pageIndex: activePageIndex,
-            text: texts.textAnnotationSample,
-            topRatio: Math.max(0, Math.min(0.9, topRatio)),
-            leftRatio: Math.max(0, Math.min(0.8, leftRatio)),
+            segments: [{ text: texts.textAnnotationSample, color: '#000000', bold: false, italic: false, underline: false }],
+            topRatio: Math.max(0, Math.min(0.9, top / pageRect.height)),
+            leftRatio: Math.max(0, Math.min(0.8, left / pageRect.width)),
             widthRatio: 0.2,
             heightRatio: 0.1,
             fontSize: 36,
             fontFamily: 'Helvetica',
-            bold: false,
-            italic: false,
-            underline: false,
-            color: '#000000',
             textAlign: 'left',
             isUserAction: true,
         };
         
-        setEditorState(prev => {
-            const newState = { ...prev, annotations: [...prev.annotations, newAnnotation] };
-            updateHistory(newState);
-            setSelectedAnnotationId(newAnnotation.id);
-            setActiveTool('select');
-            setInteractionMode('selected');
-            return newState;
-        });
+        addAnnotation(newAnnotation);
+        setSelectedAnnotationId(newAnnotation.id);
+        setActiveTool('select');
+        setInteractionMode('selected');
     };
     
     const handleDeleteAnnotation = (id: string) => {
-        setEditorState(prev => {
-            const newState = { ...prev, annotations: prev.annotations.filter(a => a.id !== id) };
-            updateHistory(newState);
-            if (selectedAnnotationId === id) {
-                setSelectedAnnotationId(null);
-                setInteractionMode('idle');
-            }
-            return newState;
-        });
+        updateState({ annotations: annotations.filter(a => a.id !== id) });
+        if (selectedAnnotationId === id) {
+            setSelectedAnnotationId(null);
+            setInteractionMode('idle');
+        }
     }
     
     const addImageAnnotation = useCallback((dataUrl: string, pageIndex: number) => {
@@ -2422,15 +2378,11 @@ export default function PdfEditorPage() {
                 isUserAction: true,
             };
             
-            setEditorState(prev => {
-                const newState = { ...prev, annotations: [...prev.annotations, newAnnotation] };
-                updateHistory(newState);
-                setSelectedAnnotationId(newAnnotation.id);
-                return newState;
-            });
+            addAnnotation(newAnnotation);
+            setSelectedAnnotationId(newAnnotation.id);
         };
         img.src = dataUrl;
-    }, [updateHistory]);
+    }, [addAnnotation]);
 
     const handleImageFileSelected = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         if (activePageIndex === null) return;
@@ -2537,26 +2489,38 @@ export default function PdfEditorPage() {
             }
         }
         
-        setEditorState(prev => {
-            const newState = { ...prev, annotations: [...prev.annotations, ...newAnnotations] };
-            updateHistory(newState);
-            return newState;
-        });
+        updateState({ annotations: [...annotations, ...newAnnotations] });
         toast({ title: 'Success', description: 'Signature applied to all pages.' });
     };
 
     const handleDeselectAll = useCallback(() => {
+        if (interactionMode === 'editing') {
+          setInteractionMode('selected');
+        } else {
+          setInteractionMode('idle');
+          setSelectedAnnotationId(null);
+        }
+        setShowDownloadOptions(false);
+    }, [interactionMode]);
+
+    const handleCanvasClick = useCallback((e: React.MouseEvent) => {
+      const target = e.target as HTMLElement;
+
+      // If click is on a canvas or an annotation, do nothing here
+      if (target.closest('.main-page-container') || target.closest('.group\\/text-annotation')) {
+        return;
+      }
+      
+      // If click is outside, deselect everything
+      if (interactionMode === 'editing') {
+        setInteractionMode('selected');
+        setSelectedAnnotationId(null);
+      } else {
         setInteractionMode('idle');
         setSelectedAnnotationId(null);
-        setShowDownloadOptions(false);
-    }, []);
+      }
 
-    const handleCanvasClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-        const clickedElement = e.target as HTMLElement;
-        if (clickedElement === e.currentTarget) {
-            handleDeselectAll();
-        }
-    }, [handleDeselectAll]);
+    }, [interactionMode]);
     
     const handleAnnotationSelect = useCallback((e: React.MouseEvent, id: string) => {
         e.stopPropagation();
@@ -2568,12 +2532,9 @@ export default function PdfEditorPage() {
     
     const handleTextAnnotationDoubleClick = useCallback((e: React.MouseEvent, id: string) => {
         e.stopPropagation();
-        const annotation = annotations.find(a => a.id === id);
-        if (annotation && annotation.type === 'text') {
-            setInteractionMode('editing');
-            setSelectedAnnotationId(id);
-        }
-    }, [annotations]);
+        setInteractionMode('editing');
+        setSelectedAnnotationId(id);
+    }, []);
     
     useEffect(() => {
         const handleGlobalClick = (e: MouseEvent) => {
@@ -2636,18 +2597,10 @@ export default function PdfEditorPage() {
 
     const handleRemoveLink = () => {
         if (!selectedAnnotationId) return;
-        setEditorState(prev => {
-            const newAnns = prev.annotations.map(a => {
-                if (a.id === selectedAnnotationId) {
-                    const { link, ...rest } = a as (TextAnnotation | ImageAnnotation);
-                    return rest;
-                }
-                return a;
-            });
-            const newState = { ...prev, annotations: newAnns };
-            updateHistory(newState);
-            return newState;
-        });
+        const annotation = annotations.find(a => a.id === selectedAnnotationId);
+        if (!annotation || (annotation.type !== 'text' && annotation.type !== 'image')) return;
+        const { link, ...rest } = annotation;
+        updateState({ annotations: annotations.map(a => a.id === selectedAnnotationId ? rest : a) });
         setIsLinkPopoverOpen(false);
         toast({ title: texts.linkRemoved, variant: "destructive" });
     };
@@ -2759,13 +2712,9 @@ export default function PdfEditorPage() {
                     insertAtIndex = pageObjects.length;
             }
             
-            setEditorState(prev => {
-                const newPageObjects = [...prev.pageObjects];
-                newPageObjects.splice(insertAtIndex, 0, ...loadedPageObjects);
-                const newState = { ...prev, pageObjects: newPageObjects };
-                updateHistory(newState);
-                return newState;
-            });
+            const newPageObjects = [...pageObjects];
+            newPageObjects.splice(insertAtIndex, 0, ...loadedPageObjects);
+            updateState({ pageObjects: newPageObjects });
             
             toast({ title: "Insert Success", description: currentLanguage === 'zh' ? `${fileToInsert.name} 已成功插入。` : `${fileToInsert.name} has been inserted.` });
 
@@ -2951,17 +2900,13 @@ export default function PdfEditorPage() {
         id,
         type: 'text',
         pageIndex: tableAnn.pageIndex,
-        text: tableAnn.cells[row]?.[col] || '',
+        segments: [{ text: tableAnn.cells[row]?.[col] || '', color: '#000000', bold: false, italic: false, underline: false }],
         topRatio: tableAnn.topRatio + (row / tableAnn.rows) * tableAnn.heightRatio,
         leftRatio: tableAnn.leftRatio + (col / tableAnn.cols) * tableAnn.widthRatio,
         widthRatio: tableAnn.widthRatio / tableAnn.cols,
         heightRatio: tableAnn.heightRatio / tableAnn.rows,
         fontSize: 12,
         fontFamily: 'Helvetica',
-        bold: false,
-        italic: false,
-        underline: false,
-        color: '#000000',
         textAlign: 'left',
         isUserAction: true,
       };
@@ -3767,7 +3712,7 @@ export default function PdfEditorPage() {
                             >
                                <div className="flex justify-between items-center">
                                  <span className="font-medium truncate pr-2">
-                                     {ann.type === 'text' ? ann.text.substring(0,20) : ann.type}
+                                     {ann.type === 'text' ? (ann as TextAnnotation).segments.map(s=>s.text).join('').substring(0,20) : ann.type}
                                  </span>
                                  <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={(e) => {e.stopPropagation(); handleDeleteAnnotation(ann.id)}}>
                                     <Trash2 className="h-4 w-4"/>

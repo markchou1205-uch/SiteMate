@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, FontSize, Eye, Scissors, LayoutGrid, PanelLeft, FilePlus2, Combine, Type, ImagePlus, Link as LinkIcon, MessageSquarePlus, ZoomIn, ZoomOut, Expand, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Highlighter, ArrowRightLeft, Edit, FileUp, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText, Sparkles, XCircle, File, FolderOpen, Save, Wrench, HelpCircle, PanelTop, Redo, Undo, Hand, Square, Circle, Pencil, Printer, SearchIcon, ChevronLeft, ChevronRight, CaseSensitive, MousePointerSquareDashed, Grid, ShieldAlert, Layers, Brush } from 'lucide-react';
+import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, FontSize, Eye, Scissors, LayoutGrid, PanelLeft, FilePlus2, Combine, Type, ImagePlus, Link as LinkIcon, MessageSquarePlus, ZoomIn, ZoomOut, Expand, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Highlighter, ArrowRightLeft, Edit, FileUp, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText, Sparkles, XCircle, File, FolderOpen, Save, Wrench, HelpCircle, PanelTop, Redo, Undo, Hand, Square, Circle, Pencil, Printer, SearchIcon, ChevronLeft, ChevronRight, CaseSensitive, MousePointerSquareDashed, Grid, ShieldAlert, Layers, Brush, History } from 'lucide-react';
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
@@ -73,6 +73,7 @@ interface TextAnnotation {
   topRatio: number;
   leftRatio: number;
   widthRatio: number;
+  heightRatio: number;
   fontSize: number;
   fontFamily: string;
   bold: boolean;
@@ -441,6 +442,7 @@ const translations = {
         newDocConfirmDescription: 'This will close the current document without saving changes. Are you sure you want to continue?',
         downloadEditedFile: 'Download',
         toolDownload: 'Download',
+        actionHistory: 'Action History',
     },
     zh: {
         pageTitle: 'PDF 編輯器 (專業模式)',
@@ -702,6 +704,7 @@ const translations = {
         newDocConfirmDescription: '這將會關閉目前正在編輯的文件，且不會儲存變更。確定要繼續嗎？',
         downloadEditedFile: '下載',
         toolDownload: '下載',
+        actionHistory: '動作歷史',
     }
 };
 
@@ -812,7 +815,7 @@ const fonts = [
 
 const fontSizes = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72];
 
-const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete }: { annotation: TextAnnotation; onAnnotationChange: (id: string, annotation: Partial<TextAnnotation>) => void; onDelete: (id: string) => void; }) => {
+const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete, onImageInsert }: { annotation: TextAnnotation; onAnnotationChange: (id: string, annotation: Partial<TextAnnotation>) => void; onDelete: (id: string) => void; onImageInsert: () => void; }) => {
     return (
         <div className="text-toolbar bg-card p-2 rounded-lg shadow-lg border flex items-center gap-2 animate-in slide-in-from-top-4 duration-300">
             <Select value={annotation.fontFamily} onValueChange={(value) => onAnnotationChange(annotation.id, { fontFamily: value })}>
@@ -848,10 +851,14 @@ const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete }: { a
                         <div className="w-4 h-4 rounded-full" style={{ backgroundColor: annotation.color }} />
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                    <Input type="color" value={annotation.color} onChange={(e) => onAnnotationChange(annotation.id, { color: e.target.value })} className="w-14 h-10 p-1 border-0 cursor-pointer" />
+                <PopoverContent className="w-auto p-0 border-0">
+                    <Input type="color" value={annotation.color} onChange={(e) => onAnnotationChange(annotation.id, { color: e.target.value })} className="w-14 h-10 p-1 border-0 cursor-pointer"/>
                 </PopoverContent>
             </Popover>
+             <Separator orientation="vertical" className="h-6" />
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onImageInsert}>
+                <ImagePlus className="h-4 w-4" />
+            </Button>
             <Separator orientation="vertical" className="h-6" />
             <ToggleGroup type="single" value={annotation.textAlign} onValueChange={(value: TextAnnotation['textAlign']) => value && onAnnotationChange(annotation.id, { textAlign: value })}>
                 <ToggleGroupItem value="left"><AlignLeft className="h-4 w-4" /></ToggleGroupItem>
@@ -894,21 +901,25 @@ const TextAnnotationComponent = ({
     mainCanvasZoom,
     isSelected,
     isEditing,
+    isHovered,
     onAnnotationChange,
     onSelect,
     onEdit,
     onDragStart,
     onResizeStart,
+    onHover,
 }: {
     annotation: TextAnnotation,
     mainCanvasZoom: number,
     isSelected: boolean,
     isEditing: boolean,
+    isHovered: boolean,
     onAnnotationChange: (id: string, annotation: Partial<TextAnnotation>) => void,
     onSelect: (e: React.MouseEvent, id: string) => void,
     onEdit: (e: React.MouseEvent, id: string) => void,
     onDragStart: (e: React.MouseEvent, id: string) => void,
     onResizeStart: (e: React.MouseEvent, id: string) => void,
+    onHover: (id: string | null) => void,
 }) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -934,11 +945,14 @@ const TextAnnotationComponent = ({
               e.stopPropagation();
               onEdit(e, annotation.id);
             }}
+            onMouseEnter={() => onHover(annotation.id)}
+            onMouseLeave={() => onHover(null)}
             className={cn(
                 "absolute group/text-annotation",
                 !isEditing && "cursor-grab",
-                isSelected && !isEditing && "border-2 border-dashed border-primary",
-                annotation.link && !isEditing && "border-2 border-dashed border-blue-500"
+                (isSelected || isHovered) && !isEditing && "border-2 border-dashed border-primary",
+                isEditing && "border-2 border-solid border-primary",
+                annotation.link && !isEditing && "border-blue-500"
             )}
             style={{
                 left: `${annotation.leftRatio * 100}%`,
@@ -972,7 +986,7 @@ const TextAnnotationComponent = ({
                 }}
             />
             {annotation.link && !isEditing && <LinkIcon className="absolute -top-1.5 -right-1.5 h-4 w-4 text-white bg-blue-500 p-0.5 rounded-full" />}
-            {isSelected && !isEditing && (
+            {(isSelected || isHovered) && !isEditing && (
                 <div
                     className="absolute -right-1 -bottom-1 w-4 h-4 bg-primary rounded-full border-2 border-white cursor-se-resize"
                     onMouseDown={(e) => onResizeStart(e, annotation.id)}
@@ -995,12 +1009,14 @@ const ScribbleIcon = () => (
 )
 
 
-const ShapeAnnotationComponent = ({ annotation, onDragStart, onResizeStart, onSelect, isSelected }: {
+const ShapeAnnotationComponent = ({ annotation, onDragStart, onResizeStart, onSelect, isSelected, isHovered, onHover }: {
     annotation: ShapeAnnotation;
     onDragStart: (e: React.MouseEvent, id: string) => void;
     onResizeStart: (e: React.MouseEvent, id: string) => void;
     onSelect: (e: React.MouseEvent, id: string) => void;
     isSelected: boolean;
+    isHovered: boolean;
+    onHover: (id: string | null) => void;
 }) => {
     const shapeStyle = {
         fill: annotation.fillColor,
@@ -1023,7 +1039,9 @@ const ShapeAnnotationComponent = ({ annotation, onDragStart, onResizeStart, onSe
               e.stopPropagation();
               onSelect(e, annotation.id);
             }}
-            className={cn("absolute cursor-grab", isSelected && "border-2 border-dashed border-primary")}
+            onMouseEnter={() => onHover(annotation.id)}
+            onMouseLeave={() => onHover(null)}
+            className={cn("absolute cursor-grab", (isSelected || isHovered) && "border-2 border-dashed border-primary")}
             style={wrapperStyle}
         >
             <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -1031,7 +1049,7 @@ const ShapeAnnotationComponent = ({ annotation, onDragStart, onResizeStart, onSe
                 {annotation.type === 'ellipse' && <ellipse cx="50" cy="50" rx="50" ry="50" {...shapeStyle} />}
                 {annotation.type === 'triangle' && <polygon points="50,0 100,100 0,100" {...shapeStyle} />}
             </svg>
-            {isSelected && (
+            {(isSelected || isHovered) && (
                 <div
                     className="absolute -right-1 -bottom-1 w-4 h-4 bg-primary rounded-full border-2 border-white cursor-se-resize"
                     onMouseDown={(e) => onResizeStart(e, annotation.id)}
@@ -1041,11 +1059,13 @@ const ShapeAnnotationComponent = ({ annotation, onDragStart, onResizeStart, onSe
     );
 };
 
-const ScribbleAnnotationComponent = ({ annotation, pageDimensions, onSelect, isSelected }: {
+const ScribbleAnnotationComponent = ({ annotation, pageDimensions, onSelect, isSelected, isHovered, onHover }: {
     annotation: ScribbleAnnotation;
     pageDimensions: { width: number, height: number};
     onSelect: (e: React.MouseEvent, id: string) => void;
     isSelected: boolean;
+    isHovered: boolean;
+    onHover: (id: string | null) => void;
 }) => {
     if (!annotation.points || annotation.points.length < 2) return null;
     
@@ -1057,7 +1077,9 @@ const ScribbleAnnotationComponent = ({ annotation, pageDimensions, onSelect, isS
     return (
       <svg
           onClick={(e) => { e.stopPropagation(); onSelect(e, annotation.id); }}
-          className={cn("absolute top-0 left-0 w-full h-full pointer-events-auto", isSelected && "ring-2 ring-primary ring-dashed")}
+          onMouseEnter={() => onHover(annotation.id)}
+          onMouseLeave={() => onHover(null)}
+          className={cn("absolute top-0 left-0 w-full h-full pointer-events-auto", (isSelected || isHovered) && "ring-2 ring-primary ring-dashed")}
           style={{ zIndex: 19 }}
       >
           <path
@@ -1073,13 +1095,15 @@ const ScribbleAnnotationComponent = ({ annotation, pageDimensions, onSelect, isS
     )
 }
 
-const TableAnnotationComponent = ({ annotation, onDragStart, onResizeStart, onSelect, isSelected, onDoubleClick }: {
+const TableAnnotationComponent = ({ annotation, onDragStart, onResizeStart, onSelect, isSelected, isHovered, onHover, onDoubleClick }: {
     annotation: TableAnnotation;
     onDragStart: (e: React.MouseEvent, id: string) => void;
     onResizeStart: (e: React.MouseEvent, id: string) => void;
     onSelect: (e: React.MouseEvent, id: string) => void;
     onDoubleClick: (e: React.MouseEvent, annotation: TableAnnotation) => void;
     isSelected: boolean;
+    isHovered: boolean;
+    onHover: (id: string | null) => void;
 }) => {
     const cellWidth = 100 / annotation.cols;
     const cellHeight = 100 / annotation.rows;
@@ -1089,7 +1113,9 @@ const TableAnnotationComponent = ({ annotation, onDragStart, onResizeStart, onSe
             onMouseDown={(e) => onDragStart(e, annotation.id)}
             onClick={(e) => { e.stopPropagation(); onSelect(e, annotation.id); }}
             onDoubleClick={(e) => onDoubleClick(e, annotation)}
-            className={cn("absolute cursor-grab", isSelected && "border-2 border-dashed border-primary")}
+            onMouseEnter={() => onHover(annotation.id)}
+            onMouseLeave={() => onHover(null)}
+            className={cn("absolute cursor-grab", (isSelected || isHovered) && "border-2 border-dashed border-primary")}
             style={{
                 left: `${annotation.leftRatio * 100}%`,
                 top: `${annotation.topRatio * 100}%`,
@@ -1122,7 +1148,7 @@ const TableAnnotationComponent = ({ annotation, onDragStart, onResizeStart, onSe
                     />
                 ))}
             </svg>
-            {isSelected && (
+            {(isSelected || isHovered) && (
                 <div
                     className="absolute -right-1 -bottom-1 w-4 h-4 bg-primary rounded-full border-2 border-white cursor-se-resize"
                     onMouseDown={(e) => onResizeStart(e, annotation.id)}
@@ -1245,6 +1271,8 @@ export default function PdfEditorPage() {
   const [interactionMode, setInteractionMode] = useState<InteractionMode>('idle');
   const [activeTool, setActiveTool] = useState<Tool>('select');
   const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
+  const [hoveredAnnotationId, setHoveredAnnotationId] = useState<string | null>(null);
+
 
   const mainViewContainerRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -1576,7 +1604,7 @@ export default function PdfEditorPage() {
   }, [isLoggedIn, texts]);
 
 
-  const processPdfFile = async (file: File): Promise<PageObject[]> => {
+  const processPdfFile = async (file: File): Promise<{ loadedPageObjects: PageObject[], initialAnnotations: Annotation[] }> => {
     const arrayBuffer = await file.arrayBuffer();
     const pdfDocProxy = await pdfjsLib.getDocument({
       data: arrayBuffer,
@@ -1587,6 +1615,7 @@ export default function PdfEditorPage() {
     const numPages = pdfDocProxy.numPages;
     const loadedPageObjects: PageObject[] = [];
     const textContents: PageTextContent[] = [];
+    let initialAnnotations: Annotation[] = [];
 
     for (let i = 1; i <= numPages; i++) {
       const page = await pdfDocProxy.getPage(i);
@@ -1598,24 +1627,47 @@ export default function PdfEditorPage() {
       if (!ctx) continue;
       await page.render({ canvasContext: ctx, viewport }).promise;
       loadedPageObjects.push({ id: uuidv4(), sourceCanvas: canvas, rotation: 0 });
-
+      
       const textContent = await page.getTextContent();
       if(textContent.items.length > 0) setHasTextLayer(true);
       textContents.push({ pageIndex: i - 1, items: textContent.items });
+
+      const pageAnnotations: TextAnnotation[] = textContent.items.map((item: any) => {
+        const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
+        const fontHeight = Math.sqrt(tx[2] * tx[2] + tx[3] * tx[3]);
+        return {
+          id: uuidv4(),
+          type: 'text',
+          pageIndex: i - 1,
+          text: item.str,
+          leftRatio: item.transform[4] / viewport.width,
+          topRatio: (viewport.height - item.transform[5] - item.height) / viewport.height,
+          widthRatio: item.width / viewport.width,
+          heightRatio: item.height / viewport.height,
+          fontSize: fontHeight,
+          fontFamily: item.fontName,
+          bold: item.fontName.includes('Bold'),
+          italic: item.fontName.includes('Italic'),
+          underline: false,
+          color: '#000000',
+          textAlign: 'left'
+        }
+      });
+      initialAnnotations = [...initialAnnotations, ...pageAnnotations];
     }
     setPageTextContents(textContents);
-    return loadedPageObjects;
+    return { loadedPageObjects, initialAnnotations };
   };
   
   const loadPdfIntoEditor = async (file: File) => {
     setIsLoading(true);
     setLoadingMessage(texts.loadingPdf);
     try {
-      const newPageObjects = await processPdfFile(file);
+      const { loadedPageObjects, initialAnnotations } = await processPdfFile(file);
       
       const newState: EditorState = {
-        ...initialEditorState,
-        pageObjects: newPageObjects,
+        pageObjects: loadedPageObjects,
+        annotations: initialAnnotations,
       };
       setEditorState(newState);
       setHistory([newState]);
@@ -2115,20 +2167,20 @@ export default function PdfEditorPage() {
 
           if (isResize) {
               const newWidthPx = dragStartRef.current.initialWidth + deltaX;
-              const newHeightPx = dragStartRef.current.initialHeight + deltaY;
-              let newWidthRatio = Math.max(0.01, newWidthPx / containerRect.width);
-              let newHeightRatio = Math.max(0.01, newHeightPx / containerRect.height);
+              let newHeightPx;
               
               if (annotation.type === 'image') {
-                  newWidthRatio = Math.max(0.05, newWidthPx / containerRect.width);
+                  const newWidthRatio = Math.max(0.05, newWidthPx / containerRect.width);
                   updatedAnnotation = { 
                       widthRatio: newWidthRatio, 
                       heightRatio: newWidthRatio / annotation.aspectRatio * (containerRect.width / containerRect.height)
                   };
-              } else if (annotation.type === 'text') {
-                  updatedAnnotation = { widthRatio: Math.max(0.1, newWidthPx / containerRect.width) };
-              } else {
-                  updatedAnnotation = { widthRatio: newWidthRatio, heightRatio: newHeightRatio };
+              } else if ('heightRatio' in annotation) {
+                 newHeightPx = dragStartRef.current.initialHeight + deltaY;
+                 updatedAnnotation = { 
+                    widthRatio: Math.max(0.01, newWidthPx / containerRect.width),
+                    heightRatio: Math.max(0.01, newHeightPx / containerRect.height)
+                 };
               }
           }
           else { // Drag operation
@@ -2233,7 +2285,6 @@ export default function PdfEditorPage() {
         const topRatio = (container.scrollTop + container.clientHeight * 0.4) / container.scrollHeight;
         const leftRatio = (container.scrollLeft + container.clientWidth * 0.4) / container.scrollWidth;
 
-
         const newAnnotation: TextAnnotation = {
             id: uuidv4(),
             type: 'text',
@@ -2241,7 +2292,8 @@ export default function PdfEditorPage() {
             text: texts.textAnnotationSample,
             topRatio: Math.min(0.8, topRatio),
             leftRatio: Math.min(0.8, leftRatio),
-            widthRatio: 0.3,
+            widthRatio: 0.2,
+            heightRatio: 0.1,
             fontSize: 36,
             fontFamily: 'Helvetica',
             bold: false,
@@ -2258,8 +2310,10 @@ export default function PdfEditorPage() {
     
     const handleDeleteAnnotation = (id: string) => {
         updateState({ annotations: annotations.filter(a => a.id !== id) });
-        setSelectedAnnotationId(null);
-        setInteractionMode('idle');
+        if (selectedAnnotationId === id) {
+            setSelectedAnnotationId(null);
+            setInteractionMode('idle');
+        }
     }
     
     const addImageAnnotation = useCallback((dataUrl: string, pageIndex: number) => {
@@ -2404,7 +2458,13 @@ export default function PdfEditorPage() {
     }, []);
 
     const handleCanvasClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-        if (e.target === e.currentTarget) {
+        const clickedElement = e.target as HTMLElement;
+        if(clickedElement.closest('.main-page-container')) return;
+
+        if (
+            !toolbarContainerRef.current?.contains(clickedElement) &&
+            !downloadButtonRef.current?.contains(clickedElement)
+        ) {
            handleDeselectAll();
         }
     }, [handleDeselectAll]);
@@ -2582,7 +2642,7 @@ export default function PdfEditorPage() {
         setIsLoading(true);
         setLoadingMessage(texts.insertingPdf);
         try {
-            const newPages = await processPdfFile(fileToInsert);
+            const { loadedPageObjects } = await processPdfFile(fileToInsert);
             let insertAtIndex: number;
 
             switch (insertionTargetRef.current) {
@@ -2603,7 +2663,7 @@ export default function PdfEditorPage() {
             }
             
             const newPageObjects = [...pageObjects];
-            newPageObjects.splice(insertAtIndex, 0, ...newPages);
+            newPageObjects.splice(insertAtIndex, 0, ...loadedPageObjects);
             updateState({ pageObjects: newPageObjects });
             
             toast({ title: "Insert Success", description: currentLanguage === 'zh' ? `${fileToInsert.name} 已成功插入。` : `${fileToInsert.name} has been inserted.` });
@@ -2788,7 +2848,8 @@ export default function PdfEditorPage() {
         text: tableAnn.cells[row]?.[col] || '',
         topRatio: tableAnn.topRatio + (row / tableAnn.rows) * tableAnn.heightRatio,
         leftRatio: tableAnn.leftRatio + (col / tableAnn.cols) * tableAnn.widthRatio,
-        widthRatio: tableAnn.widthRatio / tableAnn.cols * 0.95,
+        widthRatio: tableAnn.widthRatio / tableAnn.cols,
+        heightRatio: tableAnn.heightRatio / tableAnn.rows,
         fontSize: 12,
         fontFamily: 'Helvetica',
         bold: false,
@@ -3241,16 +3302,17 @@ export default function PdfEditorPage() {
     </div>
 
 
-      <main className="flex-grow flex overflow-hidden relative">
+      <div className="flex-grow flex overflow-hidden relative">
         <div ref={toolbarContainerRef} className="absolute top-2 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2">
           {interactionMode === 'editing' && activeTextAnnotation && (
               <TextAnnotationToolbar
                   annotation={activeTextAnnotation}
                   onAnnotationChange={updateAnnotation}
                   onDelete={() => handleDeleteAnnotation(activeTextAnnotation.id)}
+                  onImageInsert={() => imageUploadRef.current?.click()}
               />
           )}
-          {(interactionMode === 'editing' || interactionMode === 'selected') && activeShapeAnnotation && (
+          {(interactionMode === 'selected' || interactionMode === 'editing') && activeShapeAnnotation && (
               <ShapeToolbar
                   annotation={activeShapeAnnotation}
                   onAnnotationChange={updateAnnotation}
@@ -3332,7 +3394,7 @@ export default function PdfEditorPage() {
                 </Card>
               </div>
           ) : (
-            <>
+            <div className="flex-grow flex overflow-hidden">
                 <div ref={thumbnailContainerRef} className="w-[15%] border-r bg-card flex-shrink-0 overflow-y-auto p-2 space-y-2">
                     {pageObjects.map((page, index) => {
                         const isActive = activePageIndex === index;
@@ -3423,7 +3485,7 @@ export default function PdfEditorPage() {
                                         onClick={(e) => { e.stopPropagation(); handleAnnotationSelect(e, ann.id); }}
                                         className={cn(
                                             "absolute cursor-grab",
-                                            selectedAnnotationId === ann.id && "border-2 border-dashed border-primary"
+                                            (selectedAnnotationId === ann.id || hoveredAnnotationId === ann.id) && "border-2 border-dashed border-primary"
                                         )}
                                         style={{
                                             left: `${ann.leftRatio * 100}%`,
@@ -3434,8 +3496,10 @@ export default function PdfEditorPage() {
                                             mixBlendMode: 'multiply',
                                             zIndex: 15
                                         }}
+                                        onMouseEnter={() => setHoveredAnnotationId(ann.id)}
+                                        onMouseLeave={() => setHoveredAnnotationId(null)}
                                     >
-                                        {selectedAnnotationId === ann.id && (
+                                        {(selectedAnnotationId === ann.id || hoveredAnnotationId === ann.id) && (
                                             <div
                                                 className="absolute -right-1 -bottom-1 w-4 h-4 bg-primary rounded-full border-2 border-white cursor-se-resize"
                                                 onMouseDown={(e) => handleDragMouseDown(e, ann.id)}
@@ -3450,7 +3514,7 @@ export default function PdfEditorPage() {
                                         onClick={(e) => { e.stopPropagation(); handleAnnotationSelect(e, ann.id); }}
                                         className={cn(
                                             "absolute cursor-grab",
-                                            selectedAnnotationId === ann.id && "border-2 border-dashed border-primary"
+                                            (selectedAnnotationId === ann.id || hoveredAnnotationId === ann.id) && "border-2 border-dashed border-primary"
                                         )}
                                         style={{
                                             left: `${ann.leftRatio * 100}%`,
@@ -3461,8 +3525,10 @@ export default function PdfEditorPage() {
                                             backgroundColor: 'rgba(255, 255, 255, 0.5)',
                                             zIndex: 25,
                                         }}
+                                        onMouseEnter={() => setHoveredAnnotationId(ann.id)}
+                                        onMouseLeave={() => setHoveredAnnotationId(null)}
                                     >
-                                        {selectedAnnotationId === ann.id && (
+                                        {(selectedAnnotationId === ann.id || hoveredAnnotationId === ann.id) && (
                                             <div
                                                 className="absolute -right-1 -bottom-1 w-4 h-4 bg-primary rounded-full border-2 border-white cursor-se-resize"
                                                 onMouseDown={(e) => handleDragMouseDown(e, ann.id)}
@@ -3475,9 +3541,11 @@ export default function PdfEditorPage() {
                                         key={ann.id}
                                         annotation={ann}
                                         isSelected={selectedAnnotationId === ann.id}
+                                        isHovered={hoveredAnnotationId === ann.id}
                                         onDragStart={(e) => handleDragMouseDown(e, ann.id)}
                                         onResizeStart={(e) => handleDragMouseDown(e, ann.id)}
                                         onSelect={(e) => handleAnnotationSelect(e, ann.id)}
+                                        onHover={setHoveredAnnotationId}
                                     />
                                 ))}
                                 {scribbleAnnotations.filter(ann => ann.pageIndex === index).map(ann => (
@@ -3486,7 +3554,9 @@ export default function PdfEditorPage() {
                                         annotation={ann}
                                         pageDimensions={{ width: canvasWidth * mainCanvasZoom, height: canvasHeight * mainCanvasZoom }}
                                         isSelected={selectedAnnotationId === ann.id}
+                                        isHovered={hoveredAnnotationId === ann.id}
                                         onSelect={(e) => handleAnnotationSelect(e, ann.id)}
+                                        onHover={setHoveredAnnotationId}
                                     />
                                 ))}
                                  {tableAnnotations.filter(a => a.pageIndex === index).map(ann => (
@@ -3494,10 +3564,12 @@ export default function PdfEditorPage() {
                                         key={ann.id}
                                         annotation={ann}
                                         isSelected={selectedAnnotationId === ann.id}
+                                        isHovered={hoveredAnnotationId === ann.id}
                                         onDragStart={(e) => handleDragMouseDown(e, ann.id)}
                                         onResizeStart={(e) => handleDragMouseDown(e, ann.id)}
                                         onSelect={(e) => handleAnnotationSelect(e, ann.id)}
                                         onDoubleClick={(e) => handleTableCellDoubleClick(e, ann)}
+                                        onHover={setHoveredAnnotationId}
                                     />
                                 ))}
                                 {imageAnnotations.filter(ann => ann.pageIndex === index).map(ann => (
@@ -3505,9 +3577,11 @@ export default function PdfEditorPage() {
                                         key={ann.id}
                                         onMouseDown={(e) => { handleDragMouseDown(e, ann.id); }}
                                         onClick={(e) => { e.stopPropagation(); handleAnnotationSelect(e, ann.id); }}
+                                        onMouseEnter={() => setHoveredAnnotationId(ann.id)}
+                                        onMouseLeave={() => setHoveredAnnotationId(null)}
                                         className={cn(
                                             "absolute cursor-grab",
-                                            selectedAnnotationId === ann.id && "border-2 border-dashed border-primary"
+                                            (selectedAnnotationId === ann.id || hoveredAnnotationId === ann.id) && "border-2 border-dashed border-primary"
                                         )}
                                         style={{
                                             left: `${ann.leftRatio * 100}%`,
@@ -3518,7 +3592,7 @@ export default function PdfEditorPage() {
                                         }}
                                     >
                                         <img src={ann.dataUrl} className="w-full h-full object-contain pointer-events-none" alt="user content" />
-                                        {selectedAnnotationId === ann.id && (
+                                        {(selectedAnnotationId === ann.id || hoveredAnnotationId === ann.id) && (
                                           <>
                                             <div
                                                 className="absolute -right-1 -bottom-1 w-4 h-4 bg-primary rounded-full border-2 border-white cursor-se-resize"
@@ -3536,11 +3610,13 @@ export default function PdfEditorPage() {
                                         mainCanvasZoom={mainCanvasZoom}
                                         isSelected={selectedAnnotationId === ann.id}
                                         isEditing={interactionMode === 'editing' && selectedAnnotationId === ann.id}
+                                        isHovered={hoveredAnnotationId === ann.id}
                                         onSelect={handleAnnotationSelect}
                                         onEdit={handleTextAnnotationDoubleClick}
                                         onAnnotationChange={updateAnnotation}
                                         onDragStart={(e) => handleDragMouseDown(e, ann.id)}
                                         onResizeStart={(e) => handleDragMouseDown(e, ann.id)}
+                                        onHover={setHoveredAnnotationId}
                                     />
                                 ))}
                             </div>
@@ -3557,9 +3633,36 @@ export default function PdfEditorPage() {
                         <Button variant="ghost" size="icon" onClick={() => setViewMode('grid')} title={texts.gridMode}><LayoutGrid className="h-5 w-5" /></Button>
                     </div>
                 </div>
-            </>
+                 <div className="w-64 bg-card border-l p-4 overflow-y-auto">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center"><History className="mr-2 h-5 w-5"/> {texts.actionHistory}</h3>
+                    <div className="space-y-2">
+                        {annotations.map((ann) => (
+                             <div 
+                                key={ann.id} 
+                                className={cn(
+                                    "p-2 rounded-md border text-sm cursor-pointer hover:bg-muted/50",
+                                    selectedAnnotationId === ann.id && "bg-primary/10 border-primary"
+                                )}
+                                onClick={() => setSelectedAnnotationId(ann.id)}
+                            >
+                               <div className="flex justify-between items-center">
+                                 <span className="font-medium truncate pr-2">
+                                     {ann.type === 'text' ? ann.text.substring(0,20) : ann.type}
+                                 </span>
+                                 <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={(e) => {e.stopPropagation(); handleDeleteAnnotation(ann.id)}}>
+                                    <Trash2 className="h-4 w-4"/>
+                                 </Button>
+                               </div>
+                            </div>
+                        ))}
+                         {annotations.length === 0 && (
+                            <p className="text-sm text-muted-foreground text-center py-4">No actions yet.</p>
+                        )}
+                    </div>
+                </div>
+            </div>
           )}
-      </main>
+      </div>
       {pageObjects.length > 0 && (
         <div ref={downloadButtonRef} className="fixed top-4 right-4 z-50">
             <DropdownMenu open={showDownloadOptions} onOpenChange={setShowDownloadOptions}>
@@ -3589,5 +3692,3 @@ export default function PdfEditorPage() {
     </div>
   );
 }
-
- 

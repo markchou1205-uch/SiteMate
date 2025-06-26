@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader as ShadAlertDialogHeader, AlertDialogTitle as ShadAlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -2250,6 +2250,7 @@ export default function PdfEditorPage() {
         updateState({ shapeAnnotations: [...shapeAnnotations, newShape] });
         setSelectedObject({ type: 'shape', id: newShape.id });
         setInteractionMode('selected');
+        setActiveTool('select');
     }
     
     const handleSaveSignature = (dataUrl: string) => {
@@ -2285,7 +2286,6 @@ export default function PdfEditorPage() {
       if (e.target === e.currentTarget) {
           setSelectedObject(null);
           setInteractionMode('idle');
-          setActiveTool('select');
       }
     }
     
@@ -3163,7 +3163,6 @@ export default function PdfEditorPage() {
                     onMouseDown={handlePanMouseDown}
                     onMouseMove={handlePanMouseMove}
                     onMouseUp={handlePanMouseUpAndLeave}
-                    onMouseLeave={handlePanMouseUpAndLeave}
                     onClick={handleDeselectAll}
                 >
                     {pageObjects.map((page, index) => {

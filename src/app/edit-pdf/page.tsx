@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader as ShadAlertDialogHeader, AlertDialogTitle as ShadAlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -170,7 +170,7 @@ type SelectedObject = {
 
 
 type Tool = 'select' | 'pan' | 'text' | 'image' | 'highlight' | 'shape' | 'signature' | 'scribble' | 'mosaic';
-type InteractionMode = 'idle' | 'editing' | 'drawing';
+type InteractionMode = 'idle' | 'selected' | 'editing' | 'drawing-mosaic';
 
 const translations = {
     en: {
@@ -796,10 +796,10 @@ const fonts = [
 
 const fontSizes = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72];
 
-const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete }: { annotation: TextAnnotation; onAnnotationChange: (annotation: Partial<TextAnnotation>) => void; onDelete: (id: string) => void; }) => {
+const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete }: { annotation: TextAnnotation; onAnnotationChange: (id: string, annotation: Partial<TextAnnotation>) => void; onDelete: (id: string) => void; }) => {
     return (
         <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 bg-card p-2 rounded-lg shadow-lg border flex items-center gap-2 animate-in slide-in-from-top-4 duration-300">
-            <Select value={annotation.fontFamily} onValueChange={(value) => onAnnotationChange({ fontFamily: value })}>
+            <Select value={annotation.fontFamily} onValueChange={(value) => onAnnotationChange(annotation.id, { fontFamily: value })}>
                 <SelectTrigger className="w-[120px] h-8 text-xs">
                     <SelectValue placeholder="Font" />
                 </SelectTrigger>
@@ -807,7 +807,7 @@ const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete }: { a
                     {fonts.map(font => <SelectItem key={font.value} value={font.value} className="text-xs">{font.name}</SelectItem>)}
                 </SelectContent>
             </Select>
-            <Select value={String(annotation.fontSize)} onValueChange={(value) => onAnnotationChange({ fontSize: Number(value) })}>
+            <Select value={String(annotation.fontSize)} onValueChange={(value) => onAnnotationChange(annotation.id, { fontSize: Number(value) })}>
                 <SelectTrigger className="w-[60px] h-8 text-xs">
                     <SelectValue placeholder="Size" />
                 </SelectTrigger>
@@ -816,13 +816,13 @@ const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete }: { a
                 </SelectContent>
             </Select>
             <Separator orientation="vertical" className="h-6" />
-            <Toggle pressed={annotation.bold} onPressedChange={(pressed) => onAnnotationChange({ bold: pressed })}>
+            <Toggle pressed={annotation.bold} onPressedChange={(pressed) => onAnnotationChange(annotation.id, { bold: pressed })}>
                 <Bold className="h-4 w-4" />
             </Toggle>
-            <Toggle pressed={annotation.italic} onPressedChange={(pressed) => onAnnotationChange({ italic: pressed })}>
+            <Toggle pressed={annotation.italic} onPressedChange={(pressed) => onAnnotationChange(annotation.id, { italic: pressed })}>
                 <Italic className="h-4 w-4" />
             </Toggle>
-            <Toggle pressed={annotation.underline} onPressedChange={(pressed) => onAnnotationChange({ underline: pressed })}>
+            <Toggle pressed={annotation.underline} onPressedChange={(pressed) => onAnnotationChange(annotation.id, { underline: pressed })}>
                 <Underline className="h-4 w-4" />
             </Toggle>
             <Separator orientation="vertical" className="h-6" />
@@ -833,11 +833,11 @@ const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete }: { a
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
-                    <Input type="color" value={annotation.color} onChange={(e) => onAnnotationChange({ color: e.target.value })} className="w-full h-10 p-1 border-0" />
+                    <Input type="color" value={annotation.color} onChange={(e) => onAnnotationChange(annotation.id, { color: e.target.value })} className="w-full h-10 p-1 border-0" />
                 </PopoverContent>
             </Popover>
             <Separator orientation="vertical" className="h-6" />
-            <ToggleGroup type="single" value={annotation.textAlign} onValueChange={(value: TextAnnotation['textAlign']) => value && onAnnotationChange({ textAlign: value })}>
+            <ToggleGroup type="single" value={annotation.textAlign} onValueChange={(value: TextAnnotation['textAlign']) => value && onAnnotationChange(annotation.id, { textAlign: value })}>
                 <ToggleGroupItem value="left"><AlignLeft className="h-4 w-4" /></ToggleGroupItem>
                 <ToggleGroupItem value="center"><AlignCenter className="h-4 w-4" /></ToggleGroupItem>
                 <ToggleGroupItem value="right"><AlignRight className="h-4 w-4" /></ToggleGroupItem>
@@ -850,16 +850,16 @@ const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete }: { a
     );
 };
 
-const ShapeToolbar = ({ annotation, onAnnotationChange, onDelete }: { annotation: ShapeAnnotation; onAnnotationChange: (annotation: Partial<ShapeAnnotation>) => void; onDelete: (id: string) => void; }) => {
+const ShapeToolbar = ({ annotation, onAnnotationChange, onDelete }: { annotation: ShapeAnnotation; onAnnotationChange: (id: string, annotation: Partial<ShapeAnnotation>) => void; onDelete: (id: string) => void; }) => {
     return (
         <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 bg-card p-2 rounded-lg shadow-lg border flex items-center gap-2 animate-in slide-in-from-top-4 duration-300">
              <Label>Fill</Label>
-             <Input type="color" value={annotation.fillColor} onChange={(e) => onAnnotationChange({ fillColor: e.target.value })} className="w-10 h-8 p-1"/>
+             <Input type="color" value={annotation.fillColor} onChange={(e) => onAnnotationChange(annotation.id, { fillColor: e.target.value })} className="w-10 h-8 p-1"/>
              <Label>Stroke</Label>
-             <Input type="color" value={annotation.strokeColor} onChange={(e) => onAnnotationChange({ strokeColor: e.target.value })} className="w-10 h-8 p-1"/>
+             <Input type="color" value={annotation.strokeColor} onChange={(e) => onAnnotationChange(annotation.id, { strokeColor: e.target.value })} className="w-10 h-8 p-1"/>
              <Separator orientation="vertical" className="h-6" />
              <Label>Width</Label>
-             <Slider min={1} max={20} step={1} value={[annotation.strokeWidth]} onValueChange={val => onAnnotationChange({ strokeWidth: val[0] })} className="w-24"/>
+             <Slider min={1} max={20} step={1} value={[annotation.strokeWidth]} onValueChange={val => onAnnotationChange(annotation.id, { strokeWidth: val[0] })} className="w-24"/>
              <Separator orientation="vertical" className="h-6" />
              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => onDelete(annotation.id)}>
                 <Trash2 className="h-4 w-4" />
@@ -883,7 +883,7 @@ const TextAnnotationComponent = ({
     mainCanvasZoom: number,
     isSelected: boolean,
     isEditing: boolean,
-    onAnnotationChange: (annotation: TextAnnotation) => void,
+    onAnnotationChange: (id: string, annotation: Partial<TextAnnotation>) => void,
     onSelect: (id: string, e: React.MouseEvent) => void,
     onEdit: (id: string, e: React.MouseEvent) => void,
     onDragStart: (e: React.MouseEvent, id: string) => void,
@@ -907,7 +907,7 @@ const TextAnnotationComponent = ({
             }}
             onClick={(e) => {
               e.stopPropagation();
-              if (!isSelected) { onSelect(annotation.id, e); }
+              if (!isSelected && !isEditing) { onSelect(annotation.id, e); }
             }}
             onDoubleClick={(e) => {
               e.stopPropagation();
@@ -930,7 +930,7 @@ const TextAnnotationComponent = ({
            <Textarea
                 ref={textareaRef}
                 value={annotation.text}
-                onChange={(e) => onAnnotationChange({ ...annotation, text: e.target.value })}
+                onChange={(e) => onAnnotationChange(annotation.id, { ...annotation, text: e.target.value })}
                 onClick={(e) => {
                     if (isEditing) e.stopPropagation();
                 }}
@@ -1129,6 +1129,7 @@ export default function PdfEditorPage() {
   const [viewMode, setViewMode] = useState<'editor' | 'grid'>('editor');
   const [activeTool, setActiveTool] = useState<Tool>('select');
   const [interactionMode, setInteractionMode] = useState<InteractionMode>('idle');
+  const [selectedObject, setSelectedObject] = useState<SelectedObject>(null);
 
   const mainViewContainerRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -1144,8 +1145,6 @@ export default function PdfEditorPage() {
   const [loadingMessage, setLoadingMessage] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  
-  const [selectedObject, setSelectedObject] = useState<SelectedObject>(null);
   
   const [isLinkPopoverOpen, setIsLinkPopoverOpen] = useState(false);
   const [currentLink, setCurrentLink] = useState<LinkAnnotationDef>({ type: 'url', value: '' });
@@ -1365,7 +1364,7 @@ export default function PdfEditorPage() {
         mainViewContainerRef.current.style.cursor = 'grabbing';
     };
 
-    const handlePanMouseUp = () => {
+    const handlePanMouseUpAndLeave = () => {
         panState.current.isPanning = false;
         if(mainViewContainerRef.current) mainViewContainerRef.current.style.cursor = 'grab';
     };
@@ -1516,8 +1515,11 @@ export default function PdfEditorPage() {
   };
 
   const handleConfirmOpenNew = () => {
-    setEditorState(initialEditorState);
-    setHistory([initialEditorState]);
+    const newState = {
+      ...initialEditorState,
+    };
+    setEditorState(newState);
+    setHistory([newState]);
     setHistoryIndex(0);
     setHasTextLayer(false);
     setSelectedPageIds(new Set());
@@ -1907,7 +1909,7 @@ export default function PdfEditorPage() {
       id: string
   ) => {
       event.stopPropagation();
-      setInteractionMode('idle');
+      setInteractionMode('selected');
 
       const isResize = type.endsWith('-resize');
       const itemType = type.split('-')[0] as 'text' | 'image' | 'highlight' | 'shape' | 'mosaic' | 'scribble';
@@ -1939,7 +1941,7 @@ export default function PdfEditorPage() {
           initialHeight: initialItemState.heightRatio * containerRect.height
       };
       
-      const tempStateRef: React.MutableRefObject<Partial<EditorState>> = { current: {} };
+      let tempStateRef: Partial<EditorState> = { };
 
       const handleMouseMove = (moveEvent: MouseEvent) => {
           moveEvent.preventDefault();
@@ -1965,7 +1967,7 @@ export default function PdfEditorPage() {
                             heightRatio: newWidthRatio / ann.aspectRatio * (containerRect.width / containerRect.height)
                         } : ann
                     );
-                    tempStateRef.current = itemType === 'image' ? { imageAnnotations: updatedItems } : { scribbleAnnotations: updatedItems as ScribbleAnnotation[] };
+                    tempStateRef = itemType === 'image' ? { imageAnnotations: updatedItems } : { scribbleAnnotations: updatedItems as ScribbleAnnotation[] };
                     break;
                 case 'highlight':
                 case 'shape':
@@ -1974,11 +1976,11 @@ export default function PdfEditorPage() {
                     const updatedShapeItems = itemsToUpdate.map(ann =>
                         ann.id === id ? { ...ann, widthRatio: newWidthRatio, heightRatio: newHeightRatio } : ann
                     );
-                    tempStateRef.current = itemType === 'highlight' ? { highlightAnnotations: updatedShapeItems as any[] } : itemType === 'shape' ? { shapeAnnotations: updatedShapeItems as any[] } : { mosaicAnnotations: updatedShapeItems as any[] };
+                    tempStateRef = itemType === 'highlight' ? { highlightAnnotations: updatedShapeItems as any[] } : itemType === 'shape' ? { shapeAnnotations: updatedShapeItems as any[] } : { mosaicAnnotations: updatedShapeItems as any[] };
                     break;
                 case 'text':
                      newWidthRatio = Math.max(0.1, newWidthPx / containerRect.width);
-                     tempStateRef.current = { textAnnotations: textAnnotations.map(ann => ann.id === id ? { ...ann, widthRatio: newWidthRatio } : ann) };
+                     tempStateRef = { textAnnotations: textAnnotations.map(ann => ann.id === id ? { ...ann, widthRatio: newWidthRatio } : ann) };
                     break;
               }
           }
@@ -1990,22 +1992,22 @@ export default function PdfEditorPage() {
               const updater = (prev: any[]) => prev.map(ann => ann.id === id ? { ...ann, leftRatio: newLeftRatio, topRatio: newTopRatio } : ann);
               
               switch (itemType) {
-                  case 'text': tempStateRef.current = { textAnnotations: updater(textAnnotations) }; break;
-                  case 'image': tempStateRef.current = { imageAnnotations: updater(imageAnnotations) }; break;
-                  case 'highlight': tempStateRef.current = { highlightAnnotations: updater(highlightAnnotations) }; break;
-                  case 'shape': tempStateRef.current = { shapeAnnotations: updater(shapeAnnotations) }; break;
-                  case 'mosaic': tempStateRef.current = { mosaicAnnotations: updater(mosaicAnnotations) }; break;
-                  case 'scribble': tempStateRef.current = { scribbleAnnotations: updater(scribbleAnnotations) }; break;
+                  case 'text': tempStateRef = { textAnnotations: updater(textAnnotations) }; break;
+                  case 'image': tempStateRef = { imageAnnotations: updater(imageAnnotations) }; break;
+                  case 'highlight': tempStateRef = { highlightAnnotations: updater(highlightAnnotations) }; break;
+                  case 'shape': tempStateRef = { shapeAnnotations: updater(shapeAnnotations) }; break;
+                  case 'mosaic': tempStateRef = { mosaicAnnotations: updater(mosaicAnnotations) }; break;
+                  case 'scribble': tempStateRef = { scribbleAnnotations: updater(scribbleAnnotations) }; break;
               }
           }
-          updateState(tempStateRef.current, false); // Update state without creating history event
+          updateState(tempStateRef, false); // Update state without creating history event
       };
 
       const handleMouseUp = () => {
           document.removeEventListener('mousemove', handleMouseMove);
           document.removeEventListener('mouseup', handleMouseUp);
           
-          updateState(tempStateRef.current, true); // Record final state in history
+          updateState(tempStateRef, true); // Record final state in history
       };
 
       document.addEventListener('mousemove', handleMouseMove);
@@ -2107,17 +2109,17 @@ export default function PdfEditorPage() {
         };
         updateState({ textAnnotations: [...textAnnotations, newAnnotation] });
         setSelectedObject({type: 'text', id: newAnnotation.id});
-        setInteractionMode('editing');
+        setInteractionMode('selected');
     };
     
     const handleAnnotationChange = (id: string, updates: Partial<TextAnnotation | ShapeAnnotation>) => {
         const annotationType = selectedObject?.type;
         if (annotationType === 'text') {
             const newAnnotations = textAnnotations.map(ann => ann.id === id ? { ...ann, ...updates } : ann);
-            updateState({ textAnnotations: newAnnotations }, false); // live update
+            updateState({ textAnnotations: newAnnotations }, false);
         } else if (annotationType === 'shape') {
             const newAnnotations = shapeAnnotations.map(ann => ann.id === id ? { ...ann, ...updates } : ann);
-            updateState({ shapeAnnotations: newAnnotations }, false); // live update
+            updateState({ shapeAnnotations: newAnnotations }, false);
         }
     };
     
@@ -2125,10 +2127,10 @@ export default function PdfEditorPage() {
         const annotationType = selectedObject?.type;
         if (annotationType === 'text') {
             const newAnnotations = textAnnotations.map(ann => ann.id === id ? { ...ann, ...updates } : ann);
-            updateState({ textAnnotations: newAnnotations }, true); // history update
+            updateState({ textAnnotations: newAnnotations }, true);
         } else if (annotationType === 'shape') {
             const newAnnotations = shapeAnnotations.map(ann => ann.id === id ? { ...ann, ...updates } : ann);
-            updateState({ shapeAnnotations: newAnnotations }, true); // history update
+            updateState({ shapeAnnotations: newAnnotations }, true);
         }
     }
 
@@ -2247,6 +2249,7 @@ export default function PdfEditorPage() {
         };
         updateState({ shapeAnnotations: [...shapeAnnotations, newShape] });
         setSelectedObject({ type: 'shape', id: newShape.id });
+        setInteractionMode('selected');
     }
     
     const handleSaveSignature = (dataUrl: string) => {
@@ -2278,21 +2281,21 @@ export default function PdfEditorPage() {
         toast({ title: 'Success', description: 'Signature applied to all pages.' });
     };
 
-    const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
-      // This is the key logic: if the click target is the container itself, deselect.
+    const handleDeselectAll = (e: React.MouseEvent<HTMLDivElement>) => {
       if (e.target === e.currentTarget) {
           setSelectedObject(null);
           setInteractionMode('idle');
+          setActiveTool('select');
       }
     }
     
     const handleSelectAnnotation = (type: SelectedObject['type'], id: string) => {
       setSelectedObject({ type, id });
-      setInteractionMode('idle');
+      setInteractionMode('selected');
     }
     
-    const handleEditAnnotation = (type: SelectedObject['type'], id: string) => {
-        setSelectedObject({ type, id });
+    const handleTextAnnotationDoubleClick = (id: string) => {
+        setSelectedObject({ type: 'text', id: id });
         setInteractionMode('editing');
     }
     
@@ -2423,7 +2426,7 @@ export default function PdfEditorPage() {
         ? textAnnotations.find(a => a.id === selectedObject.id)
         : null;
 
-    const selectedShapeAnnotation = selectedObject?.type === 'shape'
+    const selectedShapeAnnotation = interactionMode === 'selected' && selectedObject?.type === 'shape'
         ? shapeAnnotations.find(a => a.id === selectedObject.id)
         : null;
 
@@ -2560,6 +2563,7 @@ export default function PdfEditorPage() {
     const handlePageMouseDown = (e: React.MouseEvent<HTMLDivElement>, pageIndex: number) => {
         if (activeTool !== 'mosaic' && activeTool !== 'scribble') return;
 
+        setInteractionMode('drawing-mosaic');
         const container = e.currentTarget;
         const rect = container.getBoundingClientRect();
         const startX = (e.clientX - rect.left) / rect.width;
@@ -2575,7 +2579,7 @@ export default function PdfEditorPage() {
     };
     
     const handlePageMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (!drawingRef.current) return;
+        if (interactionMode !== 'drawing-mosaic' || !drawingRef.current) return;
         
         const { startX, startY, id } = drawingRef.current;
         const container = e.currentTarget;
@@ -2597,8 +2601,8 @@ export default function PdfEditorPage() {
     };
     
     const handlePageMouseUp = () => {
-        if (!drawingRef.current) return;
-        
+        if (interactionMode !== 'drawing-mosaic' || !drawingRef.current) return;
+
         const { id } = drawingRef.current;
         if (activeTool === 'mosaic') {
              const finalAnnotation = editorState.mosaicAnnotations.find(a => a.id === id);
@@ -2611,6 +2615,7 @@ export default function PdfEditorPage() {
         
         drawingRef.current = null;
         setActiveTool('select');
+        setInteractionMode('idle');
     };
 
 
@@ -3035,14 +3040,14 @@ export default function PdfEditorPage() {
         {editingTextAnnotation && (
             <TextAnnotationToolbar
                 annotation={editingTextAnnotation}
-                onAnnotationChange={(updates) => handleAnnotationChange(editingTextAnnotation.id, updates)}
+                onAnnotationChange={handleAnnotationChange}
                 onDelete={() => handleDeleteAnnotation(editingTextAnnotation.id)}
             />
         )}
         {selectedShapeAnnotation && (
              <ShapeToolbar
                 annotation={selectedShapeAnnotation}
-                onAnnotationChange={(updates) => handleAnnotationChange(selectedShapeAnnotation.id, updates)}
+                onAnnotationChange={handleAnnotationChange}
                 onDelete={() => handleDeleteAnnotation(selectedShapeAnnotation.id)}
             />
         )}
@@ -3154,12 +3159,12 @@ export default function PdfEditorPage() {
                 </div>
 
                 <div ref={mainViewContainerRef} 
-                    className={cn("flex-grow bg-muted/30 overflow-auto flex flex-col items-center p-4 space-y-4 relative", activeTool === 'pan' && 'cursor-grab', (activeTool === 'mosaic' || activeTool === 'scribble') && 'cursor-crosshair')}
+                    className={cn("flex-grow bg-muted/30 overflow-auto flex flex-col items-center p-4 space-y-4 relative", activeTool === 'pan' && 'cursor-grab', activeTool === 'mosaic' && 'cursor-crosshair')}
                     onMouseDown={handlePanMouseDown}
                     onMouseMove={handlePanMouseMove}
-                    onMouseUp={handlePanMouseUp}
-                    onMouseLeave={handlePanMouseUp}
-                    onClick={handleCanvasClick}
+                    onMouseUp={handlePanMouseUpAndLeave}
+                    onMouseLeave={handlePanMouseUpAndLeave}
+                    onClick={handleDeselectAll}
                 >
                     {pageObjects.map((page, index) => {
                         const {sourceCanvas, rotation} = page;
@@ -3310,16 +3315,10 @@ export default function PdfEditorPage() {
                                         isSelected={selectedObject?.id === ann.id}
                                         isEditing={interactionMode === 'editing' && selectedObject?.id === ann.id}
                                         onSelect={(id, e) => handleSelectAnnotation('text', id)}
-                                        onEdit={(id, e) => handleEditAnnotation('text', id)}
-                                        onAnnotationChange={(updatedAnnotation) => updateState({ textAnnotations: textAnnotations.map(a => a.id === ann.id ? updatedAnnotation : a) }, false)}
-                                        onDragStart={(e, id) => {
-                                            if (interactionMode !== 'editing') {
-                                                handleDragMouseDown(e, 'text', id);
-                                            }
-                                        }}
-                                        onResizeStart={(e, id) => {
-                                            handleDragMouseDown(e, 'text-resize', id)
-                                        }}
+                                        onEdit={(id, e) => handleTextAnnotationDoubleClick(id)}
+                                        onAnnotationChange={(id, updates) => handleAnnotationChange(id, updates)}
+                                        onDragStart={(e, id) => handleDragMouseDown(e, 'text', id)}
+                                        onResizeStart={(e, id) => handleDragMouseDown(e, 'text-resize', id)}
                                     />
                                 ))}
                             </div>

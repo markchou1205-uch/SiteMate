@@ -876,8 +876,8 @@ const TextAnnotationComponent = ({
     isSelected: boolean,
     isEditing: boolean,
     onAnnotationChange: (id: string, annotation: Partial<TextAnnotation>) => void,
-    onSelect: (id: string, e: React.MouseEvent) => void,
-    onEdit: (id: string, e: React.MouseEvent) => void,
+    onSelect: (e: React.MouseEvent, id: string) => void,
+    onEdit: (e: React.MouseEvent, id: string) => void,
     onDragStart: (e: React.MouseEvent, id: string) => void,
     onResizeStart: (e: React.MouseEvent, id: string) => void,
 }) => {
@@ -899,11 +899,11 @@ const TextAnnotationComponent = ({
             }}
             onClick={(e) => {
               e.stopPropagation();
-              if (!isEditing) onSelect(annotation.id, e);
+              onSelect(e, annotation.id);
             }}
             onDoubleClick={(e) => {
               e.stopPropagation();
-              onEdit(annotation.id, e);
+              onEdit(e, annotation.id);
             }}
             className={cn(
                 "absolute group/text-annotation",
@@ -1115,10 +1115,9 @@ export default function PdfEditorPage() {
   const [activePageIndex, setActivePageIndex] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<'editor' | 'grid'>('editor');
   
-  // Refactored state management
+  const [interactionMode, setInteractionMode] = useState<InteractionMode>('idle');
   const [activeTool, setActiveTool] = useState<Tool>('select');
   const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
-  const [editingAnnotationId, setEditingAnnotationId] = useState<string | null>(null);
 
   const mainViewContainerRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -1136,6 +1135,7 @@ export default function PdfEditorPage() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [showDownloadOptions, setShowDownloadOptions] = useState(false);
+  const downloadButtonRef = useRef<HTMLDivElement>(null);
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   
@@ -2087,7 +2087,7 @@ export default function PdfEditorPage() {
     const handleDeleteAnnotation = (id: string) => {
         updateState({ annotations: annotations.filter(a => a.id !== id) });
         setSelectedAnnotationId(null);
-        setEditingAnnotationId(null);
+        setInteractionMode('idle');
     }
     
     const addImageAnnotation = useCallback((dataUrl: string, pageIndex: number) => {
@@ -2117,7 +2117,7 @@ export default function PdfEditorPage() {
             setSelectedAnnotationId(newAnnotation.id);
         };
         img.src = dataUrl;
-    }, [addAnnotation]);
+    }, [annotations, updateState]);
 
     const handleImageFileSelected = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         if (activePageIndex === null) return;
@@ -2225,32 +2225,53 @@ export default function PdfEditorPage() {
         toast({ title: 'Success', description: 'Signature applied to all pages.' });
     };
 
-    const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
-      if (e.target === e.currentTarget) {
-          setSelectedAnnotationId(null);
-          setEditingAnnotationId(null);
-          setActiveTool('select');
-      }
-    };
+    const handleDeselectAll = useCallback(() => {
+        setInteractionMode('idle');
+        setSelectedAnnotationId(null);
+    }, []);
+
+    const handleCanvasClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+        if (e.target === e.currentTarget) {
+           handleDeselectAll();
+        }
+    }, [handleDeselectAll]);
     
-    const handleAnnotationSelect = (id: string, e: React.MouseEvent) => {
-      if (editingAnnotationId !== id) {
-          setSelectedAnnotationId(id);
-          setEditingAnnotationId(null);
-      }
-    };
+    const handleAnnotationSelect = useCallback((e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        if (interactionMode !== 'editing') {
+            setInteractionMode('selected');
+            setSelectedAnnotationId(id);
+        }
+    }, [interactionMode]);
     
-    const handleAnnotationDoubleClick = (id: string, e: React.MouseEvent) => {
+    const handleTextAnnotationDoubleClick = useCallback((e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
         const annotation = annotations.find(a => a.id === id);
         if (annotation && annotation.type === 'text') {
-            setEditingAnnotationId(id);
-            setSelectedAnnotationId(null);
+            setInteractionMode('editing');
+            setSelectedAnnotationId(id);
         }
-    };
+    }, [annotations]);
+    
+    useEffect(() => {
+        const handleGlobalClick = (e: MouseEvent) => {
+            const mainView = mainViewContainerRef.current;
+            const downloadButton = downloadButtonRef.current;
+
+            if (mainView && !mainView.contains(e.target as Node) &&
+                downloadButton && !downloadButton.contains(e.target as Node)) {
+                handleDeselectAll();
+                setShowDownloadOptions(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleGlobalClick);
+        return () => document.removeEventListener('mousedown', handleGlobalClick);
+    }, [handleDeselectAll]);
     
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if ((e.key === 'Delete' || e.key === 'Backspace') && selectedAnnotationId !== null && editingAnnotationId === null) {
+            if ((e.key === 'Delete' || e.key === 'Backspace') && selectedAnnotationId !== null && interactionMode !== 'editing') {
                 handleDeleteAnnotation(selectedAnnotationId);
             }
             if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
@@ -2269,7 +2290,7 @@ export default function PdfEditorPage() {
             window.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('paste', handlePaste);
         };
-    }, [selectedAnnotationId, editingAnnotationId, handlePaste, handleUndo, handleRedo]);
+    }, [selectedAnnotationId, interactionMode, handlePaste, handleUndo, handleRedo]);
 
 
     const handleOpenLinkPopover = () => {
@@ -2346,11 +2367,11 @@ export default function PdfEditorPage() {
       </div>
     );
     
-    const editingTextAnnotation = editingAnnotationId
-        ? annotations.find(a => a.id === editingAnnotationId && a.type === 'text') as TextAnnotation | undefined
+    const activeTextAnnotation = interactionMode === 'editing' && selectedAnnotationId
+        ? annotations.find(a => a.id === selectedAnnotationId && a.type === 'text') as TextAnnotation | undefined
         : undefined;
 
-    const selectedShapeAnnotation = selectedAnnotationId
+    const activeShapeAnnotation = interactionMode === 'selected' && selectedAnnotationId
         ? annotations.find(a => a.id === selectedAnnotationId && (a.type === 'rect' || a.type === 'ellipse' || a.type === 'triangle')) as ShapeAnnotation | undefined
         : undefined;
 
@@ -2485,8 +2506,9 @@ export default function PdfEditorPage() {
     
     // Drawing new annotations (mosaic)
     const handlePageMouseDown = (e: React.MouseEvent<HTMLDivElement>, pageIndex: number) => {
-        if (activeTool !== 'mosaic' && activeTool !== 'scribble') return;
-
+        if (activeTool !== 'mosaic') return;
+        setInteractionMode('drawing-mosaic');
+        
         const container = e.currentTarget;
         const rect = container.getBoundingClientRect();
         const startX = (e.clientX - rect.left) / rect.width;
@@ -2495,25 +2517,21 @@ export default function PdfEditorPage() {
         
         drawingStartRef.current = { pageIndex, startX, startY, id };
         
-        if (activeTool === 'mosaic') {
-            const newAnnotation: MosaicAnnotation = { id, type: 'mosaic', pageIndex, topRatio: startY, leftRatio: startX, widthRatio: 0, heightRatio: 0 };
-            addAnnotation(newAnnotation);
-        }
+        const newAnnotation: MosaicAnnotation = { id, type: 'mosaic', pageIndex, topRatio: startY, leftRatio: startX, widthRatio: 0, heightRatio: 0 };
+        addAnnotation(newAnnotation);
     };
     
     const handleMainViewMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
         handlePanMouseMove(e); // Handle pan if active
 
-        if (!drawingStartRef.current || activeTool !== 'mosaic') return;
+        if (interactionMode !== 'drawing-mosaic' || !drawingStartRef.current) return;
         
         const { pageIndex, startX, startY, id } = drawingStartRef.current;
         const container = pageRefs.current[pageIndex];
         if (!container) return;
 
         const rect = container.getBoundingClientRect();
-        const mainRect = mainViewContainerRef.current!.getBoundingClientRect();
-
-        // Adjust coordinates relative to the page, not the main view
+        
         const currentX = (e.clientX - rect.left) / rect.width;
         const currentY = (e.clientY - rect.top) / rect.height;
 
@@ -2528,19 +2546,20 @@ export default function PdfEditorPage() {
     const handleMainViewMouseUp = () => {
         handlePanMouseUpAndLeave(); // Handle pan if active
 
-        if (drawingStartRef.current) {
-            const finalAnnotation = annotations.find(a => a.id === drawingStartRef.current!.id);
-            if(finalAnnotation && ('widthRatio' in finalAnnotation) && (finalAnnotation.widthRatio < 0.01 || finalAnnotation.heightRatio < 0.01)) {
-                updateState({ annotations: annotations.filter(a => a.id !== drawingStartRef.current!.id) }, false);
-            } else {
-                 recordNextStateRef.current = true;
-                 setEditorState(prev => ({...prev})); // Trigger history
+        if (interactionMode === 'drawing-mosaic') {
+             if (drawingStartRef.current) {
+                const finalAnnotation = annotations.find(a => a.id === drawingStartRef.current!.id);
+                if(finalAnnotation && ('widthRatio' in finalAnnotation) && (finalAnnotation.widthRatio < 0.01 || finalAnnotation.heightRatio < 0.01)) {
+                    updateState({ annotations: annotations.filter(a => a.id !== drawingStartRef.current!.id) }, false);
+                } else {
+                     recordNextStateRef.current = true;
+                     setEditorState(prev => ({...prev})); // Trigger history
+                }
             }
-        }
-        
-        drawingStartRef.current = null;
-        if (activeTool === 'mosaic' || activeTool === 'scribble') {
+            
+            drawingStartRef.current = null;
             setActiveTool('select');
+            setInteractionMode('idle');
         }
     };
 
@@ -2899,15 +2918,6 @@ export default function PdfEditorPage() {
                 </TooltipTrigger>
                 <TooltipContent side="bottom"><p>{texts.menuPageDelete}</p></TooltipContent>
                 </Tooltip>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={() => setShowDownloadOptions(true)} disabled={pageObjects.length === 0}>
-                            <Download className="h-5 w-5" />
-                            <span className="text-xs">{texts.toolDownload}</span>
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom"><p>{texts.downloadEditedFile}</p></TooltipContent>
-                </Tooltip>
             </TooltipProvider>
         </div>
         <div className="flex items-center gap-1">
@@ -2953,18 +2963,18 @@ export default function PdfEditorPage() {
 
 
       <main className="flex-grow flex overflow-hidden relative">
-        {editingTextAnnotation && (
+        {activeTextAnnotation && (
             <TextAnnotationToolbar
-                annotation={editingTextAnnotation}
+                annotation={activeTextAnnotation}
                 onAnnotationChange={updateAnnotation}
-                onDelete={() => handleDeleteAnnotation(editingTextAnnotation.id)}
+                onDelete={() => handleDeleteAnnotation(activeTextAnnotation.id)}
             />
         )}
-        {selectedShapeAnnotation && (
+        {activeShapeAnnotation && (
              <ShapeToolbar
-                annotation={selectedShapeAnnotation}
+                annotation={activeShapeAnnotation}
                 onAnnotationChange={updateAnnotation}
-                onDelete={() => handleDeleteAnnotation(selectedShapeAnnotation.id)}
+                onDelete={() => handleDeleteAnnotation(activeShapeAnnotation.id)}
             />
         )}
         {pageObjects.length === 0 ? (
@@ -3130,7 +3140,7 @@ export default function PdfEditorPage() {
                                     <div
                                         key={ann.id}
                                         onMouseDown={(e) => handleDragMouseDown(e, ann.id)}
-                                        onClick={(e) => { e.stopPropagation(); handleAnnotationSelect(ann.id, e); }}
+                                        onClick={(e) => { e.stopPropagation(); handleAnnotationSelect(e, ann.id); }}
                                         className={cn(
                                             "absolute cursor-grab",
                                             selectedAnnotationId === ann.id && "border-2 border-dashed border-primary"
@@ -3157,7 +3167,7 @@ export default function PdfEditorPage() {
                                     <div
                                         key={ann.id}
                                         onMouseDown={(e) => handleDragMouseDown(e, ann.id)}
-                                        onClick={(e) => { e.stopPropagation(); handleAnnotationSelect(ann.id, e); }}
+                                        onClick={(e) => { e.stopPropagation(); handleAnnotationSelect(e, ann.id); }}
                                         className={cn(
                                             "absolute cursor-grab",
                                             selectedAnnotationId === ann.id && "border-2 border-dashed border-primary"
@@ -3168,6 +3178,7 @@ export default function PdfEditorPage() {
                                             width: `${ann.widthRatio * 100}%`,
                                             height: `${ann.heightRatio * 100}%`,
                                             backdropFilter: 'blur(5px)',
+                                            backgroundColor: 'rgba(255, 255, 255, 0.5)',
                                             zIndex: 25,
                                         }}
                                     >
@@ -3186,14 +3197,14 @@ export default function PdfEditorPage() {
                                         isSelected={selectedAnnotationId === ann.id}
                                         onDragStart={(e) => handleDragMouseDown(e, ann.id)}
                                         onResizeStart={(e) => handleDragMouseDown(e, ann.id)}
-                                        onSelect={(e) => handleAnnotationSelect(ann.id, e)}
+                                        onSelect={(e) => handleAnnotationSelect(e, ann.id)}
                                     />
                                 ))}
                                 {imageAnnotations.filter(ann => ann.pageIndex === index).map(ann => (
                                     <div
                                         key={ann.id}
                                         onMouseDown={(e) => { handleDragMouseDown(e, ann.id); }}
-                                        onClick={(e) => { e.stopPropagation(); handleAnnotationSelect(ann.id, e); }}
+                                        onClick={(e) => { e.stopPropagation(); handleAnnotationSelect(e, ann.id); }}
                                         className={cn(
                                             "absolute cursor-grab",
                                             selectedAnnotationId === ann.id && "border-2 border-dashed border-primary"
@@ -3224,9 +3235,9 @@ export default function PdfEditorPage() {
                                         annotation={ann}
                                         mainCanvasZoom={mainCanvasZoom}
                                         isSelected={selectedAnnotationId === ann.id}
-                                        isEditing={editingAnnotationId === ann.id}
+                                        isEditing={interactionMode === 'editing' && selectedAnnotationId === ann.id}
                                         onSelect={handleAnnotationSelect}
-                                        onEdit={handleAnnotationDoubleClick}
+                                        onEdit={handleTextAnnotationDoubleClick}
                                         onAnnotationChange={updateAnnotation}
                                         onDragStart={(e) => handleDragMouseDown(e, ann.id)}
                                         onResizeStart={(e) => handleDragMouseDown(e, ann.id)}
@@ -3250,24 +3261,29 @@ export default function PdfEditorPage() {
           )}
       </main>
       {pageObjects.length > 0 && (
-        <div className="fixed bottom-6 right-6 z-50">
-            {showDownloadOptions && (
-                <Card className="p-2 mb-2 shadow-lg animate-in fade-in-0 slide-in-from-bottom-4">
-                    <div className="grid grid-cols-2 gap-2">
-                        {saveAsFormatOptions.map(opt => (
-                            <Button key={opt.value} variant="ghost" size="sm" onClick={() => handleDownloadOption(opt.value)}>{texts[opt.labelKey]}</Button>
-                        ))}
-                    </div>
-                </Card>
+        <div ref={downloadButtonRef} className="fixed top-4 right-4 z-50">
+            <DropdownMenu open={showDownloadOptions} onOpenChange={setShowDownloadOptions}>
+                <DropdownMenuTrigger asChild>
+                    <Button
+                        size="lg"
+                        className="w-48 h-14 text-lg rounded-full shadow-2xl bg-red-500 hover:bg-red-600 text-white"
+                    >
+                        <Download className="mr-2 h-5 w-5" />
+                        {texts.toolDownload}
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-48">
+                    {saveAsFormatOptions.map(opt => (
+                        <DropdownMenuItem key={opt.value} onClick={() => handleDownloadOption(opt.value)}>{texts[opt.labelKey]}</DropdownMenuItem>
+                    ))}
+                </DropdownMenuContent>
+            </DropdownMenu>
+            {isDownloading && (
+                <div className="mt-2 w-48 bg-card p-2 rounded-lg shadow-lg border">
+                    <p className="text-sm text-center mb-1">{texts.generatingFile}</p>
+                    <Progress value={downloadProgress} />
+                </div>
             )}
-            <Button
-              onClick={() => setShowDownloadOptions(prev => !prev)}
-              size="lg"
-              className="w-48 h-14 text-lg rounded-full shadow-2xl"
-            >
-              <Download className="mr-2 h-5 w-5" />
-              {texts.toolDownload}
-            </Button>
         </div>
       )}
     </div>

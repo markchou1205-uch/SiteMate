@@ -421,6 +421,11 @@ const translations = {
         toolMosaic: 'Mosaic',
         toolTable: 'Table',
         drawTable: 'Draw Table',
+        tableConfigTitle: 'Configure Table',
+        tableConfigDescription: 'Set the number of rows and columns for your new table.',
+        tableRows: 'Rows',
+        tableCols: 'Columns',
+        createTable: 'Create Table',
         applyToAllPages: 'Apply to All Pages',
         convertConfirmTitle: "Convert File",
         convertConfirmDescription: (filename: string) => `"${filename}" will be converted to PDF. Do you want to download it or open it in the editor?`,
@@ -678,6 +683,11 @@ const translations = {
         toolMosaic: '馬賽克',
         toolTable: '表格',
         drawTable: '繪製表格',
+        tableConfigTitle: '設定表格',
+        tableConfigDescription: '設定新表格的欄與列數。',
+        tableRows: '列',
+        tableCols: '欄',
+        createTable: '建立表格',
         applyToAllPages: '套用至所有頁面',
         convertConfirmTitle: "轉換檔案",
         convertConfirmDescription: (filename: string) => `將為您轉檔 "${filename}" 為 PDF。請選擇轉檔後要下載至您的電腦還是進入編輯模式？`,
@@ -838,8 +848,8 @@ const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete }: { a
                         <div className="w-4 h-4 rounded-full" style={{ backgroundColor: annotation.color }} />
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-2">
-                    <Input type="color" value={annotation.color} onChange={(e) => onAnnotationChange(annotation.id, { color: e.target.value })} className="w-full h-10 p-1 border-0" />
+                <PopoverContent className="w-auto p-0">
+                    <Input type="color" value={annotation.color} onChange={(e) => onAnnotationChange(annotation.id, { color: e.target.value })} className="w-14 h-10 p-1 border-0 cursor-pointer" />
                 </PopoverContent>
             </Popover>
             <Separator orientation="vertical" className="h-6" />
@@ -862,10 +872,10 @@ const ShapeToolbar = ({ annotation, onAnnotationChange, onDelete }: { annotation
     return (
         <div className="shape-toolbar bg-card p-2 rounded-lg shadow-lg border flex items-center gap-2 animate-in slide-in-from-top-4 duration-300">
              {isShape && <Label>Fill</Label>}
-             {isShape && <Input type="color" value={(annotation as ShapeAnnotation).fillColor} onChange={(e) => onAnnotationChange(annotation.id, { fillColor: e.target.value })} className="w-10 h-8 p-1"/>}
+             {isShape && <Input type="color" value={(annotation as ShapeAnnotation).fillColor} onChange={(e) => onAnnotationChange(annotation.id, { fillColor: e.target.value })} className="w-10 h-8 p-1 cursor-pointer"/>}
              
              <Label>Stroke</Label>
-             <Input type="color" value={(annotation as any).strokeColor || annotation.color} onChange={(e) => onAnnotationChange(annotation.id, { [isShape ? 'strokeColor' : 'color']: e.target.value })} className="w-10 h-8 p-1"/>
+             <Input type="color" value={(annotation as any).strokeColor || annotation.color} onChange={(e) => onAnnotationChange(annotation.id, { [isShape ? 'strokeColor' : 'color']: e.target.value })} className="w-10 h-8 p-1 cursor-pointer"/>
              
              <Separator orientation="vertical" className="h-6" />
              <Label>Width</Label>
@@ -1068,7 +1078,7 @@ const TableAnnotationComponent = ({ annotation, onDragStart, onResizeStart, onSe
     onDragStart: (e: React.MouseEvent, id: string) => void;
     onResizeStart: (e: React.MouseEvent, id: string) => void;
     onSelect: (e: React.MouseEvent, id: string) => void;
-    onDoubleClick: (e: React.MouseEvent) => void;
+    onDoubleClick: (e: React.MouseEvent, annotation: TableAnnotation) => void;
     isSelected: boolean;
 }) => {
     const cellWidth = 100 / annotation.cols;
@@ -1078,7 +1088,7 @@ const TableAnnotationComponent = ({ annotation, onDragStart, onResizeStart, onSe
         <div
             onMouseDown={(e) => onDragStart(e, annotation.id)}
             onClick={(e) => { e.stopPropagation(); onSelect(e, annotation.id); }}
-            onDoubleClick={onDoubleClick}
+            onDoubleClick={(e) => onDoubleClick(e, annotation)}
             className={cn("absolute cursor-grab", isSelected && "border-2 border-dashed border-primary")}
             style={{
                 left: `${annotation.leftRatio * 100}%`,
@@ -1262,6 +1272,8 @@ export default function PdfEditorPage() {
   const [currentLink, setCurrentLink] = useState<LinkAnnotationDef>({ type: 'url', value: '' });
 
   const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false);
+  const [isTableConfigDialogOpen, setIsTableConfigDialogOpen] = useState(false);
+  const [tableConfig, setTableConfig] = useState({ rows: 3, cols: 3 });
 
   const [pageTextContents, setPageTextContents] = useState<PageTextContent[]>([]);
   const [hasTextLayer, setHasTextLayer] = useState(false);
@@ -1298,7 +1310,7 @@ export default function PdfEditorPage() {
   const textAnnotations = annotations.filter(a => a.type === 'text') as TextAnnotation[];
   const imageAnnotations = annotations.filter(a => a.type === 'image') as ImageAnnotation[];
   const highlightAnnotations = annotations.filter(a => a.type === 'highlight') as HighlightAnnotation[];
-  const shapeAnnotations = annotations.filter(a => a.type === 'shape') as ShapeAnnotation[];
+  const shapeAnnotations = annotations.filter(a => a.type === 'rect' || a.type === 'ellipse' || a.type === 'triangle') as ShapeAnnotation[];
   const mosaicAnnotations = annotations.filter(a => a.type === 'mosaic') as MosaicAnnotation[];
   const scribbleAnnotations = annotations.filter(a => a.type === 'scribble') as ScribbleAnnotation[];
   const tableAnnotations = annotations.filter(a => a.type === 'table') as TableAnnotation[];
@@ -1306,9 +1318,6 @@ export default function PdfEditorPage() {
   const updateState = useCallback((newPartialState: Partial<EditorState>, isHistoryEvent: boolean = true) => {
     setEditorState(prevState => {
       const newState = { ...prevState, ...newPartialState };
-      if (newState.annotations) {
-        newState.annotations = newState.annotations.map(a => ({...a, type: a.type || 'text'}));
-      }
       return newState;
     });
 
@@ -1322,45 +1331,15 @@ export default function PdfEditorPage() {
   };
   
   const updateAnnotation = (id: string, updates: Partial<Annotation>) => {
-      updateState({
-          annotations: annotations.map(ann => {
-              if (ann.id === id && 'text' in updates && ann.type !== 'text') {
-                  // This block handles syncing text updates back to a parent table if applicable.
-                  const textAnn = { ...ann, ...updates } as TextAnnotation;
-                  const tableAnn = annotations.find(
-                      a => a.type === 'table' && 
-                           a.pageIndex === textAnn.pageIndex &&
-                           textAnn.leftRatio >= a.leftRatio && 
-                           textAnn.leftRatio < a.leftRatio + a.widthRatio &&
-                           textAnn.topRatio >= a.topRatio &&
-                           textAnn.topRatio < a.topRatio + a.heightRatio
-                  ) as TableAnnotation;
-                  
-                  if (tableAnn) {
-                      const col = Math.floor((textAnn.leftRatio - tableAnn.leftRatio) / (tableAnn.widthRatio / tableAnn.cols));
-                      const row = Math.floor((textAnn.topRatio - tableAnn.topRatio) / (tableAnn.heightRatio / tableAnn.rows));
-                      
-                      const newCells = tableAnn.cells.map(r => [...r]);
-                      if (newCells[row]) {
-                          newCells[row][col] = updates.text as string;
-                      }
-                      
-                      // Update the table annotation as well
-                      const newAnnotations = annotations.map(a => 
-                          a.id === tableAnn.id ? {...a, cells: newCells} : a
-                      );
-                      
-                      // Update the text annotation itself
-                      const finalAnnotations = newAnnotations.map(a => a.id === id ? { ...a, ...updates } : a);
-                      
-                      setEditorState(prev => ({...prev, annotations: finalAnnotations}));
-                      return { ...ann, ...updates }; // already handled above but returning for completeness
-                  }
-              }
-              return ann.id === id ? { ...ann, ...updates } : ann;
-          })
-      }, false); // Set history event to false for intermediate updates
+      const newAnnotations = annotations.map(ann => {
+          if (ann.id === id) {
+              return { ...ann, ...updates };
+          }
+          return ann;
+      });
+      updateState({ annotations: newAnnotations }, false); 
   };
+
 
   useEffect(() => {
     if (recordNextStateRef.current) {
@@ -2448,19 +2427,19 @@ export default function PdfEditorPage() {
     }, [annotations]);
     
     useEffect(() => {
-      const handleGlobalClick = (e: MouseEvent) => {
-        const target = e.target as Node;
-        const isCanvasClick = mainViewContainerRef.current?.contains(target);
-        const isDownloadClick = downloadButtonRef.current?.contains(target);
-        const isToolbarClick = (e.target as HTMLElement).closest('.text-toolbar, .shape-toolbar');
+        const handleGlobalClick = (e: MouseEvent) => {
+            const target = e.target as Node;
+            if (
+                !mainViewContainerRef.current?.contains(target) &&
+                !toolbarContainerRef.current?.contains(target) &&
+                !downloadButtonRef.current?.contains(target)
+            ) {
+              handleDeselectAll();
+            }
+        };
 
-        if (!isCanvasClick && !isDownloadClick && !isToolbarClick) {
-          handleDeselectAll();
-        }
-      };
-
-      document.addEventListener('mousedown', handleGlobalClick);
-      return () => document.removeEventListener('mousedown', handleGlobalClick);
+        document.addEventListener('mousedown', handleGlobalClick);
+        return () => document.removeEventListener('mousedown', handleGlobalClick);
     }, [handleDeselectAll]);
     
     useEffect(() => {
@@ -2561,7 +2540,7 @@ export default function PdfEditorPage() {
       </div>
     );
     
-    const activeTextAnnotation = (interactionMode === 'editing') && selectedAnnotationId
+    const activeTextAnnotation = (interactionMode === 'editing' || interactionMode === 'selected') && selectedAnnotationId
         ? annotations.find(a => a.id === selectedAnnotationId && a.type === 'text') as TextAnnotation | undefined
         : undefined;
 
@@ -2730,8 +2709,8 @@ export default function PdfEditorPage() {
              const newAnnotation: TableAnnotation = {
                 id, type: 'table', pageIndex,
                 topRatio: startY, leftRatio: startX, widthRatio: 0, heightRatio: 0,
-                rows: 3, cols: 3, cellPadding: 5, strokeColor: '#000000', strokeWidth: 1,
-                cells: Array(3).fill(0).map(() => Array(3).fill(''))
+                rows: tableConfig.rows, cols: tableConfig.cols, cellPadding: 5, strokeColor: '#000000', strokeWidth: 1,
+                cells: Array(tableConfig.rows).fill(0).map(() => Array(tableConfig.cols).fill(''))
             };
             addAnnotation(newAnnotation);
         }
@@ -2832,6 +2811,15 @@ export default function PdfEditorPage() {
         }
     }, [activeTool]);
 
+    const handleConfirmCreateTable = () => {
+        if (activePageIndex === null) {
+            toast({ title: texts.noPageSelected, variant: "destructive" });
+        } else {
+            setActiveTool('table');
+        }
+        setIsTableConfigDialogOpen(false);
+    }
+
   return (
     <div className="flex flex-col h-screen bg-background text-foreground font-sans">
       {(isLoading || isDownloading) && (
@@ -2906,6 +2894,28 @@ export default function PdfEditorPage() {
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      <Dialog open={isTableConfigDialogOpen} onOpenChange={setIsTableConfigDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{texts.tableConfigTitle}</DialogTitle>
+            <DialogDescription>{texts.tableConfigDescription}</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="table-rows" className="text-right">{texts.tableRows}</Label>
+              <Input id="table-rows" type="number" value={tableConfig.rows} onChange={(e) => setTableConfig(prev => ({...prev, rows: Math.max(1, parseInt(e.target.value) || 1)}))} className="col-span-3" />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="table-cols" className="text-right">{texts.tableCols}</Label>
+              <Input id="table-cols" type="number" value={tableConfig.cols} onChange={(e) => setTableConfig(prev => ({...prev, cols: Math.max(1, parseInt(e.target.value) || 1)}))} className="col-span-3" />
+            </div>
+          </div>
+          <DialogClose asChild>
+            <Button type="button" onClick={handleConfirmCreateTable}>{texts.createTable}</Button>
+          </DialogClose>
+        </DialogContent>
+      </Dialog>
 
     <header className="p-0 border-b bg-card sticky top-0 z-40 flex-shrink-0 h-14">
         <Menubar className="rounded-none border-x-0 h-full px-4 lg:px-6">
@@ -3121,7 +3131,7 @@ export default function PdfEditorPage() {
                 </Popover>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                      <Button variant={activeTool === 'table' ? "secondary" : "ghost"} className="flex flex-col h-auto p-2 space-y-1" onClick={() => setActiveTool('table')} disabled={activePageIndex === null}>
+                      <Button variant={activeTool === 'table' ? "secondary" : "ghost"} className="flex flex-col h-auto p-2 space-y-1" onClick={() => setIsTableConfigDialogOpen(true)} disabled={activePageIndex === null}>
                           <Grid className="h-5 w-5" />
                           <span className="text-xs">{texts.toolTable}</span>
                       </Button>
@@ -3152,7 +3162,7 @@ export default function PdfEditorPage() {
                     <DialogContent>
                         <DialogHeader>
                             <DialogTitle>{texts.signaturePadTitle}</DialogTitle>
-                            <DialogDescription>{texts.signaturePadDescription}</DialogDescription>
+                            <ShadAlertDialogDescription>{texts.signaturePadDescription}</ShadAlertDialogDescription>
                         </DialogHeader>
                         <SignaturePad onSave={handleSaveSignature} texts={texts}/>
                     </DialogContent>
@@ -3474,7 +3484,7 @@ export default function PdfEditorPage() {
                                     <ScribbleAnnotationComponent
                                         key={ann.id}
                                         annotation={ann}
-                                        pageDimensions={{ width: canvasWidth, height: canvasHeight }}
+                                        pageDimensions={{ width: canvasWidth * mainCanvasZoom, height: canvasHeight * mainCanvasZoom }}
                                         isSelected={selectedAnnotationId === ann.id}
                                         onSelect={(e) => handleAnnotationSelect(e, ann.id)}
                                     />
@@ -3580,4 +3590,4 @@ export default function PdfEditorPage() {
   );
 }
 
-    
+ 

@@ -139,7 +139,23 @@ interface MosaicAnnotation {
     heightRatio: number;
 }
 
-type Annotation = TextAnnotation | ImageAnnotation | HighlightAnnotation | ShapeAnnotation | ScribbleAnnotation | MosaicAnnotation;
+interface TableAnnotation {
+  id: string;
+  type: 'table';
+  pageIndex: number;
+  topRatio: number;
+  leftRatio: number;
+  widthRatio: number;
+  heightRatio: number;
+  rows: number;
+  cols: number;
+  cellPadding: number;
+  strokeColor: string;
+  strokeWidth: number;
+  cells: string[][];
+}
+
+type Annotation = TextAnnotation | ImageAnnotation | HighlightAnnotation | ShapeAnnotation | ScribbleAnnotation | MosaicAnnotation | TableAnnotation;
 
 interface EditorState {
     pageObjects: PageObject[];
@@ -160,8 +176,8 @@ interface SearchResult {
   height: number;
 }
 
-type Tool = 'select' | 'pan' | 'text' | 'image' | 'highlight' | 'shape' | 'signature' | 'scribble' | 'mosaic';
-type InteractionMode = 'idle' | 'selected' | 'editing' | 'drawing';
+type Tool = 'select' | 'pan' | 'text' | 'image' | 'highlight' | 'shape' | 'signature' | 'scribble' | 'mosaic' | 'table';
+type InteractionMode = 'idle' | 'selected' | 'editing' | 'drawing-mosaic' | 'drawing-scribble' | 'drawing-table';
 
 const translations = {
     en: {
@@ -403,6 +419,8 @@ const translations = {
         noTextInPdf: 'This PDF has no text layer. OCR may be needed to enable search.',
         toolScribble: 'Scribble',
         toolMosaic: 'Mosaic',
+        toolTable: 'Table',
+        drawTable: 'Draw Table',
         applyToAllPages: 'Apply to All Pages',
         convertConfirmTitle: "Convert File",
         convertConfirmDescription: (filename: string) => `"${filename}" will be converted to PDF. Do you want to download it or open it in the editor?`,
@@ -658,12 +676,13 @@ const translations = {
         noTextInPdf: '此 PDF 不包含文字層。可能需要 OCR 才能啟用搜尋。',
         toolScribble: '畫筆',
         toolMosaic: '馬賽克',
+        toolTable: '表格',
+        drawTable: '繪製表格',
         applyToAllPages: '套用至所有頁面',
         convertConfirmTitle: "轉換檔案",
         convertConfirmDescription: (filename: string) => `將為您轉檔 "${filename}" 為 PDF。請選擇轉檔後要下載至您的電腦還是進入編輯模式？`,
         convertConfirmDownload: '下載檔案',
         convertConfirmEdit: '進入編輯模式',
-        convertingToPdf: '正在轉檔為 PDF...',
         toolInsertFile: '插入PDF',
         insertAtStart: '插入至開頭',
         insertAtEnd: '插入至結尾',
@@ -820,7 +839,7 @@ const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete }: { a
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-2">
-                    <Input type="color" value={annotation.color} onChange={(e) => onAnnotationChange(annotation.id, { color: e.target.value })} className="w-full h-10 border-0" />
+                    <Input type="color" value={annotation.color} onChange={(e) => onAnnotationChange(annotation.id, { color: e.target.value })} className="w-full h-10 p-1 border-0" />
                 </PopoverContent>
             </Popover>
             <Separator orientation="vertical" className="h-6" />
@@ -922,7 +941,7 @@ const TextAnnotationComponent = ({
            <Textarea
                 ref={textareaRef}
                 value={annotation.text}
-                onChange={(e) => onAnnotationChange(annotation.id, { ...annotation, text: e.target.value })}
+                onChange={(e) => onAnnotationChange(annotation.id, { text: e.target.value })}
                 onClick={(e) => {
                     if (isEditing) e.stopPropagation();
                 }}
@@ -1043,6 +1062,65 @@ const ScribbleAnnotationComponent = ({ annotation, pageDimensions, onSelect, isS
       </svg>
     )
 }
+
+const TableAnnotationComponent = ({ annotation, onDragStart, onResizeStart, onSelect, isSelected, onDoubleClick }: {
+    annotation: TableAnnotation;
+    onDragStart: (e: React.MouseEvent, id: string) => void;
+    onResizeStart: (e: React.MouseEvent, id: string) => void;
+    onSelect: (e: React.MouseEvent, id: string) => void;
+    onDoubleClick: (e: React.MouseEvent) => void;
+    isSelected: boolean;
+}) => {
+    const cellWidth = 100 / annotation.cols;
+    const cellHeight = 100 / annotation.rows;
+
+    return (
+        <div
+            onMouseDown={(e) => onDragStart(e, annotation.id)}
+            onClick={(e) => { e.stopPropagation(); onSelect(e, annotation.id); }}
+            onDoubleClick={onDoubleClick}
+            className={cn("absolute cursor-grab", isSelected && "border-2 border-dashed border-primary")}
+            style={{
+                left: `${annotation.leftRatio * 100}%`,
+                top: `${annotation.topRatio * 100}%`,
+                width: `${annotation.widthRatio * 100}%`,
+                height: `${annotation.heightRatio * 100}%`,
+                zIndex: 18,
+            }}
+        >
+            <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+                {Array.from({ length: annotation.rows + 1 }, (_, i) => (
+                    <line
+                        key={`h-${i}`}
+                        x1="0"
+                        y1={i * cellHeight}
+                        x2="100"
+                        y2={i * cellHeight}
+                        stroke={annotation.strokeColor}
+                        strokeWidth={annotation.strokeWidth / 10}
+                    />
+                ))}
+                {Array.from({ length: annotation.cols + 1 }, (_, i) => (
+                    <line
+                        key={`v-${i}`}
+                        x1={i * cellWidth}
+                        y1="0"
+                        x2={i * cellWidth}
+                        y2="100"
+                        stroke={annotation.strokeColor}
+                        strokeWidth={annotation.strokeWidth / 10}
+                    />
+                ))}
+            </svg>
+            {isSelected && (
+                <div
+                    className="absolute -right-1 -bottom-1 w-4 h-4 bg-primary rounded-full border-2 border-white cursor-se-resize"
+                    onMouseDown={(e) => onResizeStart(e, annotation.id)}
+                />
+            )}
+        </div>
+    );
+};
 
 const SignaturePad = ({ onSave, texts }: { onSave: (dataUrl: string) => void, texts: typeof translations.en }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -1223,13 +1301,13 @@ export default function PdfEditorPage() {
   const shapeAnnotations = annotations.filter(a => a.type === 'shape') as ShapeAnnotation[];
   const mosaicAnnotations = annotations.filter(a => a.type === 'mosaic') as MosaicAnnotation[];
   const scribbleAnnotations = annotations.filter(a => a.type === 'scribble') as ScribbleAnnotation[];
+  const tableAnnotations = annotations.filter(a => a.type === 'table') as TableAnnotation[];
 
   const updateState = useCallback((newPartialState: Partial<EditorState>, isHistoryEvent: boolean = true) => {
     setEditorState(prevState => {
       const newState = { ...prevState, ...newPartialState };
-      // Ensure all annotations have a type property
       if (newState.annotations) {
-        newState.annotations = newState.annotations.map(a => ({...a, type: a.type || 'text'})); // Simple fix, may need improvement
+        newState.annotations = newState.annotations.map(a => ({...a, type: a.type || 'text'}));
       }
       return newState;
     });
@@ -1244,9 +1322,44 @@ export default function PdfEditorPage() {
   };
   
   const updateAnnotation = (id: string, updates: Partial<Annotation>) => {
-    updateState({
-        annotations: annotations.map(ann => ann.id === id ? { ...ann, ...updates } : ann)
-    }, false);
+      updateState({
+          annotations: annotations.map(ann => {
+              if (ann.id === id && 'text' in updates && ann.type !== 'text') {
+                  // This block handles syncing text updates back to a parent table if applicable.
+                  const textAnn = { ...ann, ...updates } as TextAnnotation;
+                  const tableAnn = annotations.find(
+                      a => a.type === 'table' && 
+                           a.pageIndex === textAnn.pageIndex &&
+                           textAnn.leftRatio >= a.leftRatio && 
+                           textAnn.leftRatio < a.leftRatio + a.widthRatio &&
+                           textAnn.topRatio >= a.topRatio &&
+                           textAnn.topRatio < a.topRatio + a.heightRatio
+                  ) as TableAnnotation;
+                  
+                  if (tableAnn) {
+                      const col = Math.floor((textAnn.leftRatio - tableAnn.leftRatio) / (tableAnn.widthRatio / tableAnn.cols));
+                      const row = Math.floor((textAnn.topRatio - tableAnn.topRatio) / (tableAnn.heightRatio / tableAnn.rows));
+                      
+                      const newCells = tableAnn.cells.map(r => [...r]);
+                      if (newCells[row]) {
+                          newCells[row][col] = updates.text as string;
+                      }
+                      
+                      // Update the table annotation as well
+                      const newAnnotations = annotations.map(a => 
+                          a.id === tableAnn.id ? {...a, cells: newCells} : a
+                      );
+                      
+                      // Update the text annotation itself
+                      const finalAnnotations = newAnnotations.map(a => a.id === id ? { ...a, ...updates } : a);
+                      
+                      setEditorState(prev => ({...prev, annotations: finalAnnotations}));
+                      return { ...ann, ...updates }; // already handled above but returning for completeness
+                  }
+              }
+              return ann.id === id ? { ...ann, ...updates } : ann;
+          })
+      }, false); // Set history event to false for intermediate updates
   };
 
   useEffect(() => {
@@ -1421,7 +1534,7 @@ export default function PdfEditorPage() {
 
     const handlePanMouseUpAndLeave = () => {
         panState.current.isPanning = false;
-        if(mainViewContainerRef.current) mainViewContainerRef.current.style.cursor = 'grab';
+        if(mainViewContainerRef.current) mainViewContainerRef.current.style.cursor = activeTool === 'pan' ? 'grab' : 'default';
     };
     
     const handlePanMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -1852,6 +1965,29 @@ export default function PdfEditorPage() {
                   }
               }
           }
+      }
+
+      for (const annotation of pageAnnotations.filter(a => a.type === 'table') as TableAnnotation[]) {
+        const { leftRatio, topRatio, widthRatio, heightRatio, rows, cols, strokeColor, strokeWidth } = annotation;
+        const x = leftRatio * pageWidth;
+        const y = pageHeight - (topRatio * pageHeight) - (heightRatio * pageHeight);
+        const width = widthRatio * pageWidth;
+        const height = heightRatio * pageHeight;
+        const { r, g, b } = hexToRgb(strokeColor);
+        const color = rgb(r, g, b);
+        const thickness = strokeWidth;
+
+        // Draw horizontal lines
+        for (let i = 0; i <= rows; i++) {
+          const lineY = y + (i / rows) * height;
+          pdfLibPage.drawLine({ start: { x, y: lineY }, end: { x: x + width, y: lineY }, thickness, color });
+        }
+
+        // Draw vertical lines
+        for (let i = 0; i <= cols; i++) {
+          const lineX = x + (i / cols) * width;
+          pdfLibPage.drawLine({ start: { x: lineX, y }, end: { x: lineX, y: y + height }, thickness, color });
+        }
       }
     }
     
@@ -2285,6 +2421,7 @@ export default function PdfEditorPage() {
     const handleDeselectAll = useCallback(() => {
         setInteractionMode('idle');
         setSelectedAnnotationId(null);
+        setShowDownloadOptions(false);
     }, []);
 
     const handleCanvasClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -2311,20 +2448,19 @@ export default function PdfEditorPage() {
     }, [annotations]);
     
     useEffect(() => {
-        const handleGlobalClick = (e: MouseEvent) => {
-            const target = e.target as Node;
-            if (
-                !mainViewContainerRef.current?.contains(target) &&
-                !downloadButtonRef.current?.contains(target) &&
-                !toolbarContainerRef.current?.contains(target)
-            ) {
-                handleDeselectAll();
-                setShowDownloadOptions(false);
-            }
-        };
+      const handleGlobalClick = (e: MouseEvent) => {
+        const target = e.target as Node;
+        const isCanvasClick = mainViewContainerRef.current?.contains(target);
+        const isDownloadClick = downloadButtonRef.current?.contains(target);
+        const isToolbarClick = (e.target as HTMLElement).closest('.text-toolbar, .shape-toolbar');
 
-        document.addEventListener('mousedown', handleGlobalClick);
-        return () => document.removeEventListener('mousedown', handleGlobalClick);
+        if (!isCanvasClick && !isDownloadClick && !isToolbarClick) {
+          handleDeselectAll();
+        }
+      };
+
+      document.addEventListener('mousedown', handleGlobalClick);
+      return () => document.removeEventListener('mousedown', handleGlobalClick);
     }, [handleDeselectAll]);
     
     useEffect(() => {
@@ -2425,7 +2561,7 @@ export default function PdfEditorPage() {
       </div>
     );
     
-    const activeTextAnnotation = (interactionMode === 'editing' || interactionMode === 'selected') && selectedAnnotationId
+    const activeTextAnnotation = (interactionMode === 'editing') && selectedAnnotationId
         ? annotations.find(a => a.id === selectedAnnotationId && a.type === 'text') as TextAnnotation | undefined
         : undefined;
 
@@ -2565,8 +2701,11 @@ export default function PdfEditorPage() {
     
     // Drawing new annotations
     const handlePageMouseDown = (e: React.MouseEvent<HTMLDivElement>, pageIndex: number) => {
-        if (activeTool !== 'mosaic' && activeTool !== 'scribble') return;
-        setInteractionMode('drawing');
+        const tool = activeTool;
+        if (tool !== 'mosaic' && tool !== 'scribble' && tool !== 'table') return;
+
+        const interaction = tool === 'mosaic' ? 'drawing-mosaic' : tool === 'scribble' ? 'drawing-scribble' : 'drawing-table';
+        setInteractionMode(interaction);
         
         const container = e.currentTarget;
         const rect = container.getBoundingClientRect();
@@ -2576,15 +2715,23 @@ export default function PdfEditorPage() {
         
         drawingStartRef.current = { pageIndex, startX, startY, id };
         
-        if (activeTool === 'mosaic') {
+        if (tool === 'mosaic') {
             const newAnnotation: MosaicAnnotation = { id, type: 'mosaic', pageIndex, topRatio: startY, leftRatio: startX, widthRatio: 0, heightRatio: 0 };
             addAnnotation(newAnnotation);
-        } else if (activeTool === 'scribble') {
+        } else if (tool === 'scribble') {
             const newAnnotation: ScribbleAnnotation = {
                 id, type: 'scribble', pageIndex,
                 points: [{ xRatio: startX, yRatio: startY }],
                 color: '#000000',
                 strokeWidth: 2
+            };
+            addAnnotation(newAnnotation);
+        } else if (tool === 'table') {
+             const newAnnotation: TableAnnotation = {
+                id, type: 'table', pageIndex,
+                topRatio: startY, leftRatio: startX, widthRatio: 0, heightRatio: 0,
+                rows: 3, cols: 3, cellPadding: 5, strokeColor: '#000000', strokeWidth: 1,
+                cells: Array(3).fill(0).map(() => Array(3).fill(''))
             };
             addAnnotation(newAnnotation);
         }
@@ -2593,7 +2740,8 @@ export default function PdfEditorPage() {
     const handleMainViewMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
         handlePanMouseMove(e); // Handle pan if active
 
-        if (interactionMode !== 'drawing' || !drawingStartRef.current) return;
+        const drawingMode = interactionMode;
+        if (!drawingMode.startsWith('drawing-') || !drawingStartRef.current) return;
         
         const { pageIndex, startX, startY, id } = drawingStartRef.current;
         const container = pageRefs.current[pageIndex];
@@ -2604,13 +2752,13 @@ export default function PdfEditorPage() {
         const currentX = (e.clientX - rect.left) / rect.width;
         const currentY = (e.clientY - rect.top) / rect.height;
 
-        if (activeTool === 'mosaic') {
+        if (drawingMode === 'drawing-mosaic' || drawingMode === 'drawing-table') {
             const leftRatio = Math.min(startX, currentX);
             const topRatio = Math.min(startY, currentY);
             const widthRatio = Math.abs(currentX - startX);
             const heightRatio = Math.abs(currentY - startY);
             updateAnnotation(id, { leftRatio, topRatio, widthRatio, heightRatio });
-        } else if (activeTool === 'scribble') {
+        } else if (drawingMode === 'drawing-scribble') {
             const existingAnnotation = annotations.find(a => a.id === id) as ScribbleAnnotation;
             if (existingAnnotation) {
                 const newPoints = [...existingAnnotation.points, { xRatio: currentX, yRatio: currentY }];
@@ -2622,11 +2770,11 @@ export default function PdfEditorPage() {
     const handleMainViewMouseUp = () => {
         handlePanMouseUpAndLeave(); // Handle pan if active
 
-        if (interactionMode === 'drawing') {
+        if (interactionMode.startsWith('drawing-')) {
              if (drawingStartRef.current) {
                 const finalAnnotation = annotations.find(a => a.id === drawingStartRef.current!.id);
                 if(finalAnnotation) {
-                    if (finalAnnotation.type === 'mosaic' && (finalAnnotation.widthRatio < 0.01 || finalAnnotation.heightRatio < 0.01)) {
+                    if ((finalAnnotation.type === 'mosaic' || finalAnnotation.type === 'table') && (finalAnnotation.widthRatio < 0.01 || finalAnnotation.heightRatio < 0.01)) {
                         updateState({ annotations: annotations.filter(a => a.id !== drawingStartRef.current!.id) }, false);
                     } else {
                          recordNextStateRef.current = true;
@@ -2640,17 +2788,46 @@ export default function PdfEditorPage() {
             setInteractionMode('idle');
         }
     };
+    
+    const handleTableCellDoubleClick = (e: React.MouseEvent, tableAnn: TableAnnotation) => {
+      e.stopPropagation();
+      const svgElement = (e.currentTarget.querySelector('svg'));
+      if(!svgElement) return;
 
-    const handleAddScribbleAnnotation = () => {
-        if(activePageIndex === null) return;
-        setActiveTool('scribble');
-    }
+      const rect = svgElement.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const clickY = e.clientY - rect.top;
+
+      const col = Math.floor(clickX / (rect.width / tableAnn.cols));
+      const row = Math.floor(clickY / (rect.height / tableAnn.rows));
+
+      const id = uuidv4();
+      const newTextAnnotation: TextAnnotation = {
+        id,
+        type: 'text',
+        pageIndex: tableAnn.pageIndex,
+        text: tableAnn.cells[row]?.[col] || '',
+        topRatio: tableAnn.topRatio + (row / tableAnn.rows) * tableAnn.heightRatio,
+        leftRatio: tableAnn.leftRatio + (col / tableAnn.cols) * tableAnn.widthRatio,
+        widthRatio: tableAnn.widthRatio / tableAnn.cols * 0.95,
+        fontSize: 12,
+        fontFamily: 'Helvetica',
+        bold: false,
+        italic: false,
+        underline: false,
+        color: '#000000',
+        textAlign: 'left',
+      };
+      addAnnotation(newTextAnnotation);
+      setInteractionMode('editing');
+      setSelectedAnnotationId(id);
+    };
 
     useEffect(() => {
         if (mainViewContainerRef.current) {
           let cursor = 'default';
           if (activeTool === 'pan') cursor = 'grab';
-          if (activeTool === 'mosaic' || activeTool === 'scribble') cursor = 'crosshair';
+          if (activeTool === 'mosaic' || activeTool === 'scribble' || activeTool === 'table') cursor = 'crosshair';
           mainViewContainerRef.current.style.cursor = cursor;
         }
     }, [activeTool]);
@@ -2939,9 +3116,18 @@ export default function PdfEditorPage() {
                         <Button variant="ghost" size="icon" onClick={() => handleAddShapeAnnotation('rect')}><Square className="h-5 w-5 text-primary" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => handleAddShapeAnnotation('ellipse')}><Circle className="h-5 w-5 text-primary" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => handleAddShapeAnnotation('triangle')}><TriangleIcon /></Button>
-                        <Button variant="ghost" size="icon" onClick={handleAddScribbleAnnotation}><ScribbleIcon /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => setActiveTool('scribble')}><ScribbleIcon /></Button>
                     </PopoverContent>
                 </Popover>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                      <Button variant={activeTool === 'table' ? "secondary" : "ghost"} className="flex flex-col h-auto p-2 space-y-1" onClick={() => setActiveTool('table')} disabled={activePageIndex === null}>
+                          <Grid className="h-5 w-5" />
+                          <span className="text-xs">{texts.toolTable}</span>
+                      </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom"><p>{texts.drawTable}</p></TooltipContent>
+                </Tooltip>
                  <Tooltip>
                     <TooltipTrigger asChild>
                         <Button variant={activeTool === 'mosaic' ? "secondary" : "ghost"} className="flex flex-col h-auto p-2 space-y-1" onClick={() => setActiveTool('mosaic')} disabled={activePageIndex === null}>
@@ -3054,7 +3240,7 @@ export default function PdfEditorPage() {
                   onDelete={() => handleDeleteAnnotation(activeTextAnnotation.id)}
               />
           )}
-          {(interactionMode === 'selected' || interactionMode === 'editing') && activeShapeAnnotation && (
+          {(interactionMode === 'editing' || interactionMode === 'selected') && activeShapeAnnotation && (
               <ShapeToolbar
                   annotation={activeShapeAnnotation}
                   onAnnotationChange={updateAnnotation}
@@ -3293,6 +3479,17 @@ export default function PdfEditorPage() {
                                         onSelect={(e) => handleAnnotationSelect(e, ann.id)}
                                     />
                                 ))}
+                                 {tableAnnotations.filter(a => a.pageIndex === index).map(ann => (
+                                    <TableAnnotationComponent
+                                        key={ann.id}
+                                        annotation={ann}
+                                        isSelected={selectedAnnotationId === ann.id}
+                                        onDragStart={(e) => handleDragMouseDown(e, ann.id)}
+                                        onResizeStart={(e) => handleDragMouseDown(e, ann.id)}
+                                        onSelect={(e) => handleAnnotationSelect(e, ann.id)}
+                                        onDoubleClick={(e) => handleTableCellDoubleClick(e, ann)}
+                                    />
+                                ))}
                                 {imageAnnotations.filter(ann => ann.pageIndex === index).map(ann => (
                                     <div
                                         key={ann.id}
@@ -3382,3 +3579,5 @@ export default function PdfEditorPage() {
     </div>
   );
 }
+
+    

@@ -2505,22 +2505,18 @@ export default function PdfEditorPage() {
 
     const handleCanvasClick = useCallback((e: React.MouseEvent) => {
       const target = e.target as HTMLElement;
-
-      // If click is on a canvas or an annotation, do nothing here
-      if (target.closest('.main-page-container') || target.closest('.group\\/text-annotation')) {
-        return;
+      if (
+          !mainViewContainerRef.current?.contains(target) &&
+          !toolbarContainerRef.current?.contains(target) &&
+          !downloadButtonRef.current?.contains(target)
+      ) {
+        handleDeselectAll();
+      } else if (interactionMode === 'editing' && !target.closest('.group\\/text-annotation') && !target.closest('.text-toolbar')) {
+        setInteractionMode('selected'); 
+      } else if (interactionMode !== 'editing' && target === mainViewContainerRef.current) {
+        handleDeselectAll();
       }
-      
-      // If click is outside, deselect everything
-      if (interactionMode === 'editing') {
-        setInteractionMode('selected');
-        setSelectedAnnotationId(null);
-      } else {
-        setInteractionMode('idle');
-        setSelectedAnnotationId(null);
-      }
-
-    }, [interactionMode]);
+    }, [interactionMode, handleDeselectAll]);
     
     const handleAnnotationSelect = useCallback((e: React.MouseEvent, id: string) => {
         e.stopPropagation();

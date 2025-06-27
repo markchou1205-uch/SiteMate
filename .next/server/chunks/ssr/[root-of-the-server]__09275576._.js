@@ -3457,6 +3457,7 @@ function PdfEditorPage() {
     const [pendingFileToConvert, setPendingFileToConvert] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(null);
     const [isTextExtractionMode, setIsTextExtractionMode] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
     const [originalAnnotations, setOriginalAnnotations] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])([]);
+    const [originalPdfFile, setOriginalPdfFile] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(null);
     const thumbnailContainerRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])(null);
     const thumbnailRefs = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])([]);
     const pdfUploadRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])(null);
@@ -3647,12 +3648,10 @@ function PdfEditorPage() {
         activePageIndex,
         pageObjects
     ]);
-    const handleFitToWidth = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])((pagesToUse, indexToUse)=>{
-        const thePages = pagesToUse || pageObjects;
-        const theIndex = indexToUse === undefined ? activePageIndex : indexToUse;
-        if (!mainViewContainerRef.current || thePages.length === 0 || theIndex === null) return;
+    const handleFitToWidth = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(()=>{
+        if (!mainViewContainerRef.current || pageObjects.length === 0 || activePageIndex === null) return;
         const containerWidth = mainViewContainerRef.current.clientWidth - 40;
-        const activePage = thePages[theIndex];
+        const activePage = pageObjects[activePageIndex];
         if (!activePage) return;
         const pageCanvas = activePage.sourceCanvas;
         const rotation = activePage.rotation;
@@ -3778,6 +3777,7 @@ function PdfEditorPage() {
     const loadPdfIntoEditor = async (file)=>{
         setIsLoading(true);
         setLoadingMessage(texts.loadingPdf);
+        setOriginalPdfFile(file);
         try {
             const { loadedPageObjects } = await processPdfFile(file);
             const newState = {
@@ -3794,7 +3794,7 @@ function PdfEditorPage() {
             setSelectedPageIds(new Set());
             setActivePageIndex(0);
             setViewMode('editor');
-            setTimeout(()=>handleFitToWidth(loadedPageObjects, 0), 100);
+            setTimeout(()=>handleFitToWidth(), 100);
         } catch (err) {
             toast({
                 title: texts.loadError,
@@ -3836,11 +3836,11 @@ function PdfEditorPage() {
         loadPdfIntoEditor(file);
     };
     const handleExtractText = async ()=>{
-        if (pageObjects.length === 0) return;
+        if (pageObjects.length === 0 || !originalPdfFile) return;
         setIsLoading(true);
         setLoadingMessage(texts.extractingText);
         try {
-            const arrayBuffer = await (await fetch(pageObjects[0].sourceCanvas.toDataURL())).arrayBuffer(); // This is a trick to get the file data back. In a real app, you'd keep the file object.
+            const arrayBuffer = await originalPdfFile.arrayBuffer();
             const pdfDocProxy = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$pdfjs$2d$dist$2f$build$2f$pdf$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getDocument"])({
                 data: arrayBuffer,
                 cMapUrl: `//cdn.jsdelivr.net/npm/pdfjs-dist@${__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$pdfjs$2d$dist$2f$build$2f$pdf$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["version"]}/cmaps/`,
@@ -3934,6 +3934,7 @@ function PdfEditorPage() {
         setActivePageIndex(null);
         setIsTextExtractionMode(false);
         setOriginalAnnotations([]);
+        setOriginalPdfFile(null);
         if (pdfUploadRef.current) {
             pdfUploadRef.current.value = '';
             pdfUploadRef.current.click();
@@ -8497,14 +8498,14 @@ function PdfEditorPage() {
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
                                                 variant: "ghost",
                                                 size: "icon",
-                                                onClick: ()=>handleFitToWidth(),
+                                                onClick: handleFitToWidth,
                                                 title: texts.fitToWidth,
                                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$columns$2d$2$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Columns$3e$__["Columns"], {
                                                     className: "h-5 w-5"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
                                                     lineNumber: 3695,
-                                                    columnNumber: 121
+                                                    columnNumber: 113
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",

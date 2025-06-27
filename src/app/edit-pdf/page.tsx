@@ -151,24 +151,7 @@ interface MosaicAnnotation {
     isUserAction?: boolean;
 }
 
-interface TableAnnotation {
-  id: string;
-  type: 'table';
-  pageIndex: number;
-  topRatio: number;
-  leftRatio: number;
-  widthRatio: number;
-  heightRatio: number;
-  rows: number;
-  cols: number;
-  cellPadding: number;
-  strokeColor: string;
-  strokeWidth: number;
-  cells: string[][];
-  isUserAction?: boolean;
-}
-
-type Annotation = TextAnnotation | ImageAnnotation | HighlightAnnotation | ShapeAnnotation | ScribbleAnnotation | MosaicAnnotation | TableAnnotation;
+type Annotation = TextAnnotation | ImageAnnotation | HighlightAnnotation | ShapeAnnotation | ScribbleAnnotation | MosaicAnnotation;
 
 interface EditorState {
     pageObjects: PageObject[];
@@ -189,8 +172,8 @@ interface SearchResult {
   height: number;
 }
 
-type Tool = 'select' | 'pan' | 'text' | 'image' | 'highlight' | 'shape' | 'signature' | 'scribble' | 'mosaic' | 'table' | 'extract-text';
-type InteractionMode = 'idle' | 'selected' | 'editing' | 'drawing-mosaic' | 'drawing-scribble' | 'drawing-table' | 'drawing-shape';
+type Tool = 'select' | 'pan' | 'text' | 'image' | 'highlight' | 'shape' | 'signature' | 'scribble' | 'mosaic' | 'extract-text';
+type InteractionMode = 'idle' | 'selected' | 'editing' | 'drawing-mosaic' | 'drawing-scribble' | 'drawing-shape';
 
 const translations = {
     en: {
@@ -403,7 +386,6 @@ const translations = {
         usageInfo: (files: number, size: string, remainingFiles: number, remainingSize: string) => `You have selected ${files} file(s), with a total size of ${size}MB. (You can still upload ${remainingFiles} more files or ${remainingSize}MB).`,
         toolSelect: 'Select',
         toolPan: 'Pan',
-        toolText: 'Text',
         toolImage: 'Image',
         toolShape: 'Sign',
         toolSignature: 'Shape',
@@ -432,14 +414,6 @@ const translations = {
         noTextInPdf: 'This PDF has no text layer. OCR may be needed to enable search.',
         toolScribble: 'Scribble',
         toolMosaic: 'Mosaic',
-        toolTable: 'Table',
-        drawTable: 'Draw Table',
-        tableConfigTitle: 'Configure Table',
-        tableConfigDescription: 'Set the number of rows and columns for your new table.',
-        tableRows: 'Rows',
-        tableCols: 'Columns',
-        createTable: 'Create Table',
-        applyToAllPages: 'Apply to All Pages',
         convertConfirmTitle: "Convert File",
         convertConfirmDescription: (filename: string) => `"${filename}" will be converted to PDF. Do you want to download it or open it in the editor?`,
         convertConfirmDownload: 'Download',
@@ -666,7 +640,6 @@ const translations = {
         usageInfo: (files: number, size: string, remainingFiles: number, remainingSize: string) => `目前您已選擇 ${files} 份文件，大小總計 ${size}MB (尚可上傳 ${remainingFiles} 份文件或 ${remainingSize}MB)`,
         toolSelect: '選取',
         toolPan: '平移',
-        toolText: '文字',
         toolImage: '圖片',
         toolShape: '圖形',
         toolSignature: '簽名',
@@ -1347,9 +1320,7 @@ export default function PdfEditorPage() {
   const [currentLink, setCurrentLink] = useState<LinkAnnotationDef>({ type: 'url', value: '' });
 
   const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false);
-  const [isTableConfigDialogOpen, setIsTableConfigDialogOpen] = useState(false);
-  const [tableConfig, setTableConfig] = useState({ rows: 3, cols: 3 });
-
+  
   const [pageTextContents, setPageTextContents] = useState<PageTextContent[]>([]);
   const [hasTextLayer, setHasTextLayer] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -1367,7 +1338,6 @@ export default function PdfEditorPage() {
   
   const [isTextExtractionMode, setIsTextExtractionMode] = useState(false);
   const [originalAnnotations, setOriginalAnnotations] = useState<Annotation[]>([]);
-  const [originalPdfFile, setOriginalPdfFile] = useState<File | null>(null);
 
   const thumbnailContainerRef = useRef<HTMLDivElement>(null);
   const thumbnailRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -1392,7 +1362,6 @@ export default function PdfEditorPage() {
   const shapeAnnotations = annotations.filter(a => a.type === 'rect' || a.type === 'ellipse' || a.type === 'triangle') as ShapeAnnotation[];
   const mosaicAnnotations = annotations.filter(a => a.type === 'mosaic') as MosaicAnnotation[];
   const scribbleAnnotations = annotations.filter(a => a.type === 'scribble') as ScribbleAnnotation[];
-  const tableAnnotations = annotations.filter(a => a.type === 'table') as TableAnnotation[];
 
   const updateState = useCallback((newPartialState: Partial<EditorState>, isHistoryEvent: boolean = true) => {
     setEditorState(prevState => {
@@ -1677,7 +1646,6 @@ export default function PdfEditorPage() {
   const loadPdfIntoEditor = async (file: File) => {
     setIsLoading(true);
     setLoadingMessage(texts.loadingPdf);
-    setOriginalPdfFile(file);
     try {
       const { loadedPageObjects } = await processPdfFile(file);
       const newState: EditorState = { pageObjects: loadedPageObjects, annotations: [] };
@@ -1728,11 +1696,11 @@ export default function PdfEditorPage() {
   };
   
   const handleExtractText = async () => {
-    if (pageObjects.length === 0 || !originalPdfFile) return;
+    if (pageObjects.length === 0) return;
     setIsLoading(true);
     setLoadingMessage(texts.extractingText);
     try {
-        const arrayBuffer = await originalPdfFile.arrayBuffer();
+        const arrayBuffer = await (await fetch(pageObjects[0].sourceCanvas.toDataURL())).arrayBuffer(); // This is a trick to get the file data back. In a real app, you'd keep the file object.
         const pdfDocProxy = await pdfjsLib.getDocument({ data: arrayBuffer, cMapUrl: `//cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/cmaps/`, cMapPacked: true }).promise;
 
         const extractedAnnotations: TextAnnotation[] = [];
@@ -1795,7 +1763,6 @@ export default function PdfEditorPage() {
     setActivePageIndex(null);
     setIsTextExtractionMode(false);
     setOriginalAnnotations([]);
-    setOriginalPdfFile(null);
     
     if (pdfUploadRef.current) {
         pdfUploadRef.current.value = ''; 
@@ -2036,27 +2003,6 @@ export default function PdfEditorPage() {
             maxWidth: boxWidth,
         });
         pdfLibPage.popGraphicsState();
-      }
-
-      for (const annotation of pageAnnotations.filter(a => a.type === 'table') as TableAnnotation[]) {
-        const { leftRatio, topRatio, widthRatio, heightRatio, rows, cols, strokeColor, strokeWidth } = annotation;
-        const x = leftRatio * pageWidth;
-        const y = pageHeight - (topRatio * pageHeight) - (heightRatio * pageHeight);
-        const width = widthRatio * pageWidth;
-        const height = heightRatio * pageHeight;
-        const { r, g, b } = hexToRgb(strokeColor);
-        const color = rgb(r, g, b);
-        const thickness = strokeWidth;
-
-        for (let i = 0; i <= rows; i++) {
-          const lineY = y + (i / rows) * height;
-          pdfLibPage.drawLine({ start: { x, y: lineY }, end: { x: x + width, y: lineY }, thickness, color });
-        }
-
-        for (let i = 0; i <= cols; i++) {
-          const lineX = x + (i / cols) * width;
-          pdfLibPage.drawLine({ start: { x: lineX, y }, end: { x: lineX, y: y + height }, thickness, color });
-        }
       }
     }
     
@@ -2789,12 +2735,11 @@ export default function PdfEditorPage() {
     
     const handlePageMouseDown = (e: React.MouseEvent<HTMLDivElement>, pageIndex: number) => {
         const tool = activeTool;
-        if (tool !== 'mosaic' && tool !== 'scribble' && tool !== 'table' && tool !== 'shape') return;
+        if (tool !== 'mosaic' && tool !== 'scribble' && tool !== 'shape') return;
     
         const interaction = 
             tool === 'mosaic' ? 'drawing-mosaic' : 
             tool === 'scribble' ? 'drawing-scribble' : 
-            tool === 'table' ? 'drawing-table' : 
             'drawing-shape';
         
         setInteractionMode(interaction);
@@ -2814,9 +2759,6 @@ export default function PdfEditorPage() {
                 break;
             case 'scribble':
                 newAnnotation = { id, type: 'scribble', pageIndex, points: [{ xRatio: startX, yRatio: startY }], color: '#000000', strokeWidth: 2, isUserAction: true };
-                break;
-            case 'table':
-                newAnnotation = { id, type: 'table', pageIndex, topRatio: startY, leftRatio: startX, widthRatio: 0, heightRatio: 0, rows: tableConfig.rows, cols: tableConfig.cols, cellPadding: 5, strokeColor: '#000000', strokeWidth: 1, cells: Array(tableConfig.rows).fill(0).map(() => Array(tableConfig.cols).fill('')), isUserAction: true };
                 break;
             case 'shape':
                 if (drawingShapeType) {
@@ -2918,19 +2860,10 @@ export default function PdfEditorPage() {
         if (mainViewContainerRef.current) {
           let cursor = 'default';
           if (activeTool === 'pan') cursor = 'grab';
-          if (activeTool === 'mosaic' || activeTool === 'scribble' || activeTool === 'table' || activeTool === 'shape') cursor = 'crosshair';
+          if (activeTool === 'mosaic' || activeTool === 'scribble' || activeTool === 'shape') cursor = 'crosshair';
           mainViewContainerRef.current.style.cursor = cursor;
         }
     }, [activeTool]);
-
-    const handleConfirmCreateTable = () => {
-        if (activePageIndex === null) {
-            toast({ title: texts.noPageSelected, variant: "destructive" });
-        } else {
-            setActiveTool('table');
-        }
-        setIsTableConfigDialogOpen(false);
-    }
     
     const handleShapeToolSelect = (shapeType: ShapeAnnotation['type']) => {
         setActiveTool('shape');
@@ -3011,28 +2944,6 @@ export default function PdfEditorPage() {
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      
-      <Dialog open={isTableConfigDialogOpen} onOpenChange={setIsTableConfigDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{texts.tableConfigTitle}</DialogTitle>
-            <DialogDescription>{texts.tableConfigDescription}</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="table-rows" className="text-right">{texts.tableRows}</Label>
-              <Input id="table-rows" type="number" value={tableConfig.rows} onChange={(e) => setTableConfig(prev => ({...prev, rows: Math.max(1, parseInt(e.target.value) || 1)}))} className="col-span-3" />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="table-cols" className="text-right">{texts.tableCols}</Label>
-              <Input id="table-cols" type="number" value={tableConfig.cols} onChange={(e) => setTableConfig(prev => ({...prev, cols: Math.max(1, parseInt(e.target.value) || 1)}))} className="col-span-3" />
-            </div>
-          </div>
-          <DialogClose asChild>
-            <Button type="button" onClick={handleConfirmCreateTable}>{texts.createTable}</Button>
-          </DialogClose>
-        </DialogContent>
-      </Dialog>
 
     <header className="p-0 border-b bg-card sticky top-0 z-40 flex-shrink-0 h-14">
         <Menubar className="rounded-none border-x-0 h-full px-4 lg:px-6">
@@ -3189,7 +3100,7 @@ export default function PdfEditorPage() {
                 <TooltipTrigger asChild>
                     <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={handleAddTextAnnotation} disabled={activePageIndex === null}>
                         <Type className="h-5 w-5" />
-                        <span className="text-xs">{texts.toolText}</span>
+                        <span className="text-xs">{texts.toolInsertText}</span>
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom"><p>{texts.menuEditInsertText}</p></TooltipContent>
@@ -3198,7 +3109,7 @@ export default function PdfEditorPage() {
                 <TooltipTrigger asChild>
                     <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={() => imageUploadRef.current?.click()} disabled={activePageIndex === null}>
                         <ImagePlus className="h-5 w-5" />
-                        <span className="text-xs">{texts.toolImage}</span>
+                        <span className="text-xs">{texts.toolInsertImage}</span>
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom"><p>{texts.menuEditInsertImage}</p></TooltipContent>
@@ -3252,15 +3163,6 @@ export default function PdfEditorPage() {
                         <Button variant="ghost" size="icon" onClick={() => setActiveTool('scribble')}><ScribbleIcon /></Button>
                     </PopoverContent>
                 </Popover>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                      <Button variant={activeTool === 'table' ? "secondary" : "ghost"} className="flex flex-col h-auto p-2 space-y-1" onClick={() => setIsTableConfigDialogOpen(true)} disabled={activePageIndex === null}>
-                          <Grid className="h-5 w-5" />
-                          <span className="text-xs">{texts.toolTable}</span>
-                      </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom"><p>{texts.drawTable}</p></TooltipContent>
-                </Tooltip>
                  <Tooltip>
                     <TooltipTrigger asChild>
                         <Button variant={activeTool === 'mosaic' ? "secondary" : "ghost"} className="flex flex-col h-auto p-2 space-y-1" onClick={() => setActiveTool('mosaic')} disabled={activePageIndex === null}>
@@ -3623,20 +3525,7 @@ export default function PdfEditorPage() {
                                         onHover={setHoveredAnnotationId}
                                     />
                                 ))}
-                                 {tableAnnotations.filter(a => a.pageIndex === index).map(ann => (
-                                    <TableAnnotationComponent
-                                        key={ann.id}
-                                        annotation={ann}
-                                        isSelected={selectedAnnotationId === ann.id}
-                                        isHovered={hoveredAnnotationId === ann.id}
-                                        onDragStart={(e) => handleDragMouseDown(e, ann.id)}
-                                        onResizeStart={(e) => handleDragMouseDown(e, ann.id)}
-                                        onSelect={(e) => handleAnnotationSelect(e, ann.id)}
-                                        onDoubleClick={(e) => handleTableCellDoubleClick(e, ann)}
-                                        onHover={setHoveredAnnotationId}
-                                    />
-                                ))}
-                                {imageAnnotations.filter(ann => ann.pageIndex === index).map(ann => (
+                                 {imageAnnotations.filter(ann => ann.pageIndex === index).map(ann => (
                                     <div
                                         key={ann.id}
                                         onMouseDown={(e) => { handleDragMouseDown(e, ann.id); }}

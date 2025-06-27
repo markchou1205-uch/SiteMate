@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, CaseSensitive, Eye, Scissors, LayoutGrid, PanelLeft, FilePlus2, Combine, Type, ImagePlus, Link as LinkIcon, MessageSquarePlus, ZoomIn, ZoomOut, Expand, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Highlighter, ArrowRightLeft, Edit, FileUp, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText, Sparkles, XCircle, File, FolderOpen, Save, Wrench, HelpCircle, PanelTop, Redo, Undo, Hand, Square, Circle, Pencil, Printer, SearchIcon, ChevronLeft, ChevronRight, MousePointerSquareDashed, Grid, ShieldAlert, Layers, Brush, History } from 'lucide-react';
+import { Loader2, RotateCcw, RotateCw, X, Trash2, Download, Upload, Info, Shuffle, Search, Edit3, Droplet, LogIn, LogOut, UserCircle, FileText, Lock, MenuSquare, Columns, ShieldCheck, FilePlus, ListOrdered, Move, CheckSquare, Image as ImageIcon, Minimize2, Palette, CaseSensitive, Eye, Scissors, LayoutGrid, PanelLeft, FilePlus2, Combine, Type, ImagePlus, Link as LinkIcon, MessageSquarePlus, ZoomIn, ZoomOut, Expand, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Highlighter, ArrowRightLeft, Edit, FileUp, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText, Sparkles, XCircle, File, FolderOpen, Save, Wrench, HelpCircle, PanelTop, Redo, Undo, Hand, Square, Circle, Pencil, Printer, SearchIcon, ChevronLeft, ChevronRight, MousePointerSquareDashed, Grid, ShieldAlert, Layers, Brush, History, Copy } from 'lucide-react';
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
@@ -173,7 +173,7 @@ interface SearchResult {
 }
 
 type Tool = 'select' | 'pan' | 'text' | 'image' | 'highlight' | 'shape' | 'signature' | 'scribble' | 'mosaic' | 'extract-text';
-type InteractionMode = 'idle' | 'selected' | 'editing' | 'drawing-mosaic' | 'drawing-scribble' | 'drawing-shape';
+type InteractionMode = 'idle' | 'selected' | 'editing' | 'drawing-text' | 'drawing-mosaic' | 'drawing-scribble' | 'drawing-shape';
 
 const translations = {
     en: {
@@ -386,6 +386,7 @@ const translations = {
         usageInfo: (files: number, size: string, remainingFiles: number, remainingSize: string) => `You have selected ${files} file(s), with a total size of ${size}MB. (You can still upload ${remainingFiles} more files or ${remainingSize}MB).`,
         toolSelect: 'Select',
         toolPan: 'Pan',
+        toolText: 'Text',
         toolImage: 'Image',
         toolShape: 'Sign',
         toolSignature: 'Shape',
@@ -414,6 +415,7 @@ const translations = {
         noTextInPdf: 'This PDF has no text layer. OCR may be needed to enable search.',
         toolScribble: 'Scribble',
         toolMosaic: 'Mosaic',
+        applyToAllPages: 'Apply to All Pages',
         convertConfirmTitle: "Convert File",
         convertConfirmDescription: (filename: string) => `"${filename}" will be converted to PDF. Do you want to download it or open it in the editor?`,
         convertConfirmDownload: 'Download',
@@ -428,7 +430,8 @@ const translations = {
         newDocConfirmDescription: 'This will close the current document without saving changes. Are you sure you want to continue?',
         downloadEditedFile: 'Download',
         toolDownload: 'Download',
-        actionHistory: 'Action History',
+        actionHistory: '操作記錄',
+        toolDuplicate: '複製本頁',
     },
     zh: {
         pageTitle: 'PDF 編輯器 (專業模式)',
@@ -640,6 +643,7 @@ const translations = {
         usageInfo: (files: number, size: string, remainingFiles: number, remainingSize: string) => `目前您已選擇 ${files} 份文件，大小總計 ${size}MB (尚可上傳 ${remainingFiles} 份文件或 ${remainingSize}MB)`,
         toolSelect: '選取',
         toolPan: '平移',
+        toolText: '文字',
         toolImage: '圖片',
         toolShape: '圖形',
         toolSignature: '簽名',
@@ -668,13 +672,6 @@ const translations = {
         noTextInPdf: '此 PDF 不包含文字層。可能需要 OCR 才能啟用搜尋。',
         toolScribble: '畫筆',
         toolMosaic: '馬賽克',
-        toolTable: '表格',
-        drawTable: '繪製表格',
-        tableConfigTitle: '設定表格',
-        tableConfigDescription: '設定新表格的欄與列數。',
-        tableRows: '列',
-        tableCols: '欄',
-        createTable: '建立表格',
         applyToAllPages: '套用至所有頁面',
         convertConfirmTitle: "轉換檔案",
         convertConfirmDescription: (filename: string) => `將為您轉檔 "${filename}" 為 PDF。請選擇轉檔後要下載至您的電腦還是進入編輯模式？`,
@@ -689,7 +686,8 @@ const translations = {
         newDocConfirmDescription: '這將會關閉目前正在編輯的文件，且不會儲存變更。確定要繼續嗎？',
         downloadEditedFile: '下載',
         toolDownload: '下載',
-        actionHistory: '動作歷史',
+        actionHistory: '操作記錄',
+        toolDuplicate: '複製本頁',
     }
 };
 
@@ -725,16 +723,17 @@ const MAX_TOTAL_SIZE_MB = 50;
 const MAX_TOTAL_SIZE_BYTES = MAX_TOTAL_SIZE_MB * 1024 * 1024;
 
 
-const PagePreviewItem = React.memo(({ pageObj, index, isSelected, onClick, onDoubleClick, texts }: {
+const PagePreviewItem = React.memo(({ pageObj, index, texts, onDuplicate, onRotate, onDelete }: {
   pageObj: PageObject;
   index: number;
-  isSelected: boolean;
-  onClick: (event: React.MouseEvent) => void;
-  onDoubleClick: () => void;
   texts: typeof translations.en;
+  onDuplicate: (index: number) => void;
+  onRotate: (index: number) => void;
+  onDelete: (index: number) => void;
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (canvasRef.current) {
@@ -756,7 +755,7 @@ const PagePreviewItem = React.memo(({ pageObj, index, isSelected, onClick, onDou
       }
 
       const targetAspectRatio = rotatedSourceWidth / rotatedSourceHeight;
-      const cssDisplayWidth = 120;
+      const cssDisplayWidth = 100; // Smaller thumbnail size
       const cssDisplayHeight = cssDisplayWidth / targetAspectRatio;
 
       previewDisplayCanvas.width = rotatedSourceWidth;
@@ -776,16 +775,24 @@ const PagePreviewItem = React.memo(({ pageObj, index, isSelected, onClick, onDou
   return (
     <div
       ref={wrapperRef}
-      className={`page-preview-wrapper p-2 border-2 rounded-lg cursor-pointer transition-all bg-card hover:border-primary ${isSelected ? 'border-primary ring-2 ring-primary' : 'border-transparent'}`}
+      className="page-preview-wrapper p-1 rounded-lg cursor-pointer transition-all bg-card relative group"
       data-id={pageObj.id}
       data-index={index}
-      onClick={onClick}
-      onDoubleClick={onDoubleClick}
-      style={{ position: 'relative' }}
     >
       <canvas ref={canvasRef} className="rounded-md shadow-md" style={{ willReadFrequently: true } as any}></canvas>
       <div className="text-xs text-muted-foreground mt-1 text-center">
         {texts.page} {index + 1}
+      </div>
+       <div className="absolute inset-0 bg-black/40 flex-col items-center justify-center gap-1 p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex">
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={(e) => {e.stopPropagation(); onDuplicate(index); toast({title: `Page ${index + 1} duplicated`})}}>
+              <Copy className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={(e) => {e.stopPropagation(); onRotate(index);}}>
+              <RotateCw className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive-foreground hover:bg-destructive" onClick={(e) => {e.stopPropagation(); onDelete(index);}}>
+              <Trash2 className="h-4 w-4" />
+          </Button>
       </div>
     </div>
   );
@@ -799,69 +806,82 @@ const fonts = [
 ];
 
 const fontSizes = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72];
+const colors = ['#000000', '#EF4444', '#3B82F6', '#22C55E', '#F97316', '#8B5CF6'];
 
-const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete, onImageInsert }: { annotation: TextAnnotation; onAnnotationChange: (id: string, annotation: Partial<TextAnnotation>) => void; onDelete: (id: string) => void; onImageInsert: () => void; }) => {
-    const handleStyleChange = (style: Partial<TextSegment>) => {
-      onAnnotationChange(annotation.id, {
-        segments: annotation.segments.map(s => ({ ...s, ...style })),
-      });
-    };
-    
-    return (
-        <div className="text-toolbar bg-card p-2 rounded-lg shadow-lg border flex items-center gap-2 animate-in slide-in-from-top-4 duration-300">
-            <Select value={annotation.fontFamily} onValueChange={(value) => onAnnotationChange(annotation.id, { fontFamily: value })}>
-                <SelectTrigger className="w-[120px] h-8 text-xs">
-                    <SelectValue placeholder="Font" />
-                </SelectTrigger>
-                <SelectContent>
-                    {fonts.map(font => <SelectItem key={font.value} value={font.value} className="text-xs">{font.name}</SelectItem>)}
-                </SelectContent>
-            </Select>
-            <Select value={String(annotation.fontSize)} onValueChange={(value) => onAnnotationChange(annotation.id, { fontSize: Number(value) })}>
-                <SelectTrigger className="w-[60px] h-8 text-xs">
-                    <SelectValue placeholder="Size" />
-                </SelectTrigger>
-                <SelectContent>
-                    {fontSizes.map(size => <SelectItem key={size} value={String(size)} className="text-xs">{size}</SelectItem>)}
-                </SelectContent>
-            </Select>
-            <Separator orientation="vertical" className="h-6" />
-            <Toggle pressed={annotation.segments[0]?.bold} onPressedChange={(pressed) => handleStyleChange({ bold: pressed })}>
-                <Bold className="h-4 w-4" />
-            </Toggle>
-            <Toggle pressed={annotation.segments[0]?.italic} onPressedChange={(pressed) => handleStyleChange({ italic: pressed })}>
-                <Italic className="h-4 w-4" />
-            </Toggle>
-            <Toggle pressed={annotation.segments[0]?.underline} onPressedChange={(pressed) => handleStyleChange({ underline: pressed })}>
-                <Underline className="h-4 w-4" />
-            </Toggle>
-            <Separator orientation="vertical" className="h-6" />
-            <Popover>
-                <PopoverTrigger asChild>
-                    <Button variant="outline" size="icon" className="h-8 w-8">
-                        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: annotation.segments[0]?.color }} />
-                    </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 border-0">
-                    <Input type="color" value={annotation.segments[0]?.color} onChange={(e) => handleStyleChange({ color: e.target.value })} className="w-14 h-10 p-1 border-0 cursor-pointer"/>
-                </PopoverContent>
-            </Popover>
-             <Separator orientation="vertical" className="h-6" />
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onImageInsert}>
-                <ImagePlus className="h-4 w-4" />
-            </Button>
-            <Separator orientation="vertical" className="h-6" />
-            <ToggleGroup type="single" value={annotation.textAlign} onValueChange={(value: TextAnnotation['textAlign']) => value && onAnnotationChange(annotation.id, { textAlign: value })}>
-                <ToggleGroupItem value="left"><AlignLeft className="h-4 w-4" /></ToggleGroupItem>
-                <ToggleGroupItem value="center"><AlignCenter className="h-4 w-4" /></ToggleGroupItem>
-                <ToggleGroupItem value="right"><AlignRight className="h-4 w-4" /></ToggleGroupItem>
-            </ToggleGroup>
-            <Separator orientation="vertical" className="h-6" />
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => onDelete(annotation.id)}>
-                <Trash2 className="h-4 w-4" />
-            </Button>
-        </div>
-    );
+const TextToolbar = ({ annotation, onAnnotationChange, onDelete }: {
+  annotation: TextAnnotation;
+  onAnnotationChange: (id: string, updates: Partial<TextAnnotation>) => void;
+  onDelete: (id: string) => void;
+}) => {
+  const handleStyleChange = (style: Partial<TextSegment>) => {
+    onAnnotationChange(annotation.id, {
+      segments: annotation.segments.map(s => ({ ...s, ...style })),
+    });
+  };
+  
+  return (
+    <div className="text-toolbar bg-card p-2 rounded-lg shadow-lg border flex items-center gap-2 animate-in slide-in-from-top-4 duration-300">
+        <Select value={annotation.fontFamily} onValueChange={(value) => onAnnotationChange(annotation.id, { fontFamily: value })}>
+            <SelectTrigger className="w-[120px] h-8 text-xs">
+                <SelectValue placeholder="Font" />
+            </SelectTrigger>
+            <SelectContent>
+                {fonts.map(font => <SelectItem key={font.value} value={font.value} className="text-xs">{font.name}</SelectItem>)}
+            </SelectContent>
+        </Select>
+        <Select value={String(annotation.fontSize)} onValueChange={(value) => onAnnotationChange(annotation.id, { fontSize: Number(value) })}>
+            <SelectTrigger className="w-[60px] h-8 text-xs">
+                <SelectValue placeholder="Size" />
+            </SelectTrigger>
+            <SelectContent>
+                {fontSizes.map(size => <SelectItem key={size} value={String(size)} className="text-xs">{size}</SelectItem>)}
+            </SelectContent>
+        </Select>
+        <Separator orientation="vertical" className="h-6" />
+        <Toggle pressed={annotation.segments[0]?.bold} onPressedChange={(pressed) => handleStyleChange({ bold: pressed })}>
+            <Bold className="h-4 w-4" />
+        </Toggle>
+        <Toggle pressed={annotation.segments[0]?.italic} onPressedChange={(pressed) => handleStyleChange({ italic: pressed })}>
+            <Italic className="h-4 w-4" />
+        </Toggle>
+        <Toggle pressed={annotation.segments[0]?.underline} onPressedChange={(pressed) => handleStyleChange({ underline: pressed })}>
+            <Underline className="h-4 w-4" />
+        </Toggle>
+        <Separator orientation="vertical" className="h-6" />
+        <Popover>
+            <PopoverTrigger asChild>
+                <Button variant="outline" size="icon" className="h-8 w-8">
+                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: annotation.segments[0]?.color }} />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-2">
+                <div className="grid grid-cols-6 gap-1">
+                    {colors.map(color => (
+                        <button
+                          key={color}
+                          onClick={() => handleStyleChange({ color })}
+                          className={cn(
+                              "w-6 h-6 rounded-full border-2",
+                              annotation.segments[0]?.color === color ? 'border-primary ring-2 ring-primary' : 'border-transparent'
+                          )}
+                          style={{ backgroundColor: color }}
+                        />
+                    ))}
+                </div>
+            </PopoverContent>
+        </Popover>
+        <Separator orientation="vertical" className="h-6" />
+        <ToggleGroup type="single" value={annotation.textAlign} onValueChange={(value: TextAnnotation['textAlign']) => value && onAnnotationChange(annotation.id, { textAlign: value })}>
+            <ToggleGroupItem value="left"><AlignLeft className="h-4 w-4" /></ToggleGroupItem>
+            <ToggleGroupItem value="center"><AlignCenter className="h-4 w-4" /></ToggleGroupItem>
+            <ToggleGroupItem value="right"><AlignRight className="h-4 w-4" /></ToggleGroupItem>
+        </ToggleGroup>
+        <Separator orientation="vertical" className="h-6" />
+        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => onDelete(annotation.id)}>
+            <Trash2 className="h-4 w-4" />
+        </Button>
+    </div>
+  );
 };
 
 const ShapeToolbar = ({ annotation, onAnnotationChange, onDelete }: { annotation: ShapeAnnotation | ScribbleAnnotation; onAnnotationChange: (id: string, annotation: Partial<ShapeAnnotation | ScribbleAnnotation>) => void; onDelete: (id: string) => void; }) => {
@@ -958,7 +978,6 @@ const TextAnnotationComponent = ({
                 ref={textareaRef}
                 value={annotation.segments.map(s => s.text).join('')}
                 onChange={(e) => {
-                    // This is a simplified handler. A real rich text editor would be much more complex.
                     onAnnotationChange(annotation.id, {
                       segments: [{ ...annotation.segments[0], text: e.target.value }],
                     });
@@ -1114,69 +1133,6 @@ const ScribbleAnnotationComponent = ({ annotation, pageDimensions, onSelect, isS
     )
 }
 
-const TableAnnotationComponent = ({ annotation, onDragStart, onResizeStart, onSelect, isSelected, isHovered, onHover, onDoubleClick }: {
-    annotation: TableAnnotation;
-    onDragStart: (e: React.MouseEvent, id: string) => void;
-    onResizeStart: (e: React.MouseEvent, id: string) => void;
-    onSelect: (e: React.MouseEvent, id: string) => void;
-    onDoubleClick: (e: React.MouseEvent, annotation: TableAnnotation) => void;
-    isSelected: boolean;
-    isHovered: boolean;
-    onHover: (id: string | null) => void;
-}) => {
-    const cellWidth = 100 / annotation.cols;
-    const cellHeight = 100 / annotation.rows;
-
-    return (
-        <div
-            onMouseDown={(e) => onDragStart(e, annotation.id)}
-            onClick={(e) => { e.stopPropagation(); onSelect(e, annotation.id); }}
-            onDoubleClick={(e) => onDoubleClick(e, annotation)}
-            onMouseEnter={() => onHover(annotation.id)}
-            onMouseLeave={() => onHover(null)}
-            className={cn("absolute cursor-grab", (isSelected || isHovered) && "border-2 border-dashed border-primary")}
-            style={{
-                left: `${annotation.leftRatio * 100}%`,
-                top: `${annotation.topRatio * 100}%`,
-                width: `${annotation.widthRatio * 100}%`,
-                height: `${annotation.heightRatio * 100}%`,
-                zIndex: 18,
-            }}
-        >
-            <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
-                {Array.from({ length: annotation.rows + 1 }, (_, i) => (
-                    <line
-                        key={`h-${i}`}
-                        x1="0"
-                        y1={i * cellHeight}
-                        x2="100"
-                        y2={i * cellHeight}
-                        stroke={annotation.strokeColor}
-                        strokeWidth={annotation.strokeWidth / 10}
-                    />
-                ))}
-                {Array.from({ length: annotation.cols + 1 }, (_, i) => (
-                    <line
-                        key={`v-${i}`}
-                        x1={i * cellWidth}
-                        y1="0"
-                        x2={i * cellWidth}
-                        y2="100"
-                        stroke={annotation.strokeColor}
-                        strokeWidth={annotation.strokeWidth / 10}
-                    />
-                ))}
-            </svg>
-            {(isSelected || isHovered) && (
-                <div
-                    className="absolute -right-1 -bottom-1 w-4 h-4 bg-primary rounded-full border-2 border-white cursor-se-resize"
-                    onMouseDown={(e) => onResizeStart(e, annotation.id)}
-                />
-            )}
-        </div>
-    );
-};
-
 const SignaturePad = ({ onSave, texts }: { onSave: (dataUrl: string) => void, texts: typeof translations.en }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isDrawing, setIsDrawing] = useState(false);
@@ -1300,6 +1256,7 @@ export default function PdfEditorPage() {
 
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isNewDocConfirmOpen, setIsNewDocConfirmOpen] = useState(false);
+  const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
   const [pageToDelete, setPageToDelete] = useState<number | null>(null);
 
   const [currentLanguage, setCurrentLanguage] = useState<'en' | 'zh'>('zh');
@@ -1313,7 +1270,7 @@ export default function PdfEditorPage() {
   const downloadButtonRef = useRef<HTMLDivElement>(null);
   const toolbarContainerRef = useRef<HTMLDivElement>(null);
 
-
+  const [originalFile, setOriginalFile] = useState<File | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   
   const [isLinkPopoverOpen, setIsLinkPopoverOpen] = useState(false);
@@ -1648,6 +1605,7 @@ export default function PdfEditorPage() {
     setLoadingMessage(texts.loadingPdf);
     try {
       const { loadedPageObjects } = await processPdfFile(file);
+      setOriginalFile(file); // Store original file
       const newState: EditorState = { pageObjects: loadedPageObjects, annotations: [] };
       setEditorState(newState);
       setHistory([newState]);
@@ -1668,6 +1626,7 @@ export default function PdfEditorPage() {
       setHistory([initialEditorState]);
       setHistoryIndex(0);
       setActivePageIndex(null);
+      setOriginalFile(null);
     } finally {
       setIsLoading(false);
       setLoadingMessage('');
@@ -1696,11 +1655,14 @@ export default function PdfEditorPage() {
   };
   
   const handleExtractText = async () => {
-    if (pageObjects.length === 0) return;
+    if (!originalFile) {
+        toast({ title: "Extraction Failed", description: "Original PDF file not found.", variant: "destructive" });
+        return;
+    }
     setIsLoading(true);
     setLoadingMessage(texts.extractingText);
     try {
-        const arrayBuffer = await (await fetch(pageObjects[0].sourceCanvas.toDataURL())).arrayBuffer(); // This is a trick to get the file data back. In a real app, you'd keep the file object.
+        const arrayBuffer = await originalFile.arrayBuffer();
         const pdfDocProxy = await pdfjsLib.getDocument({ data: arrayBuffer, cMapUrl: `//cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/cmaps/`, cMapPacked: true }).promise;
 
         const extractedAnnotations: TextAnnotation[] = [];
@@ -1772,32 +1734,50 @@ export default function PdfEditorPage() {
     setIsNewDocConfirmOpen(false);
   };
 
-  const handleDeletePages = () => {
-      if (selectedPageIds.size === 0) {
-          toast({ title: texts.pageManagement, description: texts.noPageSelected, variant: "destructive" });
-          return;
-      }
-      
-      const newPageObjects = pageObjects.filter(p => !selectedPageIds.has(p.id));
-      const oldIndexMap = new Map(pageObjects.map((p, i) => [p.id, i]));
-      const newIndexMap = new Map(newPageObjects.map((p, i) => [p.id, i]));
-      
+  const handlePageAction = (index: number, action: 'delete' | 'duplicate' | 'rotate') => {
+    if (action === 'delete') {
+      const pageIdToDelete = pageObjects[index].id;
+      const newPageObjects = pageObjects.filter((_, i) => i !== index);
       const newAnnotations = annotations
-          .filter(ann => {
-              const oldPageIndex = oldIndexMap.get(pageObjects[ann.pageIndex]?.id);
-              return oldPageIndex !== undefined && !selectedPageIds.has(pageObjects[oldPageIndex].id);
-          })
-          .map(ann => {
-              const newIndex = newIndexMap.get(pageObjects[ann.pageIndex].id);
-              return { ...ann, pageIndex: newIndex ?? -1 };
-          })
-          .filter(ann => ann.pageIndex !== -1);
+        .filter(ann => ann.pageIndex !== index)
+        .map(ann => ({...ann, pageIndex: ann.pageIndex > index ? ann.pageIndex - 1 : ann.pageIndex}));
       
       updateState({ pageObjects: newPageObjects, annotations: newAnnotations });
+      toast({ title: `Page ${index + 1} deleted.` });
       
-      setSelectedPageIds(new Set());
-      setActivePageIndex(pageObjects.length > 0 ? 0 : null);
-      toast({ title: texts.pageManagement, description: currentLanguage === 'zh' ? "選取的頁面已刪除。" : "Selected pages have been deleted." });
+      if (activePageIndex === index) {
+        setActivePageIndex(newPageObjects.length > 0 ? Math.max(0, index - 1) : null);
+      } else if (activePageIndex && activePageIndex > index) {
+        setActivePageIndex(activePageIndex - 1);
+      }
+
+    } else if (action === 'duplicate') {
+      const pageToDuplicate = pageObjects[index];
+      const newPageObject: PageObject = { ...pageToDuplicate, id: uuidv4() };
+      
+      const newPageObjects = [...pageObjects];
+      newPageObjects.splice(index + 1, 0, newPageObject);
+
+      const duplicatedAnnotations = annotations
+        .filter(ann => ann.pageIndex === index)
+        .map(ann => ({...ann, id: uuidv4(), pageIndex: index + 1}));
+
+      const newAnnotations = annotations
+        .map(ann => (ann.pageIndex > index ? {...ann, pageIndex: ann.pageIndex + 1} : ann))
+        .concat(duplicatedAnnotations);
+      
+      updateState({ pageObjects: newPageObjects, annotations: newAnnotations });
+
+    } else if (action === 'rotate') {
+      const newPageObjects = pageObjects.map((page, i) => {
+        if (i === index) {
+          const newRotation = (page.rotation + 90 + 360) % 360;
+          return { ...page, rotation: newRotation };
+        }
+        return page;
+      });
+      updateState({ pageObjects: newPageObjects });
+    }
   };
 
 
@@ -2212,19 +2192,6 @@ export default function PdfEditorPage() {
       }
   };
 
-    const handleRotatePage = (direction: 'cw' | 'ccw') => {
-        if (activePageIndex === null) return;
-        
-        const newPageObjects = pageObjects.map((page, index) => {
-            if (index === activePageIndex) {
-                const newRotation = (page.rotation + (direction === 'cw' ? 90 : -90) + 360) % 360;
-                return { ...page, rotation: newRotation };
-            }
-            return page;
-        });
-        updateState({ pageObjects: newPageObjects });
-    };
-
     const handleAddBlankPage = () => {
         const blankCanvas = document.createElement('canvas');
         
@@ -2260,40 +2227,6 @@ export default function PdfEditorPage() {
         }, 100);
     };
 
-    const handleAddTextAnnotation = () => {
-        if (activePageIndex === null || !mainViewContainerRef.current) {
-            toast({ title: texts.toolInsertText, description: texts.noPageSelected, variant: "destructive" });
-            return;
-        }
-
-        const container = mainViewContainerRef.current;
-        const pageRect = pageRefs.current[activePageIndex]?.getBoundingClientRect();
-        if (!pageRect) return;
-
-        const top = (container.scrollTop + container.clientHeight / 2) - pageRect.top;
-        const left = (container.scrollLeft + container.clientWidth / 2) - pageRect.left;
-        
-        const newAnnotation: TextAnnotation = {
-            id: uuidv4(),
-            type: 'text',
-            pageIndex: activePageIndex,
-            segments: [{ text: texts.textAnnotationSample, color: '#000000', bold: false, italic: false, underline: false }],
-            topRatio: Math.max(0, Math.min(0.9, top / pageRect.height)),
-            leftRatio: Math.max(0, Math.min(0.8, left / pageRect.width)),
-            widthRatio: 0.2,
-            heightRatio: 0.1,
-            fontSize: 36,
-            fontFamily: 'Helvetica',
-            textAlign: 'left',
-            isUserAction: true,
-        };
-        
-        addAnnotation(newAnnotation);
-        setSelectedAnnotationId(newAnnotation.id);
-        setActiveTool('select');
-        setInteractionMode('selected');
-    };
-    
     const handleDeleteAnnotation = (id: string) => {
         updateState({ annotations: annotations.filter(a => a.id !== id) });
         if (selectedAnnotationId === id) {
@@ -2462,7 +2395,7 @@ export default function PdfEditorPage() {
         handleDeselectAll();
       } else if (interactionMode === 'editing' && !target.closest('.group\\/text-annotation') && !target.closest('.text-toolbar')) {
         setInteractionMode('selected'); 
-      } else if (interactionMode !== 'editing' && target === mainViewContainerRef.current) {
+      } else if (interactionMode !== 'editing' && target.classList.contains('main-view-container')) {
         handleDeselectAll();
       }
     }, [interactionMode, handleDeselectAll]);
@@ -2735,11 +2668,12 @@ export default function PdfEditorPage() {
     
     const handlePageMouseDown = (e: React.MouseEvent<HTMLDivElement>, pageIndex: number) => {
         const tool = activeTool;
-        if (tool !== 'mosaic' && tool !== 'scribble' && tool !== 'shape') return;
+        if (tool !== 'mosaic' && tool !== 'scribble' && tool !== 'text' && tool !== 'shape') return;
     
         const interaction = 
             tool === 'mosaic' ? 'drawing-mosaic' : 
             tool === 'scribble' ? 'drawing-scribble' : 
+            tool === 'text' ? 'drawing-text' : 
             'drawing-shape';
         
         setInteractionMode(interaction);
@@ -2759,6 +2693,9 @@ export default function PdfEditorPage() {
                 break;
             case 'scribble':
                 newAnnotation = { id, type: 'scribble', pageIndex, points: [{ xRatio: startX, yRatio: startY }], color: '#000000', strokeWidth: 2, isUserAction: true };
+                break;
+            case 'text':
+                newAnnotation = { id, type: 'text', pageIndex, segments: [{ text: texts.textAnnotationSample, color: '#000000', bold: false, italic: false, underline: false }], topRatio: startY, leftRatio: startX, widthRatio: 0, heightRatio: 0, fontSize: 36, fontFamily: 'Helvetica', textAlign: 'left', isUserAction: true };
                 break;
             case 'shape':
                 if (drawingShapeType) {
@@ -2817,53 +2754,17 @@ export default function PdfEditorPage() {
                 }
             }
             
+            if (interactionMode === 'drawing-text' && drawingStartRef.current) {
+                setSelectedAnnotationId(drawingStartRef.current.id);
+                setInteractionMode('editing');
+            } else {
+                setInteractionMode('idle');
+            }
             drawingStartRef.current = null;
             setActiveTool('select');
-            setInteractionMode('idle');
             setDrawingShapeType(null);
         }
     };
-    
-    const handleTableCellDoubleClick = (e: React.MouseEvent, tableAnn: TableAnnotation) => {
-      e.stopPropagation();
-      const svgElement = (e.currentTarget.querySelector('svg'));
-      if(!svgElement) return;
-
-      const rect = svgElement.getBoundingClientRect();
-      const clickX = e.clientX - rect.left;
-      const clickY = e.clientY - rect.top;
-
-      const col = Math.floor(clickX / (rect.width / tableAnn.cols));
-      const row = Math.floor(clickY / (rect.height / tableAnn.rows));
-
-      const id = uuidv4();
-      const newTextAnnotation: TextAnnotation = {
-        id,
-        type: 'text',
-        pageIndex: tableAnn.pageIndex,
-        segments: [{ text: tableAnn.cells[row]?.[col] || '', color: '#000000', bold: false, italic: false, underline: false }],
-        topRatio: tableAnn.topRatio + (row / tableAnn.rows) * tableAnn.heightRatio,
-        leftRatio: tableAnn.leftRatio + (col / tableAnn.cols) * tableAnn.widthRatio,
-        widthRatio: tableAnn.widthRatio / tableAnn.cols,
-        heightRatio: tableAnn.heightRatio / tableAnn.rows,
-        fontSize: 12,
-        fontFamily: 'Helvetica',
-        textAlign: 'left',
-        isUserAction: true,
-      };
-      addAnnotation(newTextAnnotation);
-      setInteractionMode('editing');
-      setSelectedAnnotationId(id);
-    };
-
-    useEffect(() => {
-        if (mainViewContainerRef.current) {
-          let cursor = 'default';
-          if (activeTool === 'pan') cursor = 'grab';
-          if (activeTool === 'mosaic' || activeTool === 'scribble' || activeTool === 'shape') cursor = 'crosshair';
-          mainViewContainerRef.current.style.cursor = cursor;
-        }
-    }, [activeTool]);
     
     const handleShapeToolSelect = (shapeType: ShapeAnnotation['type']) => {
         setActiveTool('shape');
@@ -2940,7 +2841,7 @@ export default function PdfEditorPage() {
             </ShadAlertDialogHeader>
             <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setPageToDelete(null)}>{texts.cancel}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeletePages}>{texts.confirm}</AlertDialogAction>
+            <AlertDialogAction onClick={() => { if (pageToDelete !== null) {handlePageAction(pageToDelete, 'delete'); setPageToDelete(null);} }}>{texts.confirm}</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -2999,7 +2900,7 @@ export default function PdfEditorPage() {
                     <MenubarItem onClick={handleUndo} disabled={historyIndex <= 0}><Undo className="mr-2 h-4 w-4" />{texts.menuEditUndo}</MenubarItem>
                     <MenubarItem onClick={handleRedo} disabled={historyIndex >= history.length - 1}><Redo className="mr-2 h-4 w-4" />{texts.menuEditRedo}</MenubarItem>
                     <MenubarSeparator/>
-                    <MenubarItem onClick={handleAddTextAnnotation} disabled={activePageIndex === null}><Type className="mr-2 h-4 w-4"/>{texts.menuEditInsertText}</MenubarItem>
+                    <MenubarItem onClick={() => setActiveTool('text')} disabled={activePageIndex === null}><Type className="mr-2 h-4 w-4"/>{texts.menuEditInsertText}</MenubarItem>
                     <MenubarItem onClick={() => imageUploadRef.current?.click()} disabled={activePageIndex === null}><ImagePlus className="mr-2 h-4 w-4"/>{texts.menuEditInsertImage}</MenubarItem>
                     <MenubarItem onClick={handleAddHighlightAnnotation} disabled={activePageIndex === null}><Highlighter className="mr-2 h-4 w-4"/>{texts.menuEditHighlight}</MenubarItem>
                     <Popover open={isLinkPopoverOpen} onOpenChange={setIsLinkPopoverOpen}>
@@ -3017,8 +2918,7 @@ export default function PdfEditorPage() {
             <MenubarMenu>
                 <MenubarTrigger>{texts.menuPage}</MenubarTrigger>
                 <MenubarContent>
-                    <MenubarItem onClick={() => handleRotatePage('cw')} disabled={activePageIndex === null}><RotateCw className="mr-2 h-4 w-4" />{texts.menuPageRotateCW}</MenubarItem>
-                    <MenubarItem onClick={() => handleRotatePage('ccw')} disabled={activePageIndex === null}><RotateCcw className="mr-2 h-4 w-4" />{texts.menuPageRotateCCW}</MenubarItem>
+                    <MenubarItem onClick={() => handlePageAction(activePageIndex!, 'rotate')} disabled={activePageIndex === null}><RotateCw className="mr-2 h-4 w-4" />{texts.menuPageRotateCW}</MenubarItem>
                     <MenubarSeparator />
                     <MenubarItem onClick={handleAddBlankPage}><FilePlus2 className="mr-2 h-4 w-4"/>{texts.menuPageAddBlank}</MenubarItem>
                     <MenubarItem onClick={() => { if(activePageIndex !== null) { setPageToDelete(activePageIndex); setIsDeleteConfirmOpen(true); } }} disabled={activePageIndex === null}>
@@ -3098,9 +2998,9 @@ export default function PdfEditorPage() {
 
                 <Tooltip>
                 <TooltipTrigger asChild>
-                    <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={handleAddTextAnnotation} disabled={activePageIndex === null}>
+                    <Button variant={activeTool === 'text' ? 'secondary' : 'ghost'} className="flex flex-col h-auto p-2 space-y-1" onClick={() => setActiveTool('text')} disabled={activePageIndex === null}>
                         <Type className="h-5 w-5" />
-                        <span className="text-xs">{texts.toolInsertText}</span>
+                        <span className="text-xs">{texts.toolText}</span>
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom"><p>{texts.menuEditInsertText}</p></TooltipContent>
@@ -3109,7 +3009,7 @@ export default function PdfEditorPage() {
                 <TooltipTrigger asChild>
                     <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={() => imageUploadRef.current?.click()} disabled={activePageIndex === null}>
                         <ImagePlus className="h-5 w-5" />
-                        <span className="text-xs">{texts.toolInsertImage}</span>
+                        <span className="text-xs">{texts.toolImage}</span>
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom"><p>{texts.menuEditInsertImage}</p></TooltipContent>
@@ -3192,36 +3092,6 @@ export default function PdfEditorPage() {
                         <SignaturePad onSave={handleSaveSignature} texts={texts}/>
                     </DialogContent>
                 </Dialog>
-
-                <Separator orientation="vertical" className="h-10 mx-2" />
-
-                <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={() => handleRotatePage('ccw')} disabled={activePageIndex === null}>
-                        <RotateCcw className="h-5 w-5" />
-                        <span className="text-xs">{texts.toolRotate}</span>
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom"><p>{texts.menuPageRotateCCW}</p></TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={handleAddBlankPage}>
-                        <FilePlus2 className="h-5 w-5" />
-                        <span className="text-xs">{texts.toolAddBlank}</span>
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom"><p>{texts.menuPageAddBlank}</p></TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button variant="ghost" className="flex flex-col h-auto p-2 space-y-1" onClick={() => { if(activePageIndex !== null) { setPageToDelete(activePageIndex); setIsDeleteConfirmOpen(true); } }} disabled={activePageIndex === null}>
-                        <Trash2 className="h-5 w-5 text-destructive"/>
-                        <span className="text-xs text-destructive">{texts.toolDelete}</span>
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom"><p>{texts.menuPageDelete}</p></TooltipContent>
-                </Tooltip>
             </TooltipProvider>
         </div>
         <div className="flex items-center gap-1">
@@ -3236,7 +3106,15 @@ export default function PdfEditorPage() {
                         <TooltipContent side="bottom"><p>Apply this image/signature to all pages</p></TooltipContent>
                     </Tooltip>
                  )}
-                 <Tooltip>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" onClick={() => setIsHistoryPanelOpen(prev => !prev)}>
+                          <History className="h-5 w-5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom"><p>{texts.actionHistory}</p></TooltipContent>
+                </Tooltip>
+                <Tooltip>
                     <TooltipTrigger asChild><Button variant="ghost" size="icon" onClick={() => window.print()}><Printer className="h-5 w-5" /></Button></TooltipTrigger>
                     <TooltipContent side="bottom"><p>{texts.toolPrint}</p></TooltipContent>
                 </Tooltip>
@@ -3269,11 +3147,10 @@ export default function PdfEditorPage() {
       <div className="flex-grow flex overflow-hidden relative">
         <div ref={toolbarContainerRef} className="absolute top-2 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2">
           {interactionMode === 'editing' && activeTextAnnotation && (
-              <TextAnnotationToolbar
+              <TextToolbar
                   annotation={activeTextAnnotation}
                   onAnnotationChange={updateAnnotation}
                   onDelete={() => handleDeleteAnnotation(activeTextAnnotation.id)}
-                  onImageInsert={() => imageUploadRef.current?.click()}
               />
           )}
           {(interactionMode === 'selected' || interactionMode === 'editing') && activeShapeAnnotation && (
@@ -3324,9 +3201,6 @@ export default function PdfEditorPage() {
                       <Button onClick={() => router.push('/split-pdf')} variant="outline" size="sm">
                         <Scissors className="mr-2 h-4 w-4" /> {texts.splitPages}
                       </Button>
-                      <Button onClick={() => { setPageToDelete(null); setIsDeleteConfirmOpen(true); }} variant="destructive" size="sm" disabled={selectedPageIds.size === 0}>
-                        <Trash2 className="mr-2 h-4 w-4" /> {texts.deletePages}
-                      </Button>
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -3341,6 +3215,9 @@ export default function PdfEditorPage() {
                           index={index}
                           isSelected={selectedPageIds.has(pageObj.id)}
                           onClick={(e) => handleThumbnailClick(index, e)}
+                          onDuplicate={() => handlePageAction(index, 'duplicate')}
+                          onRotate={() => handlePageAction(index, 'rotate')}
+                          onDelete={() => setPageToDelete(index)}
                           onDoubleClick={() => {
                             setActivePageIndex(index);
                             setViewMode('editor');
@@ -3359,40 +3236,38 @@ export default function PdfEditorPage() {
               </div>
           ) : (
             <div className="flex-grow flex overflow-hidden">
-                <div ref={thumbnailContainerRef} className="w-[15%] border-r bg-card flex-shrink-0 overflow-y-auto p-2 space-y-2">
-                    {pageObjects.map((page, index) => {
-                        const isActive = activePageIndex === index;
-                        return (
-                           <div key={page.id}
-                                ref={el => thumbnailRefs.current[index] = el}
-                                data-id={page.id}
-                                onClick={(e) => handleThumbnailClick(index, e)}
-                                className={cn(
-                                    "p-1 rounded-md cursor-pointer border-2",
-                                    isActive ? "border-primary" : "border-transparent"
-                                )}>
-                                <canvas
-                                    ref={canvas => {
-                                        if (canvas) {
-                                            const ctx = canvas.getContext('2d');
-                                            if (!ctx) return;
-                                            const source = page.sourceCanvas;
-                                            const aspectRatio = source.width / source.height;
-                                            canvas.width = 240;
-                                            canvas.height = 240 / aspectRatio;
-                                            ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
-                                        }
-                                    }}
-                                    className="w-full h-auto rounded-sm shadow-md bg-white"
-                                />
-                               <p className='text-center text-xs mt-1 text-muted-foreground'>{texts.page} {index + 1}</p>
-                           </div>
-                        )
-                    })}
+                <div className="w-[15%] border-r bg-card flex-shrink-0 flex flex-col">
+                  <div className="p-2 border-b">
+                     <Button variant="outline" size="sm" className="w-full" onClick={() => handleAddBlankPage()}><FilePlus2 className="mr-2 h-4 w-4" /> {texts.toolAddBlank}</Button>
+                  </div>
+                  <div ref={thumbnailContainerRef} className="flex-grow overflow-y-auto p-2 space-y-2">
+                      {pageObjects.map((page, index) => (
+                         <div key={page.id}
+                              ref={el => thumbnailRefs.current[index] = el}
+                              data-id={page.id}
+                              onClick={(e) => handleThumbnailClick(index, e)}
+                              className={cn(
+                                  "p-1 rounded-md cursor-pointer border-2",
+                                  activePageIndex === index ? "border-primary" : "border-transparent"
+                              )}>
+                              <PagePreviewItem 
+                                pageObj={page}
+                                index={index}
+                                texts={texts}
+                                onDuplicate={handlePageAction}
+                                onRotate={handlePageAction}
+                                onDelete={(idx) => {setPageToDelete(idx); setIsDeleteConfirmOpen(true)}}
+                              />
+                         </div>
+                      ))}
+                  </div>
+                  <div className="p-2 border-t">
+                     <Button variant="outline" size="sm" className="w-full" onClick={() => handleInitiateInsert('after')} disabled={activePageIndex === null}><FilePlus className="mr-2 h-4 w-4" />{texts.insertPdf}</Button>
+                  </div>
                 </div>
 
                 <div ref={mainViewContainerRef} 
-                    className={cn("flex-grow bg-muted/30 overflow-auto flex flex-col items-center p-4 space-y-4 relative")}
+                    className={cn("flex-grow bg-muted/30 overflow-auto flex flex-col items-center p-4 space-y-4 relative main-view-container")}
                     onMouseDown={handlePanMouseDown}
                     onMouseMove={handleMainViewMouseMove}
                     onMouseUp={handleMainViewMouseUp}
@@ -3586,33 +3461,38 @@ export default function PdfEditorPage() {
                         <Button variant="ghost" size="icon" onClick={() => setViewMode('grid')} title={texts.gridMode}><LayoutGrid className="h-5 w-5" /></Button>
                     </div>
                 </div>
-                 <div className="w-64 bg-card border-l p-4 overflow-y-auto">
-                    <h3 className="text-lg font-semibold mb-4 flex items-center"><History className="mr-2 h-5 w-5"/> {texts.actionHistory}</h3>
-                    <div className="space-y-2">
-                        {annotations.filter(ann => ann.isUserAction).map((ann) => (
-                             <div 
-                                key={ann.id} 
-                                className={cn(
-                                    "p-2 rounded-md border text-sm cursor-pointer hover:bg-muted/50",
-                                    selectedAnnotationId === ann.id && "bg-primary/10 border-primary"
-                                )}
-                                onClick={() => setSelectedAnnotationId(ann.id)}
-                            >
-                               <div className="flex justify-between items-center">
-                                 <span className="font-medium truncate pr-2">
-                                     {ann.type === 'text' ? (ann as TextAnnotation).segments.map(s=>s.text).join('').substring(0,20) : ann.type}
-                                 </span>
-                                 <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={(e) => {e.stopPropagation(); handleDeleteAnnotation(ann.id)}}>
-                                    <Trash2 className="h-4 w-4"/>
-                                 </Button>
-                               </div>
-                            </div>
-                        ))}
-                         {annotations.filter(ann => ann.isUserAction).length === 0 && (
-                            <p className="text-sm text-muted-foreground text-center py-4">No actions yet.</p>
-                        )}
-                    </div>
-                </div>
+                 {isHistoryPanelOpen && (
+                    <div className="w-64 bg-card border-l p-4 overflow-y-auto transition-all duration-300 animate-in slide-in-from-right-5">
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-semibold flex items-center"><History className="mr-2 h-5 w-5"/> {texts.actionHistory}</h3>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsHistoryPanelOpen(false)}><X className="h-4 w-4" /></Button>
+                      </div>
+                      <div className="space-y-2">
+                          {annotations.filter(ann => ann.isUserAction).map((ann) => (
+                               <div 
+                                  key={ann.id} 
+                                  className={cn(
+                                      "p-2 rounded-md border text-sm cursor-pointer hover:bg-muted/50",
+                                      selectedAnnotationId === ann.id && "bg-primary/10 border-primary"
+                                  )}
+                                  onClick={() => setSelectedAnnotationId(ann.id)}
+                              >
+                                 <div className="flex justify-between items-center">
+                                   <span className="font-medium truncate pr-2">
+                                       {ann.type === 'text' ? (ann as TextAnnotation).segments.map(s=>s.text).join('').substring(0,20) : ann.type}
+                                   </span>
+                                   <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={(e) => {e.stopPropagation(); handleDeleteAnnotation(ann.id)}}>
+                                      <Trash2 className="h-4 w-4"/>
+                                   </Button>
+                                 </div>
+                              </div>
+                          ))}
+                           {annotations.filter(ann => ann.isUserAction).length === 0 && (
+                              <p className="text-sm text-muted-foreground text-center py-4">No actions yet.</p>
+                          )}
+                      </div>
+                  </div>
+                 )}
             </div>
           )}
       </div>

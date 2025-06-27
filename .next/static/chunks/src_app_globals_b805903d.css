@@ -1179,6 +1179,10 @@ body {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.grid-cols-6 {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
 .flex-row {
   flex-direction: row;
 }
@@ -1585,6 +1589,10 @@ body {
 .bg-white {
   --tw-bg-opacity: 1;
   background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1));
+}
+
+.bg-black\/40 {
+  background-color: #0006;
 }
 
 .fill-current {
@@ -2187,6 +2195,10 @@ body {
   --tw-enter-translate-y: -1rem;
 }
 
+.slide-in-from-right-5 {
+  --tw-enter-translate-x: 1.25rem;
+}
+
 .duration-200 {
   animation-duration: .2s;
 }
@@ -2329,6 +2341,10 @@ body {
 
 .hover\:bg-sidebar-accent:hover {
   background-color: hsl(var(--sidebar-accent));
+}
+
+.hover\:bg-destructive:hover {
+  background-color: hsl(var(--destructive));
 }
 
 .hover\:text-accent-foreground:hover {

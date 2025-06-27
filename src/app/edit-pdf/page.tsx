@@ -1367,6 +1367,7 @@ export default function PdfEditorPage() {
   
   const [isTextExtractionMode, setIsTextExtractionMode] = useState(false);
   const [originalAnnotations, setOriginalAnnotations] = useState<Annotation[]>([]);
+  const [originalPdfFile, setOriginalPdfFile] = useState<File | null>(null);
 
   const thumbnailContainerRef = useRef<HTMLDivElement>(null);
   const thumbnailRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -1551,13 +1552,10 @@ export default function PdfEditorPage() {
       setMainCanvasZoom(newZoom);
   }, [activePageIndex, pageObjects]);
 
-  const handleFitToWidth = useCallback((pagesToUse?: PageObject[], indexToUse?: number) => {
-      const thePages = pagesToUse || pageObjects;
-      const theIndex = indexToUse === undefined ? activePageIndex : indexToUse;
-
-      if (!mainViewContainerRef.current || thePages.length === 0 || theIndex === null) return;
+  const handleFitToWidth = useCallback(() => {
+      if (!mainViewContainerRef.current || pageObjects.length === 0 || activePageIndex === null) return;
       const containerWidth = mainViewContainerRef.current.clientWidth - 40;
-      const activePage = thePages[theIndex];
+      const activePage = pageObjects[activePageIndex];
       if (!activePage) return;
 
       const pageCanvas = activePage.sourceCanvas;
@@ -1679,6 +1677,7 @@ export default function PdfEditorPage() {
   const loadPdfIntoEditor = async (file: File) => {
     setIsLoading(true);
     setLoadingMessage(texts.loadingPdf);
+    setOriginalPdfFile(file);
     try {
       const { loadedPageObjects } = await processPdfFile(file);
       const newState: EditorState = { pageObjects: loadedPageObjects, annotations: [] };
@@ -1692,7 +1691,7 @@ export default function PdfEditorPage() {
       setActivePageIndex(0);
       setViewMode('editor');
       
-      setTimeout(() => handleFitToWidth(loadedPageObjects, 0), 100);
+      setTimeout(() => handleFitToWidth(), 100);
 
     } catch (err: any)
     {
@@ -1729,11 +1728,11 @@ export default function PdfEditorPage() {
   };
   
   const handleExtractText = async () => {
-    if (pageObjects.length === 0) return;
+    if (pageObjects.length === 0 || !originalPdfFile) return;
     setIsLoading(true);
     setLoadingMessage(texts.extractingText);
     try {
-        const arrayBuffer = await (await fetch(pageObjects[0].sourceCanvas.toDataURL())).arrayBuffer(); // This is a trick to get the file data back. In a real app, you'd keep the file object.
+        const arrayBuffer = await originalPdfFile.arrayBuffer();
         const pdfDocProxy = await pdfjsLib.getDocument({ data: arrayBuffer, cMapUrl: `//cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/cmaps/`, cMapPacked: true }).promise;
 
         const extractedAnnotations: TextAnnotation[] = [];
@@ -1796,6 +1795,7 @@ export default function PdfEditorPage() {
     setActivePageIndex(null);
     setIsTextExtractionMode(false);
     setOriginalAnnotations([]);
+    setOriginalPdfFile(null);
     
     if (pdfUploadRef.current) {
         pdfUploadRef.current.value = ''; 
@@ -3692,7 +3692,7 @@ export default function PdfEditorPage() {
                         <Button variant="ghost" size="icon" onClick={() => handleZoom('in')} title={texts.zoomIn}><ZoomIn className="h-5 w-5" /></Button>
                          <Separator orientation="vertical" className="h-6 mx-1" />
                         <Button variant="ghost" size="icon" onClick={handleFitToPage} title={texts.fitToPage}><Expand className="h-5 w-5" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleFitToWidth()} title={texts.fitToWidth}><Columns className="h-5 w-5" /></Button>
+                        <Button variant="ghost" size="icon" onClick={handleFitToWidth} title={texts.fitToWidth}><Columns className="h-5 w-5" /></Button>
                          <Separator orientation="vertical" className="h-6 mx-1" />
                         <Button variant="ghost" size="icon" onClick={() => setViewMode('grid')} title={texts.gridMode}><LayoutGrid className="h-5 w-5" /></Button>
                     </div>

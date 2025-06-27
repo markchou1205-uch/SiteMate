@@ -1803,8 +1803,8 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$r
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/select.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$use$2d$toast$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/hooks/use-toast.ts [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$loader$2d$circle$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Loader2$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/loader-circle.js [app-client] (ecmascript) <export default as Loader2>");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$rotate$2d$ccw$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__RotateCcw$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/rotate-ccw.js [app-client] (ecmascript) <export default as RotateCcw>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$rotate$2d$cw$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__RotateCw$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/rotate-cw.js [app-client] (ecmascript) <export default as RotateCw>");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$x$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__X$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/x.js [app-client] (ecmascript) <export default as X>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$trash$2d$2$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Trash2$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/trash-2.js [app-client] (ecmascript) <export default as Trash2>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$download$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Download$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/download.js [app-client] (ecmascript) <export default as Download>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$upload$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Upload$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/upload.js [app-client] (ecmascript) <export default as Upload>");
@@ -1853,6 +1853,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$re
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$layers$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Layers$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/layers.js [app-client] (ecmascript) <export default as Layers>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$brush$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Brush$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/brush.js [app-client] (ecmascript) <export default as Brush>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$history$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__History$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/history.js [app-client] (ecmascript) <export default as History>");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$copy$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Copy$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/copy.js [app-client] (ecmascript) <export default as Copy>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$slider$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/slider.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$separator$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/separator.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/textarea.tsx [app-client] (ecmascript)");
@@ -2108,6 +2109,7 @@ const translations = {
         usageInfo: (files, size, remainingFiles, remainingSize)=>`You have selected ${files} file(s), with a total size of ${size}MB. (You can still upload ${remainingFiles} more files or ${remainingSize}MB).`,
         toolSelect: 'Select',
         toolPan: 'Pan',
+        toolText: 'Text',
         toolImage: 'Image',
         toolShape: 'Sign',
         toolSignature: 'Shape',
@@ -2136,6 +2138,7 @@ const translations = {
         noTextInPdf: 'This PDF has no text layer. OCR may be needed to enable search.',
         toolScribble: 'Scribble',
         toolMosaic: 'Mosaic',
+        applyToAllPages: 'Apply to All Pages',
         convertConfirmTitle: "Convert File",
         convertConfirmDescription: (filename)=>`"${filename}" will be converted to PDF. Do you want to download it or open it in the editor?`,
         convertConfirmDownload: 'Download',
@@ -2150,7 +2153,8 @@ const translations = {
         newDocConfirmDescription: 'This will close the current document without saving changes. Are you sure you want to continue?',
         downloadEditedFile: 'Download',
         toolDownload: 'Download',
-        actionHistory: 'Action History'
+        actionHistory: '操作記錄',
+        toolDuplicate: '複製本頁'
     },
     zh: {
         pageTitle: 'PDF 編輯器 (專業模式)',
@@ -2362,6 +2366,7 @@ const translations = {
         usageInfo: (files, size, remainingFiles, remainingSize)=>`目前您已選擇 ${files} 份文件，大小總計 ${size}MB (尚可上傳 ${remainingFiles} 份文件或 ${remainingSize}MB)`,
         toolSelect: '選取',
         toolPan: '平移',
+        toolText: '文字',
         toolImage: '圖片',
         toolShape: '圖形',
         toolSignature: '簽名',
@@ -2390,13 +2395,6 @@ const translations = {
         noTextInPdf: '此 PDF 不包含文字層。可能需要 OCR 才能啟用搜尋。',
         toolScribble: '畫筆',
         toolMosaic: '馬賽克',
-        toolTable: '表格',
-        drawTable: '繪製表格',
-        tableConfigTitle: '設定表格',
-        tableConfigDescription: '設定新表格的欄與列數。',
-        tableRows: '列',
-        tableCols: '欄',
-        createTable: '建立表格',
         applyToAllPages: '套用至所有頁面',
         convertConfirmTitle: "轉換檔案",
         convertConfirmDescription: (filename)=>`將為您轉檔 "${filename}" 為 PDF。請選擇轉檔後要下載至您的電腦還是進入編輯模式？`,
@@ -2411,7 +2409,8 @@ const translations = {
         newDocConfirmDescription: '這將會關閉目前正在編輯的文件，且不會儲存變更。確定要繼續嗎？',
         downloadEditedFile: '下載',
         toolDownload: '下載',
-        actionHistory: '動作歷史'
+        actionHistory: '操作記錄',
+        toolDuplicate: '複製本頁'
     }
 };
 const pageNumberPositions = [
@@ -2480,10 +2479,11 @@ const saveAsFormatOptions = [
 const MAX_BATCH_FILES = 10;
 const MAX_TOTAL_SIZE_MB = 50;
 const MAX_TOTAL_SIZE_BYTES = MAX_TOTAL_SIZE_MB * 1024 * 1024;
-const PagePreviewItem = /*#__PURE__*/ __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"].memo(_s(({ pageObj, index, isSelected, onClick, onDoubleClick, texts })=>{
+const PagePreviewItem = /*#__PURE__*/ __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"].memo(_s(({ pageObj, index, texts, onDuplicate, onRotate, onDelete })=>{
     _s();
     const canvasRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])(null);
     const wrapperRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])(null);
+    const { toast } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$use$2d$toast$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useToast"])();
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
         "PagePreviewItem.useEffect": ()=>{
             if (canvasRef.current) {
@@ -2502,7 +2502,7 @@ const PagePreviewItem = /*#__PURE__*/ __TURBOPACK__imported__module__$5b$project
                     rotatedSourceHeight = sourceCanvas.height;
                 }
                 const targetAspectRatio = rotatedSourceWidth / rotatedSourceHeight;
-                const cssDisplayWidth = 120;
+                const cssDisplayWidth = 100; // Smaller thumbnail size
                 const cssDisplayHeight = cssDisplayWidth / targetAspectRatio;
                 previewDisplayCanvas.width = rotatedSourceWidth;
                 previewDisplayCanvas.height = rotatedSourceHeight;
@@ -2521,14 +2521,9 @@ const PagePreviewItem = /*#__PURE__*/ __TURBOPACK__imported__module__$5b$project
     ]);
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
         ref: wrapperRef,
-        className: `page-preview-wrapper p-2 border-2 rounded-lg cursor-pointer transition-all bg-card hover:border-primary ${isSelected ? 'border-primary ring-2 ring-primary' : 'border-transparent'}`,
+        className: "page-preview-wrapper p-1 rounded-lg cursor-pointer transition-all bg-card relative group",
         "data-id": pageObj.id,
         "data-index": index,
-        onClick: onClick,
-        onDoubleClick: onDoubleClick,
-        style: {
-            position: 'relative'
-        },
         children: [
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("canvas", {
                 ref: canvasRef,
@@ -2538,7 +2533,7 @@ const PagePreviewItem = /*#__PURE__*/ __TURBOPACK__imported__module__$5b$project
                 }
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 786,
+                lineNumber: 782,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2550,16 +2545,92 @@ const PagePreviewItem = /*#__PURE__*/ __TURBOPACK__imported__module__$5b$project
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 787,
+                lineNumber: 783,
                 columnNumber: 7
+            }, this),
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                className: "absolute inset-0 bg-black/40 flex-col items-center justify-center gap-1 p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex",
+                children: [
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
+                        variant: "ghost",
+                        size: "icon",
+                        className: "h-7 w-7 text-white",
+                        onClick: (e)=>{
+                            e.stopPropagation();
+                            onDuplicate(index);
+                            toast({
+                                title: `Page ${index + 1} duplicated`
+                            });
+                        },
+                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$copy$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Copy$3e$__["Copy"], {
+                            className: "h-4 w-4"
+                        }, void 0, false, {
+                            fileName: "[project]/src/app/edit-pdf/page.tsx",
+                            lineNumber: 788,
+                            columnNumber: 15
+                        }, this)
+                    }, void 0, false, {
+                        fileName: "[project]/src/app/edit-pdf/page.tsx",
+                        lineNumber: 787,
+                        columnNumber: 11
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
+                        variant: "ghost",
+                        size: "icon",
+                        className: "h-7 w-7 text-white",
+                        onClick: (e)=>{
+                            e.stopPropagation();
+                            onRotate(index);
+                        },
+                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$rotate$2d$cw$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__RotateCw$3e$__["RotateCw"], {
+                            className: "h-4 w-4"
+                        }, void 0, false, {
+                            fileName: "[project]/src/app/edit-pdf/page.tsx",
+                            lineNumber: 791,
+                            columnNumber: 15
+                        }, this)
+                    }, void 0, false, {
+                        fileName: "[project]/src/app/edit-pdf/page.tsx",
+                        lineNumber: 790,
+                        columnNumber: 11
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
+                        variant: "ghost",
+                        size: "icon",
+                        className: "h-7 w-7 text-destructive-foreground hover:bg-destructive",
+                        onClick: (e)=>{
+                            e.stopPropagation();
+                            onDelete(index);
+                        },
+                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$trash$2d$2$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Trash2$3e$__["Trash2"], {
+                            className: "h-4 w-4"
+                        }, void 0, false, {
+                            fileName: "[project]/src/app/edit-pdf/page.tsx",
+                            lineNumber: 794,
+                            columnNumber: 15
+                        }, this)
+                    }, void 0, false, {
+                        fileName: "[project]/src/app/edit-pdf/page.tsx",
+                        lineNumber: 793,
+                        columnNumber: 11
+                    }, this)
+                ]
+            }, void 0, true, {
+                fileName: "[project]/src/app/edit-pdf/page.tsx",
+                lineNumber: 786,
+                columnNumber: 8
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/edit-pdf/page.tsx",
-        lineNumber: 777,
+        lineNumber: 776,
         columnNumber: 5
     }, this);
-}, "p/wmOSKZsm6gR42zy+IGkB0ffxo="));
+}, "TbJJ+XrK8K0rffrkgfagXrd/xTw=", false, function() {
+    return [
+        __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$use$2d$toast$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useToast"]
+    ];
+}));
 _c = PagePreviewItem;
 PagePreviewItem.displayName = 'PagePreviewItem';
 const fonts = [
@@ -2594,7 +2665,15 @@ const fontSizes = [
     48,
     72
 ];
-const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete, onImageInsert })=>{
+const colors = [
+    '#000000',
+    '#EF4444',
+    '#3B82F6',
+    '#22C55E',
+    '#F97316',
+    '#8B5CF6'
+];
+const TextToolbar = ({ annotation, onAnnotationChange, onDelete })=>{
     const handleStyleChange = (style)=>{
         onAnnotationChange(annotation.id, {
             segments: annotation.segments.map((s)=>({
@@ -2618,13 +2697,13 @@ const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete, onIma
                             placeholder: "Font"
                         }, void 0, false, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 814,
-                            columnNumber: 21
+                            lineNumber: 826,
+                            columnNumber: 17
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 813,
-                        columnNumber: 17
+                        lineNumber: 825,
+                        columnNumber: 13
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectContent"], {
                         children: fonts.map((font)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectItem"], {
@@ -2633,19 +2712,19 @@ const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete, onIma
                                 children: font.name
                             }, font.value, false, {
                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                lineNumber: 817,
-                                columnNumber: 40
+                                lineNumber: 829,
+                                columnNumber: 36
                             }, this))
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 816,
-                        columnNumber: 17
+                        lineNumber: 828,
+                        columnNumber: 13
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 812,
-                columnNumber: 13
+                lineNumber: 824,
+                columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Select"], {
                 value: String(annotation.fontSize),
@@ -2659,13 +2738,13 @@ const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete, onIma
                             placeholder: "Size"
                         }, void 0, false, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 822,
-                            columnNumber: 21
+                            lineNumber: 834,
+                            columnNumber: 17
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 821,
-                        columnNumber: 17
+                        lineNumber: 833,
+                        columnNumber: 13
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectContent"], {
                         children: fontSizes.map((size)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectItem"], {
@@ -2674,27 +2753,27 @@ const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete, onIma
                                 children: size
                             }, size, false, {
                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                lineNumber: 825,
-                                columnNumber: 44
+                                lineNumber: 837,
+                                columnNumber: 40
                             }, this))
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 824,
-                        columnNumber: 17
+                        lineNumber: 836,
+                        columnNumber: 13
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 820,
-                columnNumber: 13
+                lineNumber: 832,
+                columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$separator$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Separator"], {
                 orientation: "vertical",
                 className: "h-6"
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 828,
-                columnNumber: 13
+                lineNumber: 840,
+                columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$toggle$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Toggle"], {
                 pressed: annotation.segments[0]?.bold,
@@ -2705,13 +2784,13 @@ const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete, onIma
                     className: "h-4 w-4"
                 }, void 0, false, {
                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                    lineNumber: 830,
-                    columnNumber: 17
+                    lineNumber: 842,
+                    columnNumber: 13
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 829,
-                columnNumber: 13
+                lineNumber: 841,
+                columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$toggle$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Toggle"], {
                 pressed: annotation.segments[0]?.italic,
@@ -2722,13 +2801,13 @@ const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete, onIma
                     className: "h-4 w-4"
                 }, void 0, false, {
                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                    lineNumber: 833,
-                    columnNumber: 17
+                    lineNumber: 845,
+                    columnNumber: 13
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 832,
-                columnNumber: 13
+                lineNumber: 844,
+                columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$toggle$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Toggle"], {
                 pressed: annotation.segments[0]?.underline,
@@ -2739,21 +2818,21 @@ const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete, onIma
                     className: "h-4 w-4"
                 }, void 0, false, {
                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                    lineNumber: 836,
-                    columnNumber: 17
+                    lineNumber: 848,
+                    columnNumber: 13
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 835,
-                columnNumber: 13
+                lineNumber: 847,
+                columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$separator$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Separator"], {
                 orientation: "vertical",
                 className: "h-6"
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 838,
-                columnNumber: 13
+                lineNumber: 850,
+                columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$popover$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Popover"], {
                 children: [
@@ -2770,76 +2849,59 @@ const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete, onIma
                                 }
                             }, void 0, false, {
                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                lineNumber: 842,
-                                columnNumber: 25
+                                lineNumber: 854,
+                                columnNumber: 21
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 841,
-                            columnNumber: 21
+                            lineNumber: 853,
+                            columnNumber: 17
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 840,
-                        columnNumber: 17
+                        lineNumber: 852,
+                        columnNumber: 13
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$popover$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["PopoverContent"], {
-                        className: "w-auto p-0 border-0",
-                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
-                            type: "color",
-                            value: annotation.segments[0]?.color,
-                            onChange: (e)=>handleStyleChange({
-                                    color: e.target.value
-                                }),
-                            className: "w-14 h-10 p-1 border-0 cursor-pointer"
+                        className: "w-auto p-2",
+                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                            className: "grid grid-cols-6 gap-1",
+                            children: colors.map((color)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+                                    onClick: ()=>handleStyleChange({
+                                            color
+                                        }),
+                                    className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$utils$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["cn"])("w-6 h-6 rounded-full border-2", annotation.segments[0]?.color === color ? 'border-primary ring-2 ring-primary' : 'border-transparent'),
+                                    style: {
+                                        backgroundColor: color
+                                    }
+                                }, color, false, {
+                                    fileName: "[project]/src/app/edit-pdf/page.tsx",
+                                    lineNumber: 860,
+                                    columnNumber: 25
+                                }, this))
                         }, void 0, false, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 846,
-                            columnNumber: 21
+                            lineNumber: 858,
+                            columnNumber: 17
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 845,
-                        columnNumber: 17
+                        lineNumber: 857,
+                        columnNumber: 13
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 839,
-                columnNumber: 13
+                lineNumber: 851,
+                columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$separator$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Separator"], {
                 orientation: "vertical",
                 className: "h-6"
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 849,
-                columnNumber: 14
-            }, this),
-            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                variant: "ghost",
-                size: "icon",
-                className: "h-8 w-8",
-                onClick: onImageInsert,
-                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$image$2d$plus$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__ImagePlus$3e$__["ImagePlus"], {
-                    className: "h-4 w-4"
-                }, void 0, false, {
-                    fileName: "[project]/src/app/edit-pdf/page.tsx",
-                    lineNumber: 851,
-                    columnNumber: 17
-                }, this)
-            }, void 0, false, {
-                fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 850,
-                columnNumber: 13
-            }, this),
-            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$separator$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Separator"], {
-                orientation: "vertical",
-                className: "h-6"
-            }, void 0, false, {
-                fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 853,
-                columnNumber: 13
+                lineNumber: 873,
+                columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$toggle$2d$group$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ToggleGroup"], {
                 type: "single",
@@ -2854,13 +2916,13 @@ const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete, onIma
                             className: "h-4 w-4"
                         }, void 0, false, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 855,
-                            columnNumber: 47
+                            lineNumber: 875,
+                            columnNumber: 43
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 855,
-                        columnNumber: 17
+                        lineNumber: 875,
+                        columnNumber: 13
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$toggle$2d$group$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ToggleGroupItem"], {
                         value: "center",
@@ -2868,13 +2930,13 @@ const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete, onIma
                             className: "h-4 w-4"
                         }, void 0, false, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 856,
-                            columnNumber: 49
+                            lineNumber: 876,
+                            columnNumber: 45
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 856,
-                        columnNumber: 17
+                        lineNumber: 876,
+                        columnNumber: 13
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$toggle$2d$group$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ToggleGroupItem"], {
                         value: "right",
@@ -2882,27 +2944,27 @@ const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete, onIma
                             className: "h-4 w-4"
                         }, void 0, false, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 857,
-                            columnNumber: 48
+                            lineNumber: 877,
+                            columnNumber: 44
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 857,
-                        columnNumber: 17
+                        lineNumber: 877,
+                        columnNumber: 13
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 854,
-                columnNumber: 13
+                lineNumber: 874,
+                columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$separator$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Separator"], {
                 orientation: "vertical",
                 className: "h-6"
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 859,
-                columnNumber: 13
+                lineNumber: 879,
+                columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
                 variant: "ghost",
@@ -2913,22 +2975,22 @@ const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete, onIma
                     className: "h-4 w-4"
                 }, void 0, false, {
                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                    lineNumber: 861,
-                    columnNumber: 17
+                    lineNumber: 881,
+                    columnNumber: 13
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 860,
-                columnNumber: 13
+                lineNumber: 880,
+                columnNumber: 9
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/edit-pdf/page.tsx",
-        lineNumber: 811,
-        columnNumber: 9
+        lineNumber: 823,
+        columnNumber: 5
     }, this);
 };
-_c1 = TextAnnotationToolbar;
+_c1 = TextToolbar;
 const ShapeToolbar = ({ annotation, onAnnotationChange, onDelete })=>{
     const isShape = annotation.type !== 'scribble';
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2938,7 +3000,7 @@ const ShapeToolbar = ({ annotation, onAnnotationChange, onDelete })=>{
                 children: "Fill"
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 872,
+                lineNumber: 892,
                 columnNumber: 26
             }, this),
             isShape && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -2950,14 +3012,14 @@ const ShapeToolbar = ({ annotation, onAnnotationChange, onDelete })=>{
                 className: "w-10 h-8 p-1 cursor-pointer"
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 873,
+                lineNumber: 893,
                 columnNumber: 26
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
                 children: "Stroke"
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 875,
+                lineNumber: 895,
                 columnNumber: 14
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -2969,7 +3031,7 @@ const ShapeToolbar = ({ annotation, onAnnotationChange, onDelete })=>{
                 className: "w-10 h-8 p-1 cursor-pointer"
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 876,
+                lineNumber: 896,
                 columnNumber: 14
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$separator$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Separator"], {
@@ -2977,14 +3039,14 @@ const ShapeToolbar = ({ annotation, onAnnotationChange, onDelete })=>{
                 className: "h-6"
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 878,
+                lineNumber: 898,
                 columnNumber: 14
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
                 children: "Width"
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 879,
+                lineNumber: 899,
                 columnNumber: 14
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$slider$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Slider"], {
@@ -3000,7 +3062,7 @@ const ShapeToolbar = ({ annotation, onAnnotationChange, onDelete })=>{
                 className: "w-24"
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 880,
+                lineNumber: 900,
                 columnNumber: 14
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$separator$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Separator"], {
@@ -3008,7 +3070,7 @@ const ShapeToolbar = ({ annotation, onAnnotationChange, onDelete })=>{
                 className: "h-6"
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 881,
+                lineNumber: 901,
                 columnNumber: 14
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -3020,18 +3082,18 @@ const ShapeToolbar = ({ annotation, onAnnotationChange, onDelete })=>{
                     className: "h-4 w-4"
                 }, void 0, false, {
                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                    lineNumber: 884,
+                    lineNumber: 904,
                     columnNumber: 17
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 883,
+                lineNumber: 903,
                 columnNumber: 14
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/edit-pdf/page.tsx",
-        lineNumber: 871,
+        lineNumber: 891,
         columnNumber: 9
     }, this);
 };
@@ -3082,7 +3144,6 @@ const TextAnnotationComponent = ({ annotation, mainCanvasZoom, isSelected, isEdi
                 ref: textareaRef,
                 value: annotation.segments.map((s)=>s.text).join(''),
                 onChange: (e)=>{
-                    // This is a simplified handler. A real rich text editor would be much more complex.
                     onAnnotationChange(annotation.id, {
                         segments: [
                             {
@@ -3105,7 +3166,7 @@ const TextAnnotationComponent = ({ annotation, mainCanvasZoom, isSelected, isEdi
                 }
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 957,
+                lineNumber: 977,
                 columnNumber: 14
             }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                 className: "w-full p-0 bg-transparent pointer-events-none",
@@ -3126,19 +3187,19 @@ const TextAnnotationComponent = ({ annotation, mainCanvasZoom, isSelected, isEdi
                         children: segment.text
                     }, index, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 993,
+                        lineNumber: 1012,
                         columnNumber: 19
                     }, this))
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 982,
+                lineNumber: 1001,
                 columnNumber: 14
             }, this),
             annotation.link && !isEditing && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$link$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Link$3e$__["Link"], {
                 className: "absolute -top-1.5 -right-1.5 h-4 w-4 text-white bg-blue-500 p-0.5 rounded-full"
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 1007,
+                lineNumber: 1026,
                 columnNumber: 47
             }, this),
             (isSelected || isHovered) && !isEditing && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3146,13 +3207,13 @@ const TextAnnotationComponent = ({ annotation, mainCanvasZoom, isSelected, isEdi
                 onMouseDown: (e)=>onResizeStart(e, annotation.id)
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 1009,
+                lineNumber: 1028,
                 columnNumber: 17
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/edit-pdf/page.tsx",
-        lineNumber: 927,
+        lineNumber: 947,
         columnNumber: 9
     }, this);
 };
@@ -3172,12 +3233,12 @@ const TriangleIcon = ()=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$pr
             strokeLinejoin: "round"
         }, void 0, false, {
             fileName: "[project]/src/app/edit-pdf/page.tsx",
-            lineNumber: 1020,
+            lineNumber: 1039,
             columnNumber: 9
         }, this)
     }, void 0, false, {
         fileName: "[project]/src/app/edit-pdf/page.tsx",
-        lineNumber: 1019,
+        lineNumber: 1038,
         columnNumber: 5
     }, this);
 _c4 = TriangleIcon;
@@ -3196,12 +3257,12 @@ const ScribbleIcon = ()=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$pr
             strokeLinejoin: "round"
         }, void 0, false, {
             fileName: "[project]/src/app/edit-pdf/page.tsx",
-            lineNumber: 1026,
+            lineNumber: 1045,
             columnNumber: 9
         }, this)
     }, void 0, false, {
         fileName: "[project]/src/app/edit-pdf/page.tsx",
-        lineNumber: 1025,
+        lineNumber: 1044,
         columnNumber: 5
     }, this);
 _c5 = ScribbleIcon;
@@ -3243,7 +3304,7 @@ const ShapeAnnotationComponent = ({ annotation, onDragStart, onResizeStart, onSe
                         ...shapeStyle
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 1067,
+                        lineNumber: 1086,
                         columnNumber: 48
                     }, this),
                     annotation.type === 'ellipse' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("ellipse", {
@@ -3254,7 +3315,7 @@ const ShapeAnnotationComponent = ({ annotation, onDragStart, onResizeStart, onSe
                         ...shapeStyle
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 1068,
+                        lineNumber: 1087,
                         columnNumber: 51
                     }, this),
                     annotation.type === 'triangle' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("polygon", {
@@ -3262,13 +3323,13 @@ const ShapeAnnotationComponent = ({ annotation, onDragStart, onResizeStart, onSe
                         ...shapeStyle
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 1069,
+                        lineNumber: 1088,
                         columnNumber: 52
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 1066,
+                lineNumber: 1085,
                 columnNumber: 13
             }, this),
             (isSelected || isHovered) && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3276,13 +3337,13 @@ const ShapeAnnotationComponent = ({ annotation, onDragStart, onResizeStart, onSe
                 onMouseDown: (e)=>onResizeStart(e, annotation.id)
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 1072,
+                lineNumber: 1091,
                 columnNumber: 17
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/edit-pdf/page.tsx",
-        lineNumber: 1055,
+        lineNumber: 1074,
         columnNumber: 9
     }, this);
 };
@@ -3314,93 +3375,16 @@ const ScribbleAnnotationComponent = ({ annotation, pageDimensions, onSelect, isS
             className: "pointer-events-none"
         }, void 0, false, {
             fileName: "[project]/src/app/edit-pdf/page.tsx",
-            lineNumber: 1104,
+            lineNumber: 1123,
             columnNumber: 11
         }, this)
     }, void 0, false, {
         fileName: "[project]/src/app/edit-pdf/page.tsx",
-        lineNumber: 1097,
+        lineNumber: 1116,
         columnNumber: 7
     }, this);
 };
 _c7 = ScribbleAnnotationComponent;
-const TableAnnotationComponent = ({ annotation, onDragStart, onResizeStart, onSelect, isSelected, isHovered, onHover, onDoubleClick })=>{
-    const cellWidth = 100 / annotation.cols;
-    const cellHeight = 100 / annotation.rows;
-    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-        onMouseDown: (e)=>onDragStart(e, annotation.id),
-        onClick: (e)=>{
-            e.stopPropagation();
-            onSelect(e, annotation.id);
-        },
-        onDoubleClick: (e)=>onDoubleClick(e, annotation),
-        onMouseEnter: ()=>onHover(annotation.id),
-        onMouseLeave: ()=>onHover(null),
-        className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$utils$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["cn"])("absolute cursor-grab", (isSelected || isHovered) && "border-2 border-dashed border-primary"),
-        style: {
-            left: `${annotation.leftRatio * 100}%`,
-            top: `${annotation.topRatio * 100}%`,
-            width: `${annotation.widthRatio * 100}%`,
-            height: `${annotation.heightRatio * 100}%`,
-            zIndex: 18
-        },
-        children: [
-            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("svg", {
-                width: "100%",
-                height: "100%",
-                viewBox: "0 0 100 100",
-                preserveAspectRatio: "none",
-                children: [
-                    Array.from({
-                        length: annotation.rows + 1
-                    }, (_, i)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("line", {
-                            x1: "0",
-                            y1: i * cellHeight,
-                            x2: "100",
-                            y2: i * cellHeight,
-                            stroke: annotation.strokeColor,
-                            strokeWidth: annotation.strokeWidth / 10
-                        }, `h-${i}`, false, {
-                            fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 1148,
-                            columnNumber: 21
-                        }, this)),
-                    Array.from({
-                        length: annotation.cols + 1
-                    }, (_, i)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("line", {
-                            x1: i * cellWidth,
-                            y1: "0",
-                            x2: i * cellWidth,
-                            y2: "100",
-                            stroke: annotation.strokeColor,
-                            strokeWidth: annotation.strokeWidth / 10
-                        }, `v-${i}`, false, {
-                            fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 1159,
-                            columnNumber: 21
-                        }, this))
-                ]
-            }, void 0, true, {
-                fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 1146,
-                columnNumber: 13
-            }, this),
-            (isSelected || isHovered) && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                className: "absolute -right-1 -bottom-1 w-4 h-4 bg-primary rounded-full border-2 border-white cursor-se-resize",
-                onMouseDown: (e)=>onResizeStart(e, annotation.id)
-            }, void 0, false, {
-                fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 1171,
-                columnNumber: 17
-            }, this)
-        ]
-    }, void 0, true, {
-        fileName: "[project]/src/app/edit-pdf/page.tsx",
-        lineNumber: 1131,
-        columnNumber: 9
-    }, this);
-};
-_c8 = TableAnnotationComponent;
 const SignaturePad = ({ onSave, texts })=>{
     _s2();
     const canvasRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])(null);
@@ -3476,7 +3460,7 @@ const SignaturePad = ({ onSave, texts })=>{
                 onMouseLeave: stopDrawing
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 1247,
+                lineNumber: 1203,
                 columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3490,7 +3474,7 @@ const SignaturePad = ({ onSave, texts })=>{
                                 children: texts.signatureColor
                             }, void 0, false, {
                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                lineNumber: 1257,
+                                lineNumber: 1213,
                                 columnNumber: 19
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -3501,13 +3485,13 @@ const SignaturePad = ({ onSave, texts })=>{
                                 className: "w-12 h-8 p-1"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                lineNumber: 1258,
+                                lineNumber: 1214,
                                 columnNumber: 19
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 1256,
+                        lineNumber: 1212,
                         columnNumber: 17
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3518,7 +3502,7 @@ const SignaturePad = ({ onSave, texts })=>{
                                 children: texts.signatureStrokeWidth
                             }, void 0, false, {
                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                lineNumber: 1261,
+                                lineNumber: 1217,
                                 columnNumber: 19
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$slider$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Slider"], {
@@ -3533,13 +3517,13 @@ const SignaturePad = ({ onSave, texts })=>{
                                 className: "w-32"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                lineNumber: 1262,
+                                lineNumber: 1218,
                                 columnNumber: 19
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 1260,
+                        lineNumber: 1216,
                         columnNumber: 17
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -3548,7 +3532,7 @@ const SignaturePad = ({ onSave, texts })=>{
                         children: texts.signatureClear
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 1264,
+                        lineNumber: 1220,
                         columnNumber: 17
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -3556,24 +3540,24 @@ const SignaturePad = ({ onSave, texts })=>{
                         children: texts.signatureSave
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 1265,
+                        lineNumber: 1221,
                         columnNumber: 17
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 1255,
+                lineNumber: 1211,
                 columnNumber: 13
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/edit-pdf/page.tsx",
-        lineNumber: 1246,
+        lineNumber: 1202,
         columnNumber: 9
     }, this);
 };
 _s2(SignaturePad, "0tvIQF2K1jZ/izqOU1TcW7/E3eg=");
-_c9 = SignaturePad;
+_c8 = SignaturePad;
 const initialEditorState = {
     pageObjects: [],
     annotations: []
@@ -3600,6 +3584,7 @@ function PdfEditorPage() {
     const [mainCanvasZoom, setMainCanvasZoom] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(1);
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
     const [isNewDocConfirmOpen, setIsNewDocConfirmOpen] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
+    const [isHistoryPanelOpen, setIsHistoryPanelOpen] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
     const [pageToDelete, setPageToDelete] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
     const [currentLanguage, setCurrentLanguage] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])('zh');
     const [texts, setTexts] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(translations.zh);
@@ -3610,6 +3595,7 @@ function PdfEditorPage() {
     const [showDownloadOptions, setShowDownloadOptions] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
     const downloadButtonRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])(null);
     const toolbarContainerRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])(null);
+    const [originalFile, setOriginalFile] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
     const [isLoggedIn, setIsLoggedIn] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
     const [isLinkPopoverOpen, setIsLinkPopoverOpen] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
     const [currentLink, setCurrentLink] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])({
@@ -4002,6 +3988,7 @@ function PdfEditorPage() {
         setLoadingMessage(texts.loadingPdf);
         try {
             const { loadedPageObjects } = await processPdfFile(file);
+            setOriginalFile(file); // Store original file
             const newState = {
                 pageObjects: loadedPageObjects,
                 annotations: []
@@ -4029,6 +4016,7 @@ function PdfEditorPage() {
             ]);
             setHistoryIndex(0);
             setActivePageIndex(null);
+            setOriginalFile(null);
         } finally{
             setIsLoading(false);
             setLoadingMessage('');
@@ -4058,11 +4046,18 @@ function PdfEditorPage() {
         loadPdfIntoEditor(file);
     };
     const handleExtractText = async ()=>{
-        if (pageObjects.length === 0) return;
+        if (!originalFile) {
+            toast({
+                title: "Extraction Failed",
+                description: "Original PDF file not found.",
+                variant: "destructive"
+            });
+            return;
+        }
         setIsLoading(true);
         setLoadingMessage(texts.extractingText);
         try {
-            const arrayBuffer = await (await fetch(pageObjects[0].sourceCanvas.toDataURL())).arrayBuffer(); // This is a trick to get the file data back. In a real app, you'd keep the file object.
+            const arrayBuffer = await originalFile.arrayBuffer();
             const pdfDocProxy = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$pdfjs$2d$dist$2f$build$2f$pdf$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["getDocument"])({
                 data: arrayBuffer,
                 cMapUrl: `//cdn.jsdelivr.net/npm/pdfjs-dist@${__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$pdfjs$2d$dist$2f$build$2f$pdf$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["version"]}/cmaps/`,
@@ -4162,44 +4157,64 @@ function PdfEditorPage() {
         }
         setIsNewDocConfirmOpen(false);
     };
-    const handleDeletePages = ()=>{
-        if (selectedPageIds.size === 0) {
-            toast({
-                title: texts.pageManagement,
-                description: texts.noPageSelected,
-                variant: "destructive"
+    const handlePageAction = (index, action)=>{
+        if (action === 'delete') {
+            const pageIdToDelete = pageObjects[index].id;
+            const newPageObjects = pageObjects.filter((_, i)=>i !== index);
+            const newAnnotations = annotations.filter((ann)=>ann.pageIndex !== index).map((ann)=>({
+                    ...ann,
+                    pageIndex: ann.pageIndex > index ? ann.pageIndex - 1 : ann.pageIndex
+                }));
+            updateState({
+                pageObjects: newPageObjects,
+                annotations: newAnnotations
             });
-            return;
-        }
-        const newPageObjects = pageObjects.filter((p)=>!selectedPageIds.has(p.id));
-        const oldIndexMap = new Map(pageObjects.map((p, i)=>[
-                p.id,
-                i
-            ]));
-        const newIndexMap = new Map(newPageObjects.map((p, i)=>[
-                p.id,
-                i
-            ]));
-        const newAnnotations = annotations.filter((ann)=>{
-            const oldPageIndex = oldIndexMap.get(pageObjects[ann.pageIndex]?.id);
-            return oldPageIndex !== undefined && !selectedPageIds.has(pageObjects[oldPageIndex].id);
-        }).map((ann)=>{
-            const newIndex = newIndexMap.get(pageObjects[ann.pageIndex].id);
-            return {
-                ...ann,
-                pageIndex: newIndex ?? -1
+            toast({
+                title: `Page ${index + 1} deleted.`
+            });
+            if (activePageIndex === index) {
+                setActivePageIndex(newPageObjects.length > 0 ? Math.max(0, index - 1) : null);
+            } else if (activePageIndex && activePageIndex > index) {
+                setActivePageIndex(activePageIndex - 1);
+            }
+        } else if (action === 'duplicate') {
+            const pageToDuplicate = pageObjects[index];
+            const newPageObject = {
+                ...pageToDuplicate,
+                id: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$uuid$2f$dist$2f$esm$2d$browser$2f$v4$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__v4$3e$__["v4"])()
             };
-        }).filter((ann)=>ann.pageIndex !== -1);
-        updateState({
-            pageObjects: newPageObjects,
-            annotations: newAnnotations
-        });
-        setSelectedPageIds(new Set());
-        setActivePageIndex(pageObjects.length > 0 ? 0 : null);
-        toast({
-            title: texts.pageManagement,
-            description: currentLanguage === 'zh' ? "選取的頁面已刪除。" : "Selected pages have been deleted."
-        });
+            const newPageObjects = [
+                ...pageObjects
+            ];
+            newPageObjects.splice(index + 1, 0, newPageObject);
+            const duplicatedAnnotations = annotations.filter((ann)=>ann.pageIndex === index).map((ann)=>({
+                    ...ann,
+                    id: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$uuid$2f$dist$2f$esm$2d$browser$2f$v4$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__v4$3e$__["v4"])(),
+                    pageIndex: index + 1
+                }));
+            const newAnnotations = annotations.map((ann)=>ann.pageIndex > index ? {
+                    ...ann,
+                    pageIndex: ann.pageIndex + 1
+                } : ann).concat(duplicatedAnnotations);
+            updateState({
+                pageObjects: newPageObjects,
+                annotations: newAnnotations
+            });
+        } else if (action === 'rotate') {
+            const newPageObjects = pageObjects.map((page, i)=>{
+                if (i === index) {
+                    const newRotation = (page.rotation + 90 + 360) % 360;
+                    return {
+                        ...page,
+                        rotation: newRotation
+                    };
+                }
+                return page;
+            });
+            updateState({
+                pageObjects: newPageObjects
+            });
+        }
     };
     const hexToRgb = (hex)=>{
         const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -4635,22 +4650,6 @@ function PdfEditorPage() {
             setSelectedPageIds(newSelectedPageIds);
         }
     };
-    const handleRotatePage = (direction)=>{
-        if (activePageIndex === null) return;
-        const newPageObjects = pageObjects.map((page, index)=>{
-            if (index === activePageIndex) {
-                const newRotation = (page.rotation + (direction === 'cw' ? 90 : -90) + 360) % 360;
-                return {
-                    ...page,
-                    rotation: newRotation
-                };
-            }
-            return page;
-        });
-        updateState({
-            pageObjects: newPageObjects
-        });
-    };
     const handleAddBlankPage = ()=>{
         const blankCanvas = document.createElement('canvas');
         if (pageObjects.length > 0 && pageObjects[0].sourceCanvas) {
@@ -4691,47 +4690,6 @@ function PdfEditorPage() {
                 });
             }
         }, 100);
-    };
-    const handleAddTextAnnotation = ()=>{
-        if (activePageIndex === null || !mainViewContainerRef.current) {
-            toast({
-                title: texts.toolInsertText,
-                description: texts.noPageSelected,
-                variant: "destructive"
-            });
-            return;
-        }
-        const container = mainViewContainerRef.current;
-        const pageRect = pageRefs.current[activePageIndex]?.getBoundingClientRect();
-        if (!pageRect) return;
-        const top = container.scrollTop + container.clientHeight / 2 - pageRect.top;
-        const left = container.scrollLeft + container.clientWidth / 2 - pageRect.left;
-        const newAnnotation = {
-            id: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$uuid$2f$dist$2f$esm$2d$browser$2f$v4$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__v4$3e$__["v4"])(),
-            type: 'text',
-            pageIndex: activePageIndex,
-            segments: [
-                {
-                    text: texts.textAnnotationSample,
-                    color: '#000000',
-                    bold: false,
-                    italic: false,
-                    underline: false
-                }
-            ],
-            topRatio: Math.max(0, Math.min(0.9, top / pageRect.height)),
-            leftRatio: Math.max(0, Math.min(0.8, left / pageRect.width)),
-            widthRatio: 0.2,
-            heightRatio: 0.1,
-            fontSize: 36,
-            fontFamily: 'Helvetica',
-            textAlign: 'left',
-            isUserAction: true
-        };
-        addAnnotation(newAnnotation);
-        setSelectedAnnotationId(newAnnotation.id);
-        setActiveTool('select');
-        setInteractionMode('selected');
     };
     const handleDeleteAnnotation = (id)=>{
         updateState({
@@ -4920,7 +4878,7 @@ function PdfEditorPage() {
                 handleDeselectAll();
             } else if (interactionMode === 'editing' && !target.closest('.group\\/text-annotation') && !target.closest('.text-toolbar')) {
                 setInteractionMode('selected');
-            } else if (interactionMode !== 'editing' && target === mainViewContainerRef.current) {
+            } else if (interactionMode !== 'editing' && target.classList.contains('main-view-container')) {
                 handleDeselectAll();
             }
         }
@@ -5044,12 +5002,12 @@ function PdfEditorPage() {
                     children: texts.linkEditTitle
                 }, void 0, false, {
                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                    lineNumber: 2557,
+                    lineNumber: 2490,
                     columnNumber: 11
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 2556,
+                lineNumber: 2489,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5070,7 +5028,7 @@ function PdfEditorPage() {
                                         id: "r-url"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                        lineNumber: 2562,
+                                        lineNumber: 2495,
                                         columnNumber: 19
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
@@ -5078,13 +5036,13 @@ function PdfEditorPage() {
                                         children: texts.linkSetUrl
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                        lineNumber: 2563,
+                                        lineNumber: 2496,
                                         columnNumber: 19
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                lineNumber: 2561,
+                                lineNumber: 2494,
                                 columnNumber: 15
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5095,7 +5053,7 @@ function PdfEditorPage() {
                                         id: "r-page"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                        lineNumber: 2566,
+                                        lineNumber: 2499,
                                         columnNumber: 19
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
@@ -5103,19 +5061,19 @@ function PdfEditorPage() {
                                         children: texts.linkSetPage
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                        lineNumber: 2567,
+                                        lineNumber: 2500,
                                         columnNumber: 19
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                lineNumber: 2565,
+                                lineNumber: 2498,
                                 columnNumber: 15
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 2560,
+                        lineNumber: 2493,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5130,7 +5088,7 @@ function PdfEditorPage() {
                                 })
                         }, void 0, false, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 2572,
+                            lineNumber: 2505,
                             columnNumber: 17
                         }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
                             id: "link-page",
@@ -5145,18 +5103,18 @@ function PdfEditorPage() {
                                 })
                         }, void 0, false, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 2579,
+                            lineNumber: 2512,
                             columnNumber: 17
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 2570,
+                        lineNumber: 2503,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 2559,
+                lineNumber: 2492,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5169,7 +5127,7 @@ function PdfEditorPage() {
                         children: texts.linkRemove
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 2592,
+                        lineNumber: 2525,
                         columnNumber: 13
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -5178,19 +5136,19 @@ function PdfEditorPage() {
                         children: texts.linkSave
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 2593,
+                        lineNumber: 2526,
                         columnNumber: 13
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 2591,
+                lineNumber: 2524,
                 columnNumber: 9
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/edit-pdf/page.tsx",
-        lineNumber: 2555,
+        lineNumber: 2488,
         columnNumber: 7
     }, this);
     const activeTextAnnotation = (interactionMode === 'editing' || interactionMode === 'selected') && selectedAnnotationId ? annotations.find((a)=>a.id === selectedAnnotationId && a.type === 'text') : undefined;
@@ -5338,8 +5296,8 @@ function PdfEditorPage() {
     };
     const handlePageMouseDown = (e, pageIndex)=>{
         const tool = activeTool;
-        if (tool !== 'mosaic' && tool !== 'scribble' && tool !== 'shape') return;
-        const interaction = tool === 'mosaic' ? 'drawing-mosaic' : tool === 'scribble' ? 'drawing-scribble' : 'drawing-shape';
+        if (tool !== 'mosaic' && tool !== 'scribble' && tool !== 'text' && tool !== 'shape') return;
+        const interaction = tool === 'mosaic' ? 'drawing-mosaic' : tool === 'scribble' ? 'drawing-scribble' : tool === 'text' ? 'drawing-text' : 'drawing-shape';
         setInteractionMode(interaction);
         const container = e.currentTarget;
         const rect = container.getBoundingClientRect();
@@ -5379,6 +5337,30 @@ function PdfEditorPage() {
                     ],
                     color: '#000000',
                     strokeWidth: 2,
+                    isUserAction: true
+                };
+                break;
+            case 'text':
+                newAnnotation = {
+                    id,
+                    type: 'text',
+                    pageIndex,
+                    segments: [
+                        {
+                            text: texts.textAnnotationSample,
+                            color: '#000000',
+                            bold: false,
+                            italic: false,
+                            underline: false
+                        }
+                    ],
+                    topRatio: startY,
+                    leftRatio: startX,
+                    widthRatio: 0,
+                    heightRatio: 0,
+                    fontSize: 36,
+                    fontFamily: 'Helvetica',
+                    textAlign: 'left',
                     isUserAction: true
                 };
                 break;
@@ -5458,60 +5440,17 @@ function PdfEditorPage() {
                     }
                 }
             }
+            if (interactionMode === 'drawing-text' && drawingStartRef.current) {
+                setSelectedAnnotationId(drawingStartRef.current.id);
+                setInteractionMode('editing');
+            } else {
+                setInteractionMode('idle');
+            }
             drawingStartRef.current = null;
             setActiveTool('select');
-            setInteractionMode('idle');
             setDrawingShapeType(null);
         }
     };
-    const handleTableCellDoubleClick = (e, tableAnn)=>{
-        e.stopPropagation();
-        const svgElement = e.currentTarget.querySelector('svg');
-        if (!svgElement) return;
-        const rect = svgElement.getBoundingClientRect();
-        const clickX = e.clientX - rect.left;
-        const clickY = e.clientY - rect.top;
-        const col = Math.floor(clickX / (rect.width / tableAnn.cols));
-        const row = Math.floor(clickY / (rect.height / tableAnn.rows));
-        const id = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$uuid$2f$dist$2f$esm$2d$browser$2f$v4$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__v4$3e$__["v4"])();
-        const newTextAnnotation = {
-            id,
-            type: 'text',
-            pageIndex: tableAnn.pageIndex,
-            segments: [
-                {
-                    text: tableAnn.cells[row]?.[col] || '',
-                    color: '#000000',
-                    bold: false,
-                    italic: false,
-                    underline: false
-                }
-            ],
-            topRatio: tableAnn.topRatio + row / tableAnn.rows * tableAnn.heightRatio,
-            leftRatio: tableAnn.leftRatio + col / tableAnn.cols * tableAnn.widthRatio,
-            widthRatio: tableAnn.widthRatio / tableAnn.cols,
-            heightRatio: tableAnn.heightRatio / tableAnn.rows,
-            fontSize: 12,
-            fontFamily: 'Helvetica',
-            textAlign: 'left',
-            isUserAction: true
-        };
-        addAnnotation(newTextAnnotation);
-        setInteractionMode('editing');
-        setSelectedAnnotationId(id);
-    };
-    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
-        "PdfEditorPage.useEffect": ()=>{
-            if (mainViewContainerRef.current) {
-                let cursor = 'default';
-                if (activeTool === 'pan') cursor = 'grab';
-                if (activeTool === 'mosaic' || activeTool === 'scribble' || activeTool === 'shape') cursor = 'crosshair';
-                mainViewContainerRef.current.style.cursor = cursor;
-            }
-        }
-    }["PdfEditorPage.useEffect"], [
-        activeTool
-    ]);
     const handleShapeToolSelect = (shapeType)=>{
         setActiveTool('shape');
         setDrawingShapeType(shapeType);
@@ -5526,7 +5465,7 @@ function PdfEditorPage() {
                         className: "h-12 w-12 text-primary animate-spin mb-4"
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 2877,
+                        lineNumber: 2778,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -5534,7 +5473,7 @@ function PdfEditorPage() {
                         children: isLoading ? loadingMessage : isDownloading ? texts.generatingFile : ''
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 2878,
+                        lineNumber: 2779,
                         columnNumber: 11
                     }, this),
                     isDownloading && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$progress$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Progress"], {
@@ -5542,13 +5481,13 @@ function PdfEditorPage() {
                         className: "w-56 mt-2"
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 2881,
+                        lineNumber: 2782,
                         columnNumber: 29
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 2876,
+                lineNumber: 2777,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -5560,7 +5499,7 @@ function PdfEditorPage() {
                 className: "hidden"
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 2885,
+                lineNumber: 2786,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -5572,7 +5511,7 @@ function PdfEditorPage() {
                 className: "hidden"
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 2886,
+                lineNumber: 2787,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -5584,7 +5523,7 @@ function PdfEditorPage() {
                 className: "hidden"
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 2887,
+                lineNumber: 2788,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -5595,7 +5534,7 @@ function PdfEditorPage() {
                 className: "hidden"
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 2888,
+                lineNumber: 2789,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialog"], {
@@ -5609,20 +5548,20 @@ function PdfEditorPage() {
                                     children: texts.newDocConfirmTitle
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 2893,
+                                    lineNumber: 2794,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogDescription"], {
                                     children: texts.newDocConfirmDescription
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 2894,
+                                    lineNumber: 2795,
                                     columnNumber: 17
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 2892,
+                            lineNumber: 2793,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogFooter"], {
@@ -5631,7 +5570,7 @@ function PdfEditorPage() {
                                     children: texts.cancel
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 2897,
+                                    lineNumber: 2798,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogAction"], {
@@ -5639,24 +5578,24 @@ function PdfEditorPage() {
                                     children: texts.confirm
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 2898,
+                                    lineNumber: 2799,
                                     columnNumber: 17
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 2896,
+                            lineNumber: 2797,
                             columnNumber: 13
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                    lineNumber: 2891,
+                    lineNumber: 2792,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 2890,
+                lineNumber: 2791,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialog"], {
@@ -5670,20 +5609,20 @@ function PdfEditorPage() {
                                     children: texts.convertConfirmTitle
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 2906,
+                                    lineNumber: 2807,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogDescription"], {
                                     children: pendingFileToConvert ? texts.convertConfirmDescription(pendingFileToConvert.name) : ''
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 2907,
+                                    lineNumber: 2808,
                                     columnNumber: 17
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 2905,
+                            lineNumber: 2806,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogFooter"], {
@@ -5694,7 +5633,7 @@ function PdfEditorPage() {
                                     children: texts.convertConfirmDownload
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 2912,
+                                    lineNumber: 2813,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -5702,24 +5641,24 @@ function PdfEditorPage() {
                                     children: texts.convertConfirmEdit
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 2913,
+                                    lineNumber: 2814,
                                     columnNumber: 17
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 2911,
+                            lineNumber: 2812,
                             columnNumber: 13
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                    lineNumber: 2904,
+                    lineNumber: 2805,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 2903,
+                lineNumber: 2804,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialog"], {
@@ -5733,20 +5672,20 @@ function PdfEditorPage() {
                                     children: guestLimitModalContent.title
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 2921,
+                                    lineNumber: 2822,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogDescription"], {
                                     children: guestLimitModalContent.description
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 2922,
+                                    lineNumber: 2823,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 2920,
+                            lineNumber: 2821,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogFooter"], {
@@ -5755,7 +5694,7 @@ function PdfEditorPage() {
                                     children: texts.cancel
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 2927,
+                                    lineNumber: 2828,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogAction"], {
@@ -5763,24 +5702,24 @@ function PdfEditorPage() {
                                     children: texts.login
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 2928,
+                                    lineNumber: 2829,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 2926,
+                            lineNumber: 2827,
                             columnNumber: 13
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                    lineNumber: 2919,
+                    lineNumber: 2820,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 2918,
+                lineNumber: 2819,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialog"], {
@@ -5794,20 +5733,20 @@ function PdfEditorPage() {
                                     children: texts.deletePageConfirmTitle
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 2936,
+                                    lineNumber: 2837,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogDescription"], {
                                     children: pageToDelete !== null ? texts.deletePageConfirmDescription : `${currentLanguage === 'zh' ? `您確定要刪除選取的 ${selectedPageIds.size} 個頁面嗎?` : `Are you sure you want to delete the ${selectedPageIds.size} selected pages?`}`
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 2937,
+                                    lineNumber: 2838,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 2935,
+                            lineNumber: 2836,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogFooter"], {
@@ -5817,32 +5756,37 @@ function PdfEditorPage() {
                                     children: texts.cancel
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 2942,
+                                    lineNumber: 2843,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogAction"], {
-                                    onClick: handleDeletePages,
+                                    onClick: ()=>{
+                                        if (pageToDelete !== null) {
+                                            handlePageAction(pageToDelete, 'delete');
+                                            setPageToDelete(null);
+                                        }
+                                    },
                                     children: texts.confirm
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 2943,
+                                    lineNumber: 2844,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 2941,
+                            lineNumber: 2842,
                             columnNumber: 13
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                    lineNumber: 2934,
+                    lineNumber: 2835,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 2933,
+                lineNumber: 2834,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("header", {
@@ -5857,7 +5801,7 @@ function PdfEditorPage() {
                                     className: "mr-2 h-6 w-6"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 2951,
+                                    lineNumber: 2852,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
@@ -5865,13 +5809,13 @@ function PdfEditorPage() {
                                     children: texts.appTitle
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 2952,
+                                    lineNumber: 2853,
                                     columnNumber: 17
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 2950,
+                            lineNumber: 2851,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarMenu"], {
@@ -5880,7 +5824,7 @@ function PdfEditorPage() {
                                     children: texts.menuFile
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 2955,
+                                    lineNumber: 2856,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarContent"], {
@@ -5898,14 +5842,14 @@ function PdfEditorPage() {
                                                     className: "mr-2 h-4 w-4"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 2963,
+                                                    lineNumber: 2864,
                                                     columnNumber: 24
                                                 }, this),
                                                 texts.menuFileNew
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 2957,
+                                            lineNumber: 2858,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarSub"], {
@@ -5917,14 +5861,14 @@ function PdfEditorPage() {
                                                             className: "mr-2 h-4 w-4"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                            lineNumber: 2965,
+                                                            lineNumber: 2866,
                                                             columnNumber: 79
                                                         }, this),
                                                         texts.menuFileOpen
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 2965,
+                                                    lineNumber: 2866,
                                                     columnNumber: 26
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarSubContent"], {
@@ -5934,7 +5878,7 @@ function PdfEditorPage() {
                                                             children: texts.wordToPdf
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                            lineNumber: 2967,
+                                                            lineNumber: 2868,
                                                             columnNumber: 30
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarItem"], {
@@ -5942,7 +5886,7 @@ function PdfEditorPage() {
                                                             children: texts.excelToPdf
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                            lineNumber: 2968,
+                                                            lineNumber: 2869,
                                                             columnNumber: 30
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarItem"], {
@@ -5950,19 +5894,19 @@ function PdfEditorPage() {
                                                             children: texts.pptToPdf
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                            lineNumber: 2969,
+                                                            lineNumber: 2870,
                                                             columnNumber: 30
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 2966,
+                                                    lineNumber: 2867,
                                                     columnNumber: 26
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 2964,
+                                            lineNumber: 2865,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarSub"], {
@@ -5974,14 +5918,14 @@ function PdfEditorPage() {
                                                             className: "mr-2 h-4 w-4"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                            lineNumber: 2974,
+                                                            lineNumber: 2875,
                                                             columnNumber: 28
                                                         }, this),
                                                         texts.insertPdf
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 2973,
+                                                    lineNumber: 2874,
                                                     columnNumber: 25
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarSubContent"], {
@@ -5991,7 +5935,7 @@ function PdfEditorPage() {
                                                             children: texts.insertAtStart
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                            lineNumber: 2977,
+                                                            lineNumber: 2878,
                                                             columnNumber: 29
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarItem"], {
@@ -5999,12 +5943,12 @@ function PdfEditorPage() {
                                                             children: texts.insertAtEnd
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                            lineNumber: 2978,
+                                                            lineNumber: 2879,
                                                             columnNumber: 29
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarSeparator"], {}, void 0, false, {
                                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                            lineNumber: 2979,
+                                                            lineNumber: 2880,
                                                             columnNumber: 29
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarItem"], {
@@ -6013,7 +5957,7 @@ function PdfEditorPage() {
                                                             children: texts.insertBeforeSelection
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                            lineNumber: 2980,
+                                                            lineNumber: 2881,
                                                             columnNumber: 29
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarItem"], {
@@ -6022,19 +5966,19 @@ function PdfEditorPage() {
                                                             children: texts.insertAfterSelection
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                            lineNumber: 2981,
+                                                            lineNumber: 2882,
                                                             columnNumber: 29
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 2976,
+                                                    lineNumber: 2877,
                                                     columnNumber: 25
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 2972,
+                                            lineNumber: 2873,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarSub"], {
@@ -6046,14 +5990,14 @@ function PdfEditorPage() {
                                                             className: "mr-2 h-4 w-4"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                            lineNumber: 2986,
+                                                            lineNumber: 2887,
                                                             columnNumber: 29
                                                         }, this),
                                                         texts.menuFileSaveAs
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 2985,
+                                                    lineNumber: 2886,
                                                     columnNumber: 25
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarSubContent"], {
@@ -6062,30 +6006,30 @@ function PdfEditorPage() {
                                                             children: opt.labelKey === 'downloadPdf' ? texts.downloadPdf : texts[opt.labelKey]
                                                         }, opt.value, false, {
                                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                            lineNumber: 2990,
+                                                            lineNumber: 2891,
                                                             columnNumber: 33
                                                         }, this))
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 2988,
+                                                    lineNumber: 2889,
                                                     columnNumber: 25
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 2984,
+                                            lineNumber: 2885,
                                             columnNumber: 21
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 2956,
+                                    lineNumber: 2857,
                                     columnNumber: 17
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 2954,
+                            lineNumber: 2855,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarMenu"], {
@@ -6094,7 +6038,7 @@ function PdfEditorPage() {
                                     children: texts.menuEdit
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 2997,
+                                    lineNumber: 2898,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarContent"], {
@@ -6107,14 +6051,14 @@ function PdfEditorPage() {
                                                     className: "mr-2 h-4 w-4"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 2999,
+                                                    lineNumber: 2900,
                                                     columnNumber: 84
                                                 }, this),
                                                 texts.menuEditUndo
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 2999,
+                                            lineNumber: 2900,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarItem"], {
@@ -6125,37 +6069,37 @@ function PdfEditorPage() {
                                                     className: "mr-2 h-4 w-4"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3000,
+                                                    lineNumber: 2901,
                                                     columnNumber: 101
                                                 }, this),
                                                 texts.menuEditRedo
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3000,
+                                            lineNumber: 2901,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarSeparator"], {}, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3001,
+                                            lineNumber: 2902,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarItem"], {
-                                            onClick: handleAddTextAnnotation,
+                                            onClick: ()=>setActiveTool('text'),
                                             disabled: activePageIndex === null,
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$type$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Type$3e$__["Type"], {
                                                     className: "mr-2 h-4 w-4"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3002,
-                                                    columnNumber: 104
+                                                    lineNumber: 2903,
+                                                    columnNumber: 108
                                                 }, this),
                                                 texts.menuEditInsertText
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3002,
+                                            lineNumber: 2903,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarItem"], {
@@ -6166,14 +6110,14 @@ function PdfEditorPage() {
                                                     className: "mr-2 h-4 w-4"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3003,
+                                                    lineNumber: 2904,
                                                     columnNumber: 118
                                                 }, this),
                                                 texts.menuEditInsertImage
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3003,
+                                            lineNumber: 2904,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarItem"], {
@@ -6184,14 +6128,14 @@ function PdfEditorPage() {
                                                     className: "mr-2 h-4 w-4"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3004,
+                                                    lineNumber: 2905,
                                                     columnNumber: 109
                                                 }, this),
                                                 texts.menuEditHighlight
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3004,
+                                            lineNumber: 2905,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$popover$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Popover"], {
@@ -6212,19 +6156,19 @@ function PdfEditorPage() {
                                                                 className: "mr-2 h-4 w-4"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                                lineNumber: 3008,
+                                                                lineNumber: 2909,
                                                                 columnNumber: 33
                                                             }, this),
                                                             texts.menuEditInsertLink
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3007,
+                                                        lineNumber: 2908,
                                                         columnNumber: 29
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3006,
+                                                    lineNumber: 2907,
                                                     columnNumber: 25
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$popover$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["PopoverContent"], {
@@ -6234,25 +6178,25 @@ function PdfEditorPage() {
                                                     children: linkPopoverContent
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3011,
+                                                    lineNumber: 2912,
                                                     columnNumber: 25
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3005,
+                                            lineNumber: 2906,
                                             columnNumber: 21
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 2998,
+                                    lineNumber: 2899,
                                     columnNumber: 17
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 2996,
+                            lineNumber: 2897,
                             columnNumber: 14
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarMenu"], {
@@ -6261,50 +6205,32 @@ function PdfEditorPage() {
                                     children: texts.menuPage
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 3018,
+                                    lineNumber: 2919,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarContent"], {
                                     children: [
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarItem"], {
-                                            onClick: ()=>handleRotatePage('cw'),
+                                            onClick: ()=>handlePageAction(activePageIndex, 'rotate'),
                                             disabled: activePageIndex === null,
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$rotate$2d$cw$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__RotateCw$3e$__["RotateCw"], {
                                                     className: "mr-2 h-4 w-4"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3020,
-                                                    columnNumber: 109
+                                                    lineNumber: 2921,
+                                                    columnNumber: 131
                                                 }, this),
                                                 texts.menuPageRotateCW
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3020,
-                                            columnNumber: 21
-                                        }, this),
-                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarItem"], {
-                                            onClick: ()=>handleRotatePage('ccw'),
-                                            disabled: activePageIndex === null,
-                                            children: [
-                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$rotate$2d$ccw$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__RotateCcw$3e$__["RotateCcw"], {
-                                                    className: "mr-2 h-4 w-4"
-                                                }, void 0, false, {
-                                                    fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3021,
-                                                    columnNumber: 110
-                                                }, this),
-                                                texts.menuPageRotateCCW
-                                            ]
-                                        }, void 0, true, {
-                                            fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3021,
+                                            lineNumber: 2921,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarSeparator"], {}, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3022,
+                                            lineNumber: 2922,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarItem"], {
@@ -6314,14 +6240,14 @@ function PdfEditorPage() {
                                                     className: "mr-2 h-4 w-4"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3023,
+                                                    lineNumber: 2923,
                                                     columnNumber: 63
                                                 }, this),
                                                 texts.menuPageAddBlank
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3023,
+                                            lineNumber: 2923,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarItem"], {
@@ -6337,7 +6263,7 @@ function PdfEditorPage() {
                                                     className: "mr-2 h-4 w-4 text-destructive"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3025,
+                                                    lineNumber: 2925,
                                                     columnNumber: 25
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -6345,25 +6271,25 @@ function PdfEditorPage() {
                                                     children: texts.menuPageDelete
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3026,
+                                                    lineNumber: 2926,
                                                     columnNumber: 25
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3024,
+                                            lineNumber: 2924,
                                             columnNumber: 21
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 3019,
+                                    lineNumber: 2920,
                                     columnNumber: 17
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 3017,
+                            lineNumber: 2918,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarMenu"], {
@@ -6372,7 +6298,7 @@ function PdfEditorPage() {
                                     children: texts.menuConvert
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 3031,
+                                    lineNumber: 2931,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarContent"], {
@@ -6384,14 +6310,14 @@ function PdfEditorPage() {
                                                         className: "mr-2 h-4 w-4"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3034,
+                                                        lineNumber: 2934,
                                                         columnNumber: 44
                                                     }, this),
                                                     texts.convertFromPdf
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3034,
+                                                lineNumber: 2934,
                                                 columnNumber: 25
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarSubContent"], {
@@ -6403,14 +6329,14 @@ function PdfEditorPage() {
                                                                 className: "mr-2 h-4 w-4"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                                lineNumber: 3036,
+                                                                lineNumber: 2936,
                                                                 columnNumber: 86
                                                             }, this),
                                                             texts.pdfToWord
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3036,
+                                                        lineNumber: 2936,
                                                         columnNumber: 29
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarItem"], {
@@ -6420,14 +6346,14 @@ function PdfEditorPage() {
                                                                 className: "mr-2 h-4 w-4"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                                lineNumber: 3037,
+                                                                lineNumber: 2937,
                                                                 columnNumber: 87
                                                             }, this),
                                                             texts.pdfToExcel
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3037,
+                                                        lineNumber: 2937,
                                                         columnNumber: 29
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarItem"], {
@@ -6437,14 +6363,14 @@ function PdfEditorPage() {
                                                                 className: "mr-2 h-4 w-4"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                                lineNumber: 3038,
+                                                                lineNumber: 2938,
                                                                 columnNumber: 85
                                                             }, this),
                                                             texts.pdfToPpt
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3038,
+                                                        lineNumber: 2938,
                                                         columnNumber: 29
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarItem"], {
@@ -6454,14 +6380,14 @@ function PdfEditorPage() {
                                                                 className: "mr-2 h-4 w-4"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                                lineNumber: 3039,
+                                                                lineNumber: 2939,
                                                                 columnNumber: 86
                                                             }, this),
                                                             texts.pdfToHtml
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3039,
+                                                        lineNumber: 2939,
                                                         columnNumber: 29
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarItem"], {
@@ -6471,14 +6397,14 @@ function PdfEditorPage() {
                                                                 className: "mr-2 h-4 w-4"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                                lineNumber: 3040,
+                                                                lineNumber: 2940,
                                                                 columnNumber: 87
                                                             }, this),
                                                             texts.pdfToJpg
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3040,
+                                                        lineNumber: 2940,
                                                         columnNumber: 29
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$menubar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["MenubarItem"], {
@@ -6488,48 +6414,48 @@ function PdfEditorPage() {
                                                                 className: "mr-2 h-4 w-4"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                                lineNumber: 3041,
+                                                                lineNumber: 2941,
                                                                 columnNumber: 85
                                                             }, this),
                                                             texts.pdfToOcr
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3041,
+                                                        lineNumber: 2941,
                                                         columnNumber: 29
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3035,
+                                                lineNumber: 2935,
                                                 columnNumber: 25
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                        lineNumber: 3033,
+                                        lineNumber: 2933,
                                         columnNumber: 21
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 3032,
+                                    lineNumber: 2932,
                                     columnNumber: 17
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 3030,
+                            lineNumber: 2930,
                             columnNumber: 14
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                    lineNumber: 2949,
+                    lineNumber: 2850,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 2948,
+                lineNumber: 2849,
                 columnNumber: 5
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6549,7 +6475,7 @@ function PdfEditorPage() {
                                             children: "基本編輯"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3053,
+                                            lineNumber: 2953,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -6559,13 +6485,13 @@ function PdfEditorPage() {
                                             children: "文字擷取"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3054,
+                                            lineNumber: 2954,
                                             columnNumber: 21
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 3052,
+                                    lineNumber: 2952,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$separator$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Separator"], {
@@ -6573,7 +6499,7 @@ function PdfEditorPage() {
                                     className: "h-10 mx-2"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 3056,
+                                    lineNumber: 2956,
                                     columnNumber: 18
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
@@ -6589,7 +6515,7 @@ function PdfEditorPage() {
                                                         className: "h-5 w-5"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3061,
+                                                        lineNumber: 2961,
                                                         columnNumber: 29
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -6597,18 +6523,18 @@ function PdfEditorPage() {
                                                         children: texts.toolSelect
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3062,
+                                                        lineNumber: 2962,
                                                         columnNumber: 29
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3060,
+                                                lineNumber: 2960,
                                                 columnNumber: 26
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3059,
+                                            lineNumber: 2959,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TooltipContent"], {
@@ -6617,18 +6543,18 @@ function PdfEditorPage() {
                                                 children: "Select"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3065,
+                                                lineNumber: 2965,
                                                 columnNumber: 51
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3065,
+                                            lineNumber: 2965,
                                             columnNumber: 21
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 3058,
+                                    lineNumber: 2958,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
@@ -6644,7 +6570,7 @@ function PdfEditorPage() {
                                                         className: "h-5 w-5"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3070,
+                                                        lineNumber: 2970,
                                                         columnNumber: 29
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -6652,18 +6578,18 @@ function PdfEditorPage() {
                                                         children: texts.toolPan
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3071,
+                                                        lineNumber: 2971,
                                                         columnNumber: 29
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3069,
+                                                lineNumber: 2969,
                                                 columnNumber: 25
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3068,
+                                            lineNumber: 2968,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TooltipContent"], {
@@ -6672,18 +6598,18 @@ function PdfEditorPage() {
                                                 children: texts.toolHand
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3074,
+                                                lineNumber: 2974,
                                                 columnNumber: 51
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3074,
+                                            lineNumber: 2974,
                                             columnNumber: 21
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 3067,
+                                    lineNumber: 2967,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$separator$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Separator"], {
@@ -6691,7 +6617,7 @@ function PdfEditorPage() {
                                     className: "h-10 mx-2"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 3076,
+                                    lineNumber: 2976,
                                     columnNumber: 18
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
@@ -6708,7 +6634,7 @@ function PdfEditorPage() {
                                                         className: "h-5 w-5"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3081,
+                                                        lineNumber: 2981,
                                                         columnNumber: 24
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -6716,18 +6642,18 @@ function PdfEditorPage() {
                                                         children: texts.menuEditUndo
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3082,
+                                                        lineNumber: 2982,
                                                         columnNumber: 24
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3080,
+                                                lineNumber: 2980,
                                                 columnNumber: 21
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3079,
+                                            lineNumber: 2979,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TooltipContent"], {
@@ -6736,18 +6662,18 @@ function PdfEditorPage() {
                                                 children: texts.menuEditUndo
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3085,
+                                                lineNumber: 2985,
                                                 columnNumber: 47
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3085,
+                                            lineNumber: 2985,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 3078,
+                                    lineNumber: 2978,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
@@ -6764,7 +6690,7 @@ function PdfEditorPage() {
                                                         className: "h-5 w-5"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3090,
+                                                        lineNumber: 2990,
                                                         columnNumber: 28
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -6772,18 +6698,18 @@ function PdfEditorPage() {
                                                         children: texts.menuEditRedo
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3091,
+                                                        lineNumber: 2991,
                                                         columnNumber: 28
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3089,
+                                                lineNumber: 2989,
                                                 columnNumber: 25
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3088,
+                                            lineNumber: 2988,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TooltipContent"], {
@@ -6792,18 +6718,18 @@ function PdfEditorPage() {
                                                 children: texts.menuEditRedo
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3094,
+                                                lineNumber: 2994,
                                                 columnNumber: 51
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3094,
+                                            lineNumber: 2994,
                                             columnNumber: 21
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 3087,
+                                    lineNumber: 2987,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$separator$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Separator"], {
@@ -6811,7 +6737,7 @@ function PdfEditorPage() {
                                     className: "h-10 mx-2"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 3097,
+                                    lineNumber: 2997,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
@@ -6819,35 +6745,35 @@ function PdfEditorPage() {
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TooltipTrigger"], {
                                             asChild: true,
                                             children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                                                variant: "ghost",
+                                                variant: activeTool === 'text' ? 'secondary' : 'ghost',
                                                 className: "flex flex-col h-auto p-2 space-y-1",
-                                                onClick: handleAddTextAnnotation,
+                                                onClick: ()=>setActiveTool('text'),
                                                 disabled: activePageIndex === null,
                                                 children: [
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$type$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Type$3e$__["Type"], {
                                                         className: "h-5 w-5"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3102,
+                                                        lineNumber: 3002,
                                                         columnNumber: 25
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                         className: "text-xs",
-                                                        children: texts.toolInsertText
+                                                        children: texts.toolText
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3103,
+                                                        lineNumber: 3003,
                                                         columnNumber: 25
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3101,
+                                                lineNumber: 3001,
                                                 columnNumber: 21
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3100,
+                                            lineNumber: 3000,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TooltipContent"], {
@@ -6856,18 +6782,18 @@ function PdfEditorPage() {
                                                 children: texts.menuEditInsertText
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3106,
+                                                lineNumber: 3006,
                                                 columnNumber: 47
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3106,
+                                            lineNumber: 3006,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 3099,
+                                    lineNumber: 2999,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
@@ -6884,26 +6810,26 @@ function PdfEditorPage() {
                                                         className: "h-5 w-5"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3111,
+                                                        lineNumber: 3011,
                                                         columnNumber: 25
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                         className: "text-xs",
-                                                        children: texts.toolInsertImage
+                                                        children: texts.toolImage
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3112,
+                                                        lineNumber: 3012,
                                                         columnNumber: 25
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3110,
+                                                lineNumber: 3010,
                                                 columnNumber: 21
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3109,
+                                            lineNumber: 3009,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TooltipContent"], {
@@ -6912,18 +6838,18 @@ function PdfEditorPage() {
                                                 children: texts.menuEditInsertImage
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3115,
+                                                lineNumber: 3015,
                                                 columnNumber: 47
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3115,
+                                            lineNumber: 3015,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 3108,
+                                    lineNumber: 3008,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DropdownMenu"], {
@@ -6943,7 +6869,7 @@ function PdfEditorPage() {
                                                                     className: "h-5 w-5"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                                    lineNumber: 3122,
+                                                                    lineNumber: 3022,
                                                                     columnNumber: 37
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -6951,23 +6877,23 @@ function PdfEditorPage() {
                                                                     children: texts.toolInsertFile
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                                    lineNumber: 3123,
+                                                                    lineNumber: 3023,
                                                                     columnNumber: 37
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                            lineNumber: 3121,
+                                                            lineNumber: 3021,
                                                             columnNumber: 33
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3120,
+                                                        lineNumber: 3020,
                                                         columnNumber: 29
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3119,
+                                                    lineNumber: 3019,
                                                     columnNumber: 25
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TooltipContent"], {
@@ -6976,18 +6902,18 @@ function PdfEditorPage() {
                                                         children: texts.insertPdf
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3127,
+                                                        lineNumber: 3027,
                                                         columnNumber: 55
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3127,
+                                                    lineNumber: 3027,
                                                     columnNumber: 25
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3118,
+                                            lineNumber: 3018,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DropdownMenuContent"], {
@@ -6997,7 +6923,7 @@ function PdfEditorPage() {
                                                     children: texts.insertAtStart
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3130,
+                                                    lineNumber: 3030,
                                                     columnNumber: 25
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DropdownMenuItem"], {
@@ -7005,12 +6931,12 @@ function PdfEditorPage() {
                                                     children: texts.insertAtEnd
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3131,
+                                                    lineNumber: 3031,
                                                     columnNumber: 25
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DropdownMenuSeparator"], {}, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3132,
+                                                    lineNumber: 3032,
                                                     columnNumber: 25
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DropdownMenuItem"], {
@@ -7019,7 +6945,7 @@ function PdfEditorPage() {
                                                     children: texts.insertBeforeSelection
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3133,
+                                                    lineNumber: 3033,
                                                     columnNumber: 25
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DropdownMenuItem"], {
@@ -7028,19 +6954,19 @@ function PdfEditorPage() {
                                                     children: texts.insertAfterSelection
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3134,
+                                                    lineNumber: 3034,
                                                     columnNumber: 25
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3129,
+                                            lineNumber: 3029,
                                             columnNumber: 21
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 3117,
+                                    lineNumber: 3017,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
@@ -7057,7 +6983,7 @@ function PdfEditorPage() {
                                                         className: "h-5 w-5"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3141,
+                                                        lineNumber: 3041,
                                                         columnNumber: 25
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -7065,18 +6991,18 @@ function PdfEditorPage() {
                                                         children: texts.toolHighlight
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3142,
+                                                        lineNumber: 3042,
                                                         columnNumber: 25
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3140,
+                                                lineNumber: 3040,
                                                 columnNumber: 21
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3139,
+                                            lineNumber: 3039,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TooltipContent"], {
@@ -7085,18 +7011,18 @@ function PdfEditorPage() {
                                                 children: texts.menuEditHighlight
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3145,
+                                                lineNumber: 3045,
                                                 columnNumber: 47
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3145,
+                                            lineNumber: 3045,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 3138,
+                                    lineNumber: 3038,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$popover$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Popover"], {
@@ -7116,7 +7042,7 @@ function PdfEditorPage() {
                                                                     className: "h-5 w-5"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                                    lineNumber: 3152,
+                                                                    lineNumber: 3052,
                                                                     columnNumber: 37
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -7124,23 +7050,23 @@ function PdfEditorPage() {
                                                                     children: texts.toolShapeShort
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                                    lineNumber: 3153,
+                                                                    lineNumber: 3053,
                                                                     columnNumber: 37
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                            lineNumber: 3151,
+                                                            lineNumber: 3051,
                                                             columnNumber: 33
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3150,
+                                                        lineNumber: 3050,
                                                         columnNumber: 29
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3149,
+                                                    lineNumber: 3049,
                                                     columnNumber: 25
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TooltipContent"], {
@@ -7149,18 +7075,18 @@ function PdfEditorPage() {
                                                         children: texts.toolShape
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3157,
+                                                        lineNumber: 3057,
                                                         columnNumber: 55
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3157,
+                                                    lineNumber: 3057,
                                                     columnNumber: 25
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3148,
+                                            lineNumber: 3048,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$popover$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["PopoverContent"], {
@@ -7174,12 +7100,12 @@ function PdfEditorPage() {
                                                         className: "h-5 w-5 text-primary"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3160,
+                                                        lineNumber: 3060,
                                                         columnNumber: 107
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3160,
+                                                    lineNumber: 3060,
                                                     columnNumber: 25
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -7190,12 +7116,12 @@ function PdfEditorPage() {
                                                         className: "h-5 w-5 text-primary"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3161,
+                                                        lineNumber: 3061,
                                                         columnNumber: 110
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3161,
+                                                    lineNumber: 3061,
                                                     columnNumber: 25
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -7204,12 +7130,12 @@ function PdfEditorPage() {
                                                     onClick: ()=>handleShapeToolSelect('triangle'),
                                                     children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(TriangleIcon, {}, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3162,
+                                                        lineNumber: 3062,
                                                         columnNumber: 111
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3162,
+                                                    lineNumber: 3062,
                                                     columnNumber: 25
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -7218,24 +7144,24 @@ function PdfEditorPage() {
                                                     onClick: ()=>setActiveTool('scribble'),
                                                     children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(ScribbleIcon, {}, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3163,
+                                                        lineNumber: 3063,
                                                         columnNumber: 103
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3163,
+                                                    lineNumber: 3063,
                                                     columnNumber: 25
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3159,
+                                            lineNumber: 3059,
                                             columnNumber: 22
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 3147,
+                                    lineNumber: 3047,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
@@ -7252,7 +7178,7 @@ function PdfEditorPage() {
                                                         className: "h-5 w-5"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3169,
+                                                        lineNumber: 3069,
                                                         columnNumber: 29
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -7260,18 +7186,18 @@ function PdfEditorPage() {
                                                         children: texts.toolMosaic
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3170,
+                                                        lineNumber: 3070,
                                                         columnNumber: 29
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3168,
+                                                lineNumber: 3068,
                                                 columnNumber: 25
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3167,
+                                            lineNumber: 3067,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TooltipContent"], {
@@ -7280,18 +7206,18 @@ function PdfEditorPage() {
                                                 children: texts.toolMosaic
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3173,
+                                                lineNumber: 3073,
                                                 columnNumber: 51
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3173,
+                                            lineNumber: 3073,
                                             columnNumber: 21
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 3166,
+                                    lineNumber: 3066,
                                     columnNumber: 18
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Dialog"], {
@@ -7313,7 +7239,7 @@ function PdfEditorPage() {
                                                                     className: "h-5 w-5"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                                    lineNumber: 3180,
+                                                                    lineNumber: 3080,
                                                                     columnNumber: 37
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -7321,23 +7247,23 @@ function PdfEditorPage() {
                                                                     children: texts.toolSignature
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                                    lineNumber: 3181,
+                                                                    lineNumber: 3081,
                                                                     columnNumber: 37
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                            lineNumber: 3179,
+                                                            lineNumber: 3079,
                                                             columnNumber: 33
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3178,
+                                                        lineNumber: 3078,
                                                         columnNumber: 29
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3177,
+                                                    lineNumber: 3077,
                                                     columnNumber: 25
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TooltipContent"], {
@@ -7346,18 +7272,18 @@ function PdfEditorPage() {
                                                         children: texts.toolSignature
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3185,
+                                                        lineNumber: 3085,
                                                         columnNumber: 55
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3185,
+                                                    lineNumber: 3085,
                                                     columnNumber: 25
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3176,
+                                            lineNumber: 3076,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogContent"], {
@@ -7368,20 +7294,20 @@ function PdfEditorPage() {
                                                             children: texts.signaturePadTitle
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                            lineNumber: 3189,
+                                                            lineNumber: 3089,
                                                             columnNumber: 29
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogDescription"], {
                                                             children: texts.signaturePadDescription
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                            lineNumber: 3190,
+                                                            lineNumber: 3090,
                                                             columnNumber: 29
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3188,
+                                                    lineNumber: 3088,
                                                     columnNumber: 25
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(SignaturePad, {
@@ -7389,210 +7315,30 @@ function PdfEditorPage() {
                                                     texts: texts
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3192,
+                                                    lineNumber: 3092,
                                                     columnNumber: 25
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3187,
+                                            lineNumber: 3087,
                                             columnNumber: 21
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 3175,
-                                    columnNumber: 17
-                                }, this),
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$separator$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Separator"], {
-                                    orientation: "vertical",
-                                    className: "h-10 mx-2"
-                                }, void 0, false, {
-                                    fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 3196,
-                                    columnNumber: 17
-                                }, this),
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
-                                    children: [
-                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TooltipTrigger"], {
-                                            asChild: true,
-                                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                                                variant: "ghost",
-                                                className: "flex flex-col h-auto p-2 space-y-1",
-                                                onClick: ()=>handleRotatePage('ccw'),
-                                                disabled: activePageIndex === null,
-                                                children: [
-                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$rotate$2d$ccw$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__RotateCcw$3e$__["RotateCcw"], {
-                                                        className: "h-5 w-5"
-                                                    }, void 0, false, {
-                                                        fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3201,
-                                                        columnNumber: 25
-                                                    }, this),
-                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                        className: "text-xs",
-                                                        children: texts.toolRotate
-                                                    }, void 0, false, {
-                                                        fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3202,
-                                                        columnNumber: 25
-                                                    }, this)
-                                                ]
-                                            }, void 0, true, {
-                                                fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3200,
-                                                columnNumber: 21
-                                            }, this)
-                                        }, void 0, false, {
-                                            fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3199,
-                                            columnNumber: 17
-                                        }, this),
-                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TooltipContent"], {
-                                            side: "bottom",
-                                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                children: texts.menuPageRotateCCW
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3205,
-                                                columnNumber: 47
-                                            }, this)
-                                        }, void 0, false, {
-                                            fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3205,
-                                            columnNumber: 17
-                                        }, this)
-                                    ]
-                                }, void 0, true, {
-                                    fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 3198,
-                                    columnNumber: 17
-                                }, this),
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
-                                    children: [
-                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TooltipTrigger"], {
-                                            asChild: true,
-                                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                                                variant: "ghost",
-                                                className: "flex flex-col h-auto p-2 space-y-1",
-                                                onClick: handleAddBlankPage,
-                                                children: [
-                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$file$2d$plus$2d$2$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__FilePlus2$3e$__["FilePlus2"], {
-                                                        className: "h-5 w-5"
-                                                    }, void 0, false, {
-                                                        fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3210,
-                                                        columnNumber: 25
-                                                    }, this),
-                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                        className: "text-xs",
-                                                        children: texts.toolAddBlank
-                                                    }, void 0, false, {
-                                                        fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3211,
-                                                        columnNumber: 25
-                                                    }, this)
-                                                ]
-                                            }, void 0, true, {
-                                                fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3209,
-                                                columnNumber: 21
-                                            }, this)
-                                        }, void 0, false, {
-                                            fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3208,
-                                            columnNumber: 17
-                                        }, this),
-                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TooltipContent"], {
-                                            side: "bottom",
-                                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                children: texts.menuPageAddBlank
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3214,
-                                                columnNumber: 47
-                                            }, this)
-                                        }, void 0, false, {
-                                            fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3214,
-                                            columnNumber: 17
-                                        }, this)
-                                    ]
-                                }, void 0, true, {
-                                    fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 3207,
-                                    columnNumber: 17
-                                }, this),
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
-                                    children: [
-                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TooltipTrigger"], {
-                                            asChild: true,
-                                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                                                variant: "ghost",
-                                                className: "flex flex-col h-auto p-2 space-y-1",
-                                                onClick: ()=>{
-                                                    if (activePageIndex !== null) {
-                                                        setPageToDelete(activePageIndex);
-                                                        setIsDeleteConfirmOpen(true);
-                                                    }
-                                                },
-                                                disabled: activePageIndex === null,
-                                                children: [
-                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$trash$2d$2$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Trash2$3e$__["Trash2"], {
-                                                        className: "h-5 w-5 text-destructive"
-                                                    }, void 0, false, {
-                                                        fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3219,
-                                                        columnNumber: 25
-                                                    }, this),
-                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                        className: "text-xs text-destructive",
-                                                        children: texts.toolDelete
-                                                    }, void 0, false, {
-                                                        fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3220,
-                                                        columnNumber: 25
-                                                    }, this)
-                                                ]
-                                            }, void 0, true, {
-                                                fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3218,
-                                                columnNumber: 21
-                                            }, this)
-                                        }, void 0, false, {
-                                            fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3217,
-                                            columnNumber: 17
-                                        }, this),
-                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TooltipContent"], {
-                                            side: "bottom",
-                                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                children: texts.menuPageDelete
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3223,
-                                                columnNumber: 47
-                                            }, this)
-                                        }, void 0, false, {
-                                            fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3223,
-                                            columnNumber: 17
-                                        }, this)
-                                    ]
-                                }, void 0, true, {
-                                    fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 3216,
+                                    lineNumber: 3075,
                                     columnNumber: 17
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 3051,
+                            lineNumber: 2951,
                             columnNumber: 14
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 3050,
+                        lineNumber: 2950,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -7612,7 +7358,7 @@ function PdfEditorPage() {
                                                         className: "mr-2 h-4 w-4"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3233,
+                                                        lineNumber: 3103,
                                                         columnNumber: 33
                                                     }, this),
                                                     " ",
@@ -7620,12 +7366,12 @@ function PdfEditorPage() {
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3232,
+                                                lineNumber: 3102,
                                                 columnNumber: 29
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3231,
+                                            lineNumber: 3101,
                                             columnNumber: 25
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TooltipContent"], {
@@ -7634,19 +7380,64 @@ function PdfEditorPage() {
                                                 children: "Apply this image/signature to all pages"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3236,
+                                                lineNumber: 3106,
                                                 columnNumber: 55
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3236,
+                                            lineNumber: 3106,
                                             columnNumber: 25
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 3230,
+                                    lineNumber: 3100,
                                     columnNumber: 21
+                                }, this),
+                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
+                                    children: [
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TooltipTrigger"], {
+                                            asChild: true,
+                                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
+                                                variant: "ghost",
+                                                size: "icon",
+                                                onClick: ()=>setIsHistoryPanelOpen((prev)=>!prev),
+                                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$history$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__History$3e$__["History"], {
+                                                    className: "h-5 w-5"
+                                                }, void 0, false, {
+                                                    fileName: "[project]/src/app/edit-pdf/page.tsx",
+                                                    lineNumber: 3112,
+                                                    columnNumber: 27
+                                                }, this)
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/app/edit-pdf/page.tsx",
+                                                lineNumber: 3111,
+                                                columnNumber: 23
+                                            }, this)
+                                        }, void 0, false, {
+                                            fileName: "[project]/src/app/edit-pdf/page.tsx",
+                                            lineNumber: 3110,
+                                            columnNumber: 21
+                                        }, this),
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TooltipContent"], {
+                                            side: "bottom",
+                                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                                children: texts.actionHistory
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/app/edit-pdf/page.tsx",
+                                                lineNumber: 3115,
+                                                columnNumber: 51
+                                            }, this)
+                                        }, void 0, false, {
+                                            fileName: "[project]/src/app/edit-pdf/page.tsx",
+                                            lineNumber: 3115,
+                                            columnNumber: 21
+                                        }, this)
+                                    ]
+                                }, void 0, true, {
+                                    fileName: "[project]/src/app/edit-pdf/page.tsx",
+                                    lineNumber: 3109,
+                                    columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
                                     children: [
@@ -7660,17 +7451,17 @@ function PdfEditorPage() {
                                                     className: "h-5 w-5"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3240,
+                                                    lineNumber: 3118,
                                                     columnNumber: 112
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3240,
+                                                lineNumber: 3118,
                                                 columnNumber: 45
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3240,
+                                            lineNumber: 3118,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TooltipContent"], {
@@ -7679,19 +7470,19 @@ function PdfEditorPage() {
                                                 children: texts.toolPrint
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3241,
+                                                lineNumber: 3119,
                                                 columnNumber: 51
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3241,
+                                            lineNumber: 3119,
                                             columnNumber: 21
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 3239,
-                                    columnNumber: 18
+                                    lineNumber: 3117,
+                                    columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$popover$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Popover"], {
                                     children: [
@@ -7718,22 +7509,22 @@ function PdfEditorPage() {
                                                                 className: "h-5 w-5"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                                lineNumber: 3252,
+                                                                lineNumber: 3130,
                                                                 columnNumber: 38
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                            lineNumber: 3247,
+                                                            lineNumber: 3125,
                                                             columnNumber: 34
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3246,
+                                                        lineNumber: 3124,
                                                         columnNumber: 29
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3245,
+                                                    lineNumber: 3123,
                                                     columnNumber: 25
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TooltipContent"], {
@@ -7742,18 +7533,18 @@ function PdfEditorPage() {
                                                         children: texts.toolSearchDoc
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3256,
+                                                        lineNumber: 3134,
                                                         columnNumber: 55
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3256,
+                                                    lineNumber: 3134,
                                                     columnNumber: 25
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3244,
+                                            lineNumber: 3122,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$popover$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["PopoverContent"], {
@@ -7764,40 +7555,40 @@ function PdfEditorPage() {
                                                     children: "Search coming soon"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3260,
+                                                    lineNumber: 3138,
                                                     columnNumber: 30
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3259,
+                                                lineNumber: 3137,
                                                 columnNumber: 25
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3258,
+                                            lineNumber: 3136,
                                             columnNumber: 21
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 3243,
+                                    lineNumber: 3121,
                                     columnNumber: 17
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 3228,
+                            lineNumber: 3098,
                             columnNumber: 14
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 3227,
+                        lineNumber: 3097,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 3049,
+                lineNumber: 2949,
                 columnNumber: 5
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -7807,14 +7598,13 @@ function PdfEditorPage() {
                         ref: toolbarContainerRef,
                         className: "absolute top-2 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2",
                         children: [
-                            interactionMode === 'editing' && activeTextAnnotation && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(TextAnnotationToolbar, {
+                            interactionMode === 'editing' && activeTextAnnotation && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(TextToolbar, {
                                 annotation: activeTextAnnotation,
                                 onAnnotationChange: updateAnnotation,
-                                onDelete: ()=>handleDeleteAnnotation(activeTextAnnotation.id),
-                                onImageInsert: ()=>imageUploadRef.current?.click()
+                                onDelete: ()=>handleDeleteAnnotation(activeTextAnnotation.id)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                lineNumber: 3272,
+                                lineNumber: 3150,
                                 columnNumber: 15
                             }, this),
                             (interactionMode === 'selected' || interactionMode === 'editing') && activeShapeAnnotation && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(ShapeToolbar, {
@@ -7823,13 +7613,13 @@ function PdfEditorPage() {
                                 onDelete: ()=>handleDeleteAnnotation(activeShapeAnnotation.id)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                lineNumber: 3280,
+                                lineNumber: 3157,
                                 columnNumber: 15
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 3270,
+                        lineNumber: 3148,
                         columnNumber: 9
                     }, this),
                     pageObjects.length === 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -7844,7 +7634,7 @@ function PdfEditorPage() {
                                             className: "h-16 w-16 text-primary mx-auto mb-4"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3291,
+                                            lineNumber: 3168,
                                             columnNumber: 19
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardTitle"], {
@@ -7852,20 +7642,20 @@ function PdfEditorPage() {
                                             children: texts.startEditingYourPdf
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3292,
+                                            lineNumber: 3169,
                                             columnNumber: 19
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardDescription"], {
                                             children: texts.uploadLabel
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3293,
+                                            lineNumber: 3170,
                                             columnNumber: 19
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 3290,
+                                    lineNumber: 3167,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -7880,7 +7670,7 @@ function PdfEditorPage() {
                                                 className: "h-12 w-12 text-muted-foreground mb-3"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3303,
+                                                lineNumber: 3180,
                                                 columnNumber: 21
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -7888,29 +7678,29 @@ function PdfEditorPage() {
                                                 children: texts.dropFileHere
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3304,
+                                                lineNumber: 3181,
                                                 columnNumber: 21
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                        lineNumber: 3296,
+                                        lineNumber: 3173,
                                         columnNumber: 19
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 3295,
+                                    lineNumber: 3172,
                                     columnNumber: 17
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 3289,
+                            lineNumber: 3166,
                             columnNumber: 15
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 3288,
+                        lineNumber: 3165,
                         columnNumber: 13
                     }, this) : viewMode === 'grid' ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                         ref: mainViewContainerRef,
@@ -7930,7 +7720,7 @@ function PdfEditorPage() {
                                                             className: "mr-2 h-5 w-5 text-primary"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                            lineNumber: 3314,
+                                                            lineNumber: 3191,
                                                             columnNumber: 72
                                                         }, this),
                                                         " ",
@@ -7938,7 +7728,7 @@ function PdfEditorPage() {
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3314,
+                                                    lineNumber: 3191,
                                                     columnNumber: 23
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardDescription"], {
@@ -7951,13 +7741,13 @@ function PdfEditorPage() {
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3315,
+                                                    lineNumber: 3192,
                                                     columnNumber: 23
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3313,
+                                            lineNumber: 3190,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -7972,7 +7762,7 @@ function PdfEditorPage() {
                                                             className: "h-4 w-4 mr-2"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                            lineNumber: 3322,
+                                                            lineNumber: 3199,
                                                             columnNumber: 25
                                                         }, this),
                                                         " ",
@@ -7980,7 +7770,7 @@ function PdfEditorPage() {
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3321,
+                                                    lineNumber: 3198,
                                                     columnNumber: 23
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -7992,7 +7782,7 @@ function PdfEditorPage() {
                                                             className: "mr-2 h-4 w-4"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                            lineNumber: 3325,
+                                                            lineNumber: 3202,
                                                             columnNumber: 25
                                                         }, this),
                                                         " ",
@@ -8000,43 +7790,19 @@ function PdfEditorPage() {
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3324,
-                                                    columnNumber: 23
-                                                }, this),
-                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                                                    onClick: ()=>{
-                                                        setPageToDelete(null);
-                                                        setIsDeleteConfirmOpen(true);
-                                                    },
-                                                    variant: "destructive",
-                                                    size: "sm",
-                                                    disabled: selectedPageIds.size === 0,
-                                                    children: [
-                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$trash$2d$2$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Trash2$3e$__["Trash2"], {
-                                                            className: "mr-2 h-4 w-4"
-                                                        }, void 0, false, {
-                                                            fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                            lineNumber: 3328,
-                                                            columnNumber: 25
-                                                        }, this),
-                                                        " ",
-                                                        texts.deletePages
-                                                    ]
-                                                }, void 0, true, {
-                                                    fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3327,
+                                                    lineNumber: 3201,
                                                     columnNumber: 23
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3320,
+                                            lineNumber: 3197,
                                             columnNumber: 21
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 3312,
+                                    lineNumber: 3189,
                                     columnNumber: 19
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -8049,6 +7815,9 @@ function PdfEditorPage() {
                                                     index: index,
                                                     isSelected: selectedPageIds.has(pageObj.id),
                                                     onClick: (e)=>handleThumbnailClick(index, e),
+                                                    onDuplicate: ()=>handlePageAction(index, 'duplicate'),
+                                                    onRotate: ()=>handlePageAction(index, 'rotate'),
+                                                    onDelete: ()=>setPageToDelete(index),
                                                     onDoubleClick: ()=>{
                                                         setActivePageIndex(index);
                                                         setViewMode('editor');
@@ -8056,12 +7825,12 @@ function PdfEditorPage() {
                                                     texts: texts
                                                 }, pageObj.id, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3338,
+                                                    lineNumber: 3212,
                                                     columnNumber: 25
                                                 }, this))
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3333,
+                                            lineNumber: 3207,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -8073,7 +7842,7 @@ function PdfEditorPage() {
                                                             className: "inline h-4 w-4 mr-1 text-primary/80"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                            lineNumber: 3353,
+                                                            lineNumber: 3230,
                                                             columnNumber: 26
                                                         }, this),
                                                         " ",
@@ -8081,7 +7850,7 @@ function PdfEditorPage() {
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3353,
+                                                    lineNumber: 3230,
                                                     columnNumber: 23
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -8090,7 +7859,7 @@ function PdfEditorPage() {
                                                             className: "inline h-4 w-4 mr-1 text-primary/80"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                            lineNumber: 3354,
+                                                            lineNumber: 3231,
                                                             columnNumber: 26
                                                         }, this),
                                                         " ",
@@ -8098,7 +7867,7 @@ function PdfEditorPage() {
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3354,
+                                                    lineNumber: 3231,
                                                     columnNumber: 23
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -8107,97 +7876,142 @@ function PdfEditorPage() {
                                                             className: "inline h-4 w-4 mr-1 text-primary/80"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                            lineNumber: 3355,
+                                                            lineNumber: 3232,
                                                             columnNumber: 26
                                                         }, this),
                                                         " Double-click page to enter editor mode."
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3355,
+                                                    lineNumber: 3232,
                                                     columnNumber: 23
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3352,
+                                            lineNumber: 3229,
                                             columnNumber: 21
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 3332,
+                                    lineNumber: 3206,
                                     columnNumber: 19
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 3311,
+                            lineNumber: 3188,
                             columnNumber: 17
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 3310,
+                        lineNumber: 3187,
                         columnNumber: 15
                     }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                         className: "flex-grow flex overflow-hidden",
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                ref: thumbnailContainerRef,
-                                className: "w-[15%] border-r bg-card flex-shrink-0 overflow-y-auto p-2 space-y-2",
-                                children: pageObjects.map((page, index)=>{
-                                    const isActive = activePageIndex === index;
-                                    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        ref: (el)=>thumbnailRefs.current[index] = el,
-                                        "data-id": page.id,
-                                        onClick: (e)=>handleThumbnailClick(index, e),
-                                        className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$utils$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["cn"])("p-1 rounded-md cursor-pointer border-2", isActive ? "border-primary" : "border-transparent"),
-                                        children: [
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("canvas", {
-                                                ref: (canvas)=>{
-                                                    if (canvas) {
-                                                        const ctx = canvas.getContext('2d');
-                                                        if (!ctx) return;
-                                                        const source = page.sourceCanvas;
-                                                        const aspectRatio = source.width / source.height;
-                                                        canvas.width = 240;
-                                                        canvas.height = 240 / aspectRatio;
-                                                        ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
-                                                    }
-                                                },
-                                                className: "w-full h-auto rounded-sm shadow-md bg-white"
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3374,
-                                                columnNumber: 33
-                                            }, this),
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                className: "text-center text-xs mt-1 text-muted-foreground",
-                                                children: [
-                                                    texts.page,
-                                                    " ",
-                                                    index + 1
-                                                ]
-                                            }, void 0, true, {
-                                                fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3388,
-                                                columnNumber: 32
-                                            }, this)
-                                        ]
-                                    }, page.id, true, {
+                                className: "w-[15%] border-r bg-card flex-shrink-0 flex flex-col",
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                        className: "p-2 border-b",
+                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
+                                            variant: "outline",
+                                            size: "sm",
+                                            className: "w-full",
+                                            onClick: ()=>handleAddBlankPage(),
+                                            children: [
+                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$file$2d$plus$2d$2$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__FilePlus2$3e$__["FilePlus2"], {
+                                                    className: "mr-2 h-4 w-4"
+                                                }, void 0, false, {
+                                                    fileName: "[project]/src/app/edit-pdf/page.tsx",
+                                                    lineNumber: 3241,
+                                                    columnNumber: 114
+                                                }, this),
+                                                " ",
+                                                texts.toolAddBlank
+                                            ]
+                                        }, void 0, true, {
+                                            fileName: "[project]/src/app/edit-pdf/page.tsx",
+                                            lineNumber: 3241,
+                                            columnNumber: 22
+                                        }, this)
+                                    }, void 0, false, {
                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                        lineNumber: 3366,
-                                        columnNumber: 28
-                                    }, this);
-                                })
-                            }, void 0, false, {
+                                        lineNumber: 3240,
+                                        columnNumber: 19
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                        ref: thumbnailContainerRef,
+                                        className: "flex-grow overflow-y-auto p-2 space-y-2",
+                                        children: pageObjects.map((page, index)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                ref: (el)=>thumbnailRefs.current[index] = el,
+                                                "data-id": page.id,
+                                                onClick: (e)=>handleThumbnailClick(index, e),
+                                                className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$utils$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["cn"])("p-1 rounded-md cursor-pointer border-2", activePageIndex === index ? "border-primary" : "border-transparent"),
+                                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(PagePreviewItem, {
+                                                    pageObj: page,
+                                                    index: index,
+                                                    texts: texts,
+                                                    onDuplicate: handlePageAction,
+                                                    onRotate: handlePageAction,
+                                                    onDelete: (idx)=>{
+                                                        setPageToDelete(idx);
+                                                        setIsDeleteConfirmOpen(true);
+                                                    }
+                                                }, void 0, false, {
+                                                    fileName: "[project]/src/app/edit-pdf/page.tsx",
+                                                    lineNumber: 3253,
+                                                    columnNumber: 31
+                                                }, this)
+                                            }, page.id, false, {
+                                                fileName: "[project]/src/app/edit-pdf/page.tsx",
+                                                lineNumber: 3245,
+                                                columnNumber: 26
+                                            }, this))
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/app/edit-pdf/page.tsx",
+                                        lineNumber: 3243,
+                                        columnNumber: 19
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                        className: "p-2 border-t",
+                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
+                                            variant: "outline",
+                                            size: "sm",
+                                            className: "w-full",
+                                            onClick: ()=>handleInitiateInsert('after'),
+                                            disabled: activePageIndex === null,
+                                            children: [
+                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$file$2d$plus$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__FilePlus$3e$__["FilePlus"], {
+                                                    className: "mr-2 h-4 w-4"
+                                                }, void 0, false, {
+                                                    fileName: "[project]/src/app/edit-pdf/page.tsx",
+                                                    lineNumber: 3265,
+                                                    columnNumber: 159
+                                                }, this),
+                                                texts.insertPdf
+                                            ]
+                                        }, void 0, true, {
+                                            fileName: "[project]/src/app/edit-pdf/page.tsx",
+                                            lineNumber: 3265,
+                                            columnNumber: 22
+                                        }, this)
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/app/edit-pdf/page.tsx",
+                                        lineNumber: 3264,
+                                        columnNumber: 19
+                                    }, this)
+                                ]
+                            }, void 0, true, {
                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                lineNumber: 3362,
+                                lineNumber: 3239,
                                 columnNumber: 17
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                 ref: mainViewContainerRef,
-                                className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$utils$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["cn"])("flex-grow bg-muted/30 overflow-auto flex flex-col items-center p-4 space-y-4 relative"),
+                                className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$utils$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["cn"])("flex-grow bg-muted/30 overflow-auto flex flex-col items-center p-4 space-y-4 relative main-view-container"),
                                 onMouseDown: handlePanMouseDown,
                                 onMouseMove: handleMainViewMouseMove,
                                 onMouseUp: handleMainViewMouseUp,
@@ -8243,7 +8057,7 @@ function PdfEditorPage() {
                                                     }
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3420,
+                                                    lineNumber: 3295,
                                                     columnNumber: 33
                                                 }, this),
                                                 highlightAnnotations.filter((ann)=>ann.pageIndex === index).map((ann)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -8269,12 +8083,12 @@ function PdfEditorPage() {
                                                             onMouseDown: (e)=>handleDragMouseDown(e, ann.id)
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                            lineNumber: 3469,
+                                                            lineNumber: 3344,
                                                             columnNumber: 45
                                                         }, this)
                                                     }, ann.id, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3448,
+                                                        lineNumber: 3323,
                                                         columnNumber: 37
                                                     }, this)),
                                                 mosaicAnnotations.filter((ann)=>ann.pageIndex === index).map((ann)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -8300,12 +8114,12 @@ function PdfEditorPage() {
                                                             onMouseDown: (e)=>handleDragMouseDown(e, ann.id)
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                            lineNumber: 3498,
+                                                            lineNumber: 3373,
                                                             columnNumber: 45
                                                         }, this)
                                                     }, ann.id, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3477,
+                                                        lineNumber: 3352,
                                                         columnNumber: 37
                                                     }, this)),
                                                 shapeAnnotations.filter((ann)=>ann.pageIndex === index).map((ann)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(ShapeAnnotationComponent, {
@@ -8318,7 +8132,7 @@ function PdfEditorPage() {
                                                         onHover: setHoveredAnnotationId
                                                     }, ann.id, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3506,
+                                                        lineNumber: 3381,
                                                         columnNumber: 37
                                                     }, this)),
                                                 scribbleAnnotations.filter((ann)=>ann.pageIndex === index).map((ann)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(ScribbleAnnotationComponent, {
@@ -8333,7 +8147,7 @@ function PdfEditorPage() {
                                                         onHover: setHoveredAnnotationId
                                                     }, ann.id, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3518,
+                                                        lineNumber: 3393,
                                                         columnNumber: 37
                                                     }, this)),
                                                 imageAnnotations.filter((ann)=>ann.pageIndex === index).map((ann)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -8361,7 +8175,7 @@ function PdfEditorPage() {
                                                                 alt: "user content"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                                lineNumber: 3547,
+                                                                lineNumber: 3422,
                                                                 columnNumber: 41
                                                             }, this),
                                                             (selectedAnnotationId === ann.id || hoveredAnnotationId === ann.id) && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
@@ -8371,14 +8185,14 @@ function PdfEditorPage() {
                                                                         onMouseDown: (e)=>handleDragMouseDown(e, ann.id)
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                                        lineNumber: 3550,
+                                                                        lineNumber: 3425,
                                                                         columnNumber: 45
                                                                     }, this),
                                                                     ann.link && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$link$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Link$3e$__["Link"], {
                                                                         className: "absolute -top-1 -right-1 h-4 w-4 text-white bg-blue-500 p-0.5 rounded-full"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                                        lineNumber: 3554,
+                                                                        lineNumber: 3429,
                                                                         columnNumber: 58
                                                                     }, this)
                                                                 ]
@@ -8386,7 +8200,7 @@ function PdfEditorPage() {
                                                         ]
                                                     }, ann.id, true, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3529,
+                                                        lineNumber: 3404,
                                                         columnNumber: 37
                                                     }, this)),
                                                 textAnnotations.filter((ann)=>ann.pageIndex === index).map((ann)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(TextAnnotationComponent, {
@@ -8403,13 +8217,13 @@ function PdfEditorPage() {
                                                         onHover: setHoveredAnnotationId
                                                     }, ann.id, false, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3560,
+                                                        lineNumber: 3435,
                                                         columnNumber: 37
                                                     }, this))
                                             ]
                                         }, page.id, true, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3408,
+                                            lineNumber: 3283,
                                             columnNumber: 29
                                         }, this);
                                     }),
@@ -8425,12 +8239,12 @@ function PdfEditorPage() {
                                                     className: "h-5 w-5"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3579,
+                                                    lineNumber: 3454,
                                                     columnNumber: 117
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3579,
+                                                lineNumber: 3454,
                                                 columnNumber: 25
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -8439,7 +8253,7 @@ function PdfEditorPage() {
                                                 children: `${Math.round(mainCanvasZoom * 100)}%`
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3580,
+                                                lineNumber: 3455,
                                                 columnNumber: 25
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -8451,12 +8265,12 @@ function PdfEditorPage() {
                                                     className: "h-5 w-5"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3581,
+                                                    lineNumber: 3456,
                                                     columnNumber: 115
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3581,
+                                                lineNumber: 3456,
                                                 columnNumber: 25
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$separator$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Separator"], {
@@ -8464,7 +8278,7 @@ function PdfEditorPage() {
                                                 className: "h-6 mx-1"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3582,
+                                                lineNumber: 3457,
                                                 columnNumber: 26
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -8476,12 +8290,12 @@ function PdfEditorPage() {
                                                     className: "h-5 w-5"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3583,
+                                                    lineNumber: 3458,
                                                     columnNumber: 111
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3583,
+                                                lineNumber: 3458,
                                                 columnNumber: 25
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -8493,12 +8307,12 @@ function PdfEditorPage() {
                                                     className: "h-5 w-5"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3584,
+                                                    lineNumber: 3459,
                                                     columnNumber: 113
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3584,
+                                                lineNumber: 3459,
                                                 columnNumber: 25
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$separator$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Separator"], {
@@ -8506,7 +8320,7 @@ function PdfEditorPage() {
                                                 className: "h-6 mx-1"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3585,
+                                                lineNumber: 3460,
                                                 columnNumber: 26
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -8518,46 +8332,72 @@ function PdfEditorPage() {
                                                     className: "h-5 w-5"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3586,
+                                                    lineNumber: 3461,
                                                     columnNumber: 120
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3586,
+                                                lineNumber: 3461,
                                                 columnNumber: 25
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                        lineNumber: 3578,
+                                        lineNumber: 3453,
                                         columnNumber: 21
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                lineNumber: 3394,
+                                lineNumber: 3269,
                                 columnNumber: 17
                             }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                className: "w-64 bg-card border-l p-4 overflow-y-auto",
+                            isHistoryPanelOpen && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                className: "w-64 bg-card border-l p-4 overflow-y-auto transition-all duration-300 animate-in slide-in-from-right-5",
                                 children: [
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
-                                        className: "text-lg font-semibold mb-4 flex items-center",
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                        className: "flex justify-between items-center mb-4",
                                         children: [
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$history$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__History$3e$__["History"], {
-                                                className: "mr-2 h-5 w-5"
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
+                                                className: "text-lg font-semibold flex items-center",
+                                                children: [
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$history$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__History$3e$__["History"], {
+                                                        className: "mr-2 h-5 w-5"
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/app/edit-pdf/page.tsx",
+                                                        lineNumber: 3467,
+                                                        columnNumber: 81
+                                                    }, this),
+                                                    " ",
+                                                    texts.actionHistory
+                                                ]
+                                            }, void 0, true, {
+                                                fileName: "[project]/src/app/edit-pdf/page.tsx",
+                                                lineNumber: 3467,
+                                                columnNumber: 25
+                                            }, this),
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
+                                                variant: "ghost",
+                                                size: "icon",
+                                                className: "h-7 w-7",
+                                                onClick: ()=>setIsHistoryPanelOpen(false),
+                                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$x$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__X$3e$__["X"], {
+                                                    className: "h-4 w-4"
+                                                }, void 0, false, {
+                                                    fileName: "[project]/src/app/edit-pdf/page.tsx",
+                                                    lineNumber: 3468,
+                                                    columnNumber: 126
+                                                }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3590,
-                                                columnNumber: 82
-                                            }, this),
-                                            " ",
-                                            texts.actionHistory
+                                                lineNumber: 3468,
+                                                columnNumber: 25
+                                            }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                        lineNumber: 3590,
-                                        columnNumber: 21
+                                        lineNumber: 3466,
+                                        columnNumber: 23
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                         className: "space-y-2",
@@ -8573,8 +8413,8 @@ function PdfEditorPage() {
                                                                 children: ann.type === 'text' ? ann.segments.map((s)=>s.text).join('').substring(0, 20) : ann.type
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                                lineNumber: 3602,
-                                                                columnNumber: 34
+                                                                lineNumber: 3481,
+                                                                columnNumber: 36
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
                                                                 variant: "ghost",
@@ -8588,55 +8428,55 @@ function PdfEditorPage() {
                                                                     className: "h-4 w-4"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                                    lineNumber: 3606,
-                                                                    columnNumber: 37
+                                                                    lineNumber: 3485,
+                                                                    columnNumber: 39
                                                                 }, this)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                                lineNumber: 3605,
-                                                                columnNumber: 34
+                                                                lineNumber: 3484,
+                                                                columnNumber: 36
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                        lineNumber: 3601,
-                                                        columnNumber: 32
+                                                        lineNumber: 3480,
+                                                        columnNumber: 34
                                                     }, this)
                                                 }, ann.id, false, {
                                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                    lineNumber: 3593,
-                                                    columnNumber: 30
+                                                    lineNumber: 3472,
+                                                    columnNumber: 32
                                                 }, this)),
                                             annotations.filter((ann)=>ann.isUserAction).length === 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                                 className: "text-sm text-muted-foreground text-center py-4",
                                                 children: "No actions yet."
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                                lineNumber: 3612,
-                                                columnNumber: 29
+                                                lineNumber: 3491,
+                                                columnNumber: 31
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                        lineNumber: 3591,
-                                        columnNumber: 21
+                                        lineNumber: 3470,
+                                        columnNumber: 23
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                lineNumber: 3589,
-                                columnNumber: 18
+                                lineNumber: 3465,
+                                columnNumber: 21
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 3361,
+                        lineNumber: 3238,
                         columnNumber: 13
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 3269,
+                lineNumber: 3147,
                 columnNumber: 7
             }, this),
             pageObjects.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -8657,19 +8497,19 @@ function PdfEditorPage() {
                                             className: "mr-2 h-5 w-5"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 3627,
+                                            lineNumber: 3507,
                                             columnNumber: 25
                                         }, this),
                                         texts.toolDownload
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 3623,
+                                    lineNumber: 3503,
                                     columnNumber: 21
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                lineNumber: 3622,
+                                lineNumber: 3502,
                                 columnNumber: 17
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DropdownMenuContent"], {
@@ -8679,18 +8519,18 @@ function PdfEditorPage() {
                                         children: texts[opt.labelKey]
                                     }, opt.value, false, {
                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                        lineNumber: 3633,
+                                        lineNumber: 3513,
                                         columnNumber: 25
                                     }, this))
                             }, void 0, false, {
                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                lineNumber: 3631,
+                                lineNumber: 3511,
                                 columnNumber: 17
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 3621,
+                        lineNumber: 3501,
                         columnNumber: 13
                     }, this),
                     isDownloading && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -8701,54 +8541,53 @@ function PdfEditorPage() {
                                 children: texts.generatingFile
                             }, void 0, false, {
                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                lineNumber: 3639,
+                                lineNumber: 3519,
                                 columnNumber: 21
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$progress$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Progress"], {
                                 value: downloadProgress
                             }, void 0, false, {
                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                lineNumber: 3640,
+                                lineNumber: 3520,
                                 columnNumber: 21
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 3638,
+                        lineNumber: 3518,
                         columnNumber: 17
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 3620,
+                lineNumber: 3500,
                 columnNumber: 9
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/edit-pdf/page.tsx",
-        lineNumber: 2874,
+        lineNumber: 2775,
         columnNumber: 5
     }, this);
 }
-_s3(PdfEditorPage, "AV+dMf4mE02GiV2d6pW8oTWkuYk=", false, function() {
+_s3(PdfEditorPage, "s7A83mpTZ8EuzojQIgcfXtDlD10=", false, function() {
     return [
         __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRouter"],
         __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$use$2d$toast$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useToast"]
     ];
 });
-_c10 = PdfEditorPage;
-var _c, _c1, _c2, _c3, _c4, _c5, _c6, _c7, _c8, _c9, _c10;
+_c9 = PdfEditorPage;
+var _c, _c1, _c2, _c3, _c4, _c5, _c6, _c7, _c8, _c9;
 __turbopack_context__.k.register(_c, "PagePreviewItem");
-__turbopack_context__.k.register(_c1, "TextAnnotationToolbar");
+__turbopack_context__.k.register(_c1, "TextToolbar");
 __turbopack_context__.k.register(_c2, "ShapeToolbar");
 __turbopack_context__.k.register(_c3, "TextAnnotationComponent");
 __turbopack_context__.k.register(_c4, "TriangleIcon");
 __turbopack_context__.k.register(_c5, "ScribbleIcon");
 __turbopack_context__.k.register(_c6, "ShapeAnnotationComponent");
 __turbopack_context__.k.register(_c7, "ScribbleAnnotationComponent");
-__turbopack_context__.k.register(_c8, "TableAnnotationComponent");
-__turbopack_context__.k.register(_c9, "SignaturePad");
-__turbopack_context__.k.register(_c10, "PdfEditorPage");
+__turbopack_context__.k.register(_c8, "SignaturePad");
+__turbopack_context__.k.register(_c9, "PdfEditorPage");
 if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
     __turbopack_context__.k.registerExports(module, globalThis.$RefreshHelpers$);
 }

@@ -541,7 +541,7 @@ const translations = {
         pdfCompressionNote: '注意：此功能使用 pdf-lib 重新儲存 PDF。檔案大小縮減效果不一。已套用 useObjectStreams:false。',
         comingSoon: '即將推出！',
         featureNotImplemented: '功能尚未實現。',
-        editorMode: '編輯模式',
+        editorMode: '縮圖模式',
         gridMode: '縮圖模式',
         deletePageConfirmTitle: '刪除頁面？',
         deletePageConfirmDescription: '您確定要刪除此頁面嗎？此操作無法復原。',
@@ -755,7 +755,7 @@ const PagePreviewItem = React.memo(({ pageObj, index, texts, onDuplicate, onRota
       }
 
       const targetAspectRatio = rotatedSourceWidth / rotatedSourceHeight;
-      const cssDisplayWidth = 100; // Smaller thumbnail size
+      const cssDisplayWidth = 140; // Increased size
       const cssDisplayHeight = cssDisplayWidth / targetAspectRatio;
 
       previewDisplayCanvas.width = rotatedSourceWidth;
@@ -2668,12 +2668,12 @@ export default function PdfEditorPage() {
     
     const handlePageMouseDown = (e: React.MouseEvent<HTMLDivElement>, pageIndex: number) => {
         const tool = activeTool;
-        if (tool !== 'mosaic' && tool !== 'scribble' && tool !== 'text' && tool !== 'shape') return;
+        if (tool !== 'text' && tool !== 'mosaic' && tool !== 'scribble' && tool !== 'shape') return;
     
         const interaction = 
+            tool === 'text' ? 'drawing-text' : 
             tool === 'mosaic' ? 'drawing-mosaic' : 
             tool === 'scribble' ? 'drawing-scribble' : 
-            tool === 'text' ? 'drawing-text' : 
             'drawing-shape';
         
         setInteractionMode(interaction);
@@ -2688,14 +2688,15 @@ export default function PdfEditorPage() {
         
         let newAnnotation: Annotation | null = null;
         switch(tool) {
+            case 'text':
+                const selectedColor = (activeTextAnnotation?.segments[0]?.color) || '#000000';
+                newAnnotation = { id, type: 'text', pageIndex, segments: [{ text: '', color: selectedColor, bold: false, italic: false, underline: false }], topRatio: startY, leftRatio: startX, widthRatio: 0, heightRatio: 0, fontSize: 16, fontFamily: 'Helvetica', textAlign: 'left', isUserAction: true };
+                break;
             case 'mosaic':
                 newAnnotation = { id, type: 'mosaic', pageIndex, topRatio: startY, leftRatio: startX, widthRatio: 0, heightRatio: 0, isUserAction: true };
                 break;
             case 'scribble':
                 newAnnotation = { id, type: 'scribble', pageIndex, points: [{ xRatio: startX, yRatio: startY }], color: '#000000', strokeWidth: 2, isUserAction: true };
-                break;
-            case 'text':
-                newAnnotation = { id, type: 'text', pageIndex, segments: [{ text: texts.textAnnotationSample, color: '#000000', bold: false, italic: false, underline: false }], topRatio: startY, leftRatio: startX, widthRatio: 0, heightRatio: 0, fontSize: 36, fontFamily: 'Helvetica', textAlign: 'left', isUserAction: true };
                 break;
             case 'shape':
                 if (drawingShapeType) {
@@ -2770,6 +2771,15 @@ export default function PdfEditorPage() {
         setActiveTool('shape');
         setDrawingShapeType(shapeType);
     };
+
+    useEffect(() => {
+        if (mainViewContainerRef.current) {
+          let cursor = 'default';
+          if (activeTool === 'pan') cursor = 'grab';
+          if (['text', 'shape', 'scribble', 'mosaic'].includes(activeTool)) cursor = 'crosshair';
+          mainViewContainerRef.current.style.cursor = cursor;
+        }
+    }, [activeTool]);
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground font-sans">
@@ -3238,7 +3248,7 @@ export default function PdfEditorPage() {
             <div className="flex-grow flex overflow-hidden">
                 <div className="w-[15%] border-r bg-card flex-shrink-0 flex flex-col">
                   <div className="p-2 border-b">
-                     <Button variant="outline" size="sm" className="w-full" onClick={() => handleAddBlankPage()}><FilePlus2 className="mr-2 h-4 w-4" /> {texts.toolAddBlank}</Button>
+                     <Button variant="outline" size="sm" className="w-full" onClick={handleAddBlankPage}><FilePlus2 className="mr-2 h-4 w-4" /> {texts.toolAddBlank}</Button>
                   </div>
                   <div ref={thumbnailContainerRef} className="flex-grow overflow-y-auto p-2 space-y-2">
                       {pageObjects.map((page, index) => (

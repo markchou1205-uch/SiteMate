@@ -23,7 +23,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useToast } from "@/hooks/use-toast";
 import { Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Trash2, ImagePlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Toggle } from '@/components/ui/toggle';
 
 if (typeof window !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
@@ -81,9 +80,6 @@ const translations = {
     downloadPdf: '另存為 PDF',
     toolSelect: '選取',
     toolText: '文字',
-    textAnnotationSample: '輸入文字',
-    loadError: "載入失敗",
-    loadingPdf: "正在載入 PDF..."
   }
 };
 
@@ -103,9 +99,74 @@ const TextAnnotationToolbar = ({ annotation, onAnnotationChange, onDelete }: {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleStyleChange = (style: Partial<TextSegment>) => {
-    onAnnotationChange(annotation.id, {
+    if (!textareaRef.current) return;
+    const textarea = textareaRef.current;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const fullText = textarea.value;
+
+    if (start === end) {
+      onAnnotationChange(annotation.id, {
         segments: annotation.segments.map(s => ({ ...s, ...style })),
       });
+    } else {
+      const selectedText = fullText.slice(start, end);
+      const beforeText = fullText.slice(0, start);
+      const afterText = fullText.slice(end);
+      
+      const newSegments: TextSegment[] = [];
+      let currentPos = 0;
+
+      for (const segment of annotation.segments) {
+        const segmentStart = currentPos;
+        const segmentEnd = currentPos + segment.text.length;
+        currentPos = segmentEnd;
+
+        if (segmentEnd <= start || segmentStart >= end) {
+          newSegments.push(segment);
+        } else {
+          if (segmentStart < start) {
+            newSegments.push({
+              ...segment,
+              text: segment.text.slice(0, start - segmentStart),
+            });
+          }
+          newSegments.push({
+            ...segment,
+            ...style,
+            text: segment.text.slice(
+              Math.max(0, start - segmentStart),
+              Math.min(segment.text.length, end - segmentStart)
+            ),
+          });
+          if (segmentEnd > end) {
+            newSegments.push({
+              ...segment,
+              text: segment.text.slice(end - segmentStart),
+            });
+          }
+        }
+      }
+
+      const mergedSegments: TextSegment[] = [];
+      let lastSegment: TextSegment | null = null;
+      for (const segment of newSegments) {
+        if (
+          lastSegment &&
+          lastSegment.color === segment.color &&
+          lastSegment.bold === segment.bold &&
+          lastSegment.italic === segment.italic &&
+          lastSegment.underline === segment.underline
+        ) {
+          lastSegment.text += segment.text;
+        } else {
+          mergedSegments.push({ ...segment });
+          lastSegment = segment;
+        }
+      }
+
+      onAnnotationChange(annotation.id, { segments: mergedSegments });
+    }
   };
 
   return (
@@ -206,7 +267,59 @@ const TextAnnotationComponent = ({
   }, [isEditing, annotation.segments, annotation.fontSize, mainCanvasZoom, annotation.fontFamily]);
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    onAnnotationChange(annotation.id, { segments: [{...annotation.segments[0], text: e.target.value}] });
+    const fullText = e.target.value;
+    const start = e.target.selectionStart;
+    const end = e.target.selectionEnd;
+
+    let currentPos = 0;
+    const newSegments: TextSegment[] = [];
+    const oldSegments = annotation.segments;
+
+    for (const segment of oldSegments) {
+      const segmentStart = currentPos;
+      const segmentEnd = currentPos + segment.text.length;
+      currentPos = segmentEnd;
+
+      if (segmentEnd <= start || segmentStart >= end) {
+        newSegments.push({ ...segment, text: fullText.slice(segmentStart, segmentEnd) });
+      } else {
+        if (segmentStart < start) {
+          newSegments.push({
+            ...segment,
+            text: fullText.slice(segmentStart, start),
+          });
+        }
+        newSegments.push({
+          ...segment,
+          text: fullText.slice(Math.max(start, segmentStart), Math.min(end, segmentEnd)),
+        });
+        if (segmentEnd > end) {
+          newSegments.push({
+            ...segment,
+            text: fullText.slice(end, segmentEnd),
+          });
+        }
+      }
+    }
+
+    const mergedSegments: TextSegment[] = [];
+    let lastSegment: TextSegment | null = null;
+    for (const segment of newSegments.filter(s => s.text)) {
+      if (
+        lastSegment &&
+        lastSegment.color === segment.color &&
+        lastSegment.bold === segment.bold &&
+        lastSegment.italic === segment.italic &&
+        lastSegment.underline === segment.underline
+      ) {
+        lastSegment.text += segment.text;
+      } else {
+        mergedSegments.push({ ...segment });
+        lastSegment = segment;
+      }
+    }
+
+    onAnnotationChange(annotation.id, { segments: mergedSegments });
   };
 
   return (
@@ -294,7 +407,7 @@ const TextAnnotationComponent = ({
   );
 };
 
-export default function PdfEditorPage() {
+export default function PdfEditor() {
   const router = useRouter();
   const { toast } = useToast();
   const [currentLanguage] = useState<'zh'>('zh');
@@ -305,37 +418,67 @@ export default function PdfEditorPage() {
   const [history, setHistory] = useState<EditorState[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedPageIds, setSelectedPageIds] = useState<Set<string>>(new Set());
   const [activePageIndex, setActivePageIndex] = useState<number | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'editor'>('editor');
   const [mainCanvasZoom, setMainCanvasZoom] = useState(1);
   const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
   const [hoveredAnnotationId, setHoveredAnnotationId] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<Tool>('select');
   const [interactionMode, setInteractionMode] = useState<InteractionMode>('idle');
-  const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const saveStateToHistory = useCallback(() => {
-    const currentState = { pageObjects, annotations };
     const newHistory = history.slice(0, historyIndex + 1);
-    newHistory.push(currentState);
+    newHistory.push({ pageObjects, annotations });
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
   }, [history, historyIndex, pageObjects, annotations]);
 
-  const handleCanvasClick = (e: React.MouseEvent) => {
+  const handleCanvasClick = (e: React.MouseEvent, pageIndex: number) => {
+    e.stopPropagation();
     const target = e.target as HTMLElement;
-    if(target.closest('.page-canvas')) {
-       if (interactionMode === 'editing') {
-          setInteractionMode('selected');
-       } else if (activeTool === 'select') {
-         setSelectedAnnotationId(null);
-         setInteractionMode('idle');
-         setHoveredAnnotationId(null);
-       }
+    const isCanvasClick = target.closest('.page-canvas');
+
+    if (isCanvasClick && interactionMode !== 'editing') {
+      if (activeTool === 'text') {
+        const rect = canvasRef.current?.getBoundingClientRect();
+        if (rect) {
+          const xRatio = (e.clientX - rect.left) / rect.width;
+          const yRatio = (e.clientY - rect.top) / rect.height;
+          const newAnnotation: TextAnnotation = {
+            id: uuidv4(),
+            type: 'text',
+            pageIndex,
+            segments: [{ text: '輸入文字', color: '#000000', bold: false, italic: false, underline: false }],
+            topRatio: yRatio,
+            leftRatio: xRatio,
+            widthRatio: 0.2,
+            heightRatio: 0.05,
+            fontSize: 12,
+            fontFamily: 'Helvetica',
+            textAlign: 'left',
+            isUserAction: true,
+          };
+          setAnnotations([...annotations, newAnnotation]);
+          setSelectedAnnotationId(newAnnotation.id);
+          setInteractionMode('editing');
+          saveStateToHistory();
+        }
+      } else {
+        setSelectedAnnotationId(null);
+        setInteractionMode('idle');
+        setHoveredAnnotationId(null);
+      }
+    }
+    if (viewMode === 'grid') {
+      setActivePageIndex(pageIndex);
     }
   };
 
   const onAnnotationChange = (id: string, updates: Partial<TextAnnotation>) => {
-    setAnnotations(prev => prev.map(ann => ann.id === id ? { ...ann, ...updates } : ann));
+    setAnnotations(annotations.map(ann => ann.id === id ? { ...ann, ...updates } : ann));
     saveStateToHistory();
   };
 
@@ -375,89 +518,57 @@ export default function PdfEditorPage() {
   const onHoverAnnotation = (id: string | null) => {
     setHoveredAnnotationId(id);
   };
-  
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
 
-    setIsLoading(true);
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      const pdfDoc = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
-      const newPageObjects: PageObject[] = [];
-
-      for (let i = 1; i <= pdfDoc.numPages; i++) {
-        const page = await pdfDoc.getPage(i);
-        const viewport = page.getViewport({ scale: 2 });
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d')!;
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        await page.render({ canvasContext: context, viewport }).promise;
-        newPageObjects.push({ id: uuidv4(), sourceCanvas: canvas, rotation: 0 });
-      }
-
-      setPageObjects(newPageObjects);
-      setActivePageIndex(0);
-      setAnnotations([]);
-      setHistory([]);
-      setHistoryIndex(-1);
-      toast({ title: "PDF 載入成功", description: `${pdfDoc.numPages} 頁已載入` });
-    } catch (error) {
-      toast({ variant: "destructive", title: texts.loadError, description: "請檢查檔案格式並重試" });
-    } finally {
-      setIsLoading(false);
+  const handleWheel = (e: WheelEvent) => {
+    if (e.ctrlKey) {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? 0.9 : 1.1;
+      setMainCanvasZoom(prev => Math.min(Math.max(prev * delta, 0.5), 3));
     }
   };
-  
-  const handleAddText = () => {
-    if(activePageIndex === null) return;
-    const newAnnotation: TextAnnotation = {
-      id: uuidv4(),
-      type: 'text',
-      pageIndex: activePageIndex,
-      segments: [{ text: '輸入文字', color: '#000000', bold: false, italic: false, underline: false }],
-      topRatio: 0.5,
-      leftRatio: 0.5,
-      widthRatio: 0.2,
-      heightRatio: 0.05,
-      fontSize: 12,
-      fontFamily: 'Helvetica',
-      textAlign: 'left',
-      isUserAction: true,
-    };
-    setAnnotations([...annotations, newAnnotation]);
-    setSelectedAnnotationId(newAnnotation.id);
-    setInteractionMode('editing');
-    saveStateToHistory();
-  };
 
-  const renderPage = (pageObj: PageObject, index: number) => {
+  useEffect(() => {
+    const container = containerRef.current;
+    if (container) {
+      container.addEventListener('wheel', handleWheel, { passive: false });
+      return () => container.removeEventListener('wheel', handleWheel);
+    }
+  }, []);
+
+  const renderPage = () => {
+    if (!canvasRef.current || activePageIndex === null || !pageObjects[activePageIndex]) return null;
+    const pageObj = pageObjects[activePageIndex];
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+
+    const rotation = pageObj.rotation;
+    const sourceCanvas = pageObj.sourceCanvas;
+    const rad = rotation * Math.PI / 180;
+
+    let rotatedWidth = rotation % 180 === 0 ? sourceCanvas.width : sourceCanvas.height;
+    let rotatedHeight = rotation % 180 === 0 ? sourceCanvas.height : sourceCanvas.width;
+
+    canvas.width = rotatedWidth;
+    canvas.height = rotatedHeight;
+    canvas.style.width = `${rotatedWidth * mainCanvasZoom}px`;
+    canvas.style.height = `${rotatedHeight * mainCanvasZoom}px`;
+
+    ctx.save();
+    ctx.translate(rotatedWidth / 2, rotatedHeight / 2);
+    ctx.rotate(rad);
+    ctx.drawImage(sourceCanvas, -sourceCanvas.width / 2, -sourceCanvas.height / 2);
+    ctx.restore();
+
     return (
-      <div 
-        key={pageObj.id} 
-        ref={el => pageRefs.current[index] = el}
-        className="relative mx-auto border shadow-lg page-canvas"
-        style={{
-          width: pageObj.sourceCanvas.width * mainCanvasZoom,
-          height: pageObj.sourceCanvas.height * mainCanvasZoom,
-        }}
-        onClick={(e) => handleCanvasClick(e)}
-      >
+      <div ref={containerRef} className="relative w-full h-full overflow-auto">
         <canvas
-          ref={canvas => {
-            if(canvas) {
-              const ctx = canvas.getContext('2d');
-              if(!ctx) return;
-              canvas.width = pageObj.sourceCanvas.width;
-              canvas.height = pageObj.sourceCanvas.height;
-              ctx.drawImage(pageObj.sourceCanvas, 0, 0);
-            }
-          }}
-          style={{ width: '100%', height: '100%' }}
+          ref={canvasRef}
+          className="page-canvas mx-auto border shadow-lg"
+          onClick={(e) => handleCanvasClick(e, activePageIndex)}
         />
         {annotations
-          .filter(ann => ann.pageIndex === index)
+          .filter(ann => ann.pageIndex === activePageIndex)
           .map(ann => (
             <TextAnnotationComponent
               key={ann.id}
@@ -474,95 +585,96 @@ export default function PdfEditorPage() {
               onHover={onHoverAnnotation}
             />
           ))}
+        {selectedAnnotationId && interactionMode === 'editing' && annotations.find(ann => ann.id === selectedAnnotationId)?.type === 'text' && (
+          <div className="absolute top-0 left-0 w-full pointer-events-none">
+            <TextAnnotationToolbar
+              annotation={annotations.find(ann => ann.id === selectedAnnotationId) as TextAnnotation}
+              onAnnotationChange={onAnnotationChange}
+              onDelete={onDeleteAnnotation}
+              onImageInsert={() => {}}
+            />
+          </div>
+        )}
       </div>
     );
   };
-  
-  const activeAnnotation = annotations.find(ann => ann.id === selectedAnnotationId);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsLoading(true);
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdfDoc = await pdfjsLib.getDocument(arrayBuffer).promise;
+      const newPageObjects: PageObject[] = [];
+
+      for (let i = 1; i <= pdfDoc.numPages; i++) {
+        const page = await pdfDoc.getPage(i);
+        const viewport = page.getViewport({ scale: 1 });
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d')!;
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        await page.render({ canvasContext: context, viewport }).promise;
+        newPageObjects.push({ id: uuidv4(), sourceCanvas: canvas, rotation: 0 });
+      }
+
+      setPageObjects(newPageObjects);
+      setActivePageIndex(0);
+      setAnnotations([]);
+      setHistory([]);
+      setHistoryIndex(-1);
+      setViewMode('editor');
+      toast({ title: "PDF 載入成功", description: `${pdfDoc.numPages} 頁已載入` });
+    } catch (error) {
+      toast({ variant: "destructive", title: "PDF載入失敗", description: "請檢查檔案格式並重試" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-muted/30 flex flex-col">
-      <header className="p-4 border-b bg-card flex justify-between items-center">
+    <div className="min-h-screen bg-background flex flex-col">
+      <header className="p-4 border-b">
         <h1 className="text-2xl font-bold">{texts.pageTitle}</h1>
-        <div>
-           <Input type="file" accept="application/pdf" onChange={handleFileUpload} disabled={isLoading} className="w-auto" />
-        </div>
       </header>
-      <div className="flex-1 flex overflow-hidden">
-        <aside className="w-20 p-2 border-r bg-card flex flex-col items-center space-y-4">
+      <div className="flex-1 flex">
+        <aside className="w-64 p-4 border-r">
+          <Card>
+            <CardHeader>
+              <CardTitle>{texts.uploadLabel}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Input type="file" accept="application/pdf" onChange={handleFileUpload} disabled={isLoading} />
+              {isLoading && <div className="mt-2">處理中...</div>}
+            </CardContent>
+          </Card>
+          <div className="mt-4">
             <Button
-              onClick={() => setActiveTool(tool => tool === 'select' ? 'text' : 'select')}
-              variant={activeTool === 'select' ? 'secondary' : 'ghost'}
-              size="icon"
+              onClick={() => setActiveTool(activeTool === 'select' ? 'text' : 'select')}
+              variant={activeTool === 'select' ? 'default' : 'outline'}
+              className="w-full mb-2"
             >
-              {texts.toolSelect[0]}
+              {texts.toolSelect}
             </Button>
             <Button
-              onClick={handleAddText}
-              variant={activeTool === 'text' ? 'secondary' : 'ghost'}
-              size="icon"
-              disabled={pageObjects.length === 0}
+              onClick={() => setActiveTool('text')}
+              variant={activeTool === 'text' ? 'default' : 'outline'}
+              className="w-full"
             >
-              {texts.toolText[0]}
+              {texts.toolText}
             </Button>
-        </aside>
-        <main className="flex-1 flex flex-col p-4 overflow-auto">
-          {activeAnnotation && interactionMode === 'editing' && (
-            <div className="mb-4">
-              <TextAnnotationToolbar
-                annotation={activeAnnotation as TextAnnotation}
-                onAnnotationChange={onAnnotationChange}
-                onDelete={onDeleteAnnotation}
-              />
-            </div>
-          )}
-          <div className="flex-1 space-y-4">
-            {pageObjects.length > 0 ? (
-              pageObjects.map((page, index) => renderPage(page, index))
-            ) : (
-              <div className="text-center text-muted-foreground pt-10">{texts.uploadLabel}</div>
-            )}
           </div>
-        </main>
-        <aside className="w-64 p-4 border-l bg-card overflow-y-auto">
-          <h3 className="text-lg font-semibold mb-2">動作歷史</h3>
-            <div className="space-y-2">
-              {annotations
-                .filter(ann => ann.isUserAction)
-                .map((ann) => (
-                  <div
-                    key={ann.id}
-                    className={cn(
-                      "p-2 rounded-md border text-sm cursor-pointer hover:bg-muted/50",
-                      selectedAnnotationId === ann.id && "bg-primary/10 border-primary"
-                    )}
-                    onClick={() => setSelectedAnnotationId(ann.id)}
-                  >
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium truncate pr-2">
-                        {ann.type === 'text' ? (ann as TextAnnotation).segments.map(s => s.text).join('').substring(0, 20) : ann.type}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteAnnotation(ann.id);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              {annotations.filter(ann => ann.isUserAction).length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">No actions yet.</p>
-              )}
-            </div>
         </aside>
+        <main className="flex-1 p-4">
+          {pageObjects.length === 0 ? (
+            <div className="text-center text-muted-foreground">{texts.uploadLabel}</div>
+          ) : (
+            renderPage()
+          )}
+        </main>
       </div>
     </div>
   );
 }
-

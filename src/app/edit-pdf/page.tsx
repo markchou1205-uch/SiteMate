@@ -1551,10 +1551,13 @@ export default function PdfEditorPage() {
       setMainCanvasZoom(newZoom);
   }, [activePageIndex, pageObjects]);
 
-  const handleFitToWidth = useCallback(() => {
-      if (!mainViewContainerRef.current || pageObjects.length === 0 || activePageIndex === null) return;
+  const handleFitToWidth = useCallback((pagesToUse?: PageObject[], indexToUse?: number) => {
+      const thePages = pagesToUse || pageObjects;
+      const theIndex = indexToUse === undefined ? activePageIndex : indexToUse;
+
+      if (!mainViewContainerRef.current || thePages.length === 0 || theIndex === null) return;
       const containerWidth = mainViewContainerRef.current.clientWidth - 40;
-      const activePage = pageObjects[activePageIndex];
+      const activePage = thePages[theIndex];
       if (!activePage) return;
 
       const pageCanvas = activePage.sourceCanvas;
@@ -1689,7 +1692,7 @@ export default function PdfEditorPage() {
       setActivePageIndex(0);
       setViewMode('editor');
       
-      setTimeout(() => handleFitToWidth(), 100);
+      setTimeout(() => handleFitToWidth(loadedPageObjects, 0), 100);
 
     } catch (err: any)
     {
@@ -3689,7 +3692,7 @@ export default function PdfEditorPage() {
                         <Button variant="ghost" size="icon" onClick={() => handleZoom('in')} title={texts.zoomIn}><ZoomIn className="h-5 w-5" /></Button>
                          <Separator orientation="vertical" className="h-6 mx-1" />
                         <Button variant="ghost" size="icon" onClick={handleFitToPage} title={texts.fitToPage}><Expand className="h-5 w-5" /></Button>
-                        <Button variant="ghost" size="icon" onClick={handleFitToWidth} title={texts.fitToWidth}><Columns className="h-5 w-5" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleFitToWidth()} title={texts.fitToWidth}><Columns className="h-5 w-5" /></Button>
                          <Separator orientation="vertical" className="h-6 mx-1" />
                         <Button variant="ghost" size="icon" onClick={() => setViewMode('grid')} title={texts.gridMode}><LayoutGrid className="h-5 w-5" /></Button>
                     </div>

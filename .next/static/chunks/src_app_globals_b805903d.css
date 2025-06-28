@@ -983,6 +983,10 @@ body {
   width: 100%;
 }
 
+.w-\[20\%\] {
+  width: 20%;
+}
+
 .min-w-0 {
   min-width: 0;
 }

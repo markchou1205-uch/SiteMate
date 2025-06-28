@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -1334,8 +1333,6 @@ export default function PdfEditorPage() {
   const observerRef = useRef<IntersectionObserver | null>(null);
   const insertionTargetRef = useRef<'start' | 'end' | 'before' | 'after'>('end');
 
-  const recordNextStateRef = useRef(false);
-
   // Destructure state for easier access in JSX
   const { pageObjects, annotations } = editorState;
   
@@ -1362,14 +1359,14 @@ export default function PdfEditorPage() {
     updateState({ annotations: [...annotations, annotation] });
   };
   
-  const updateAnnotation = useCallback((id: string, updates: Partial<Annotation>) => {
+  const updateAnnotation = useCallback((id: string, updates: Partial<Annotation>, isHistoryEvent: boolean = true) => {
       const newAnnotations = annotations.map(ann => {
           if (ann.id === id) {
               return { ...ann, ...updates };
           }
           return ann;
       });
-      updateState({ annotations: newAnnotations });
+      updateState({ annotations: newAnnotations }, isHistoryEvent);
   }, [annotations, updateState]);
 
 
@@ -1609,7 +1606,6 @@ export default function PdfEditorPage() {
 
     const numPages = pdfDocProxy.numPages;
     const loadedPageObjects: PageObject[] = [];
-    const textContents: PageTextContent[] = [];
 
     for (let i = 1; i <= numPages; i++) {
       const page = await pdfDocProxy.getPage(i);
@@ -1631,7 +1627,7 @@ export default function PdfEditorPage() {
     setLoadingMessage(texts.loadingPdf);
     try {
       const { loadedPageObjects } = await processPdfFile(file);
-      setOriginalFile(file); // Store original file
+      setOriginalFile(file);
       const newState: EditorState = { pageObjects: loadedPageObjects, annotations: [] };
       setEditorState(newState);
       setHistory([newState]);
@@ -1689,29 +1685,38 @@ export default function PdfEditorPage() {
     setLoadingMessage(texts.extractingText);
     try {
         const arrayBuffer = await originalFile.arrayBuffer();
-        const pdfDocProxy = await pdfjsLib.getDocument({ data: arrayBuffer, cMapUrl: `//cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/cmaps/`, cMapPacked: true }).promise;
+        const pdfDocProxy = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
         const extractedAnnotations: TextAnnotation[] = [];
         for (let i = 1; i <= pdfDocProxy.numPages; i++) {
             const page = await pdfDocProxy.getPage(i);
-            const viewport = page.getViewport({ scale: 3.0 });
+            const viewport = page.getViewport({ scale: 1.0 }); // Use scale 1 for stable coordinates
             const textContent = await page.getTextContent();
             
             textContent.items.forEach((item: any) => {
                 if (item.str.trim().length === 0) return;
-                const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
-                const fontHeight = Math.sqrt(tx[2] * tx[2] + tx[3] * tx[3]);
+                
+                const x = item.transform[4];
+                const y = item.transform[5];
+                const width = item.width;
+                const height = item.height;
+
+                const topRatio = (viewport.height - y - height) / viewport.height;
+                const leftRatio = x / viewport.width;
+
+                const fontSize = Math.hypot(item.transform[0], item.transform[1]);
+
                 extractedAnnotations.push({
                     id: uuidv4(),
                     type: 'text',
                     pageIndex: i - 1,
                     segments: [{ text: item.str, color: '#000000', bold: item.fontName.toLowerCase().includes('bold'), italic: item.fontName.toLowerCase().includes('italic'), underline: false }],
-                    leftRatio: item.transform[4] / viewport.width,
-                    topRatio: (viewport.height - item.transform[5] - item.height) / viewport.height,
-                    widthRatio: item.width / viewport.width,
-                    heightRatio: item.height / viewport.height,
-                    fontSize: fontHeight,
-                    fontFamily: item.fontName,
+                    leftRatio: leftRatio,
+                    topRatio: topRatio,
+                    widthRatio: width / viewport.width,
+                    heightRatio: height / viewport.height,
+                    fontSize: fontSize * 3, // Adjust for render scale
+                    fontFamily: item.fontName.split('-')[0] || 'Helvetica',
                     textAlign: 'left',
                     isUserAction: false,
                 });
@@ -1745,12 +1750,13 @@ export default function PdfEditorPage() {
 
   const handleConfirmOpenNew = () => {
     setEditorState(initialEditorState);
-    updateState(initialEditorState);
+    updateState(initialEditorState, false);
     setHasTextLayer(false);
     setSelectedPageIds(new Set());
     setActivePageIndex(null);
     setIsTextExtractionMode(false);
     setOriginalAnnotations([]);
+    setOriginalFile(null);
     
     if (pdfUploadRef.current) {
         pdfUploadRef.current.value = ''; 
@@ -2204,14 +2210,13 @@ export default function PdfEditorPage() {
               const newTopRatio = Math.max(0, Math.min(1 - currentHeightRatio, newTopPx / containerRect.height));
               updatedAnnotation = { leftRatio: newLeftRatio, topRatio: newTopRatio };
           }
-          updateAnnotation(id, updatedAnnotation);
+          updateAnnotation(id, updatedAnnotation, false);
       };
 
       const handleMouseUp = () => {
           document.removeEventListener('mousemove', handleMouseMove);
           document.removeEventListener('mouseup', handleMouseUp);
-          recordNextStateRef.current = true;
-          setEditorState(prev => ({...prev})); // Trigger history recording
+          updateAnnotation(id, {}, true); // Commit to history
       };
 
       document.addEventListener('mousemove', handleMouseMove);
@@ -2739,14 +2744,14 @@ export default function PdfEditorPage() {
             const existingAnnotation = annotations.find(a => a.id === id) as ScribbleAnnotation;
             if (existingAnnotation) {
                 const newPoints = [...existingAnnotation.points, { xRatio: currentX, yRatio: currentY }];
-                updateAnnotation(id, { points: newPoints });
+                updateAnnotation(id, { points: newPoints }, false);
             }
         } else {
             const leftRatio = Math.min(startX, currentX);
             const topRatio = Math.min(startY, currentY);
             const widthRatio = Math.abs(currentX - startX);
             const heightRatio = Math.abs(currentY - startY);
-            updateAnnotation(id, { leftRatio, topRatio, widthRatio, heightRatio });
+            updateAnnotation(id, { leftRatio, topRatio, widthRatio, heightRatio }, false);
         }
     };
     
@@ -2760,8 +2765,7 @@ export default function PdfEditorPage() {
                     if (('widthRatio' in finalAnnotation && finalAnnotation.widthRatio < 0.01) || ('heightRatio' in finalAnnotation && finalAnnotation.heightRatio < 0.01)) {
                         updateState({ annotations: annotations.filter(a => a.id !== drawingStartRef.current!.id) }, false);
                     } else {
-                         recordNextStateRef.current = true;
-                         setEditorState(prev => ({...prev})); // Trigger history
+                         updateAnnotation(drawingStartRef.current!.id, {}, true);
                     }
                 }
             }
@@ -3252,16 +3256,16 @@ export default function PdfEditorPage() {
               </div>
           ) : (
             <div className="flex-grow flex overflow-hidden">
-                <div className="w-[15%] border-r bg-card flex-shrink-0 flex flex-col">
-                  <div ref={thumbnailContainerRef} className="flex-grow overflow-y-auto p-2 space-y-4">
+                <div className="w-[20%] border-r bg-muted/30 flex-shrink-0 flex flex-col items-center">
+                  <div ref={thumbnailContainerRef} className="flex-grow overflow-y-auto p-2 space-y-4 w-full">
                       {pageObjects.map((page, index) => (
                          <div key={page.id}
                               ref={el => thumbnailRefs.current[index] = el}
                               data-id={page.id}
                               onClick={(e) => handleThumbnailClick(index, e)}
                               className={cn(
-                                  "p-1 rounded-md cursor-pointer border-2",
-                                  activePageIndex === index ? "border-primary" : "border-transparent"
+                                  "p-1 rounded-md cursor-pointer",
+                                  activePageIndex === index ? "ring-2 ring-primary" : ""
                               )}>
                               <PagePreviewItem 
                                 pageObj={page}
@@ -3278,7 +3282,7 @@ export default function PdfEditorPage() {
                 </div>
 
                 <div ref={mainViewContainerRef} 
-                    className={cn("flex-grow bg-muted/30 overflow-auto flex flex-col items-center justify-center p-4 space-y-4 relative main-view-container")}
+                    className={cn("flex-grow bg-muted/30 overflow-auto flex flex-col items-center p-4 space-y-4 relative main-view-container")}
                     onMouseDown={handlePanMouseDown}
                     onMouseMove={handleMainViewMouseMove}
                     onMouseUp={handleMainViewMouseUp}

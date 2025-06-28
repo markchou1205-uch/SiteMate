@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -431,6 +432,9 @@ const translations = {
         toolDownload: 'Download',
         actionHistory: '操作記錄',
         toolDuplicate: '複製本頁',
+        toolInsert: '插入',
+        toolInsertBlankPage: '插入空白頁',
+        toolInsertPdf: '插入PDF',
     },
     zh: {
         pageTitle: 'PDF 編輯器 (專業模式)',
@@ -687,6 +691,9 @@ const translations = {
         toolDownload: '下載',
         actionHistory: '操作記錄',
         toolDuplicate: '複製本頁',
+        toolInsert: '插入',
+        toolInsertBlankPage: '插入空白頁',
+        toolInsertPdf: '插入PDF',
     }
 };
 
@@ -722,7 +729,7 @@ const MAX_TOTAL_SIZE_MB = 50;
 const MAX_TOTAL_SIZE_BYTES = MAX_TOTAL_SIZE_MB * 1024 * 1024;
 
 
-const PagePreviewItem = React.memo(({ pageObj, index, texts, onDuplicate, onRotate, onDelete, onAddBlank }: {
+const PagePreviewItem = React.memo(({ pageObj, index, texts, onDuplicate, onRotate, onDelete, onAddBlank, onAddPdf }: {
   pageObj: PageObject;
   index: number;
   texts: typeof translations.en;
@@ -730,6 +737,7 @@ const PagePreviewItem = React.memo(({ pageObj, index, texts, onDuplicate, onRota
   onRotate: (index: number) => void;
   onDelete: (index: number) => void;
   onAddBlank: (index: number) => void;
+  onAddPdf: (index: number) => void;
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -785,14 +793,29 @@ const PagePreviewItem = React.memo(({ pageObj, index, texts, onDuplicate, onRota
       </div>
        <div className="flex items-center justify-center gap-1 p-1 rounded-lg transition-opacity mt-2">
           <TooltipProvider>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => {e.stopPropagation(); onAddBlank(index);}}>
-                        <FilePlus2 className="h-4 w-4" />
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent><p>{texts.toolAddBlank}</p></TooltipContent>
-            </Tooltip>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                 <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-7 w-7">
+                            <FilePlus2 className="h-4 w-4" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>{texts.toolInsert}</p></TooltipContent>
+                </Tooltip>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={(e) => {e.stopPropagation(); onAddBlank(index);}}>
+                  <FilePlus className="mr-2 h-4 w-4" />
+                  <span>{texts.toolInsertBlankPage}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={(e) => {e.stopPropagation(); onAddPdf(index);}}>
+                   <FileUp className="mr-2 h-4 w-4" />
+                  <span>{texts.toolInsertPdf}</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <Tooltip>
                 <TooltipTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => {e.stopPropagation(); onDuplicate(index); toast({title: `Page ${index + 1} duplicated`})}}>
@@ -812,7 +835,7 @@ const PagePreviewItem = React.memo(({ pageObj, index, texts, onDuplicate, onRota
             <Tooltip>
                 <TooltipTrigger asChild>
                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive-foreground hover:bg-destructive" onClick={(e) => {e.stopPropagation(); onDelete(index);}}>
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4 stroke-black" />
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent><p>{texts.toolDelete}</p></TooltipContent>
@@ -1331,7 +1354,7 @@ export default function PdfEditorPage() {
   const sortableInstanceRef = useRef<Sortable | null>(null);
   
   const observerRef = useRef<IntersectionObserver | null>(null);
-  const insertionTargetRef = useRef<'start' | 'end' | 'before' | 'after'>('end');
+  const insertionTargetRef = useRef<'start' | 'end' | 'before' | 'after' | number>('end');
 
   // Destructure state for easier access in JSX
   const { pageObjects, annotations } = editorState;
@@ -1363,7 +1386,7 @@ export default function PdfEditorPage() {
       const newAnnotations = annotations.map(ann => {
           if (ann.id === id) {
               return { ...ann, ...updates };
-          }
+              }
           return ann;
       });
       updateState({ annotations: newAnnotations }, isHistoryEvent);
@@ -1685,7 +1708,11 @@ export default function PdfEditorPage() {
     setLoadingMessage(texts.extractingText);
     try {
         const arrayBuffer = await originalFile.arrayBuffer();
-        const pdfDocProxy = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const pdfDocProxy = await pdfjsLib.getDocument({ 
+            data: arrayBuffer,
+            cMapUrl: `//cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
+            cMapPacked: true,
+        }).promise;
 
         const extractedAnnotations: TextAnnotation[] = [];
         for (let i = 1; i <= pdfDocProxy.numPages; i++) {
@@ -1696,14 +1723,21 @@ export default function PdfEditorPage() {
             textContent.items.forEach((item: any) => {
                 if (item.str.trim().length === 0) return;
                 
-                const x = item.transform[4];
-                const y = item.transform[5];
+                const transform = pdfjsLib.util.transform(
+                    viewport.transform,
+                    item.transform
+                );
+
+                const x = transform[4];
+                const y = transform[5];
                 const width = item.width;
                 const height = item.height;
-
-                const topRatio = (viewport.height - y - height) / viewport.height;
+                
+                const topRatio = y / viewport.height;
                 const leftRatio = x / viewport.width;
-
+                const widthRatio = width / viewport.width;
+                const heightRatio = height / viewport.height;
+                
                 const fontSize = Math.hypot(item.transform[0], item.transform[1]);
 
                 extractedAnnotations.push({
@@ -1712,9 +1746,9 @@ export default function PdfEditorPage() {
                     pageIndex: i - 1,
                     segments: [{ text: item.str, color: '#000000', bold: item.fontName.toLowerCase().includes('bold'), italic: item.fontName.toLowerCase().includes('italic'), underline: false }],
                     leftRatio: leftRatio,
-                    topRatio: topRatio,
-                    widthRatio: width / viewport.width,
-                    heightRatio: height / viewport.height,
+                    topRatio: 1 - topRatio - heightRatio, // Correct Y coordinate
+                    widthRatio: widthRatio,
+                    heightRatio: heightRatio,
                     fontSize: fontSize * 3, // Adjust for render scale
                     fontFamily: item.fontName.split('-')[0] || 'Helvetica',
                     textAlign: 'left',
@@ -1766,7 +1800,7 @@ export default function PdfEditorPage() {
     setIsNewDocConfirmOpen(false);
   };
 
-  const handlePageAction = (index: number, action: 'delete' | 'duplicate' | 'rotate' | 'addBlank') => {
+  const handlePageAction = (index: number, action: 'delete' | 'duplicate' | 'rotate' | 'addBlank' | 'addPdf') => {
     if (action === 'delete') {
       const pageIdToDelete = pageObjects[index].id;
       const newPageObjects = pageObjects.filter((_, i) => i !== index);
@@ -1808,7 +1842,7 @@ export default function PdfEditorPage() {
         }
         return page;
       });
-      updateState({ pageObjects: newPageObjects });
+      updateState({ pageObjects: newPageObjects }, false);
     } else if (action === 'addBlank') {
       const blankCanvas = document.createElement('canvas');
         if (pageObjects.length > 0 && pageObjects[0].sourceCanvas) {
@@ -1829,6 +1863,8 @@ export default function PdfEditorPage() {
         newPages.splice(insertAt, 0, newPageObject);
         updateState({ pageObjects: newPages });
         setActivePageIndex(insertAt);
+    } else if (action === 'addPdf') {
+      handleInitiateInsert(index);
     }
   };
 
@@ -2561,7 +2597,7 @@ export default function PdfEditorPage() {
       });
     };
     
-    const handleInitiateInsert = (target: 'start' | 'end' | 'before' | 'after') => {
+    const handleInitiateInsert = (target: 'start' | 'end' | 'before' | 'after' | number) => {
       if (pageObjects.length === 0 && (target === 'before' || target === 'after')) {
           toast({ title: texts.noPageSelected, variant: "destructive" });
           return;
@@ -2589,21 +2625,27 @@ export default function PdfEditorPage() {
             const { loadedPageObjects } = await processPdfFile(fileToInsert);
             let insertAtIndex: number;
 
-            switch (insertionTargetRef.current) {
-                case 'start':
-                    insertAtIndex = 0;
-                    break;
-                case 'end':
-                    insertAtIndex = pageObjects.length;
-                    break;
-                case 'before':
-                    insertAtIndex = activePageIndex ?? 0;
-                    break;
-                case 'after':
-                    insertAtIndex = (activePageIndex ?? pageObjects.length - 1) + 1;
-                    break;
-                default:
-                    insertAtIndex = pageObjects.length;
+            const target = insertionTargetRef.current;
+
+            if (typeof target === 'number') {
+                insertAtIndex = target + 1;
+            } else {
+                switch (target) {
+                    case 'start':
+                        insertAtIndex = 0;
+                        break;
+                    case 'end':
+                        insertAtIndex = pageObjects.length;
+                        break;
+                    case 'before':
+                        insertAtIndex = activePageIndex ?? 0;
+                        break;
+                    case 'after':
+                        insertAtIndex = (activePageIndex ?? pageObjects.length - 1) + 1;
+                        break;
+                    default:
+                        insertAtIndex = pageObjects.length;
+                }
             }
             
             const newPageObjects = [...pageObjects];
@@ -2685,12 +2727,25 @@ export default function PdfEditorPage() {
     const handlePageMouseDown = (e: React.MouseEvent<HTMLDivElement>, pageIndex: number) => {
         const tool = activeTool;
         if (tool !== 'text' && tool !== 'mosaic' && tool !== 'scribble' && tool !== 'shape') return;
-    
-        const interaction = 
-            tool === 'text' ? 'drawing-text' : 
-            tool === 'mosaic' ? 'drawing-mosaic' : 
-            tool === 'scribble' ? 'drawing-scribble' : 
-            'drawing-shape';
+        
+        let interaction: InteractionMode;
+        switch(tool) {
+            case 'text':
+                interaction = 'drawing-text';
+                break;
+            case 'mosaic':
+                interaction = 'drawing-mosaic';
+                break;
+            case 'scribble':
+                interaction = 'drawing-scribble';
+                break;
+            case 'shape':
+                interaction = 'drawing-shape';
+                break;
+            default:
+                interaction = 'idle';
+                return;
+        }
         
         setInteractionMode(interaction);
         
@@ -2885,8 +2940,7 @@ export default function PdfEditorPage() {
                             setIsNewDocConfirmOpen(true);
                         } else {
                             handleConfirmOpenNew();
-                        }
-                    }}><FilePlus className="mr-2 h-4 w-4"/>{texts.menuFileNew}</MenubarItem>
+                        }}><FilePlus className="mr-2 h-4 w-4"/>{texts.menuFileNew}</MenubarItem>
                     <MenubarSub>
                          <MenubarSubTrigger disabled={pageObjects.length > 0}><FolderOpen className="mr-2 h-4 w-4"/>{texts.menuFileOpen}</MenubarSubTrigger>
                          <MenubarSubContent>
@@ -2897,7 +2951,7 @@ export default function PdfEditorPage() {
                     </MenubarSub>
                     <MenubarSub>
                         <MenubarSubTrigger disabled={pageObjects.length === 0}>
-                           <FilePlus2 className="mr-2 h-4 w-4" />{texts.insertPdf}
+                           <FilePlus2 className="mr-2 h-4 w-4" />{texts.menuFile}
                         </MenubarSubTrigger>
                         <MenubarSubContent>
                             <MenubarItem onClick={() => handleInitiateInsert('start')}>{texts.insertAtStart}</MenubarItem>
@@ -2931,8 +2985,7 @@ export default function PdfEditorPage() {
                     <Popover open={isLinkPopoverOpen} onOpenChange={setIsLinkPopoverOpen}>
                         <PopoverTrigger asChild>
                             <MenubarItem disabled={!selectedAnnotationId || !['text', 'image'].includes(annotations.find(a=>a.id === selectedAnnotationId)?.type || '')} onSelect={(e) => e.preventDefault()} onClick={handleOpenLinkPopover}>
-                                <LinkIcon className="mr-2 h-4 w-4"/>{texts.menuEditInsertLink}
-                            </MenubarItem>
+                                <LinkIcon className="mr-2 h-4 w-4"/>{texts.menuEditInsertLink}</MenubarItem>
                         </PopoverTrigger>
                         <PopoverContent className="w-80" side="right" align="start">
                             {linkPopoverContent}
@@ -3239,10 +3292,11 @@ export default function PdfEditorPage() {
                           pageObj={pageObj}
                           index={index}
                           texts={texts}
-                          onDuplicate={handlePageAction}
-                          onRotate={handlePageAction}
+                          onDuplicate={(idx) => handlePageAction(idx, 'duplicate')}
+                          onRotate={(idx) => handlePageAction(idx, 'rotate')}
                           onDelete={(idx) => {setPageToDelete(idx); setIsDeleteConfirmOpen(true)}}
                           onAddBlank={(idx) => handlePageAction(idx, 'addBlank')}
+                          onAddPdf={(idx) => handlePageAction(idx, 'addPdf')}
                         />
                       ))}
                     </div>
@@ -3271,10 +3325,11 @@ export default function PdfEditorPage() {
                                 pageObj={page}
                                 index={index}
                                 texts={texts}
-                                onDuplicate={handlePageAction}
-                                onRotate={handlePageAction}
+                                onDuplicate={(idx) => handlePageAction(idx, 'duplicate')}
+                                onRotate={(idx) => handlePageAction(idx, 'rotate')}
                                 onDelete={(idx) => {setPageToDelete(idx); setIsDeleteConfirmOpen(true)}}
                                 onAddBlank={(idx) => handlePageAction(idx, 'addBlank')}
+                                onAddPdf={(idx) => handlePageAction(idx, 'addPdf')}
                               />
                          </div>
                       ))}
@@ -3299,7 +3354,7 @@ export default function PdfEditorPage() {
                                 key={page.id} 
                                 ref={el => pageRefs.current[index] = el} 
                                 data-page-index={index} 
-                                className="shadow-lg bg-white relative my-2 main-page-container"
+                                className="shadow-lg bg-white my-2 main-page-container"
                                 style={{
                                     width: canvasWidth * mainCanvasZoom,
                                     height: canvasHeight * mainCanvasZoom,

@@ -680,6 +680,7 @@ const translations = {
         convertConfirmDescription: (filename: string) => `將為您轉檔 "${filename}" 為 PDF。請選擇轉檔後要下載至您的電腦還是進入編輯模式？`,
         convertConfirmDownload: '下載檔案',
         convertConfirmEdit: '進入編輯模式',
+        convertingToPdf: '正在轉換為 PDF...',
         toolInsertFile: '插入PDF',
         insertAtStart: '插入至開頭',
         insertAtEnd: '插入至結尾',

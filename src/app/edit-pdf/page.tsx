@@ -763,7 +763,7 @@ const PagePreviewItem = React.memo(({ pageObj, index, texts, onDuplicate, onRota
       }
 
       const targetAspectRatio = rotatedSourceWidth / rotatedSourceHeight;
-      const cssDisplayWidth = 140; // Increased size
+      const cssDisplayWidth = 160;
       const cssDisplayHeight = cssDisplayWidth / targetAspectRatio;
 
       previewDisplayCanvas.width = rotatedSourceWidth;
@@ -798,7 +798,7 @@ const PagePreviewItem = React.memo(({ pageObj, index, texts, onDuplicate, onRota
                  <Tooltip>
                     <TooltipTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-7 w-7">
-                            <FilePlus2 className="h-4 w-4" />
+                            <FilePlus2 className="mr-2 h-4 w-4" />
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent><p>{texts.toolInsert}</p></TooltipContent>
@@ -835,7 +835,7 @@ const PagePreviewItem = React.memo(({ pageObj, index, texts, onDuplicate, onRota
             <Tooltip>
                 <TooltipTrigger asChild>
                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive-foreground hover:bg-destructive" onClick={(e) => {e.stopPropagation(); onDelete(index);}}>
-                        <Trash2 className="h-4 w-4 stroke-black" />
+                        <Trash2 className="h-4 w-4 stroke-current" />
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent><p>{texts.toolDelete}</p></TooltipContent>
@@ -1302,7 +1302,7 @@ export default function PdfEditorPage() {
 
   const mainViewContainerRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const [mainCanvasZoom, setMainCanvasZoom] = useState(1);
+  const [mainCanvasZoom, setMainCanvasZoom] = useState(0.7);
 
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isNewDocConfirmOpen, setIsNewDocConfirmOpen] = useState(false);
@@ -1527,18 +1527,28 @@ export default function PdfEditorPage() {
   }, [activePageIndex, pageObjects]);
 
   const handleFitToWidth = useCallback(() => {
-      if (!mainViewContainerRef.current || pageObjects.length === 0 || activePageIndex === null) return;
-      const containerWidth = mainViewContainerRef.current.clientWidth - 40;
-      const activePage = pageObjects[activePageIndex];
-      if (!activePage) return;
+      if (!mainViewContainerRef.current || pageObjects.length === 0) {
+        setMainCanvasZoom(0.7);
+        return;
+      }
+      const pageToMeasure = pageObjects[activePageIndex ?? 0];
+      if (!pageToMeasure) return;
+      
+      const containerWidth = mainViewContainerRef.current.clientWidth - 40; // 40 for padding
 
-      const pageCanvas = activePage.sourceCanvas;
-      const rotation = activePage.rotation;
+      const pageCanvas = pageToMeasure.sourceCanvas;
+      const rotation = pageToMeasure.rotation;
       let pageRenderWidth = (rotation % 180 !== 0) ? pageCanvas.height : pageCanvas.width;
 
       const newZoom = containerWidth / pageRenderWidth;
       setMainCanvasZoom(newZoom);
   }, [activePageIndex, pageObjects]);
+  
+  useEffect(() => {
+    if (pageObjects.length > 0) {
+        setTimeout(() => handleFitToWidth(), 100);
+    }
+  }, [pageObjects.length, handleFitToWidth]);
 
   // Pan Tool Logic
     const panState = useRef({ isPanning: false, startX: 0, startY: 0, scrollLeft: 0, scrollTop: 0 });
@@ -1719,7 +1729,7 @@ export default function PdfEditorPage() {
         const extractedAnnotations: TextAnnotation[] = [];
         for (let i = 1; i <= pdfDocProxy.numPages; i++) {
             const page = await pdfDocProxy.getPage(i);
-            const viewport = page.getViewport({ scale: 1.0 }); // Use scale 1 for stable coordinates
+            const viewport = page.getViewport({ scale: 1.0 });
             const textContent = await page.getTextContent();
             
             textContent.items.forEach((item: any) => {
@@ -1735,7 +1745,6 @@ export default function PdfEditorPage() {
                 const width = item.width;
                 const height = item.height;
                 
-                // Convert PDF coordinates (origin at bottom-left) to CSS coordinates (origin at top-left)
                 const topRatio = (viewport.height - y - height) / viewport.height;
                 const leftRatio = x / viewport.width;
                 const widthRatio = width / viewport.width;
@@ -2729,61 +2738,64 @@ export default function PdfEditorPage() {
     
     const handlePageMouseDown = (e: React.MouseEvent<HTMLDivElement>, pageIndex: number) => {
         const tool = activeTool;
-
-        if (tool === 'pan' || tool === 'select') {
+    
+        if (tool === 'pan') {
             handlePanMouseDown(e);
             return;
         }
-
-        if (!['text', 'mosaic', 'scribble', 'shape'].includes(tool)) {
+    
+        if (tool === 'select') {
             return;
         }
-
-        let interaction: InteractionMode;
+    
+        let newInteractionMode: InteractionMode | null = null;
         switch (tool) {
             case 'text':
-                interaction = 'drawing-text';
+                newInteractionMode = 'drawing-text';
                 break;
             case 'mosaic':
-                interaction = 'drawing-mosaic';
+                newInteractionMode = 'drawing-mosaic';
                 break;
             case 'scribble':
-                interaction = 'drawing-scribble';
+                newInteractionMode = 'drawing-scribble';
                 break;
             case 'shape':
-                if (!drawingShapeType) return;
-                interaction = 'drawing-shape';
+                if (drawingShapeType) {
+                    newInteractionMode = 'drawing-shape';
+                }
                 break;
-            default:
-                return;
         }
-        
-        setInteractionMode(interaction);
-        
+    
+        if (!newInteractionMode) {
+            return;
+        }
+    
+        setInteractionMode(newInteractionMode);
+    
         const container = e.currentTarget;
         const rect = container.getBoundingClientRect();
         const startX = (e.clientX - rect.left) / rect.width;
         const startY = (e.clientY - rect.top) / rect.height;
         const id = uuidv4();
-        
+    
         drawingStartRef.current = { pageIndex, startX, startY, id };
-        
+    
         let newAnnotation: Annotation | null = null;
-        switch(interaction) {
+        switch (newInteractionMode) {
             case 'drawing-text':
-                newAnnotation = { 
-                    id, 
-                    type: 'text', 
-                    pageIndex, 
-                    segments: [{ text: '', color: '#000000', bold: false, italic: false, underline: false }], 
-                    topRatio: startY, 
-                    leftRatio: startX, 
-                    widthRatio: 0, 
-                    heightRatio: 0, 
-                    fontSize: 16, 
-                    fontFamily: 'Helvetica', 
-                    textAlign: 'left', 
-                    isUserAction: true 
+                newAnnotation = {
+                    id,
+                    type: 'text',
+                    pageIndex,
+                    segments: [{ text: '', color: '#000000', bold: false, italic: false, underline: false }],
+                    topRatio: startY,
+                    leftRatio: startX,
+                    widthRatio: 0,
+                    heightRatio: 0,
+                    fontSize: 16,
+                    fontFamily: 'Helvetica',
+                    textAlign: 'left',
+                    isUserAction: true
                 };
                 break;
             case 'drawing-mosaic':
@@ -2798,7 +2810,7 @@ export default function PdfEditorPage() {
                 }
                 break;
         }
-        
+    
         if (newAnnotation) {
             addAnnotation(newAnnotation);
         }
@@ -3340,8 +3352,8 @@ export default function PdfEditorPage() {
               </div>
           ) : (
             <div className="flex-grow flex overflow-hidden">
-                <div className="w-[20%] border-r bg-muted/30 flex-shrink-0 flex flex-col items-center">
-                  <div ref={thumbnailContainerRef} className="flex-grow overflow-y-auto p-2 space-y-4 w-full">
+                <div className="w-[20%] bg-muted border-r flex-shrink-0 flex flex-col">
+                  <div ref={thumbnailContainerRef} className="flex-grow overflow-y-auto p-2 space-y-4 w-full flex flex-col items-center">
                       {pageObjects.map((page, index) => (
                          <div key={page.id}
                               ref={el => thumbnailRefs.current[index] = el}
@@ -3367,7 +3379,7 @@ export default function PdfEditorPage() {
                 </div>
 
                 <div ref={mainViewContainerRef} 
-                    className={cn("flex-grow bg-muted/30 overflow-auto flex flex-col items-center p-4 space-y-4 relative main-view-container")}
+                    className={cn("flex-grow bg-muted overflow-auto flex flex-col items-center p-4 space-y-4 relative main-view-container")}
                     onMouseDown={handlePanMouseDown}
                     onMouseMove={handleMainViewMouseMove}
                     onMouseUp={handleMainViewMouseUp}
@@ -3384,7 +3396,7 @@ export default function PdfEditorPage() {
                                 key={page.id} 
                                 ref={el => pageRefs.current[index] = el} 
                                 data-page-index={index} 
-                                className="shadow-lg bg-white my-2 main-page-container"
+                                className="shadow-lg bg-white my-2 main-page-container relative"
                                 style={{
                                     width: canvasWidth * mainCanvasZoom,
                                     height: canvasHeight * mainCanvasZoom,
@@ -3626,3 +3638,4 @@ export default function PdfEditorPage() {
   );
 }
 
+    

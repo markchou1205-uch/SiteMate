@@ -1595,6 +1595,10 @@ body {
   stroke: #000;
 }
 
+.stroke-current {
+  stroke: currentColor;
+}
+
 .object-contain {
   object-fit: contain;
 }

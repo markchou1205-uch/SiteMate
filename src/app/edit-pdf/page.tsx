@@ -545,9 +545,9 @@ const translations = {
         gridMode: '縮圖模式',
         deletePageConfirmTitle: '刪除頁面？',
         deletePageConfirmDescription: '您確定要刪除此頁面嗎？此操作無法復原。',
-        toolRotate: '旋轉',
-        toolDelete: '刪除',
-        toolAddBlank: '新增空白',
+        toolRotate: '旋轉本頁',
+        toolDelete: '刪除本頁',
+        toolAddBlank: '新增空白頁',
         toolMerge: '合併',
         toolSplit: '拆分',
         toolWatermark: '浮水印',
@@ -723,13 +723,14 @@ const MAX_TOTAL_SIZE_MB = 50;
 const MAX_TOTAL_SIZE_BYTES = MAX_TOTAL_SIZE_MB * 1024 * 1024;
 
 
-const PagePreviewItem = React.memo(({ pageObj, index, texts, onDuplicate, onRotate, onDelete }: {
+const PagePreviewItem = React.memo(({ pageObj, index, texts, onDuplicate, onRotate, onDelete, onAddBlank }: {
   pageObj: PageObject;
   index: number;
   texts: typeof translations.en;
   onDuplicate: (index: number) => void;
   onRotate: (index: number) => void;
   onDelete: (index: number) => void;
+  onAddBlank: (index: number) => void;
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -775,24 +776,49 @@ const PagePreviewItem = React.memo(({ pageObj, index, texts, onDuplicate, onRota
   return (
     <div
       ref={wrapperRef}
-      className="page-preview-wrapper p-1 rounded-lg cursor-pointer transition-all bg-card relative group"
+      className="page-preview-wrapper p-1 rounded-lg cursor-pointer transition-all bg-card flex flex-col items-center"
       data-id={pageObj.id}
       data-index={index}
     >
       <canvas ref={canvasRef} className="rounded-md shadow-md" style={{ willReadFrequently: true } as any}></canvas>
-      <div className="text-xs text-muted-foreground mt-1 text-center">
+      <div className="text-sm text-muted-foreground mt-2 text-center">
         {texts.page} {index + 1}
       </div>
-       <div className="absolute inset-0 bg-black/40 flex-col items-center justify-center gap-1 p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex">
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={(e) => {e.stopPropagation(); onDuplicate(index); toast({title: `Page ${index + 1} duplicated`})}}>
-              <Copy className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={(e) => {e.stopPropagation(); onRotate(index);}}>
-              <RotateCw className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive-foreground hover:bg-destructive" onClick={(e) => {e.stopPropagation(); onDelete(index);}}>
-              <Trash2 className="h-4 w-4" />
-          </Button>
+       <div className="flex items-center justify-center gap-1 p-1 rounded-lg transition-opacity mt-2">
+          <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => {e.stopPropagation(); onAddBlank(index);}}>
+                        <FilePlus2 className="h-4 w-4" />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent><p>{texts.toolAddBlank}</p></TooltipContent>
+            </Tooltip>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => {e.stopPropagation(); onDuplicate(index); toast({title: `Page ${index + 1} duplicated`})}}>
+                        <Copy className="h-4 w-4" />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent><p>{texts.toolDuplicate}</p></TooltipContent>
+            </Tooltip>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => {e.stopPropagation(); onRotate(index);}}>
+                        <RotateCw className="h-4 w-4" />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent><p>{texts.toolRotate}</p></TooltipContent>
+            </Tooltip>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive-foreground hover:bg-destructive" onClick={(e) => {e.stopPropagation(); onDelete(index);}}>
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent><p>{texts.toolDelete}</p></TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
       </div>
     </div>
   );
@@ -1734,7 +1760,7 @@ export default function PdfEditorPage() {
     setIsNewDocConfirmOpen(false);
   };
 
-  const handlePageAction = (index: number, action: 'delete' | 'duplicate' | 'rotate') => {
+  const handlePageAction = (index: number, action: 'delete' | 'duplicate' | 'rotate' | 'addBlank') => {
     if (action === 'delete') {
       const pageIdToDelete = pageObjects[index].id;
       const newPageObjects = pageObjects.filter((_, i) => i !== index);
@@ -1777,6 +1803,26 @@ export default function PdfEditorPage() {
         return page;
       });
       updateState({ pageObjects: newPageObjects });
+    } else if (action === 'addBlank') {
+      const blankCanvas = document.createElement('canvas');
+        if (pageObjects.length > 0 && pageObjects[0].sourceCanvas) {
+            blankCanvas.width = pageObjects[0].sourceCanvas.width;
+            blankCanvas.height = pageObjects[0].sourceCanvas.height;
+        } else {
+            blankCanvas.width = 2480; 
+            blankCanvas.height = 3508;
+        }
+        const ctx = blankCanvas.getContext('2d');
+        if (ctx) {
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, blankCanvas.width, blankCanvas.height);
+        }
+        const newPageObject: PageObject = { id: uuidv4(), sourceCanvas: blankCanvas, rotation: 0 };
+        const insertAt = index + 1;
+        const newPages = [...pageObjects];
+        newPages.splice(insertAt, 0, newPageObject);
+        updateState({ pageObjects: newPages });
+        setActivePageIndex(insertAt);
     }
   };
 
@@ -2191,41 +2237,6 @@ export default function PdfEditorPage() {
           setSelectedPageIds(newSelectedPageIds);
       }
   };
-
-    const handleAddBlankPage = () => {
-        const blankCanvas = document.createElement('canvas');
-        
-        if (pageObjects.length > 0 && pageObjects[0].sourceCanvas) {
-            blankCanvas.width = pageObjects[0].sourceCanvas.width;
-            blankCanvas.height = pageObjects[0].sourceCanvas.height;
-        } else {
-            blankCanvas.width = 2480; 
-            blankCanvas.height = 3508;
-        }
-
-        const ctx = blankCanvas.getContext('2d');
-        if (ctx) {
-            ctx.fillStyle = 'white';
-            ctx.fillRect(0, 0, blankCanvas.width, blankCanvas.height);
-        }
-        const newPageObject: PageObject = { id: uuidv4(), sourceCanvas: blankCanvas, rotation: 0 };
-
-        const insertAt = (activePageIndex === null ? pageObjects.length - 1 : activePageIndex) + 1;
-
-        const newPages = [...pageObjects];
-        newPages.splice(insertAt, 0, newPageObject);
-        updateState({ pageObjects: newPages });
-        
-        setActivePageIndex(insertAt);
-        setSelectedPageIds(new Set([newPageObject.id]));
-        
-        setTimeout(() => {
-            const newPageElement = pageRefs.current[insertAt];
-            if (newPageElement) {
-                newPageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        }, 100);
-    };
 
     const handleDeleteAnnotation = (id: string) => {
         updateState({ annotations: annotations.filter(a => a.id !== id) });
@@ -2690,7 +2701,7 @@ export default function PdfEditorPage() {
         switch(tool) {
             case 'text':
                 const selectedColor = (activeTextAnnotation?.segments[0]?.color) || '#000000';
-                newAnnotation = { id, type: 'text', pageIndex, segments: [{ text: '', color: selectedColor, bold: false, italic: false, underline: false }], topRatio: startY, leftRatio: startX, widthRatio: 0, heightRatio: 0, fontSize: 16, fontFamily: 'Helvetica', textAlign: 'left', isUserAction: true };
+                newAnnotation = { id, type: 'text', pageIndex, segments: [{ text: texts.textAnnotationSample, color: selectedColor, bold: false, italic: false, underline: false }], topRatio: startY, leftRatio: startX, widthRatio: 0, heightRatio: 0, fontSize: 16, fontFamily: 'Helvetica', textAlign: 'left', isUserAction: true };
                 break;
             case 'mosaic':
                 newAnnotation = { id, type: 'mosaic', pageIndex, topRatio: startY, leftRatio: startX, widthRatio: 0, heightRatio: 0, isUserAction: true };
@@ -2930,7 +2941,7 @@ export default function PdfEditorPage() {
                 <MenubarContent>
                     <MenubarItem onClick={() => handlePageAction(activePageIndex!, 'rotate')} disabled={activePageIndex === null}><RotateCw className="mr-2 h-4 w-4" />{texts.menuPageRotateCW}</MenubarItem>
                     <MenubarSeparator />
-                    <MenubarItem onClick={handleAddBlankPage}><FilePlus2 className="mr-2 h-4 w-4"/>{texts.menuPageAddBlank}</MenubarItem>
+                    <MenubarItem onClick={() => handlePageAction(activePageIndex ?? pageObjects.length - 1, 'addBlank')}><FilePlus2 className="mr-2 h-4 w-4"/>{texts.menuPageAddBlank}</MenubarItem>
                     <MenubarItem onClick={() => { if(activePageIndex !== null) { setPageToDelete(activePageIndex); setIsDeleteConfirmOpen(true); } }} disabled={activePageIndex === null}>
                         <Trash2 className="mr-2 h-4 w-4 text-destructive"/>
                         <span className="text-destructive">{texts.menuPageDelete}</span>
@@ -3227,6 +3238,7 @@ export default function PdfEditorPage() {
                           onDuplicate={handlePageAction}
                           onRotate={handlePageAction}
                           onDelete={(idx) => {setPageToDelete(idx); setIsDeleteConfirmOpen(true)}}
+                          onAddBlank={(idx) => handlePageAction(idx, 'addBlank')}
                         />
                       ))}
                     </div>
@@ -3241,10 +3253,7 @@ export default function PdfEditorPage() {
           ) : (
             <div className="flex-grow flex overflow-hidden">
                 <div className="w-[15%] border-r bg-card flex-shrink-0 flex flex-col">
-                  <div className="p-2 border-b">
-                     <Button variant="outline" size="sm" className="w-full" onClick={handleAddBlankPage}><FilePlus2 className="mr-2 h-4 w-4" /> {texts.toolAddBlank}</Button>
-                  </div>
-                  <div ref={thumbnailContainerRef} className="flex-grow overflow-y-auto p-2 space-y-2">
+                  <div ref={thumbnailContainerRef} className="flex-grow overflow-y-auto p-2 space-y-4">
                       {pageObjects.map((page, index) => (
                          <div key={page.id}
                               ref={el => thumbnailRefs.current[index] = el}
@@ -3261,17 +3270,15 @@ export default function PdfEditorPage() {
                                 onDuplicate={handlePageAction}
                                 onRotate={handlePageAction}
                                 onDelete={(idx) => {setPageToDelete(idx); setIsDeleteConfirmOpen(true)}}
+                                onAddBlank={(idx) => handlePageAction(idx, 'addBlank')}
                               />
                          </div>
                       ))}
                   </div>
-                  <div className="p-2 border-t">
-                     <Button variant="outline" size="sm" className="w-full" onClick={() => handleInitiateInsert('after')} disabled={activePageIndex === null}><FilePlus className="mr-2 h-4 w-4" />{texts.insertPdf}</Button>
-                  </div>
                 </div>
 
                 <div ref={mainViewContainerRef} 
-                    className={cn("flex-grow bg-muted/30 overflow-auto flex flex-col items-center p-4 space-y-4 relative main-view-container")}
+                    className={cn("flex-grow bg-muted/30 overflow-auto flex flex-col items-center justify-center p-4 space-y-4 relative main-view-container")}
                     onMouseDown={handlePanMouseDown}
                     onMouseMove={handleMainViewMouseMove}
                     onMouseUp={handleMainViewMouseUp}
@@ -3529,4 +3536,3 @@ export default function PdfEditorPage() {
     </div>
   );
 }
-

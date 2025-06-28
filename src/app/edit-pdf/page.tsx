@@ -46,7 +46,7 @@ import {
   MenubarSubContent,
   MenubarSubTrigger,
   MenubarTrigger,
-} from "@/components/ui/menubar"
+} from "@/components/ui/menubar";
 import { cn } from '@/lib/utils';
 
 
@@ -2737,19 +2737,11 @@ export default function PdfEditorPage() {
     };
     
     const handlePageMouseDown = (e: React.MouseEvent<HTMLDivElement>, pageIndex: number) => {
-        const currentTool = activeTool;
-    
-        if (currentTool === 'pan') {
+        if (activeTool === 'pan') {
             handlePanMouseDown(e);
             return;
         }
-    
-        if (currentTool === 'select') {
-            return;
-        }
-    
-        const isDrawingTool = ['text', 'mosaic', 'scribble', 'shape'].includes(currentTool);
-        if (!isDrawingTool) {
+        if (activeTool === 'select') {
             return;
         }
     
@@ -2764,41 +2756,46 @@ export default function PdfEditorPage() {
         drawingStartRef.current = { pageIndex, startX: startXRatio, startY: startYRatio, id: newAnnotationId };
     
         let annotationToCreate: Annotation | null = null;
-        let newInteractionMode: InteractionMode | null = null;
     
-        if (currentTool === 'text') {
-            newInteractionMode = 'drawing-text';
-            annotationToCreate = {
-                id: newAnnotationId, type: 'text', pageIndex: pageIndex,
-                segments: [{ text: '', color: '#000000', bold: false, italic: false, underline: false }],
-                topRatio: startYRatio, leftRatio: startXRatio, widthRatio: 0, heightRatio: 0,
-                fontSize: 16, fontFamily: 'Helvetica', textAlign: 'left', isUserAction: true
-            };
-        } else if (currentTool === 'mosaic') {
-            newInteractionMode = 'drawing-mosaic';
-            annotationToCreate = {
-                id: newAnnotationId, type: 'mosaic', pageIndex: pageIndex,
-                topRatio: startYRatio, leftRatio: startXRatio, widthRatio: 0, heightRatio: 0,
-                isUserAction: true
-            };
-        } else if (currentTool === 'scribble') {
-            newInteractionMode = 'drawing-scribble';
-            annotationToCreate = {
-                id: newAnnotationId, type: 'scribble', pageIndex: pageIndex,
-                points: [{ xRatio: startXRatio, yRatio: startYRatio }],
-                color: '#000000', strokeWidth: 2, isUserAction: true
-            };
-        } else if (currentTool === 'shape' && drawingShapeType) {
-            newInteractionMode = 'drawing-shape';
-            annotationToCreate = {
-                id: newAnnotationId, type: drawingShapeType, pageIndex: pageIndex,
-                topRatio: startYRatio, leftRatio: startXRatio, widthRatio: 0, heightRatio: 0,
-                fillColor: '#3b82f6', strokeColor: '#000000', strokeWidth: 2, isUserAction: true
-            };
+        switch (activeTool) {
+            case 'text':
+                setInteractionMode('drawing-text');
+                annotationToCreate = {
+                    id: newAnnotationId, type: 'text', pageIndex,
+                    segments: [{ text: '', color: '#000000', bold: false, italic: false, underline: false }],
+                    topRatio: startYRatio, leftRatio: startXRatio, widthRatio: 0, heightRatio: 0,
+                    fontSize: 16, fontFamily: 'Helvetica', textAlign: 'left', isUserAction: true
+                };
+                break;
+            case 'mosaic':
+                setInteractionMode('drawing-mosaic');
+                annotationToCreate = {
+                    id: newAnnotationId, type: 'mosaic', pageIndex,
+                    topRatio: startYRatio, leftRatio: startXRatio, widthRatio: 0, heightRatio: 0,
+                    isUserAction: true
+                };
+                break;
+            case 'scribble':
+                setInteractionMode('drawing-scribble');
+                annotationToCreate = {
+                    id: newAnnotationId, type: 'scribble', pageIndex,
+                    points: [{ xRatio: startXRatio, yRatio: startYRatio }],
+                    color: '#000000', strokeWidth: 2, isUserAction: true
+                };
+                break;
+            case 'shape':
+                if (drawingShapeType) {
+                    setInteractionMode('drawing-shape');
+                    annotationToCreate = {
+                        id: newAnnotationId, type: drawingShapeType, pageIndex,
+                        topRatio: startYRatio, leftRatio: startXRatio, widthRatio: 0, heightRatio: 0,
+                        fillColor: '#3b82f6', strokeColor: '#000000', strokeWidth: 2, isUserAction: true
+                    };
+                }
+                break;
         }
-    
-        if (annotationToCreate && newInteractionMode) {
-            setInteractionMode(newInteractionMode);
+        
+        if (annotationToCreate) {
             addAnnotation(annotationToCreate);
         }
     };
@@ -2833,37 +2830,44 @@ export default function PdfEditorPage() {
     };
     
     const handleMainViewMouseUp = () => {
-        handlePanMouseUpAndLeave(); // Handle pan if active
+        handlePanMouseUpAndLeave();
 
-        if (interactionMode.startsWith('drawing-')) {
-             if (drawingStartRef.current) {
-                const finalAnnotation = annotations.find(a => a.id === drawingStartRef.current!.id);
-                if(finalAnnotation) {
-                    if (('widthRatio' in finalAnnotation && finalAnnotation.widthRatio < 0.01) || ('heightRatio' in finalAnnotation && finalAnnotation.heightRatio < 0.01)) {
-                        updateState({ annotations: annotations.filter(a => a.id !== drawingStartRef.current!.id) }, false);
-                    } else if (finalAnnotation.type === 'text') {
-                        updateAnnotation(finalAnnotation.id, {
-                            segments: [{
-                                ...finalAnnotation.segments[0],
-                                text: texts.textAnnotationSample
-                            }]
-                        }, true);
-                    } else {
-                         updateAnnotation(drawingStartRef.current!.id, {}, true);
-                    }
+        if (!interactionMode.startsWith('drawing-') || !drawingStartRef.current) {
+            return;
+        }
+
+        const { id: drawnId } = drawingStartRef.current;
+        const finalAnnotation = annotations.find(a => a.id === drawnId);
+
+        if (finalAnnotation) {
+            const isTooSmall = ('widthRatio' in finalAnnotation && finalAnnotation.widthRatio < 0.01) || 
+                               ('heightRatio' in finalAnnotation && finalAnnotation.heightRatio < 0.01);
+
+            if (isTooSmall) {
+                updateState({ annotations: annotations.filter(a => a.id !== drawnId) }, false);
+            } else {
+                if (finalAnnotation.type === 'text') {
+                    updateAnnotation(drawnId, {
+                        segments: [{
+                            ...finalAnnotation.segments[0],
+                            text: texts.textAnnotationSample
+                        }]
+                    }, true);
+                    setSelectedAnnotationId(drawnId);
+                    setInteractionMode('editing');
+                } else {
+                    updateAnnotation(drawnId, {}, true);
+                    setInteractionMode('idle');
                 }
             }
-            
-            if (interactionMode === 'drawing-text' && drawingStartRef.current) {
-                setSelectedAnnotationId(drawingStartRef.current.id);
-                setInteractionMode('editing');
-            } else {
-                setInteractionMode('idle');
-            }
-            drawingStartRef.current = null;
-            setActiveTool('select');
-            setDrawingShapeType(null);
         }
+        
+        if (interactionMode !== 'editing') {
+             setInteractionMode('idle');
+        }
+        drawingStartRef.current = null;
+        setActiveTool('select');
+        setDrawingShapeType(null);
     };
     
     const handleShapeToolSelect = (shapeType: ShapeAnnotation['type']) => {

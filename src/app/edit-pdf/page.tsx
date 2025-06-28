@@ -2758,42 +2758,37 @@ export default function PdfEditorPage() {
     
         let annotationToCreate: Annotation | null = null;
     
-        switch (activeTool) {
-            case 'text':
-                setInteractionMode('drawing-text');
+        if (activeTool === 'text') {
+            setInteractionMode('drawing-text');
+            annotationToCreate = {
+                id: newAnnotationId, type: 'text', pageIndex,
+                segments: [{ text: '', color: '#000000', bold: false, italic: false, underline: false }],
+                topRatio: startYRatio, leftRatio: startXRatio, widthRatio: 0, heightRatio: 0,
+                fontSize: 16, fontFamily: 'Helvetica', textAlign: 'left', isUserAction: true
+            };
+        } else if (activeTool === 'mosaic') {
+            setInteractionMode('drawing-mosaic');
+            annotationToCreate = {
+                id: newAnnotationId, type: 'mosaic', pageIndex,
+                topRatio: startYRatio, leftRatio: startXRatio, widthRatio: 0, heightRatio: 0,
+                isUserAction: true
+            };
+        } else if (activeTool === 'scribble') {
+            setInteractionMode('drawing-scribble');
+            annotationToCreate = {
+                id: newAnnotationId, type: 'scribble', pageIndex,
+                points: [{ xRatio: startXRatio, yRatio: startYRatio }],
+                color: '#000000', strokeWidth: 2, isUserAction: true
+            };
+        } else if (activeTool === 'shape') {
+            if (drawingShapeType) {
+                setInteractionMode('drawing-shape');
                 annotationToCreate = {
-                    id: newAnnotationId, type: 'text', pageIndex,
-                    segments: [{ text: '', color: '#000000', bold: false, italic: false, underline: false }],
+                    id: newAnnotationId, type: drawingShapeType, pageIndex,
                     topRatio: startYRatio, leftRatio: startXRatio, widthRatio: 0, heightRatio: 0,
-                    fontSize: 16, fontFamily: 'Helvetica', textAlign: 'left', isUserAction: true
+                    fillColor: '#3b82f6', strokeColor: '#000000', strokeWidth: 2, isUserAction: true
                 };
-                break;
-            case 'mosaic':
-                setInteractionMode('drawing-mosaic');
-                annotationToCreate = {
-                    id: newAnnotationId, type: 'mosaic', pageIndex,
-                    topRatio: startYRatio, leftRatio: startXRatio, widthRatio: 0, heightRatio: 0,
-                    isUserAction: true
-                };
-                break;
-            case 'scribble':
-                setInteractionMode('drawing-scribble');
-                annotationToCreate = {
-                    id: newAnnotationId, type: 'scribble', pageIndex,
-                    points: [{ xRatio: startXRatio, yRatio: startYRatio }],
-                    color: '#000000', strokeWidth: 2, isUserAction: true
-                };
-                break;
-            case 'shape':
-                if (drawingShapeType) {
-                    setInteractionMode('drawing-shape');
-                    annotationToCreate = {
-                        id: newAnnotationId, type: drawingShapeType, pageIndex,
-                        topRatio: startYRatio, leftRatio: startXRatio, widthRatio: 0, heightRatio: 0,
-                        fillColor: '#3b82f6', strokeColor: '#000000', strokeWidth: 2, isUserAction: true
-                    };
-                }
-                break;
+            }
         }
         
         if (annotationToCreate) {

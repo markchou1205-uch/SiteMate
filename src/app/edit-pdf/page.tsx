@@ -3223,16 +3223,10 @@ export default function PdfEditorPage() {
                           key={pageObj.id}
                           pageObj={pageObj}
                           index={index}
-                          isSelected={selectedPageIds.has(pageObj.id)}
-                          onClick={(e) => handleThumbnailClick(index, e)}
-                          onDuplicate={() => handlePageAction(index, 'duplicate')}
-                          onRotate={() => handlePageAction(index, 'rotate')}
-                          onDelete={() => setPageToDelete(index)}
-                          onDoubleClick={() => {
-                            setActivePageIndex(index);
-                            setViewMode('editor');
-                          }}
                           texts={texts}
+                          onDuplicate={handlePageAction}
+                          onRotate={handlePageAction}
+                          onDelete={(idx) => {setPageToDelete(idx); setIsDeleteConfirmOpen(true)}}
                         />
                       ))}
                     </div>
@@ -3535,3 +3529,4 @@ export default function PdfEditorPage() {
     </div>
   );
 }
+

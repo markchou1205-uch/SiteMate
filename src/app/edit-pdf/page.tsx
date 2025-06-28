@@ -1018,6 +1018,7 @@ const TextAnnotationComponent = ({
                 top: `${annotation.topRatio * 100}%`,
                 width: `${annotation.widthRatio * 100}%`,
                 height: 'auto',
+                minHeight: `${annotation.heightRatio * 100}%`,
                 zIndex: 20,
             }}
         >
@@ -1035,7 +1036,7 @@ const TextAnnotationComponent = ({
                 }}
                 disabled={!isEditing}
                 className={cn(
-                    "w-full p-0 bg-transparent border-0 resize-none focus:ring-0 overflow-hidden",
+                    "w-full h-full p-0 bg-transparent border-0 resize-none focus:ring-0 overflow-hidden",
                     isEditing ? "cursor-text pointer-events-auto" : "pointer-events-none"
                 )}
                 style={{
@@ -1043,11 +1044,12 @@ const TextAnnotationComponent = ({
                     fontSize: `${annotation.fontSize * mainCanvasZoom}px`,
                     textAlign: annotation.textAlign,
                     lineHeight: 1.3,
+                    color: annotation.segments[0]?.color,
                 }}
             />
            ) : (
              <div
-                className="w-full p-0 bg-transparent pointer-events-none"
+                className="w-full h-full p-0 bg-transparent pointer-events-none"
                 style={{
                     fontFamily: annotation.fontFamily.includes('Times') ? '"Times New Roman", Times, serif' : annotation.fontFamily,
                     fontSize: `${annotation.fontSize * mainCanvasZoom}px`,
@@ -1733,7 +1735,8 @@ export default function PdfEditorPage() {
                 const width = item.width;
                 const height = item.height;
                 
-                const topRatio = y / viewport.height;
+                // Convert PDF coordinates (origin at bottom-left) to CSS coordinates (origin at top-left)
+                const topRatio = (viewport.height - y - height) / viewport.height;
                 const leftRatio = x / viewport.width;
                 const widthRatio = width / viewport.width;
                 const heightRatio = height / viewport.height;
@@ -1746,7 +1749,7 @@ export default function PdfEditorPage() {
                     pageIndex: i - 1,
                     segments: [{ text: item.str, color: '#000000', bold: item.fontName.toLowerCase().includes('bold'), italic: item.fontName.toLowerCase().includes('italic'), underline: false }],
                     leftRatio: leftRatio,
-                    topRatio: 1 - topRatio - heightRatio, // Correct Y coordinate
+                    topRatio: topRatio,
                     widthRatio: widthRatio,
                     heightRatio: heightRatio,
                     fontSize: fontSize * 3, // Adjust for render scale
@@ -2726,10 +2729,18 @@ export default function PdfEditorPage() {
     
     const handlePageMouseDown = (e: React.MouseEvent<HTMLDivElement>, pageIndex: number) => {
         const tool = activeTool;
-        if (tool !== 'text' && tool !== 'mosaic' && tool !== 'scribble' && tool !== 'shape') return;
-        
+
+        if (tool === 'pan' || tool === 'select') {
+            handlePanMouseDown(e);
+            return;
+        }
+
+        if (!['text', 'mosaic', 'scribble', 'shape'].includes(tool)) {
+            return;
+        }
+
         let interaction: InteractionMode;
-        switch(tool) {
+        switch (tool) {
             case 'text':
                 interaction = 'drawing-text';
                 break;
@@ -2740,10 +2751,10 @@ export default function PdfEditorPage() {
                 interaction = 'drawing-scribble';
                 break;
             case 'shape':
+                if (!drawingShapeType) return;
                 interaction = 'drawing-shape';
                 break;
             default:
-                interaction = 'idle';
                 return;
         }
         
@@ -2758,18 +2769,30 @@ export default function PdfEditorPage() {
         drawingStartRef.current = { pageIndex, startX, startY, id };
         
         let newAnnotation: Annotation | null = null;
-        switch(tool) {
-            case 'text':
-                const selectedColor = (activeTextAnnotation?.segments[0]?.color) || '#000000';
-                newAnnotation = { id, type: 'text', pageIndex, segments: [{ text: texts.textAnnotationSample, color: selectedColor, bold: false, italic: false, underline: false }], topRatio: startY, leftRatio: startX, widthRatio: 0, heightRatio: 0, fontSize: 16, fontFamily: 'Helvetica', textAlign: 'left', isUserAction: true };
+        switch(interaction) {
+            case 'drawing-text':
+                newAnnotation = { 
+                    id, 
+                    type: 'text', 
+                    pageIndex, 
+                    segments: [{ text: '', color: '#000000', bold: false, italic: false, underline: false }], 
+                    topRatio: startY, 
+                    leftRatio: startX, 
+                    widthRatio: 0, 
+                    heightRatio: 0, 
+                    fontSize: 16, 
+                    fontFamily: 'Helvetica', 
+                    textAlign: 'left', 
+                    isUserAction: true 
+                };
                 break;
-            case 'mosaic':
+            case 'drawing-mosaic':
                 newAnnotation = { id, type: 'mosaic', pageIndex, topRatio: startY, leftRatio: startX, widthRatio: 0, heightRatio: 0, isUserAction: true };
                 break;
-            case 'scribble':
+            case 'drawing-scribble':
                 newAnnotation = { id, type: 'scribble', pageIndex, points: [{ xRatio: startX, yRatio: startY }], color: '#000000', strokeWidth: 2, isUserAction: true };
                 break;
-            case 'shape':
+            case 'drawing-shape':
                 if (drawingShapeType) {
                     newAnnotation = { id, type: drawingShapeType, pageIndex, topRatio: startY, leftRatio: startX, widthRatio: 0, heightRatio: 0, fillColor: '#3b82f6', strokeColor: '#000000', strokeWidth: 2, isUserAction: true };
                 }
@@ -2819,6 +2842,13 @@ export default function PdfEditorPage() {
                 if(finalAnnotation) {
                     if (('widthRatio' in finalAnnotation && finalAnnotation.widthRatio < 0.01) || ('heightRatio' in finalAnnotation && finalAnnotation.heightRatio < 0.01)) {
                         updateState({ annotations: annotations.filter(a => a.id !== drawingStartRef.current!.id) }, false);
+                    } else if (finalAnnotation.type === 'text') {
+                        updateAnnotation(finalAnnotation.id, {
+                            segments: [{
+                                ...finalAnnotation.segments[0],
+                                text: texts.textAnnotationSample
+                            }]
+                        }, true);
                     } else {
                          updateAnnotation(drawingStartRef.current!.id, {}, true);
                     }
@@ -3222,7 +3252,7 @@ export default function PdfEditorPage() {
     </div>
 
 
-      <div className="flex-grow flex overflow-hidden relative">
+      <div className="flex flex-grow flex overflow-hidden relative">
         <div ref={toolbarContainerRef} className="absolute top-2 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2">
           {interactionMode === 'editing' && activeTextAnnotation && (
               <TextToolbar
@@ -3595,3 +3625,4 @@ export default function PdfEditorPage() {
     </div>
   );
 }
+

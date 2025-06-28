@@ -430,11 +430,11 @@ const translations = {
         newDocConfirmDescription: 'This will close the current document without saving changes. Are you sure you want to continue?',
         downloadEditedFile: 'Download',
         toolDownload: 'Download',
-        actionHistory: '操作記錄',
-        toolDuplicate: '複製本頁',
-        toolInsert: '插入',
-        toolInsertBlankPage: '插入空白頁',
-        toolInsertPdf: '插入PDF',
+        actionHistory: 'Action History',
+        toolDuplicate: 'Duplicate Page',
+        toolInsert: 'Insert',
+        toolInsertBlankPage: 'Insert Blank Page',
+        toolInsertPdf: 'Insert PDF',
     },
     zh: {
         pageTitle: 'PDF 編輯器 (專業模式)',
@@ -783,11 +783,11 @@ const PagePreviewItem = React.memo(({ pageObj, index, texts, onDuplicate, onRota
   return (
     <div
       ref={wrapperRef}
-      className="page-preview-wrapper p-1 rounded-lg cursor-pointer transition-all bg-card flex flex-col items-center"
+      className="page-preview-wrapper p-1 rounded-lg cursor-pointer transition-all flex flex-col items-center"
       data-id={pageObj.id}
       data-index={index}
     >
-      <canvas ref={canvasRef} className="rounded-md shadow-md" style={{ willReadFrequently: true } as any}></canvas>
+      <canvas ref={canvasRef} className="rounded-md shadow-md bg-white" style={{ willReadFrequently: true } as any}></canvas>
       <div className="text-sm text-muted-foreground mt-2 text-center">
         {texts.page} {index + 1}
       </div>
@@ -798,7 +798,7 @@ const PagePreviewItem = React.memo(({ pageObj, index, texts, onDuplicate, onRota
                  <Tooltip>
                     <TooltipTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-7 w-7">
-                            <FilePlus2 className="mr-2 h-4 w-4" />
+                            <FilePlus2 className="h-4 w-4" />
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent><p>{texts.toolInsert}</p></TooltipContent>
@@ -834,8 +834,8 @@ const PagePreviewItem = React.memo(({ pageObj, index, texts, onDuplicate, onRota
             </Tooltip>
             <Tooltip>
                 <TooltipTrigger asChild>
-                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive-foreground hover:bg-destructive" onClick={(e) => {e.stopPropagation(); onDelete(index);}}>
-                        <Trash2 className="h-4 w-4 stroke-current" />
+                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => {e.stopPropagation(); onDelete(index);}}>
+                        <Trash2 className="h-4 w-4 stroke-black" />
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent><p>{texts.toolDelete}</p></TooltipContent>
@@ -2745,7 +2745,7 @@ export default function PdfEditorPage() {
         }
     
         if (tool === 'select') {
-            return;
+            return; 
         }
     
         let newInteractionMode: InteractionMode | null = null;
@@ -2767,7 +2767,7 @@ export default function PdfEditorPage() {
         }
     
         if (!newInteractionMode) {
-            return;
+            return; 
         }
     
         setInteractionMode(newInteractionMode);
@@ -3352,15 +3352,15 @@ export default function PdfEditorPage() {
               </div>
           ) : (
             <div className="flex-grow flex overflow-hidden">
-                <div className="w-[20%] bg-muted border-r flex-shrink-0 flex flex-col">
-                  <div ref={thumbnailContainerRef} className="flex-grow overflow-y-auto p-2 space-y-4 w-full flex flex-col items-center">
+                <div className="w-[20%] bg-muted/50 border-r flex-shrink-0 flex flex-col">
+                  <div ref={thumbnailContainerRef} className="flex-grow overflow-y-auto p-4 space-y-4 w-full flex flex-col items-center">
                       {pageObjects.map((page, index) => (
                          <div key={page.id}
                               ref={el => thumbnailRefs.current[index] = el}
                               data-id={page.id}
                               onClick={(e) => handleThumbnailClick(index, e)}
                               className={cn(
-                                  "p-1 rounded-md cursor-pointer",
+                                  "p-1 rounded-md cursor-pointer w-full",
                                   activePageIndex === index ? "ring-2 ring-primary" : ""
                               )}>
                               <PagePreviewItem 
@@ -3637,5 +3637,3 @@ export default function PdfEditorPage() {
     </div>
   );
 }
-
-    

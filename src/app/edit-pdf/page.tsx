@@ -835,7 +835,7 @@ const PagePreviewItem = React.memo(({ pageObj, index, texts, onDuplicate, onRota
             <Tooltip>
                 <TooltipTrigger asChild>
                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => {e.stopPropagation(); onDelete(index);}}>
-                        <Trash2 className="h-4 w-4 stroke-black" />
+                        <Trash2 className="h-4 w-4 text-black" />
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent><p>{texts.toolDelete}</p></TooltipContent>
@@ -2737,82 +2737,69 @@ export default function PdfEditorPage() {
     };
     
     const handlePageMouseDown = (e: React.MouseEvent<HTMLDivElement>, pageIndex: number) => {
-        const tool = activeTool;
+        const currentTool = activeTool;
     
-        if (tool === 'pan') {
+        if (currentTool === 'pan') {
             handlePanMouseDown(e);
             return;
         }
     
-        if (tool === 'select') {
-            return; 
+        if (currentTool === 'select') {
+            return;
         }
     
-        let newInteractionMode: InteractionMode | null = null;
-        switch (tool) {
-            case 'text':
-                newInteractionMode = 'drawing-text';
-                break;
-            case 'mosaic':
-                newInteractionMode = 'drawing-mosaic';
-                break;
-            case 'scribble':
-                newInteractionMode = 'drawing-scribble';
-                break;
-            case 'shape':
-                if (drawingShapeType) {
-                    newInteractionMode = 'drawing-shape';
-                }
-                break;
+        const isDrawingTool = ['text', 'mosaic', 'scribble', 'shape'].includes(currentTool);
+        if (!isDrawingTool) {
+            return;
         }
-    
-        if (!newInteractionMode) {
-            return; 
-        }
-    
-        setInteractionMode(newInteractionMode);
     
         const container = e.currentTarget;
+        if (!container) return;
+
         const rect = container.getBoundingClientRect();
-        const startX = (e.clientX - rect.left) / rect.width;
-        const startY = (e.clientY - rect.top) / rect.height;
-        const id = uuidv4();
+        const startXRatio = (e.clientX - rect.left) / rect.width;
+        const startYRatio = (e.clientY - rect.top) / rect.height;
+        const newAnnotationId = uuidv4();
+
+        drawingStartRef.current = { pageIndex, startX: startXRatio, startY: startYRatio, id: newAnnotationId };
     
-        drawingStartRef.current = { pageIndex, startX, startY, id };
+        let annotationToCreate: Annotation | null = null;
+        let newInteractionMode: InteractionMode | null = null;
     
-        let newAnnotation: Annotation | null = null;
-        switch (newInteractionMode) {
-            case 'drawing-text':
-                newAnnotation = {
-                    id,
-                    type: 'text',
-                    pageIndex,
-                    segments: [{ text: '', color: '#000000', bold: false, italic: false, underline: false }],
-                    topRatio: startY,
-                    leftRatio: startX,
-                    widthRatio: 0,
-                    heightRatio: 0,
-                    fontSize: 16,
-                    fontFamily: 'Helvetica',
-                    textAlign: 'left',
-                    isUserAction: true
-                };
-                break;
-            case 'drawing-mosaic':
-                newAnnotation = { id, type: 'mosaic', pageIndex, topRatio: startY, leftRatio: startX, widthRatio: 0, heightRatio: 0, isUserAction: true };
-                break;
-            case 'drawing-scribble':
-                newAnnotation = { id, type: 'scribble', pageIndex, points: [{ xRatio: startX, yRatio: startY }], color: '#000000', strokeWidth: 2, isUserAction: true };
-                break;
-            case 'drawing-shape':
-                if (drawingShapeType) {
-                    newAnnotation = { id, type: drawingShapeType, pageIndex, topRatio: startY, leftRatio: startX, widthRatio: 0, heightRatio: 0, fillColor: '#3b82f6', strokeColor: '#000000', strokeWidth: 2, isUserAction: true };
-                }
-                break;
+        if (currentTool === 'text') {
+            newInteractionMode = 'drawing-text';
+            annotationToCreate = {
+                id: newAnnotationId, type: 'text', pageIndex: pageIndex,
+                segments: [{ text: '', color: '#000000', bold: false, italic: false, underline: false }],
+                topRatio: startYRatio, leftRatio: startXRatio, widthRatio: 0, heightRatio: 0,
+                fontSize: 16, fontFamily: 'Helvetica', textAlign: 'left', isUserAction: true
+            };
+        } else if (currentTool === 'mosaic') {
+            newInteractionMode = 'drawing-mosaic';
+            annotationToCreate = {
+                id: newAnnotationId, type: 'mosaic', pageIndex: pageIndex,
+                topRatio: startYRatio, leftRatio: startXRatio, widthRatio: 0, heightRatio: 0,
+                isUserAction: true
+            };
+        } else if (currentTool === 'scribble') {
+            newInteractionMode = 'drawing-scribble';
+            annotationToCreate = {
+                id: newAnnotationId, type: 'scribble', pageIndex: pageIndex,
+                points: [{ xRatio: startXRatio, yRatio: startYRatio }],
+                color: '#000000', strokeWidth: 2, isUserAction: true
+            };
+        } else if (currentTool === 'shape' && drawingShapeType) {
+            newInteractionMode = 'drawing-shape';
+            annotationToCreate = {
+                id: newAnnotationId, type: drawingShapeType, pageIndex: pageIndex,
+                topRatio: startYRatio, leftRatio: startXRatio, widthRatio: 0, heightRatio: 0,
+                fillColor: '#3b82f6', strokeColor: '#000000', strokeWidth: 2, isUserAction: true
+            };
         }
     
-        if (newAnnotation) {
-            addAnnotation(newAnnotation);
+        if (annotationToCreate && newInteractionMode) {
+            setInteractionMode(newInteractionMode);
+            addAnnotation(annotationToCreate);
         }
     };
     

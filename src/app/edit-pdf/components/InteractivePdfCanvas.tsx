@@ -134,167 +134,160 @@ export default function InteractivePdfCanvas({
   }, [pdfDoc, docVersion, scale]);
 
   useEffect(() => {
-    console.log(`[DRAW-EFFECT] Running for tool: "${drawingTool}". Canvases available: ${localCanvases.length}`);
+    const isDrawingActive = drawingTool !== null;
 
-    const handleMouseDown = (o: fabric.IEvent, canvasIndex: number) => {
-        const currentTool = drawingTool;
-        console.log(`[MOUSE-DOWN] Fired on canvas ${canvasIndex} with tool: "${currentTool}"`);
-        if (!currentTool || currentTool === 'freedraw') return;
-        
-        const canvas = localCanvases[canvasIndex];
-        if (!canvas) return;
+    const handleMouseDown = (o: fabric.IEvent) => {
+      const canvas = o.target?.canvas;
+      if (!canvas || !drawingTool || drawingTool === 'freedraw') return;
 
-        drawingState.current.isDrawing = true;
-        drawingState.current.canvasIndex = canvasIndex;
-        const pointer = canvas.getPointer(o.e);
-        drawingState.current.origX = pointer.x;
-        drawingState.current.origY = pointer.y;
+      drawingState.current.isDrawing = true;
+      const pointer = canvas.getPointer(o.e);
+      drawingState.current.origX = pointer.x;
+      drawingState.current.origY = pointer.y;
 
-        let shape: fabric.Object;
-        const commonProps = {
-            left: pointer.x,
-            top: pointer.y,
-            originX: 'left' as const,
-            originY: 'top' as const,
-            width: 0,
-            height: 0,
-            angle: 0,
-            fill: 'transparent',
-            stroke: 'black',
-            strokeWidth: 2,
-            selectable: false,
-            evented: false,
-        };
+      // Find canvas index
+      const canvasIndex = localCanvases.findIndex(c => c === canvas);
+      if (canvasIndex === -1) return;
+      drawingState.current.canvasIndex = canvasIndex;
+      
+      let shape: fabric.Object;
+      const commonProps = {
+          left: pointer.x,
+          top: pointer.y,
+          originX: 'left' as const,
+          originY: 'top' as const,
+          width: 0,
+          height: 0,
+          angle: 0,
+          fill: 'transparent',
+          stroke: 'black',
+          strokeWidth: 2,
+          selectable: false, // Not selectable while drawing
+          evented: false,
+      };
 
-        switch (currentTool) {
-            case 'rect':
-                shape = new fabric.Rect(commonProps);
-                break;
-            case 'circle':
-                shape = new fabric.Circle({ ...commonProps, radius: 0 });
-                break;
-            case 'triangle':
-                shape = new fabric.Triangle(commonProps);
-                break;
-            default: return;
-        }
-        
-        drawingState.current.shape = shape;
-        canvas.add(shape);
-        console.log(`[MOUSE-DOWN] Shape added to canvas ${canvasIndex}`);
+      switch (drawingTool) {
+          case 'rect':
+              shape = new fabric.Rect(commonProps);
+              break;
+          case 'circle':
+              shape = new fabric.Circle({ ...commonProps, radius: 0 });
+              break;
+          case 'triangle':
+              shape = new fabric.Triangle(commonProps);
+              break;
+          default: return;
+      }
+      
+      drawingState.current.shape = shape;
+      canvas.add(shape);
     };
 
     const handleMouseMove = (o: fabric.IEvent) => {
-        if (!drawingState.current.isDrawing || !drawingState.current.shape) return;
+      if (!drawingState.current.isDrawing || !drawingState.current.shape) return;
+      
+      const canvasIndex = drawingState.current.canvasIndex;
+      if (canvasIndex === null) return;
+      const canvas = localCanvases[canvasIndex];
+      if (!canvas) return;
 
-        const canvasIndex = drawingState.current.canvasIndex;
-        if (canvasIndex === null) return;
-        
-        const canvas = localCanvases[canvasIndex];
-        if (!canvas) return;
-
-        const pointer = canvas.getPointer(o.e);
-        const { origX, origY, shape } = drawingState.current;
-        
-        if (shape.type === 'circle') {
-             const radius = Math.sqrt(Math.pow(pointer.x - origX, 2) + Math.pow(pointer.y - origY, 2)) / 2;
-             shape.set({
-                left: (pointer.x + origX) / 2,
-                top: (pointer.y + origY) / 2,
-                radius: radius,
-                originX: 'center',
-                originY: 'center'
-            });
-        } else {
-            const newLeft = Math.min(pointer.x, origX);
-            const newTop = Math.min(pointer.y, origY);
-            const newWidth = Math.abs(origX - pointer.x);
-            const newHeight = Math.abs(origY - pointer.y);
-            shape.set({
-                left: newLeft,
-                top: newTop,
-                width: newWidth,
-                height: newHeight,
-            });
-        }
-        
-        canvas.requestRenderAll();
+      const pointer = canvas.getPointer(o.e);
+      const { origX, origY, shape } = drawingState.current;
+      
+      if (shape.type === 'circle') {
+           const radius = Math.sqrt(Math.pow(pointer.x - origX, 2) + Math.pow(pointer.y - origY, 2)) / 2;
+           shape.set({
+              left: (pointer.x + origX) / 2,
+              top: (pointer.y + origY) / 2,
+              radius: radius,
+              originX: 'center',
+              originY: 'center'
+          });
+      } else {
+          const newLeft = Math.min(pointer.x, origX);
+          const newTop = Math.min(pointer.y, origY);
+          const newWidth = Math.abs(origX - pointer.x);
+          const newHeight = Math.abs(origY - pointer.y);
+          shape.set({
+              left: newLeft,
+              top: newTop,
+              width: newWidth,
+              height: newHeight,
+          });
+      }
+      canvas.requestRenderAll();
     };
 
     const handleMouseUp = () => {
-        if (!drawingState.current.isDrawing || !drawingState.current.shape) return;
-        console.log(`[MOUSE-UP] Fired. Finalizing shape.`);
+      if (!drawingState.current.isDrawing || !drawingState.current.shape) return;
 
-        const canvasIndex = drawingState.current.canvasIndex;
-        if (canvasIndex === null) return;
+      const canvasIndex = drawingState.current.canvasIndex;
+      if (canvasIndex === null) return;
+      const canvas = localCanvases[canvasIndex];
+      if (!canvas) return;
 
-        const canvas = localCanvases[canvasIndex];
-        if (!canvas) return;
+      const { shape } = drawingState.current;
+      shape.setCoords();
 
-        const { shape } = drawingState.current;
-        shape.setCoords();
-
-        const minSize = 5;
-        const width = shape.getScaledWidth();
-        const height = shape.getScaledHeight();
-
-        if (width < minSize && height < minSize) {
-            canvas.remove(shape);
-        } else {
-            shape.set({ selectable: true, evented: true });
-            onUpdateFabricObject(canvasIndex, canvas);
-        }
-        
-        drawingState.current = { isDrawing: false, origX: 0, origY: 0, shape: null, canvasIndex: null };
-        canvas.requestRenderAll();
-        setDrawingTool(null);
-        console.log(`[MOUSE-UP] Drawing tool reset to null.`);
+      const minSize = 5;
+      const width = shape.getScaledWidth();
+      const height = shape.getScaledHeight();
+      
+      if (width < minSize && height < minSize) {
+          canvas.remove(shape);
+      } else {
+          shape.set({ selectable: true, evented: true });
+          onUpdateFabricObject(canvasIndex, canvas);
+      }
+      
+      drawingState.current = { isDrawing: false, origX: 0, origY: 0, shape: null, canvasIndex: null };
+      canvas.requestRenderAll();
+      setDrawingTool(null);
     };
     
     localCanvases.forEach((canvas, index) => {
-        if (!canvas) return;
+      if (!canvas) return;
 
-        canvas.off('mouse:down');
-        canvas.off('mouse:move');
-        canvas.off('mouse:up');
-        canvas.off('path:created');
-        canvas.isDrawingMode = false;
-        
-        const isDrawingActive = drawingTool !== null;
-        
-        canvas.selection = !isDrawingActive;
-        canvas.defaultCursor = isDrawingActive ? 'crosshair' : 'default';
-        canvas.forEachObject(obj => {
-            obj.selectable = !isDrawingActive;
-            obj.evented = !isDrawingActive;
-        });
+      // --- Cleanup all previous listeners ---
+      canvas.off('mouse:down', handleMouseDown);
+      canvas.off('mouse:move', handleMouseMove);
+      canvas.off('mouse:up', handleMouseUp);
+      canvas.off('path:created');
+      
+      // --- Set canvas mode based on drawingTool ---
+      canvas.isDrawingMode = (drawingTool === 'freedraw');
+      canvas.selection = !isDrawingActive;
+      canvas.defaultCursor = isDrawingActive ? 'crosshair' : 'default';
+      canvas.skipTargetFind = isDrawingActive;
 
-        if (drawingTool === 'freedraw') {
-            console.log(`[DRAW-EFFECT] Enabling freedraw mode for canvas ${index}`);
-            canvas.isDrawingMode = true;
-            canvas.freeDrawingBrush.width = 2;
-            canvas.freeDrawingBrush.color = 'black';
-            canvas.on('path:created', () => onUpdateFabricObject(index, canvas));
-        } else if (isDrawingActive) {
-            console.log(`[DRAW-EFFECT] Binding drawing events for tool "${drawingTool}" to canvas ${index}`);
-            canvas.on('mouse:down', (o) => handleMouseDown(o, index));
-            canvas.on('mouse:move', handleMouseMove);
-            canvas.on('mouse:up', handleMouseUp);
-        }
-        canvas.requestRenderAll();
+      canvas.forEachObject(obj => {
+          obj.selectable = !isDrawingActive;
+          obj.evented = !isDrawingActive;
+      });
+
+      // --- Bind new listeners based on mode ---
+      if (drawingTool === 'freedraw') {
+          canvas.freeDrawingBrush.width = 2;
+          canvas.freeDrawingBrush.color = 'black';
+          canvas.on('path:created', () => onUpdateFabricObject(index, canvas));
+      } else if (isDrawingActive) {
+          canvas.on('mouse:down', handleMouseDown);
+          canvas.on('mouse:move', handleMouseMove);
+          canvas.on('mouse:up', handleMouseUp);
+      }
+      
+      canvas.requestRenderAll();
     });
 
     return () => {
-        console.log('[DRAW-EFFECT] Cleanup function running.');
-        localCanvases.forEach((canvas, index) => {
-            if (canvas) {
-                canvas.off('mouse:down');
-                canvas.off('mouse:move');
-                canvas.off('mouse:up');
-                canvas.off('path:created');
-                console.log(`[DRAW-EFFECT] All events cleaned from canvas ${index}`);
-            }
-        });
+      localCanvases.forEach((canvas) => {
+          if (canvas) {
+              canvas.off('mouse:down', handleMouseDown);
+              canvas.off('mouse:move', handleMouseMove);
+              canvas.off('mouse:up', handleMouseUp);
+              canvas.off('path:created');
+          }
+      });
     };
   }, [drawingTool, localCanvases, onUpdateFabricObject, setDrawingTool]);
 
@@ -303,4 +296,5 @@ export default function InteractivePdfCanvas({
       <div ref={containerRef} className="flex flex-col items-center" />
     </div>
   );
-}
+
+    

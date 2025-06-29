@@ -11,6 +11,7 @@ interface InteractivePdfCanvasProps {
   pdfFile: File | null;
   currentPage: number;
   scale: number;
+  rotation: number;
   onTextEditStart: () => void;
   onTextEditEnd: () => void;
   selectedStyle: any;
@@ -24,15 +25,10 @@ interface InteractivePdfCanvasProps {
 
 export default function InteractivePdfCanvas({
   pdfFile,
-  currentPage,
   scale,
+  rotation,
   onTextEditStart,
   onTextEditEnd,
-  selectedStyle,
-  selectedObjectId,
-  setSelectedObjectId,
-  pageObjects,
-  setPageObjects,
   setPdfLoaded,
   setNumPages,
 }: InteractivePdfCanvasProps) {
@@ -50,6 +46,7 @@ export default function InteractivePdfCanvas({
     if (!pdfFile) return;
 
     const renderPdf = async () => {
+      setPdfLoaded(false);
       const reader = new FileReader();
       reader.onload = async () => {
         const typedarray = new Uint8Array(reader.result as ArrayBuffer);
@@ -58,28 +55,46 @@ export default function InteractivePdfCanvas({
 
         const container = containerRef.current;
         if (!container) return;
-        container.innerHTML = "";
+        container.innerHTML = ""; // Clear previous renders
 
-        const page = await pdf.getPage(currentPage);
-        const viewport = page.getViewport({ scale });
+        // Loop to render all pages
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+          const page = await pdf.getPage(pageNum);
+          const viewport = page.getViewport({ scale, rotation });
+          
+          const canvas = document.createElement("canvas");
+          const context = canvas.getContext("2d", { willReadFrequently: true });
+          if (!context) continue;
 
-        const canvas = document.createElement("canvas");
-        canvas.className = "mb-4 border mx-auto";
-        const context = canvas.getContext("2d")!;
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
+          // For crisp rendering on high-DPI screens
+          const outputScale = window.devicePixelRatio || 1;
 
-        const renderContext = { canvasContext: context, viewport };
-        await page.render(renderContext).promise;
+          canvas.width = Math.floor(viewport.width * outputScale);
+          canvas.height = Math.floor(viewport.height * outputScale);
+          canvas.style.width = `${Math.floor(viewport.width)}px`;
+          canvas.style.height = `${Math.floor(viewport.height)}px`;
+          
+          canvas.className = "mb-4 border mx-auto shadow-lg";
+          
+          const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
 
-        container.appendChild(canvas);
+          const renderContext = { 
+            canvasContext: context, 
+            viewport,
+            transform,
+          };
+          
+          await page.render(renderContext).promise;
+          container.appendChild(canvas);
+        }
+        
         setPdfLoaded(true);
       };
       reader.readAsArrayBuffer(pdfFile);
     };
 
     renderPdf();
-  }, [pdfFile, currentPage, scale, setNumPages, setPdfLoaded]);
+  }, [pdfFile, scale, rotation, setNumPages, setPdfLoaded]);
 
   useEffect(() => {
     const handleMouseUp = () => {
@@ -115,8 +130,8 @@ export default function InteractivePdfCanvas({
   };
 
   return (
-    <div className="relative w-full h-full">
-      <div ref={containerRef} className="overflow-auto max-h-[calc(100vh-100px)]" />
+    <div className="relative w-full h-full p-4">
+      <div ref={containerRef} className="flex flex-col items-center" />
       <PropertyPanel
         isVisible={showStylePanel}
         onClose={() => setShowStylePanel(false)}

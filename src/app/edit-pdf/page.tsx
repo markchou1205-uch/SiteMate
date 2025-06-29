@@ -24,6 +24,7 @@ export default function Page() {
   const [scale, setScale] = useState(1);
   const [numPages, setNumPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
+  const [rotation, setRotation] = useState(0);
 
   const handleStyleChange = (styleUpdate: Partial<typeof selectedTextStyle>) => {
     setSelectedTextStyle((prev) => ({ ...prev, ...styleUpdate }));
@@ -34,13 +35,19 @@ export default function Page() {
     setSelectedObjectId(null);
   };
 
-  const handleZoomIn = () => setScale((s) => Math.min(s + 0.1, 3));
-  const handleZoomOut = () => setScale((s) => Math.max(s - 0.1, 0.2));
+  const handleZoomIn = () => setScale((s) => Math.min(s + 0.2, 3));
+  const handleZoomOut = () => setScale((s) => Math.max(s - 0.2, 0.2));
+  const handleRotateRight = () => setRotation((r) => (r + 90) % 360);
+  const handleRotateLeft = () => setRotation((r) => (r - 90 + 360) % 360);
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setPdfFile(file);
+      setRotation(0);
+      setCurrentPage(1);
+      setScale(1);
     }
   };
 
@@ -65,12 +72,13 @@ export default function Page() {
             />
           </div>
 
-          <div className="ml-[12%] h-full overflow-auto">
+          <div className="ml-[12%] h-full overflow-auto bg-muted">
             <InteractivePdfCanvas
               pdfFile={pdfFile}
               setNumPages={setNumPages}
               currentPage={currentPage}
               scale={scale}
+              rotation={rotation}
               onTextEditStart={() => setIsEditingText(true)}
               onTextEditEnd={() => setIsEditingText(false)}
               selectedStyle={selectedTextStyle}
@@ -81,8 +89,16 @@ export default function Page() {
               setPdfLoaded={setPdfLoaded}
             />
           </div>
-
-          <ZoomControls scale={scale} onZoomIn={handleZoomIn} onZoomOut={handleZoomOut} />
+          
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50">
+            <ZoomControls 
+              scale={scale} 
+              onZoomIn={handleZoomIn} 
+              onZoomOut={handleZoomOut}
+              onRotateLeft={handleRotateLeft}
+              onRotateRight={handleRotateRight}
+            />
+          </div>
 
           <PropertyPanel
             isVisible={isEditingText}

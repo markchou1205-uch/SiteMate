@@ -1019,6 +1019,10 @@ body {
   width: 12%;
 }
 
+.w-px {
+  width: 1px;
+}
+
 .min-w-0 {
   min-width: 0;
 }

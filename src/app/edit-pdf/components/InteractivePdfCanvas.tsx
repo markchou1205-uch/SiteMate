@@ -137,9 +137,9 @@ export default function InteractivePdfCanvas({
   useEffect(() => {
     const isDrawingActive = drawingTool !== null;
 
-    // Define handlers inside the effect to capture the latest state
     const handleMouseDown = (o: fabric.IEvent) => {
       if (!drawingTool || drawingTool === 'freedraw') return;
+
       const canvas = o.target?.canvas;
       if (!canvas) return;
 
@@ -164,8 +164,6 @@ export default function InteractivePdfCanvas({
           fill: 'transparent',
           stroke: 'black',
           strokeWidth: 2,
-          selectable: true,
-          evented: true,
       };
 
       switch (drawingTool) {
@@ -197,10 +195,12 @@ export default function InteractivePdfCanvas({
       const { origX, origY, shape } = drawingState.current;
       
       if (shape instanceof fabric.Circle) {
-           const radius = Math.sqrt(Math.pow(pointer.x - origX, 2) + Math.pow(pointer.y - origY, 2)) / 2;
+           const dx = pointer.x - origX;
+           const dy = pointer.y - origY;
+           const radius = Math.sqrt(dx * dx + dy * dy) / 2;
            shape.set({
-              left: origX,
-              top: origY,
+              left: origX + dx / 2,
+              top: origY + dy / 2,
               radius: radius,
               originX: 'center',
               originY: 'center'
@@ -234,26 +234,25 @@ export default function InteractivePdfCanvas({
       if (width < minSize && height < minSize) {
           canvas.remove(shape);
       } else {
-          shape.set({ selectable: true, evented: true });
           onUpdateFabricObject(canvasIndex, canvas);
       }
       
       drawingState.current = { isDrawing: false, origX: 0, origY: 0, shape: null, canvasIndex: null };
-      canvas.requestRenderAll();
+      
+      // Crucially, reset the tool in the parent component to exit drawing mode.
       setDrawingTool(null);
     };
     
-    // Setup and cleanup for each canvas
     localCanvases.forEach((canvas, index) => {
       if (!canvas) return;
 
-      // Clean up all previous listeners to prevent duplicates
+      // 1. Clean up all previous listeners to prevent duplicates
       canvas.off('mouse:down');
       canvas.off('mouse:move');
       canvas.off('mouse:up');
       canvas.off('path:created');
       
-      // Set canvas mode based on drawing tool
+      // 2. Set canvas mode based on the current tool
       canvas.isDrawingMode = (drawingTool === 'freedraw');
       canvas.selection = !isDrawingActive;
       canvas.defaultCursor = isDrawingActive ? 'crosshair' : 'default';
@@ -264,7 +263,7 @@ export default function InteractivePdfCanvas({
           obj.evented = !isDrawingActive;
       });
 
-      // Bind new events based on the current tool
+      // 3. Bind new events based on the current tool
       if (drawingTool === 'freedraw') {
           canvas.freeDrawingBrush.width = 2;
           canvas.freeDrawingBrush.color = 'black';

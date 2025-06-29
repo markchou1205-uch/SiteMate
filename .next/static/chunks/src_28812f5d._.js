@@ -1505,6 +1505,7 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
         "InteractivePdfCanvas.useEffect": ()=>{
             const isDrawingActive = drawingTool !== null;
+            // Define handlers inside the effect to capture the latest state
             const handleMouseDown = {
                 "InteractivePdfCanvas.useEffect.handleMouseDown": (o)=>{
                     if (!drawingTool || drawingTool === 'freedraw') return;
@@ -1615,13 +1616,16 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
                     setDrawingTool(null);
                 }
             }["InteractivePdfCanvas.useEffect.handleMouseUp"];
+            // Setup and cleanup for each canvas
             localCanvases.forEach({
                 "InteractivePdfCanvas.useEffect": (canvas, index)=>{
                     if (!canvas) return;
+                    // Clean up all previous listeners to prevent duplicates
                     canvas.off('mouse:down');
                     canvas.off('mouse:move');
                     canvas.off('mouse:up');
                     canvas.off('path:created');
+                    // Set canvas mode based on drawing tool
                     canvas.isDrawingMode = drawingTool === 'freedraw';
                     canvas.selection = !isDrawingActive;
                     canvas.defaultCursor = isDrawingActive ? 'crosshair' : 'default';
@@ -1632,6 +1636,7 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
                             obj.evented = !isDrawingActive;
                         }
                     }["InteractivePdfCanvas.useEffect"]);
+                    // Bind new events based on the current tool
                     if (drawingTool === 'freedraw') {
                         canvas.freeDrawingBrush.width = 2;
                         canvas.freeDrawingBrush.color = 'black';
@@ -1674,12 +1679,12 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
             className: "flex flex-col items-center"
         }, void 0, false, {
             fileName: "[project]/src/app/edit-pdf/components/InteractivePdfCanvas.tsx",
-            lineNumber: 290,
+            lineNumber: 295,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/src/app/edit-pdf/components/InteractivePdfCanvas.tsx",
-        lineNumber: 289,
+        lineNumber: 294,
         columnNumber: 5
     }, this);
 }

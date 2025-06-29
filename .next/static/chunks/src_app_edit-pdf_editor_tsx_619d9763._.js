@@ -9,8 +9,6 @@
   "static/chunks/node_modules_@pdf-lib_standard-fonts_es_93f6d7f2._.js",
   "static/chunks/node_modules_fabric_dist_fabric_f47627fe.js",
   "static/chunks/node_modules_pdfjs-dist_build_pdf_5e5dd1fa.js",
-  "static/chunks/node_modules_pdfjs-dist_build_pdf_worker_c58b4303.js",
-  "static/chunks/node_modules_pdfjs-dist_build_pdf_worker_entry_7dfea33e.js",
   "static/chunks/node_modules_2908375a._.js"
 ],
     source: "dynamic"

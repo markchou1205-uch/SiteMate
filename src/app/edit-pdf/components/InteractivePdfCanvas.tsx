@@ -200,6 +200,7 @@ export default function InteractivePdfCanvas({
 
             const handleMouseUp = () => {
                 if (drawingState.current.isDrawing && drawingState.current.shape) {
+                    const { shape } = drawingState.current;
                     if (shape.type === 'circle') {
                         shape.set({
                             originX: 'left',

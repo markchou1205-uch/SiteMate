@@ -1,3 +1,4 @@
+
 // File: PdfEditor.tsx
 "use client";
 
@@ -570,8 +571,6 @@ export default function PdfEditor() {
                           docVersion={docVersion}
                           setNumPages={setNumPages}
                           scale={scale}
-                          onTextEditStart={handleTextEditStart}
-                          onTextEditEnd={handleTextEditEnd}
                           setPdfLoaded={setPdfLoaded}
                           fabricObjects={fabricObjects}
                           onUpdateFabricObject={handleUpdateFabricObject}

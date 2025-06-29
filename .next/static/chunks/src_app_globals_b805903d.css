@@ -955,12 +955,12 @@ body {
   width: 120px;
 }
 
-.w-\[15\%\] {
-  width: 15%;
-}
-
 .w-\[1px\] {
   width: 1px;
+}
+
+.w-\[20\%\] {
+  width: 20%;
 }
 
 .w-\[50px\] {
@@ -981,10 +981,6 @@ body {
 
 .w-full {
   width: 100%;
-}
-
-.w-\[20\%\] {
-  width: 20%;
 }
 
 .min-w-0 {
@@ -1500,10 +1496,6 @@ body {
   background-color: hsl(var(--background) / .5);
 }
 
-.bg-black\/40 {
-  background-color: #0006;
-}
-
 .bg-black\/50 {
   background-color: #00000080;
 }
@@ -1539,10 +1531,6 @@ body {
 
 .bg-muted\/20 {
   background-color: hsl(var(--muted) / .2);
-}
-
-.bg-muted\/30 {
-  background-color: hsl(var(--muted) / .3);
 }
 
 .bg-muted\/50 {
@@ -1589,14 +1577,6 @@ body {
 
 .fill-current {
   fill: currentColor;
-}
-
-.stroke-black {
-  stroke: #000;
-}
-
-.stroke-current {
-  stroke: currentColor;
 }
 
 .object-contain {
@@ -1877,6 +1857,11 @@ body {
   color: hsl(var(--accent-foreground));
 }
 
+.text-black {
+  --tw-text-opacity: 1;
+  color: rgb(0 0 0 / var(--tw-text-opacity, 1));
+}
+
 .text-card-foreground {
   color: hsl(var(--card-foreground));
 }
@@ -1941,11 +1926,6 @@ body {
 .text-yellow-500 {
   --tw-text-opacity: 1;
   color: rgb(234 179 8 / var(--tw-text-opacity, 1));
-}
-
-.text-black {
-  --tw-text-opacity: 1;
-  color: rgb(0 0 0 / var(--tw-text-opacity, 1));
 }
 
 .underline {
@@ -2301,10 +2281,6 @@ body {
 
 .hover\:bg-accent\/90:hover {
   background-color: hsl(var(--accent) / .9);
-}
-
-.hover\:bg-destructive:hover {
-  background-color: hsl(var(--destructive));
 }
 
 .hover\:bg-destructive\/80:hover {

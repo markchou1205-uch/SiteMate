@@ -124,92 +124,122 @@ export default function InteractivePdfCanvas({
   }, [pdfDoc, docVersion, scale]);
 
   useEffect(() => {
-    fabricCanvasRefs.current.forEach(canvas => {
+    fabricCanvasRefs.current.forEach((canvas, index) => {
         if (!canvas) return;
-        
+
         canvas.isDrawingMode = drawingTool === 'freedraw';
-        canvas.defaultCursor = drawingTool ? 'crosshair' : 'default';
         canvas.selection = !drawingTool;
-        canvas.forEachObject(obj => obj.selectable = !drawingTool);
+        canvas.defaultCursor = drawingTool ? 'crosshair' : 'default';
+        canvas.forEachObject(obj => {
+            obj.selectable = !drawingTool;
+            obj.evented = !drawingTool;
+        });
 
         canvas.off('mouse:down');
         canvas.off('mouse:move');
         canvas.off('mouse:up');
-        
+        canvas.renderAll();
+
         if (drawingTool && drawingTool !== 'freedraw') {
             const handleMouseDown = (o: fabric.IEvent) => {
-                const pointer = canvas.getPointer(o.e);
-                drawingState.current = { isDrawing: true, origX: pointer.x, origY: pointer.y, shape: null };
-                
+                const currentCanvas = fabricCanvasRefs.current[index];
+                if (!currentCanvas) return;
+
+                const pointer = currentCanvas.getPointer(o.e);
+                drawingState.current.isDrawing = true;
+                drawingState.current.origX = pointer.x;
+                drawingState.current.origY = pointer.y;
+
                 let shape;
-                const commonProps = { 
-                    left: pointer.x, 
-                    top: pointer.y, 
-                    width: 0, 
-                    height: 0, 
-                    fill: 'transparent', 
-                    stroke: 'black', 
-                    strokeWidth: 2,
+                const commonProps = {
+                    left: pointer.x,
+                    top: pointer.y,
                     originX: 'left',
-                    originY: 'top'
+                    originY: 'top',
+                    fill: 'transparent',
+                    stroke: 'black',
+                    strokeWidth: 2,
+                    selectable: false,
+                    evented: false,
                 };
 
                 switch (drawingTool) {
                     case 'rect':
-                        shape = new fabric.Rect(commonProps);
+                        shape = new fabric.Rect({ ...commonProps, width: 0, height: 0 });
                         break;
                     case 'circle':
                         shape = new fabric.Circle({ ...commonProps, radius: 0 });
                         break;
                     case 'triangle':
-                        shape = new fabric.Triangle(commonProps);
+                        shape = new fabric.Triangle({ ...commonProps, width: 0, height: 0 });
                         break;
                     default:
                         return;
                 }
+                
                 drawingState.current.shape = shape;
-                canvas.add(shape);
+                currentCanvas.add(shape);
             };
 
             const handleMouseMove = (o: fabric.IEvent) => {
                 if (!drawingState.current.isDrawing || !drawingState.current.shape) return;
-                const pointer = canvas.getPointer(o.e);
+
+                const currentCanvas = fabricCanvasRefs.current[index];
+                if (!currentCanvas) return;
+
+                const pointer = currentCanvas.getPointer(o.e);
                 const { origX, origY, shape } = drawingState.current;
 
                 if (shape.type === 'circle') {
                     const radius = Math.sqrt(Math.pow(pointer.x - origX, 2) + Math.pow(pointer.y - origY, 2)) / 2;
-                    shape.set({ 
-                        radius: radius, 
+                    shape.set({
+                        radius,
                         left: origX + (pointer.x - origX) / 2,
                         top: origY + (pointer.y - origY) / 2,
                         originX: 'center',
                         originY: 'center',
-                     });
+                    });
                 } else {
-                    const width = Math.abs(origX - pointer.x);
-                    const height = Math.abs(origY - pointer.y);
-                    shape.set({ 
-                        width, 
-                        height, 
-                        left: Math.min(pointer.x, origX), 
-                        top: Math.min(pointer.y, origY) 
+                    shape.set({
+                        left: Math.min(pointer.x, origX),
+                        top: Math.min(pointer.y, origY),
+                        width: Math.abs(origX - pointer.x),
+                        height: Math.abs(origY - pointer.y),
                     });
                 }
-                canvas.renderAll();
+                currentCanvas.renderAll();
             };
 
             const handleMouseUp = () => {
-                if (drawingState.current.isDrawing && drawingState.current.shape) {
-                    const { shape } = drawingState.current;
-                    if (shape.type === 'circle') {
-                        shape.set({
-                            originX: 'left',
-                            originY: 'top'
-                        });
-                    }
-                    onUpdateFabricObject(fabricCanvasRefs.current.indexOf(canvas), canvas);
+                if (!drawingState.current.isDrawing || !drawingState.current.shape) return;
+
+                const currentCanvas = fabricCanvasRefs.current[index];
+                if (!currentCanvas) return;
+                
+                const { shape } = drawingState.current;
+                shape.set({ selectable: true, evented: true });
+
+                if (shape.type === 'circle') {
+                    const s = shape as fabric.Circle;
+                    s.set({
+                        left: s.left! - s.radius!,
+                        top: s.top! - s.radius!,
+                        originX: 'left',
+                        originY: 'top',
+                    });
                 }
+                
+                const minSize = 5;
+                const hasSize = (shape.width ?? 0) > minSize || (shape.height ?? 0) > minSize || ((shape as fabric.Circle).radius ?? 0) > minSize / 2;
+
+                if (hasSize) {
+                    onUpdateFabricObject(index, currentCanvas);
+                } else {
+                    currentCanvas.remove(shape);
+                }
+
                 drawingState.current = { isDrawing: false, origX: 0, origY: 0, shape: null };
+                currentCanvas.renderAll();
                 setDrawingTool(null);
             };
 
@@ -218,6 +248,16 @@ export default function InteractivePdfCanvas({
             canvas.on('mouse:up', handleMouseUp);
         }
     });
+
+    return () => {
+        fabricCanvasRefs.current.forEach(canvas => {
+            if (canvas) {
+                canvas.off('mouse:down');
+                canvas.off('mouse:move');
+                canvas.off('mouse:up');
+            }
+        });
+    };
   }, [drawingTool, onUpdateFabricObject, setDrawingTool]);
 
   return (

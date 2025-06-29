@@ -1545,7 +1545,7 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, onTextEditStart, onTe
                                     origY: pointer.y,
                                     shape: null
                                 };
-                                let shape1;
+                                let shape;
                                 const commonProps = {
                                     left: pointer.x,
                                     top: pointer.y,
@@ -1559,32 +1559,32 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, onTextEditStart, onTe
                                 };
                                 switch(drawingTool){
                                     case 'rect':
-                                        shape1 = new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$fabric$2f$dist$2f$fabric$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["fabric"].Rect(commonProps);
+                                        shape = new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$fabric$2f$dist$2f$fabric$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["fabric"].Rect(commonProps);
                                         break;
                                     case 'circle':
-                                        shape1 = new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$fabric$2f$dist$2f$fabric$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["fabric"].Circle({
+                                        shape = new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$fabric$2f$dist$2f$fabric$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["fabric"].Circle({
                                             ...commonProps,
                                             radius: 0
                                         });
                                         break;
                                     case 'triangle':
-                                        shape1 = new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$fabric$2f$dist$2f$fabric$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["fabric"].Triangle(commonProps);
+                                        shape = new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$fabric$2f$dist$2f$fabric$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["fabric"].Triangle(commonProps);
                                         break;
                                     default:
                                         return;
                                 }
-                                drawingState.current.shape = shape1;
-                                canvas.add(shape1);
+                                drawingState.current.shape = shape;
+                                canvas.add(shape);
                             }
                         }["InteractivePdfCanvas.useEffect.handleMouseDown"];
                         const handleMouseMove = {
                             "InteractivePdfCanvas.useEffect.handleMouseMove": (o)=>{
                                 if (!drawingState.current.isDrawing || !drawingState.current.shape) return;
                                 const pointer = canvas.getPointer(o.e);
-                                const { origX, origY, shape: shape1 } = drawingState.current;
-                                if (shape1.type === 'circle') {
+                                const { origX, origY, shape } = drawingState.current;
+                                if (shape.type === 'circle') {
                                     const radius = Math.sqrt(Math.pow(pointer.x - origX, 2) + Math.pow(pointer.y - origY, 2)) / 2;
-                                    shape1.set({
+                                    shape.set({
                                         radius: radius,
                                         left: origX + (pointer.x - origX) / 2,
                                         top: origY + (pointer.y - origY) / 2,
@@ -1594,7 +1594,7 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, onTextEditStart, onTe
                                 } else {
                                     const width = Math.abs(origX - pointer.x);
                                     const height = Math.abs(origY - pointer.y);
-                                    shape1.set({
+                                    shape.set({
                                         width,
                                         height,
                                         left: Math.min(pointer.x, origX),
@@ -1607,6 +1607,7 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, onTextEditStart, onTe
                         const handleMouseUp = {
                             "InteractivePdfCanvas.useEffect.handleMouseUp": ()=>{
                                 if (drawingState.current.isDrawing && drawingState.current.shape) {
+                                    const { shape } = drawingState.current;
                                     if (shape.type === 'circle') {
                                         shape.set({
                                             originX: 'left',
@@ -1643,12 +1644,12 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, onTextEditStart, onTe
             className: "flex flex-col items-center"
         }, void 0, false, {
             fileName: "[project]/src/app/edit-pdf/components/InteractivePdfCanvas.tsx",
-            lineNumber: 224,
+            lineNumber: 225,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/src/app/edit-pdf/components/InteractivePdfCanvas.tsx",
-        lineNumber: 223,
+        lineNumber: 224,
         columnNumber: 5
     }, this);
 }

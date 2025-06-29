@@ -5,9 +5,9 @@ import { PDFDocument, rgb, StandardFonts, degrees } from 'pdf-lib';
 import { useEffect, useRef, useState, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import * as pdfjsWorker from "pdfjs-dist/build/pdf.worker.entry";
-import { Upload, Edit } from 'lucide-react';
+import { Upload, Edit, Download } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
-
+import { Button } from "@/components/ui/button";
 import { Toolbar } from "./components/toolbar";
 import PropertyPanel from "./components/PropertyPanel";
 import InteractivePdfCanvas from "./components/InteractivePdfCanvas";
@@ -114,6 +114,62 @@ export default function Page() {
       setIsLoading(false);
     }
   }, [pdfDoc]);
+
+  const handleDownloadRequest = useCallback(async (format: string) => {
+    if (!pdfDoc) return;
+
+    if (format === 'pdf') {
+      await handleDownload();
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const pdfBytes = await pdfDoc.save();
+      const file = new File([pdfBytes], 'edited.pdf', { type: 'application/pdf' });
+      
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("format", format);
+      formData.append("output_dir", "./");
+
+      const response = await fetch("https://pdfsolution.dpdns.org/upload", {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Conversion failed with status ${response.status}`);
+      }
+
+      const resBlob = await response.blob();
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let downloadFilename = `result.${format === 'word' ? 'docx' : format}`;
+      if (format === 'jpg' || format === 'jpeg' || format === 'png') downloadFilename = 'result.zip';
+
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (match && match[1]) {
+          downloadFilename = match[1];
+        }
+      }
+
+      const url = window.URL.createObjectURL(resBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = downloadFilename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
+    } catch (error) {
+      console.error(`Failed to convert to ${format}`, error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [pdfDoc, handleDownload]);
+
 
   const updateThumbnails = useCallback(async () => {
     if (!pdfDoc) {
@@ -297,26 +353,28 @@ export default function Page() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <header className="flex-shrink-0 border-b shadow-sm bg-card z-30">
-        <div className="container mx-auto px-4 py-2 flex items-center justify-between">
+      <header className="flex-shrink-0 border-b bg-card z-40">
+        <div className="container mx-auto px-4 py-3 flex items-center">
             <h1 className="text-xl font-bold text-primary flex items-center gap-2">
                 <Edit className="h-6 w-6"/>
                 PDF Editor Pro
             </h1>
-            {pdfDoc && (
-                 <Toolbar 
-                    selectedTextObject={!!selectedObjectId}
-                    style={selectedTextStyle}
-                    onTextStyleChange={handleStyleChange}
-                    onNewFile={triggerFileUpload}
-                    onUpload={triggerFileUpload}
-                    onDownload={handleDownload}
-                 />
-            )}
         </div>
       </header>
+
+      {pdfDoc && (
+        <div className="flex-shrink-0 border-b shadow-sm bg-card z-30 sticky top-0">
+            <div className="container mx-auto px-4 py-2">
+                 <Toolbar
+                    onUpload={triggerFileUpload}
+                    onNewFile={triggerFileUpload}
+                    onDownloadRequest={handleDownloadRequest}
+                 />
+            </div>
+        </div>
+      )}
       
-      <main className="flex-grow flex overflow-hidden">
+      <main className={`flex-grow flex overflow-hidden ${!pdfDoc ? 'items-center justify-center' : ''}`}>
         {!pdfDoc ? (
              <div className="flex-grow flex items-center justify-center p-6">
               <Card className="w-full max-w-2xl text-center">

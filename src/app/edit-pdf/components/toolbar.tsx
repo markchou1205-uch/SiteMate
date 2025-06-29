@@ -1,8 +1,7 @@
 // 檔案：Toolbar.tsx
-import { FilePlus, Download, Upload, Eraser, Circle, Pencil, Text, Trash2 } from "lucide-react";
+import { FilePlus, Download, Upload, Eraser, Circle, Pencil, Text, Trash2, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 
 export function Toolbar({
   onAddText,
@@ -10,16 +9,13 @@ export function Toolbar({
   onAddFreeDraw,
   onErase,
   onUpload,
-  onDownload,
   onNewFile,
-  selectedTextObject,
-  style,
-  onTextStyleChange,
+  onDownloadRequest,
+  onDeleteObject,
 }: any) {
-  const setStyle = onTextStyleChange;
 
   return (
-    <div className="flex items-center justify-between gap-4">
+    <div className="flex items-center justify-between w-full">
       <div className="flex items-center gap-1 text-center">
         <div className="flex flex-col items-center w-16">
             <Button variant="ghost" size="icon" onClick={onNewFile}><FilePlus className="h-5 w-5" /></Button>
@@ -28,10 +24,6 @@ export function Toolbar({
         <div className="flex flex-col items-center w-16">
             <Button variant="ghost" size="icon" onClick={onUpload}><Upload className="h-5 w-5" /></Button>
             <span className="text-xs mt-1">上傳</span>
-        </div>
-        <div className="flex flex-col items-center w-16">
-            <Button variant="ghost" size="icon" onClick={onDownload}><Download className="h-5 w-5" /></Button>
-            <span className="text-xs mt-1">下載</span>
         </div>
         <div className="flex flex-col items-center w-16">
             <Button variant="ghost" size="icon" onClick={onErase}><Eraser className="h-5 w-5" /></Button>
@@ -50,32 +42,47 @@ export function Toolbar({
             <span className="text-xs mt-1">文字</span>
         </div>
         <div className="flex flex-col items-center w-16">
-            <Button variant="ghost" size="icon"><Trash2 className="h-5 w-5" /></Button>
+            <Button variant="ghost" size="icon" onClick={onDeleteObject}><Trash2 className="h-5 w-5" /></Button>
             <span className="text-xs mt-1">刪除物件</span>
         </div>
       </div>
 
-      {selectedTextObject && style && (
-        <div className="flex items-center gap-2">
-          <Button variant={style.bold ? "default" : "ghost"} size="icon" onClick={() => setStyle({ bold: !style.bold })}><b>B</b></Button>
-          <Button variant={style.italic ? "default" : "ghost"} size="icon" onClick={() => setStyle({ italic: !style.italic })}><i>I</i></Button>
-          <Button variant={style.underline ? "default" : "ghost"} size="icon" onClick={() => setStyle({ underline: !style.underline })}><u>U</u></Button>
-
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon" style={{ backgroundColor: style.color || "black" }} />
-            </PopoverTrigger>
-            <PopoverContent className="w-40">
-              <input
-                type="color"
-                className="w-full h-8 border rounded"
-                value={style.color || "#000000"}
-                onChange={(e) => setStyle({ color: e.target.value })}
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-      )}
+       <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+            <Button variant="destructive">
+                <Download className="h-4 w-4 mr-2" />
+                下載
+            </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+            <DropdownMenuLabel>下載格式</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => onDownloadRequest('pdf')}>
+                <FileText className="mr-2 h-4 w-4" />
+                <span>PDF 文件</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onDownloadRequest('word')}>
+                <FileText className="mr-2 h-4 w-4" />
+                <span>Word 文件 (.docx)</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onDownloadRequest('excel')}>
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                <span>Excel 試算表 (.xlsx)</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onDownloadRequest('ppt')}>
+                <LucidePresentation className="mr-2 h-4 w-4" />
+                <span>PowerPoint 簡報 (.pptx)</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onDownloadRequest('html')}>
+                <Code className="mr-2 h-4 w-4" />
+                <span>HTML 文件 (.html)</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onDownloadRequest('jpg')}>
+                <FileImage className="mr-2 h-4 w-4" />
+                <span>圖片 (JPG)</span>
+            </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

@@ -55,16 +55,11 @@ export default function InteractivePdfCanvas({
   });
 
   useEffect(() => {
-    if (!pdfDoc) {
-        if(containerRef.current) containerRef.current.innerHTML = "";
-        setLocalCanvases([]);
-        return;
-    };
-    
     let canvasesToSet: (fabric.Canvas | null)[] = [];
 
     const renderPdf = async () => {
       setPdfLoaded(false);
+      if (!pdfDoc) return;
       
       const pdfBytes = await pdfDoc.save();
       const typedarray = new Uint8Array(pdfBytes);
@@ -248,6 +243,11 @@ export default function InteractivePdfCanvas({
         const isDrawingActive = drawingTool !== null;
         
         canvas.isDrawingMode = (drawingTool === 'freedraw');
+        if (canvas.isDrawingMode) {
+            canvas.freeDrawingBrush.width = 2;
+            canvas.freeDrawingBrush.color = 'black';
+        }
+        
         canvas.selection = !isDrawingActive;
         canvas.defaultCursor = isDrawingActive ? 'crosshair' : 'default';
         canvas.forEachObject(obj => {

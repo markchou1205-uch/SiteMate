@@ -1402,7 +1402,7 @@ var _s = __turbopack_context__.k.signature();
 ;
 ;
 __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$pdfjs$2d$dist$2f$build$2f$pdf$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["GlobalWorkerOptions"].workerSrc = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$pdfjs$2d$dist$2f$build$2f$pdf$2e$worker$2e$entry$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__;
-function InteractivePdfCanvas({ pdfDoc, docVersion, scale, onTextEditStart, onTextEditEnd, setPdfLoaded, setNumPages, fabricObjects, onUpdateFabricObject, setFabricCanvases, drawingTool, setDrawingTool, onShapeDoubleClick }) {
+function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumPages, fabricObjects, onUpdateFabricObject, setFabricCanvases, drawingTool, setDrawingTool, onShapeDoubleClick }) {
     _s();
     const containerRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])(null);
     const [localCanvases, setLocalCanvases] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])([]);
@@ -1410,7 +1410,8 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, onTextEditStart, onTe
         isDrawing: false,
         origX: 0,
         origY: 0,
-        shape: null
+        shape: null,
+        canvasIndex: null
     });
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
         "InteractivePdfCanvas.useEffect": ()=>{
@@ -1495,133 +1496,139 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, onTextEditStart, onTe
     ]);
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
         "InteractivePdfCanvas.useEffect": ()=>{
+            const handleMouseDown = {
+                "InteractivePdfCanvas.useEffect.handleMouseDown": (o, canvasIndex)=>{
+                    const canvas = localCanvases[canvasIndex];
+                    if (!canvas || !drawingTool || drawingTool === 'freedraw') return;
+                    drawingState.current.isDrawing = true;
+                    drawingState.current.canvasIndex = canvasIndex;
+                    const pointer = canvas.getPointer(o.e);
+                    drawingState.current.origX = pointer.x;
+                    drawingState.current.origY = pointer.y;
+                    let shape;
+                    const commonProps = {
+                        left: pointer.x,
+                        top: pointer.y,
+                        originX: 'left',
+                        originY: 'top',
+                        width: 0,
+                        height: 0,
+                        angle: 0,
+                        fill: 'transparent',
+                        stroke: 'black',
+                        strokeWidth: 2,
+                        selectable: false,
+                        evented: false
+                    };
+                    switch(drawingTool){
+                        case 'rect':
+                            shape = new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$fabric$2f$dist$2f$fabric$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["fabric"].Rect(commonProps);
+                            break;
+                        case 'circle':
+                            shape = new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$fabric$2f$dist$2f$fabric$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["fabric"].Circle({
+                                ...commonProps,
+                                radius: 0
+                            });
+                            break;
+                        case 'triangle':
+                            shape = new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$fabric$2f$dist$2f$fabric$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["fabric"].Triangle(commonProps);
+                            break;
+                        default:
+                            return;
+                    }
+                    drawingState.current.shape = shape;
+                    canvas.add(shape);
+                }
+            }["InteractivePdfCanvas.useEffect.handleMouseDown"];
+            const handleMouseMove = {
+                "InteractivePdfCanvas.useEffect.handleMouseMove": (o)=>{
+                    if (!drawingState.current.isDrawing || !drawingState.current.shape) return;
+                    const canvasIndex = drawingState.current.canvasIndex;
+                    if (canvasIndex === null) return;
+                    const canvas = localCanvases[canvasIndex];
+                    if (!canvas) return;
+                    const pointer = canvas.getPointer(o.e);
+                    const { origX, origY, shape } = drawingState.current;
+                    let newLeft = Math.min(pointer.x, origX);
+                    let newTop = Math.min(pointer.y, origY);
+                    let newWidth = Math.abs(origX - pointer.x);
+                    let newHeight = Math.abs(origY - pointer.y);
+                    if (shape.type === 'circle') {
+                        const radius = Math.max(newWidth, newHeight) / 2;
+                        shape.set({
+                            left: newLeft + newWidth / 2,
+                            top: newTop + newHeight / 2,
+                            radius: radius,
+                            originX: 'center',
+                            originY: 'center'
+                        });
+                    } else {
+                        shape.set({
+                            left: newLeft,
+                            top: newTop,
+                            width: newWidth,
+                            height: newHeight
+                        });
+                    }
+                    canvas.requestRenderAll();
+                }
+            }["InteractivePdfCanvas.useEffect.handleMouseMove"];
+            const handleMouseUp = {
+                "InteractivePdfCanvas.useEffect.handleMouseUp": ()=>{
+                    if (!drawingState.current.isDrawing || !drawingState.current.shape) return;
+                    const canvasIndex = drawingState.current.canvasIndex;
+                    if (canvasIndex === null) return;
+                    const canvas = localCanvases[canvasIndex];
+                    if (!canvas) return;
+                    const { shape } = drawingState.current;
+                    shape.setCoords();
+                    const minSize = 5;
+                    const width = shape.getScaledWidth();
+                    const height = shape.getScaledHeight();
+                    if (width < minSize && height < minSize) {
+                        canvas.remove(shape);
+                    } else {
+                        shape.set({
+                            selectable: true,
+                            evented: true
+                        });
+                        onUpdateFabricObject(canvasIndex, canvas);
+                    }
+                    drawingState.current = {
+                        isDrawing: false,
+                        origX: 0,
+                        origY: 0,
+                        shape: null,
+                        canvasIndex: null
+                    };
+                    canvas.requestRenderAll();
+                    setDrawingTool(null);
+                }
+            }["InteractivePdfCanvas.useEffect.handleMouseUp"];
             localCanvases.forEach({
                 "InteractivePdfCanvas.useEffect": (canvas, index)=>{
                     if (!canvas) return;
-                    canvas.isDrawingMode = drawingTool === 'freedraw';
-                    canvas.selection = !drawingTool;
-                    canvas.defaultCursor = drawingTool ? 'crosshair' : 'default';
-                    canvas.forEachObject({
-                        "InteractivePdfCanvas.useEffect": (obj)=>{
-                            obj.selectable = !drawingTool;
-                            obj.evented = !drawingTool;
-                        }
-                    }["InteractivePdfCanvas.useEffect"]);
                     canvas.off('mouse:down');
                     canvas.off('mouse:move');
                     canvas.off('mouse:up');
-                    if (drawingTool && drawingTool !== 'freedraw') {
-                        const handleMouseDown = {
-                            "InteractivePdfCanvas.useEffect.handleMouseDown": (o)=>{
-                                const currentCanvas = localCanvases[index];
-                                if (!currentCanvas || !o.e) return;
-                                drawingState.current.isDrawing = true;
-                                const pointer = currentCanvas.getPointer(o.e);
-                                drawingState.current.origX = pointer.x;
-                                drawingState.current.origY = pointer.y;
-                                let shape;
-                                const commonProps = {
-                                    left: pointer.x,
-                                    top: pointer.y,
-                                    originX: 'left',
-                                    originY: 'top',
-                                    width: 0,
-                                    height: 0,
-                                    angle: 0,
-                                    fill: 'transparent',
-                                    stroke: 'black',
-                                    strokeWidth: 2,
-                                    selectable: false,
-                                    evented: false
-                                };
-                                switch(drawingTool){
-                                    case 'rect':
-                                        shape = new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$fabric$2f$dist$2f$fabric$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["fabric"].Rect(commonProps);
-                                        break;
-                                    case 'circle':
-                                        shape = new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$fabric$2f$dist$2f$fabric$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["fabric"].Circle({
-                                            ...commonProps,
-                                            radius: 0
-                                        });
-                                        break;
-                                    case 'triangle':
-                                        shape = new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$fabric$2f$dist$2f$fabric$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["fabric"].Triangle(commonProps);
-                                        break;
-                                    default:
-                                        return;
-                                }
-                                drawingState.current.shape = shape;
-                                currentCanvas.add(shape);
-                            }
-                        }["InteractivePdfCanvas.useEffect.handleMouseDown"];
-                        const handleMouseMove = {
-                            "InteractivePdfCanvas.useEffect.handleMouseMove": (o)=>{
-                                if (!drawingState.current.isDrawing || !drawingState.current.shape || !o.e) return;
-                                const currentCanvas = localCanvases[index];
-                                if (!currentCanvas) return;
-                                const pointer = currentCanvas.getPointer(o.e);
-                                const { origX, origY, shape } = drawingState.current;
-                                let newLeft = Math.min(pointer.x, origX);
-                                let newTop = Math.min(pointer.y, origY);
-                                let newWidth = Math.abs(origX - pointer.x);
-                                let newHeight = Math.abs(origY - pointer.y);
-                                if (shape.type === 'circle') {
-                                    const radius = Math.max(newWidth, newHeight) / 2;
-                                    shape.set({
-                                        left: newLeft + newWidth / 2,
-                                        top: newTop + newHeight / 2,
-                                        radius: radius,
-                                        originX: 'center',
-                                        originY: 'center'
-                                    });
-                                } else {
-                                    shape.set({
-                                        left: newLeft,
-                                        top: newTop,
-                                        width: newWidth,
-                                        height: newHeight
-                                    });
-                                }
-                                currentCanvas.renderAll();
-                            }
-                        }["InteractivePdfCanvas.useEffect.handleMouseMove"];
-                        const handleMouseUp = {
-                            "InteractivePdfCanvas.useEffect.handleMouseUp": ()=>{
-                                if (!drawingState.current.isDrawing) return;
-                                const currentCanvas = localCanvases[index];
-                                if (!currentCanvas || !drawingState.current.shape) {
-                                    setDrawingTool(null);
-                                    return;
-                                }
-                                const { shape } = drawingState.current;
-                                shape.setCoords();
-                                const minSize = 5;
-                                const width = shape.getScaledWidth();
-                                const height = shape.getScaledHeight();
-                                if (width < minSize && height < minSize) {
-                                    currentCanvas.remove(shape);
-                                } else {
-                                    shape.set({
-                                        selectable: true,
-                                        evented: true
-                                    });
-                                    onUpdateFabricObject(index, currentCanvas);
-                                }
-                                drawingState.current = {
-                                    isDrawing: false,
-                                    origX: 0,
-                                    origY: 0,
-                                    shape: null
-                                };
-                                currentCanvas.renderAll();
-                                setDrawingTool(null);
-                            }
-                        }["InteractivePdfCanvas.useEffect.handleMouseUp"];
-                        canvas.on('mouse:down', handleMouseDown);
+                    const isDrawingActive = drawingTool !== null;
+                    canvas.isDrawingMode = drawingTool === 'freedraw';
+                    canvas.selection = !isDrawingActive;
+                    canvas.defaultCursor = isDrawingActive ? 'crosshair' : 'default';
+                    canvas.forEachObject({
+                        "InteractivePdfCanvas.useEffect": (obj)=>{
+                            obj.selectable = !isDrawingActive;
+                            obj.evented = !isDrawingActive;
+                        }
+                    }["InteractivePdfCanvas.useEffect"]);
+                    if (isDrawingActive && drawingTool !== 'freedraw') {
+                        canvas.on('mouse:down', {
+                            "InteractivePdfCanvas.useEffect": (o)=>handleMouseDown(o, index)
+                        }["InteractivePdfCanvas.useEffect"]);
                         canvas.on('mouse:move', handleMouseMove);
                         canvas.on('mouse:up', handleMouseUp);
                     }
-                    canvas.renderAll();
+                    canvas.requestRenderAll();
                 }
             }["InteractivePdfCanvas.useEffect"]);
             return ({
@@ -1651,12 +1658,12 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, onTextEditStart, onTe
             className: "flex flex-col items-center"
         }, void 0, false, {
             fileName: "[project]/src/app/edit-pdf/components/InteractivePdfCanvas.tsx",
-            lineNumber: 272,
+            lineNumber: 279,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/src/app/edit-pdf/components/InteractivePdfCanvas.tsx",
-        lineNumber: 271,
+        lineNumber: 278,
         columnNumber: 5
     }, this);
 }
@@ -3038,7 +3045,7 @@ function PdfEditor() {
                         className: "h-12 w-12 text-primary animate-spin mb-4"
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                        lineNumber: 468,
+                        lineNumber: 469,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3046,13 +3053,13 @@ function PdfEditor() {
                         children: "Processing..."
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                        lineNumber: 469,
+                        lineNumber: 470,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                lineNumber: 467,
+                lineNumber: 468,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialog"], {
@@ -3066,20 +3073,20 @@ function PdfEditor() {
                                     children: "確認刪除"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                    lineNumber: 476,
+                                    lineNumber: 477,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogDescription"], {
                                     children: "您確定要刪除此頁面嗎？此操作無法復原。"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                    lineNumber: 477,
+                                    lineNumber: 478,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                            lineNumber: 475,
+                            lineNumber: 476,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogFooter"], {
@@ -3088,7 +3095,7 @@ function PdfEditor() {
                                     children: "取消"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                    lineNumber: 482,
+                                    lineNumber: 483,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogAction"], {
@@ -3097,24 +3104,24 @@ function PdfEditor() {
                                     children: "刪除"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                    lineNumber: 483,
+                                    lineNumber: 484,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                            lineNumber: 481,
+                            lineNumber: 482,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                    lineNumber: 474,
+                    lineNumber: 475,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                lineNumber: 473,
+                lineNumber: 474,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialog"], {
@@ -3128,20 +3135,20 @@ function PdfEditor() {
                                     children: "開啟新檔案"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                    lineNumber: 491,
+                                    lineNumber: 492,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogDescription"], {
                                     children: "將會關閉目前開啟的文件，請確認已經下載目前的文件。"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                    lineNumber: 492,
+                                    lineNumber: 493,
                                     columnNumber: 17
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                            lineNumber: 490,
+                            lineNumber: 491,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogFooter"], {
@@ -3150,7 +3157,7 @@ function PdfEditor() {
                                     children: "取消"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                    lineNumber: 497,
+                                    lineNumber: 498,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogAction"], {
@@ -3158,24 +3165,24 @@ function PdfEditor() {
                                     children: "確定"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                    lineNumber: 498,
+                                    lineNumber: 499,
                                     columnNumber: 17
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                            lineNumber: 496,
+                            lineNumber: 497,
                             columnNumber: 13
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                    lineNumber: 489,
+                    lineNumber: 490,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                lineNumber: 488,
+                lineNumber: 489,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("header", {
@@ -3189,24 +3196,24 @@ function PdfEditor() {
                                 className: "h-6 w-6"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                lineNumber: 506,
+                                lineNumber: 507,
                                 columnNumber: 17
                             }, this),
                             "PDF Editor Pro"
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                        lineNumber: 505,
+                        lineNumber: 506,
                         columnNumber: 13
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                    lineNumber: 504,
+                    lineNumber: 505,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                lineNumber: 503,
+                lineNumber: 504,
                 columnNumber: 7
             }, this),
             pdfDoc && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3222,17 +3229,17 @@ function PdfEditor() {
                         onAddText: handleAddText
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                        lineNumber: 515,
+                        lineNumber: 516,
                         columnNumber: 18
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                    lineNumber: 514,
+                    lineNumber: 515,
                     columnNumber: 13
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                lineNumber: 513,
+                lineNumber: 514,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("main", {
@@ -3250,32 +3257,32 @@ function PdfEditor() {
                                             className: "h-10 w-10 text-primary"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                            lineNumber: 533,
+                                            lineNumber: 534,
                                             columnNumber: 21
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                        lineNumber: 532,
+                                        lineNumber: 533,
                                         columnNumber: 19
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardTitle"], {
                                         children: "Professional PDF Editor"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                        lineNumber: 535,
+                                        lineNumber: 536,
                                         columnNumber: 19
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardDescription"], {
                                         children: "Upload a file to start editing, signing, and organizing."
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                        lineNumber: 536,
+                                        lineNumber: 537,
                                         columnNumber: 19
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                lineNumber: 531,
+                                lineNumber: 532,
                                 columnNumber: 17
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -3287,7 +3294,7 @@ function PdfEditor() {
                                             className: "h-12 w-12 text-muted-foreground mb-3"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                            lineNumber: 543,
+                                            lineNumber: 544,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3295,7 +3302,7 @@ function PdfEditor() {
                                             children: "Click or drag a file to upload"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                            lineNumber: 544,
+                                            lineNumber: 545,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3303,29 +3310,29 @@ function PdfEditor() {
                                             children: "PDF files only"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                            lineNumber: 545,
+                                            lineNumber: 546,
                                             columnNumber: 21
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                    lineNumber: 539,
+                                    lineNumber: 540,
                                     columnNumber: 19
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                lineNumber: 538,
+                                lineNumber: 539,
                                 columnNumber: 17
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                        lineNumber: 530,
+                        lineNumber: 531,
                         columnNumber: 15
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                    lineNumber: 529,
+                    lineNumber: 530,
                     columnNumber: 14
                 }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
                     children: [
@@ -3342,12 +3349,12 @@ function PdfEditor() {
                                 onPrepareInsertPdf: handleInsertPdfRequest
                             }, `thumb-list-${docVersion}`, false, {
                                 fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                lineNumber: 553,
+                                lineNumber: 554,
                                 columnNumber: 21
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                            lineNumber: 552,
+                            lineNumber: 553,
                             columnNumber: 17
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3361,8 +3368,6 @@ function PdfEditor() {
                                         docVersion: docVersion,
                                         setNumPages: setNumPages,
                                         scale: scale,
-                                        onTextEditStart: handleTextEditStart,
-                                        onTextEditEnd: handleTextEditEnd,
                                         setPdfLoaded: setPdfLoaded,
                                         fabricObjects: fabricObjects,
                                         onUpdateFabricObject: handleUpdateFabricObject,
@@ -3372,12 +3377,12 @@ function PdfEditor() {
                                         onShapeDoubleClick: handleShapeDoubleClick
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                        lineNumber: 568,
+                                        lineNumber: 569,
                                         columnNumber: 23
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                    lineNumber: 567,
+                                    lineNumber: 568,
                                     columnNumber: 19
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3390,12 +3395,12 @@ function PdfEditor() {
                                         onRotateRight: ()=>handleRotateActivePage('right')
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                        lineNumber: 586,
+                                        lineNumber: 585,
                                         columnNumber: 23
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                    lineNumber: 585,
+                                    lineNumber: 584,
                                     columnNumber: 19
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$edit$2d$pdf$2f$components$2f$PropertyPanel$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -3405,7 +3410,7 @@ function PdfEditor() {
                                     onStyleChange: handleStyleChange
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                    lineNumber: 595,
+                                    lineNumber: 594,
                                     columnNumber: 19
                                 }, this),
                                 activeShape && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$edit$2d$pdf$2f$components$2f$ShapePropertyPanel$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -3415,20 +3420,20 @@ function PdfEditor() {
                                     onModify: ()=>fabricCanvases[currentPage - 1]?.renderAll()
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                    lineNumber: 603,
+                                    lineNumber: 602,
                                     columnNumber: 23
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                            lineNumber: 566,
+                            lineNumber: 567,
                             columnNumber: 17
                         }, this)
                     ]
                 }, void 0, true)
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                lineNumber: 527,
+                lineNumber: 528,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -3440,7 +3445,7 @@ function PdfEditor() {
                 accept: "application/pdf"
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                lineNumber: 615,
+                lineNumber: 614,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -3451,13 +3456,13 @@ function PdfEditor() {
                 onChange: onInsertPdfSelected
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                lineNumber: 623,
+                lineNumber: 622,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-        lineNumber: 465,
+        lineNumber: 466,
         columnNumber: 5
     }, this);
 }

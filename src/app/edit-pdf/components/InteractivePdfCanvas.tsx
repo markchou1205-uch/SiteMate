@@ -4,9 +4,6 @@
 import { useEffect, useRef, useState } from "react";
 import { fabric } from 'fabric';
 import * as pdfjsLib from "pdfjs-dist";
-import * as pdfjsWorker from "pdfjs-dist/build/pdf.worker.entry";
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 type DrawingTool = 'circle' | 'rect' | 'triangle' | 'freedraw' | null;
 
@@ -137,7 +134,6 @@ export default function InteractivePdfCanvas({
   useEffect(() => {
     const isDrawingActive = drawingTool !== null;
     
-    // Define all handlers inside the useEffect to capture the latest props and state
     const handleMouseDown = (o: fabric.IEvent) => {
       const canvas = o.target?.canvas;
       if (!canvas || !drawingTool || drawingTool === 'freedraw') return;
@@ -243,13 +239,11 @@ export default function InteractivePdfCanvas({
     localCanvases.forEach((canvas, index) => {
       if (!canvas) return;
 
-      // 1. Clean up all previous listeners to prevent duplicates
       canvas.off('mouse:down');
       canvas.off('mouse:move');
       canvas.off('mouse:up');
       canvas.off('path:created');
       
-      // 2. Set canvas mode based on the current tool
       canvas.isDrawingMode = (drawingTool === 'freedraw');
       canvas.selection = !isDrawingActive;
       canvas.defaultCursor = isDrawingActive ? 'crosshair' : 'default';
@@ -260,7 +254,6 @@ export default function InteractivePdfCanvas({
           obj.evented = !isDrawingActive;
       });
 
-      // 3. Bind new events based on the current tool
       if (drawingTool === 'freedraw') {
           canvas.freeDrawingBrush.width = 2;
           canvas.freeDrawingBrush.color = 'black';

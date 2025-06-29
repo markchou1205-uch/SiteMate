@@ -20,7 +20,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+if (typeof window !== 'undefined') {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+}
 
 type DrawingTool = 'circle' | 'rect' | 'triangle' | 'freedraw' | null;
 type InsertPosition = 'start' | 'end' | 'before' | 'after';
@@ -62,7 +64,6 @@ export default function Editor() {
   const { toast } = useToast();
 
   const handleSetDrawingTool = useCallback((tool: DrawingTool) => {
-    console.log('PdfEditor: Setting drawing tool to:', tool);
     setDrawingTool(tool);
   }, []);
 

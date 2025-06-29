@@ -741,6 +741,10 @@ body {
   height: 100svh;
 }
 
+.h-\[400px\] {
+  height: 400px;
+}
+
 .max-h-40 {
   max-height: 10rem;
 }

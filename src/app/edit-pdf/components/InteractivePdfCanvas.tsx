@@ -73,6 +73,7 @@ export default function InteractivePdfCanvas({
       if (!container) return;
       container.innerHTML = ""; 
 
+      const newCanvases: (fabric.Canvas | null)[] = [];
       for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
         const page = await pdf.getPage(pageNum);
         const viewport = page.getViewport({ scale });
@@ -89,6 +90,7 @@ export default function InteractivePdfCanvas({
         pdfCanvasEl.width = viewport.width;
         pdfCanvasEl.height = viewport.height;
         fabricCanvasEl.id = `fabric-canvas-${pageNum}`;
+        fabricCanvasEl.className = "absolute top-0 left-0";
         
         pageWrapper.appendChild(pdfCanvasEl);
         pageWrapper.appendChild(fabricCanvasEl);
@@ -114,12 +116,14 @@ export default function InteractivePdfCanvas({
             }
         });
         
-        canvasesToSet[pageNum - 1] = fabricCanvas;
+        newCanvases[pageNum - 1] = fabricCanvas;
       }
       
       if (isMounted) {
-        setLocalCanvases(canvasesToSet);
-        setFabricCanvases(canvasesToSet);
+        // Dispose old canvases before setting new ones
+        localCanvases.forEach(canvas => canvas?.dispose());
+        setLocalCanvases(newCanvases);
+        setFabricCanvases(newCanvases);
         setPdfLoaded(true);
       }
     };
@@ -128,7 +132,7 @@ export default function InteractivePdfCanvas({
 
     return () => {
       isMounted = false;
-      canvasesToSet.forEach(canvas => canvas?.dispose());
+      // The cleanup of canvases now happens before setting new ones or on unmount
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pdfDoc, docVersion, scale]);
@@ -137,8 +141,9 @@ export default function InteractivePdfCanvas({
     const isDrawingActive = drawingTool !== null;
 
     const handleMouseDown = (o: fabric.IEvent) => {
+      if (!drawingTool || drawingTool === 'freedraw') return;
       const canvas = o.target?.canvas;
-      if (!canvas || !drawingTool || drawingTool === 'freedraw') return;
+      if (!canvas) return;
 
       drawingState.current.isDrawing = true;
       const pointer = canvas.getPointer(o.e);
@@ -161,8 +166,8 @@ export default function InteractivePdfCanvas({
           fill: 'transparent',
           stroke: 'black',
           strokeWidth: 2,
-          selectable: false,
-          evented: false,
+          selectable: true,
+          evented: true,
       };
 
       switch (drawingTool) {
@@ -196,22 +201,18 @@ export default function InteractivePdfCanvas({
       if (shape.type === 'circle') {
            const radius = Math.sqrt(Math.pow(pointer.x - origX, 2) + Math.pow(pointer.y - origY, 2)) / 2;
            shape.set({
-              left: (pointer.x + origX) / 2,
-              top: (pointer.y + origY) / 2,
+              left: origX,
+              top: origY,
               radius: radius,
               originX: 'center',
               originY: 'center'
           });
       } else {
-          const newLeft = Math.min(pointer.x, origX);
-          const newTop = Math.min(pointer.y, origY);
-          const newWidth = Math.abs(origX - pointer.x);
-          const newHeight = Math.abs(origY - pointer.y);
           shape.set({
-              left: newLeft,
-              top: newTop,
-              width: newWidth,
-              height: newHeight,
+              left: Math.min(pointer.x, origX),
+              top: Math.min(pointer.y, origY),
+              width: Math.abs(origX - pointer.x),
+              height: Math.abs(origY - pointer.y),
           });
       }
       canvas.requestRenderAll();
@@ -247,9 +248,9 @@ export default function InteractivePdfCanvas({
     localCanvases.forEach((canvas, index) => {
       if (!canvas) return;
 
-      canvas.off('mouse:down', handleMouseDown);
-      canvas.off('mouse:move', handleMouseMove);
-      canvas.off('mouse:up', handleMouseUp);
+      canvas.off('mouse:down');
+      canvas.off('mouse:move');
+      canvas.off('mouse:up');
       canvas.off('path:created');
       
       canvas.isDrawingMode = (drawingTool === 'freedraw');
@@ -278,9 +279,9 @@ export default function InteractivePdfCanvas({
     return () => {
       localCanvases.forEach((canvas) => {
           if (canvas) {
-              canvas.off('mouse:down', handleMouseDown);
-              canvas.off('mouse:move', handleMouseMove);
-              canvas.off('mouse:up', handleMouseUp);
+              canvas.off('mouse:down');
+              canvas.off('mouse:move');
+              canvas.off('mouse:up');
               canvas.off('path:created');
           }
       });

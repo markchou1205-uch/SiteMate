@@ -1512,7 +1512,6 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
                     const pointer = canvas.getPointer(o.e);
                     drawingState.current.origX = pointer.x;
                     drawingState.current.origY = pointer.y;
-                    // Find canvas index
                     const canvasIndex = localCanvases.findIndex({
                         "InteractivePdfCanvas.useEffect.handleMouseDown.canvasIndex": (c)=>c === canvas
                     }["InteractivePdfCanvas.useEffect.handleMouseDown.canvasIndex"]);
@@ -1621,12 +1620,10 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
             localCanvases.forEach({
                 "InteractivePdfCanvas.useEffect": (canvas, index)=>{
                     if (!canvas) return;
-                    // --- Cleanup all previous listeners ---
                     canvas.off('mouse:down', handleMouseDown);
                     canvas.off('mouse:move', handleMouseMove);
                     canvas.off('mouse:up', handleMouseUp);
                     canvas.off('path:created');
-                    // --- Set canvas mode based on drawingTool ---
                     canvas.isDrawingMode = drawingTool === 'freedraw';
                     canvas.selection = !isDrawingActive;
                     canvas.defaultCursor = isDrawingActive ? 'crosshair' : 'default';
@@ -1637,7 +1634,6 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
                             obj.evented = !isDrawingActive;
                         }
                     }["InteractivePdfCanvas.useEffect"]);
-                    // --- Bind new listeners based on mode ---
                     if (drawingTool === 'freedraw') {
                         canvas.freeDrawingBrush.width = 2;
                         canvas.freeDrawingBrush.color = 'black';
@@ -1680,12 +1676,12 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
             className: "flex flex-col items-center"
         }, void 0, false, {
             fileName: "[project]/src/app/edit-pdf/components/InteractivePdfCanvas.tsx",
-            lineNumber: 296,
+            lineNumber: 292,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/src/app/edit-pdf/components/InteractivePdfCanvas.tsx",
-        lineNumber: 295,
+        lineNumber: 291,
         columnNumber: 5
     }, this);
 }

@@ -694,7 +694,7 @@ var _s = __turbopack_context__.k.signature();
 ;
 ;
 __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$pdfjs$2d$dist$2f$build$2f$pdf$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["GlobalWorkerOptions"].workerSrc = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$pdfjs$2d$dist$2f$build$2f$pdf$2e$worker$2e$entry$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__;
-function InteractivePdfCanvas({ pdfDoc, docVersion, scale, rotation, onTextEditStart, onTextEditEnd, setPdfLoaded, setNumPages }) {
+function InteractivePdfCanvas({ pdfDoc, docVersion, scale, onTextEditStart, onTextEditEnd, setPdfLoaded, setNumPages }) {
     _s();
     const containerRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])(null);
     const [showStylePanel, setShowStylePanel] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
@@ -727,10 +727,9 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, rotation, onTextEditS
                     // Loop to render all pages
                     for(let pageNum = 1; pageNum <= pdf.numPages; pageNum++){
                         const page = await pdf.getPage(pageNum);
-                        // Use global rotation for view, page-specific rotation is handled by pdf-lib
+                        // The rotation is baked into the page object itself via pdf-lib
                         const viewport = page.getViewport({
-                            scale,
-                            rotation: (page.rotate + rotation) % 360
+                            scale
                         });
                         const canvasWrapper = document.createElement("div");
                         canvasWrapper.id = `pdf-page-${pageNum}`;
@@ -772,7 +771,6 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, rotation, onTextEditS
         pdfDoc,
         docVersion,
         scale,
-        rotation,
         setNumPages,
         setPdfLoaded
     ]);
@@ -822,7 +820,7 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, rotation, onTextEditS
                 className: "flex flex-col items-center"
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/components/InteractivePdfCanvas.tsx",
-                lineNumber: 141,
+                lineNumber: 139,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$edit$2d$pdf$2f$components$2f$PropertyPanel$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -838,13 +836,13 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, rotation, onTextEditS
                 currentStyle: currentStyle
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/components/InteractivePdfCanvas.tsx",
-                lineNumber: 142,
+                lineNumber: 140,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/edit-pdf/components/InteractivePdfCanvas.tsx",
-        lineNumber: 140,
+        lineNumber: 138,
         columnNumber: 5
     }, this);
 }
@@ -1744,7 +1742,6 @@ function Page() {
     const [scale, setScale] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(1);
     const [numPages, setNumPages] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(0);
     const [currentPage, setCurrentPage] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(1);
-    const [rotation, setRotation] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(0);
     const { toast } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$use$2d$toast$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useToast"])();
     const handleStyleChange = (styleUpdate)=>{
         setSelectedTextStyle((prev)=>({
@@ -1758,8 +1755,24 @@ function Page() {
     };
     const handleZoomIn = ()=>setScale((s)=>Math.min(s + 0.2, 3));
     const handleZoomOut = ()=>setScale((s)=>Math.max(s - 0.2, 0.2));
-    const handleRotateRight = ()=>setRotation((r)=>(r + 90) % 360);
-    const handleRotateLeft = ()=>setRotation((r)=>(r - 90 + 360) % 360);
+    const handleRotateActivePage = (direction)=>{
+        if (!pdfDoc || currentPage < 1) return;
+        const pageIndex = currentPage - 1;
+        const rotate = async ()=>{
+            const newDoc = await pdfDoc.copy();
+            const page = newDoc.getPage(pageIndex);
+            const currentRotation = page.getRotation().angle;
+            const rotationAmount = direction === 'right' ? 90 : -90;
+            page.setRotation((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$pdf$2d$lib$2f$es$2f$api$2f$rotations$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["degrees"])((currentRotation + rotationAmount + 360) % 360));
+            setPdfDoc(newDoc);
+            setDocVersion((v)=>v + 1);
+            toast({
+                title: "Page Rotated",
+                description: `Page ${pageIndex + 1} has been rotated.`
+            });
+        };
+        rotate();
+    };
     const handleFileChange = async (e)=>{
         const file = e.target.files?.[0];
         if (file && file.type === "application/pdf") {
@@ -1769,7 +1782,6 @@ function Page() {
                 const doc = await __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$pdf$2d$lib$2f$es$2f$api$2f$PDFDocument$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__PDFDocument$3e$__["PDFDocument"].load(arrayBuffer);
                 setPdfDoc(doc);
                 setNumPages(doc.getPageCount());
-                setRotation(0);
                 setCurrentPage(1);
                 setScale(1);
                 setDocVersion((v)=>v + 1);
@@ -1948,7 +1960,7 @@ function Page() {
                         className: "h-12 w-12 text-primary animate-spin mb-4"
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 197,
+                        lineNumber: 210,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1956,13 +1968,13 @@ function Page() {
                         children: "Processing..."
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 198,
+                        lineNumber: 211,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 196,
+                lineNumber: 209,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("header", {
@@ -1976,12 +1988,12 @@ function Page() {
                     onDownload: handleDownload
                 }, void 0, false, {
                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                    lineNumber: 202,
+                    lineNumber: 215,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 201,
+                lineNumber: 214,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -1992,7 +2004,7 @@ function Page() {
                 accept: "application/pdf"
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 211,
+                lineNumber: 224,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2010,12 +2022,12 @@ function Page() {
                             onReorderPages: handleReorderPages
                         }, void 0, false, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 216,
+                            lineNumber: 229,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 215,
+                        lineNumber: 228,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("main", {
@@ -2025,7 +2037,6 @@ function Page() {
                             docVersion: docVersion,
                             setNumPages: setNumPages,
                             scale: scale,
-                            rotation: rotation,
                             onTextEditStart: ()=>setIsEditingText(true),
                             onTextEditEnd: ()=>setIsEditingText(false),
                             selectedStyle: selectedTextStyle,
@@ -2036,12 +2047,12 @@ function Page() {
                             setPdfLoaded: setPdfLoaded
                         }, void 0, false, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 229,
+                            lineNumber: 242,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 228,
+                        lineNumber: 241,
                         columnNumber: 9
                     }, this),
                     pdfDoc && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2050,16 +2061,16 @@ function Page() {
                             scale: scale,
                             onZoomIn: handleZoomIn,
                             onZoomOut: handleZoomOut,
-                            onRotateLeft: handleRotateLeft,
-                            onRotateRight: handleRotateRight
+                            onRotateLeft: ()=>handleRotateActivePage('left'),
+                            onRotateRight: ()=>handleRotateActivePage('right')
                         }, void 0, false, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 248,
+                            lineNumber: 260,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 247,
+                        lineNumber: 259,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$edit$2d$pdf$2f$components$2f$PropertyPanel$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -2069,23 +2080,23 @@ function Page() {
                         onStyleChange: handleStyleChange
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 258,
+                        lineNumber: 270,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 213,
+                lineNumber: 226,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/edit-pdf/page.tsx",
-        lineNumber: 194,
+        lineNumber: 207,
         columnNumber: 5
     }, this);
 }
-_s(Page, "/gV6RWT8eDTfmF8WtilnnVzkIyo=", false, function() {
+_s(Page, "O2wfTkZRKTOYGLU6CgTIvy0aKI0=", false, function() {
     return [
         __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$use$2d$toast$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useToast"]
     ];

@@ -2,9 +2,8 @@
 
 "use client";
 
-import { degrees } from 'pdf-lib';
+import { degrees, PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { useEffect, useRef, useState, useCallback } from "react";
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import * as pdfjsLib from "pdfjs-dist";
 import * as pdfjsWorker from "pdfjs-dist/build/pdf.worker.entry";
 import { Loader2 } from 'lucide-react';
@@ -41,19 +40,17 @@ export default function Page() {
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
 
-  const handleStyleChange = (styleUpdate: Partial<typeof selectedTextStyle>) => {
+  const handleTextEditStart = useCallback(() => setIsEditingText(true), []);
+  const handleTextEditEnd = useCallback(() => setIsEditingText(false), []);
+
+  const handleStyleChange = useCallback((styleUpdate: Partial<typeof selectedTextStyle>) => {
     setSelectedTextStyle((prev) => ({ ...prev, ...styleUpdate }));
-  };
+  }, []);
 
-  const handleClickCanvas = () => {
-    setIsEditingText(false);
-    setSelectedObjectId(null);
-  };
+  const handleZoomIn = useCallback(() => setScale((s) => Math.min(s + 0.2, 3)), []);
+  const handleZoomOut = useCallback(() => setScale((s) => Math.max(s - 0.2, 0.2)), []);
 
-  const handleZoomIn = () => setScale((s) => Math.min(s + 0.2, 3));
-  const handleZoomOut = () => setScale((s) => Math.max(s - 0.2, 0.2));
-
-  const handleRotateActivePage = (direction: 'left' | 'right') => {
+  const handleRotateActivePage = useCallback((direction: 'left' | 'right') => {
     if (!pdfDoc || currentPage < 1) return;
     const pageIndex = currentPage - 1;
 
@@ -68,9 +65,9 @@ export default function Page() {
       toast({ title: "Page Rotated", description: `Page ${pageIndex + 1} has been rotated.` });
     };
     rotate();
-  };
+  }, [pdfDoc, currentPage, toast]);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && file.type === "application/pdf") {
       setIsLoading(true);
@@ -90,43 +87,61 @@ export default function Page() {
         setIsLoading(false);
       }
     }
-  };
+  }, [toast]);
 
   const updateThumbnails = useCallback(async () => {
-    if (!pdfDoc) return;
+    if (!pdfDoc) {
+      setPageThumbnails([]);
+      return;
+    }
     setIsLoading(true);
     const thumbs: string[] = [];
-    const pdfBytes = await pdfDoc.save();
-    const pdfJsDoc = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
+    try {
+      const pdfBytes = await pdfDoc.save();
+      const pdfJsDoc = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
     
-    for (let i = 1; i <= pdfJsDoc.numPages; i++) {
-      const page = await pdfJsDoc.getPage(i);
-      const viewport = page.getViewport({ scale: 0.3 });
-      const canvas = document.createElement("canvas");
-      const context = canvas.getContext("2d")!;
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      await page.render({ canvasContext: context, viewport: viewport }).promise;
-      thumbs.push(canvas.toDataURL());
+      for (let i = 1; i <= pdfJsDoc.numPages; i++) {
+        const page = await pdfJsDoc.getPage(i);
+        const viewport = page.getViewport({ scale: 0.3 });
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d")!;
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        await page.render({ canvasContext: context, viewport: viewport }).promise;
+        thumbs.push(canvas.toDataURL());
+      }
+      setPageThumbnails(thumbs);
+    } catch (error) {
+       console.error("Failed to update thumbnails", error);
+       toast({ title: "Thumbnail Error", description: "Could not generate page thumbnails.", variant: "destructive"});
+    } finally {
+      setIsLoading(false);
     }
-    setPageThumbnails(thumbs);
-    setIsLoading(false);
-  }, [pdfDoc]);
+  }, [pdfDoc, toast]);
 
   useEffect(() => {
     updateThumbnails();
   }, [docVersion, pdfDoc, updateThumbnails]);
 
 
-  const handleAddBlankPage = async (pageIndex: number) => {
+  const handleAddBlankPage = useCallback(async (pageIndex: number) => {
     if (!pdfDoc) return;
     const newDoc = await pdfDoc.copy();
-    const newPage = newDoc.insertPage(pageIndex);
-    const { width, height } = newPage.getSize();
+    // Copy the first page to get the correct dimensions and orientation
+    const [templatePage] = await newDoc.copyPages(pdfDoc, [0]);
+    const newPage = newDoc.insertPage(pageIndex, templatePage);
+    // Clear the copied content by drawing a white rectangle over it
+    newPage.drawRectangle({
+        x: 0,
+        y: 0,
+        width: newPage.getWidth(),
+        height: newPage.getHeight(),
+        color: rgb(1, 1, 1),
+    });
     const helveticaFont = await newDoc.embedFont(StandardFonts.Helvetica);
     newPage.drawText('This is a new blank page.', {
       x: 50,
-      y: height - 50,
+      y: newPage.getHeight() - 50,
       font: helveticaFont,
       size: 24,
       color: rgb(0, 0, 0),
@@ -135,9 +150,9 @@ export default function Page() {
     setNumPages(newDoc.getPageCount());
     setDocVersion(v => v + 1);
     toast({ title: "Page Added", description: "A blank page has been inserted." });
-  };
+  }, [pdfDoc, toast]);
 
-  const handleDeletePage = async (pageIndex: number) => {
+  const handleDeletePage = useCallback(async (pageIndex: number) => {
     if (!pdfDoc || pdfDoc.getPageCount() <= 1) {
       toast({ title: "Cannot Delete", description: "Cannot delete the last page of the document.", variant: "destructive"});
       return;
@@ -148,9 +163,9 @@ export default function Page() {
     setNumPages(newDoc.getPageCount());
     setDocVersion(v => v + 1);
     toast({ title: "Page Deleted", description: `Page ${pageIndex + 1} has been removed.` });
-  };
+  }, [pdfDoc, toast]);
   
-  const handleRotatePage = async (pageIndex: number) => {
+  const handleRotatePage = useCallback(async (pageIndex: number) => {
     if (!pdfDoc) return;
     const newDoc = await pdfDoc.copy();
     const page = newDoc.getPage(pageIndex);
@@ -159,9 +174,9 @@ export default function Page() {
     setPdfDoc(newDoc);
     setDocVersion(v => v + 1);
     toast({ title: "Page Rotated", description: `Page ${pageIndex + 1} has been rotated.` });
-  };
+  }, [pdfDoc, toast]);
    
-  const handleReorderPages = async (oldIndex: number, newIndex: number) => {
+  const handleReorderPages = useCallback(async (oldIndex: number, newIndex: number) => {
     if (!pdfDoc) return;
     const newDoc = await pdfDoc.copy();
     const [page] = await newDoc.copyPages(pdfDoc, [oldIndex]);
@@ -171,9 +186,9 @@ export default function Page() {
     setPdfDoc(newDoc);
     setDocVersion(v => v + 1);
     toast({ title: "Page Moved", description: `Page ${oldIndex + 1} moved to position ${newIndex + 1}.` });
-  };
+  }, [pdfDoc, toast]);
 
-  const handleDownload = async () => {
+  const handleDownload = useCallback(async () => {
     if (!pdfDoc) return;
     setIsLoading(true);
     try {
@@ -194,17 +209,21 @@ export default function Page() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [pdfDoc, toast]);
 
-  const handlePageClick = (pageNumber: number) => {
+  const handlePageClick = useCallback((pageNumber: number) => {
     const pageElement = document.getElementById(`pdf-page-${pageNumber}`);
     pageElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     setCurrentPage(pageNumber);
-  };
+  }, []);
 
+  const handleNewFile = useCallback(() => {
+    const uploadEl = document.getElementById('pdf-upload');
+    if (uploadEl) uploadEl.click();
+  }, []);
 
   return (
-    <div className="flex flex-col h-screen bg-background text-foreground font-sans">
+    <div className="flex h-screen bg-background text-foreground font-sans">
        {isLoading && (
         <div className="fixed inset-0 bg-black/50 z-[100] flex flex-col items-center justify-center">
           <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
@@ -216,8 +235,8 @@ export default function Page() {
           selectedTextObject={!!selectedObjectId}
           style={selectedTextStyle}
           onTextStyleChange={handleStyleChange}
-          onNewFile={() => document.getElementById('pdf-upload')?.click()}
-          onUpload={() => document.getElementById('pdf-upload')?.click()}
+          onNewFile={handleNewFile}
+          onUpload={handleNewFile}
           onDownload={handleDownload}
         />
       </header>
@@ -244,8 +263,8 @@ export default function Page() {
             docVersion={docVersion}
             setNumPages={setNumPages}
             scale={scale}
-            onTextEditStart={() => setIsEditingText(true)}
-            onTextEditEnd={() => setIsEditingText(false)}
+            onTextEditStart={handleTextEditStart}
+            onTextEditEnd={handleTextEditEnd}
             selectedStyle={selectedTextStyle}
             selectedObjectId={selectedObjectId}
             setSelectedObjectId={setSelectedObjectId}
@@ -269,7 +288,7 @@ export default function Page() {
 
         <PropertyPanel
           isVisible={isEditingText}
-          onClose={() => setIsEditingText(false)}
+          onClose={handleTextEditEnd}
           currentStyle={selectedTextStyle}
           onStyleChange={handleStyleChange}
         />

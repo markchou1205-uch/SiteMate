@@ -137,6 +137,7 @@ export default function InteractivePdfCanvas({
   useEffect(() => {
     const isDrawingActive = drawingTool !== null;
 
+    // Define handlers inside the effect to capture the latest state
     const handleMouseDown = (o: fabric.IEvent) => {
       if (!drawingTool || drawingTool === 'freedraw') return;
       const canvas = o.target?.canvas;
@@ -242,14 +243,17 @@ export default function InteractivePdfCanvas({
       setDrawingTool(null);
     };
     
+    // Setup and cleanup for each canvas
     localCanvases.forEach((canvas, index) => {
       if (!canvas) return;
 
+      // Clean up all previous listeners to prevent duplicates
       canvas.off('mouse:down');
       canvas.off('mouse:move');
       canvas.off('mouse:up');
       canvas.off('path:created');
       
+      // Set canvas mode based on drawing tool
       canvas.isDrawingMode = (drawingTool === 'freedraw');
       canvas.selection = !isDrawingActive;
       canvas.defaultCursor = isDrawingActive ? 'crosshair' : 'default';
@@ -260,6 +264,7 @@ export default function InteractivePdfCanvas({
           obj.evented = !isDrawingActive;
       });
 
+      // Bind new events based on the current tool
       if (drawingTool === 'freedraw') {
           canvas.freeDrawingBrush.width = 2;
           canvas.freeDrawingBrush.color = 'black';

@@ -1415,7 +1415,6 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
     });
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
         "InteractivePdfCanvas.useEffect": ()=>{
-            let canvasesToSet = [];
             let isMounted = true;
             const renderPdf = {
                 "InteractivePdfCanvas.useEffect.renderPdf": async ()=>{
@@ -1481,7 +1480,6 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
                         newCanvases[pageNum - 1] = fabricCanvas;
                     }
                     if (isMounted) {
-                        // Dispose old canvases before setting new ones
                         localCanvases.forEach({
                             "InteractivePdfCanvas.useEffect.renderPdf": (canvas)=>canvas?.dispose()
                         }["InteractivePdfCanvas.useEffect.renderPdf"]);
@@ -1495,7 +1493,6 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
             return ({
                 "InteractivePdfCanvas.useEffect": ()=>{
                     isMounted = false;
-                // The cleanup of canvases now happens before setting new ones or on unmount
                 }
             })["InteractivePdfCanvas.useEffect"];
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1566,7 +1563,7 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
                     if (!canvas) return;
                     const pointer = canvas.getPointer(o.e);
                     const { origX, origY, shape } = drawingState.current;
-                    if (shape.type === 'circle') {
+                    if (shape instanceof __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$fabric$2f$dist$2f$fabric$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["fabric"].Circle) {
                         const radius = Math.sqrt(Math.pow(pointer.x - origX, 2) + Math.pow(pointer.y - origY, 2)) / 2;
                         shape.set({
                             left: origX,
@@ -1677,12 +1674,12 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
             className: "flex flex-col items-center"
         }, void 0, false, {
             fileName: "[project]/src/app/edit-pdf/components/InteractivePdfCanvas.tsx",
-            lineNumber: 293,
+            lineNumber: 290,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/src/app/edit-pdf/components/InteractivePdfCanvas.tsx",
-        lineNumber: 292,
+        lineNumber: 289,
         columnNumber: 5
     }, this);
 }

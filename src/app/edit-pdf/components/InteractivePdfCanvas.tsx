@@ -220,26 +220,26 @@ export default function InteractivePdfCanvas({
             };
 
             const handleMouseUp = () => {
-                if (!drawingState.current.isDrawing || !drawingState.current.shape) return;
+                if (!drawingState.current.isDrawing) return;
 
                 const currentCanvas = localCanvases[index];
-                if (!currentCanvas) return;
+                if (!currentCanvas || !drawingState.current.shape) {
+                    setDrawingTool(null);
+                    return;
+                }
                 
                 const { shape } = drawingState.current;
                 shape.setCoords();
 
                 const minSize = 5;
-                const width = shape.width ?? 0;
-                const height = shape.height ?? 0;
-                const radius = (shape as fabric.Circle).radius ?? 0;
+                const width = shape.getScaledWidth();
+                const height = shape.getScaledHeight();
 
-                if (width * (shape.scaleX ?? 1) > minSize || 
-                    height * (shape.scaleY ?? 1) > minSize || 
-                    radius > minSize / 2) {
+                if (width < minSize && height < minSize) {
+                    currentCanvas.remove(shape);
+                } else {
                     shape.set({ selectable: true, evented: true });
                     onUpdateFabricObject(index, currentCanvas);
-                } else {
-                    currentCanvas.remove(shape);
                 }
                 
                 drawingState.current = { isDrawing: false, origX: 0, origY: 0, shape: null };
@@ -264,7 +264,7 @@ export default function InteractivePdfCanvas({
             }
         });
     };
-  }, [drawingTool, localCanvases, onUpdateFabricObject, setDrawingTool, onShapeDoubleClick]);
+  }, [drawingTool, localCanvases, onUpdateFabricObject, setDrawingTool]);
 
   return (
     <div className="relative w-full h-full p-4">

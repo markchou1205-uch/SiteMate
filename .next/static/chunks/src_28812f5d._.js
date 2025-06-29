@@ -1433,7 +1433,7 @@ __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$pdfjs$2d$dist$2f
 function InteractivePdfCanvas({ pdfDoc, docVersion, scale, onTextEditStart, onTextEditEnd, setPdfLoaded, setNumPages, fabricObjects, onUpdateFabricObject, setFabricCanvases, drawingTool, setDrawingTool, onShapeDoubleClick }) {
     _s();
     const containerRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])(null);
-    const fabricCanvasRefs = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])([]);
+    const [localCanvases, setLocalCanvases] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])([]);
     const drawingState = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])({
         isDrawing: false,
         origX: 0,
@@ -1444,10 +1444,11 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, onTextEditStart, onTe
         "InteractivePdfCanvas.useEffect": ()=>{
             if (!pdfDoc) {
                 if (containerRef.current) containerRef.current.innerHTML = "";
+                setLocalCanvases([]);
                 return;
             }
             ;
-            let canvases = [];
+            let canvasesToSet = [];
             const renderPdf = {
                 "InteractivePdfCanvas.useEffect.renderPdf": async ()=>{
                     setPdfLoaded(false);
@@ -1460,7 +1461,6 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, onTextEditStart, onTe
                     const container = containerRef.current;
                     if (!container) return;
                     container.innerHTML = "";
-                    fabricCanvasRefs.current = [];
                     for(let pageNum = 1; pageNum <= pdf.numPages; pageNum++){
                         const page = await pdf.getPage(pageNum);
                         const viewport = page.getViewport({
@@ -1506,10 +1506,10 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, onTextEditStart, onTe
                                 }
                             }
                         }["InteractivePdfCanvas.useEffect.renderPdf"]);
-                        canvases[pageNum - 1] = fabricCanvas;
+                        canvasesToSet[pageNum - 1] = fabricCanvas;
                     }
-                    fabricCanvasRefs.current = canvases;
-                    setFabricCanvases(canvases);
+                    setLocalCanvases(canvasesToSet);
+                    setFabricCanvases(canvasesToSet);
                     setPdfLoaded(true);
                 }
             }["InteractivePdfCanvas.useEffect.renderPdf"];
@@ -1523,7 +1523,7 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, onTextEditStart, onTe
     ]);
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
         "InteractivePdfCanvas.useEffect": ()=>{
-            fabricCanvasRefs.current.forEach({
+            localCanvases.forEach({
                 "InteractivePdfCanvas.useEffect": (canvas, index)=>{
                     if (!canvas) return;
                     canvas.isDrawingMode = drawingTool === 'freedraw';
@@ -1538,11 +1538,10 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, onTextEditStart, onTe
                     canvas.off('mouse:down');
                     canvas.off('mouse:move');
                     canvas.off('mouse:up');
-                    canvas.renderAll();
                     if (drawingTool && drawingTool !== 'freedraw') {
                         const handleMouseDown = {
                             "InteractivePdfCanvas.useEffect.handleMouseDown": (o)=>{
-                                const currentCanvas = fabricCanvasRefs.current[index];
+                                const currentCanvas = localCanvases[index];
                                 if (!currentCanvas || !o.e) return;
                                 drawingState.current.isDrawing = true;
                                 const pointer = currentCanvas.getPointer(o.e);
@@ -1586,7 +1585,7 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, onTextEditStart, onTe
                         const handleMouseMove = {
                             "InteractivePdfCanvas.useEffect.handleMouseMove": (o)=>{
                                 if (!drawingState.current.isDrawing || !drawingState.current.shape || !o.e) return;
-                                const currentCanvas = fabricCanvasRefs.current[index];
+                                const currentCanvas = localCanvases[index];
                                 if (!currentCanvas) return;
                                 const pointer = currentCanvas.getPointer(o.e);
                                 const { origX, origY, shape } = drawingState.current;
@@ -1617,7 +1616,7 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, onTextEditStart, onTe
                         const handleMouseUp = {
                             "InteractivePdfCanvas.useEffect.handleMouseUp": ()=>{
                                 if (!drawingState.current.isDrawing || !drawingState.current.shape) return;
-                                const currentCanvas = fabricCanvasRefs.current[index];
+                                const currentCanvas = localCanvases[index];
                                 if (!currentCanvas) return;
                                 const { shape } = drawingState.current;
                                 shape.setCoords();
@@ -1648,11 +1647,12 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, onTextEditStart, onTe
                         canvas.on('mouse:move', handleMouseMove);
                         canvas.on('mouse:up', handleMouseUp);
                     }
+                    canvas.renderAll();
                 }
             }["InteractivePdfCanvas.useEffect"]);
             return ({
                 "InteractivePdfCanvas.useEffect": ()=>{
-                    fabricCanvasRefs.current.forEach({
+                    localCanvases.forEach({
                         "InteractivePdfCanvas.useEffect": (canvas)=>{
                             if (canvas) {
                                 canvas.off('mouse:down');
@@ -1666,6 +1666,7 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, onTextEditStart, onTe
         }
     }["InteractivePdfCanvas.useEffect"], [
         drawingTool,
+        localCanvases,
         onUpdateFabricObject,
         setDrawingTool,
         onShapeDoubleClick
@@ -1677,16 +1678,16 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, onTextEditStart, onTe
             className: "flex flex-col items-center"
         }, void 0, false, {
             fileName: "[project]/src/app/edit-pdf/components/InteractivePdfCanvas.tsx",
-            lineNumber: 269,
+            lineNumber: 271,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/src/app/edit-pdf/components/InteractivePdfCanvas.tsx",
-        lineNumber: 268,
+        lineNumber: 270,
         columnNumber: 5
     }, this);
 }
-_s(InteractivePdfCanvas, "KVWL37nmYe1UW6Kn01D7HwoBpOA=");
+_s(InteractivePdfCanvas, "RRTzXnIgIzadANr8OzCidefqEdI=");
 _c = InteractivePdfCanvas;
 var _c;
 __turbopack_context__.k.register(_c, "InteractivePdfCanvas");

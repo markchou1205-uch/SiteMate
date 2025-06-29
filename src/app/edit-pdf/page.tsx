@@ -2,8 +2,9 @@
 
 "use client";
 
+import { degrees } from 'pdf-lib';
 import { useEffect, useRef, useState, useCallback } from "react";
-import { PDFDocument, rgb, StandardFonts, RotationTypes } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import * as pdfjsLib from "pdfjs-dist";
 import * as pdfjsWorker from "pdfjs-dist/build/pdf.worker.entry";
 
@@ -105,9 +106,10 @@ export default function Page() {
 
   const handleAddBlankPage = async (pageIndex: number) => {
     if (!pdfDoc) return;
-    const newPage = pdfDoc.insertPage(pageIndex);
+    const newDoc = await pdfDoc.copy();
+    const newPage = newDoc.insertPage(pageIndex);
     const { width, height } = newPage.getSize();
-    const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const helveticaFont = await newDoc.embedFont(StandardFonts.Helvetica);
     newPage.drawText('This is a new blank page.', {
       x: 50,
       y: height - 50,
@@ -115,7 +117,8 @@ export default function Page() {
       size: 24,
       color: rgb(0, 0, 0),
     });
-    setNumPages(pdfDoc.getPageCount());
+    setPdfDoc(newDoc);
+    setNumPages(newDoc.getPageCount());
     setDocVersion(v => v + 1);
     toast({ title: "Page Added", description: "A blank page has been inserted." });
   };
@@ -125,26 +128,33 @@ export default function Page() {
       toast({ title: "Cannot Delete", description: "Cannot delete the last page of the document.", variant: "destructive"});
       return;
     };
-    pdfDoc.removePage(pageIndex);
-    setNumPages(pdfDoc.getPageCount());
+    const newDoc = await pdfDoc.copy();
+    newDoc.removePage(pageIndex);
+    setPdfDoc(newDoc);
+    setNumPages(newDoc.getPageCount());
     setDocVersion(v => v + 1);
     toast({ title: "Page Deleted", description: `Page ${pageIndex + 1} has been removed.` });
   };
   
   const handleRotatePage = async (pageIndex: number) => {
     if (!pdfDoc) return;
-    const page = pdfDoc.getPage(pageIndex);
+    const newDoc = await pdfDoc.copy();
+    const page = newDoc.getPage(pageIndex);
     const currentRotation = page.getRotation().angle;
-    page.setRotation({ type: RotationTypes.Absolute, angle: (currentRotation + 90) % 360 });
+    page.setRotation(degrees((currentRotation + 90) % 360));
+    setPdfDoc(newDoc);
     setDocVersion(v => v + 1);
     toast({ title: "Page Rotated", description: `Page ${pageIndex + 1} has been rotated.` });
   };
-  
+   
   const handleReorderPages = async (oldIndex: number, newIndex: number) => {
     if (!pdfDoc) return;
-    const [page] = await pdfDoc.copyPages(pdfDoc, [oldIndex]);
-    pdfDoc.removePage(oldIndex);
-    pdfDoc.insertPage(newIndex, page);
+    const newDoc = await pdfDoc.copy();
+    const [page] = await newDoc.copyPages(pdfDoc, [oldIndex]);
+    newDoc.removePage(oldIndex > newIndex ? oldIndex + 1 : oldIndex);
+    newDoc.insertPage(newIndex, page);
+    
+    setPdfDoc(newDoc);
     setDocVersion(v => v + 1);
     toast({ title: "Page Moved", description: `Page ${oldIndex + 1} moved to position ${newIndex + 1}.` });
   };
@@ -181,19 +191,27 @@ export default function Page() {
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground font-sans">
-      <Toolbar 
-        selectedTextObject={!!selectedObjectId}
-        style={selectedTextStyle}
-        onTextStyleChange={handleStyleChange}
-        onNewFile={() => document.getElementById('pdf-upload')?.click()}
-        onUpload={() => document.getElementById('pdf-upload')?.click()}
-        onDownload={handleDownload}
-      />
+       {isLoading && (
+        <div className="fixed inset-0 bg-black/50 z-[100] flex flex-col items-center justify-center">
+          <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
+          <p className="text-white text-lg">Processing...</p>
+        </div>
+      )}
+      <header className="relative z-20 flex items-center justify-between border-b bg-secondary p-2 shadow-md">
+        <Toolbar 
+          selectedTextObject={!!selectedObjectId}
+          style={selectedTextStyle}
+          onTextStyleChange={handleStyleChange}
+          onNewFile={() => document.getElementById('pdf-upload')?.click()}
+          onUpload={() => document.getElementById('pdf-upload')?.click()}
+          onDownload={handleDownload}
+        />
+      </header>
       <input type="file" id="pdf-upload" className="hidden" onChange={handleFileChange} accept="application/pdf" />
 
-      <div className="flex flex-1 overflow-hidden relative">
+      <div className="flex flex-1 overflow-hidden">
         {pdfDoc && (
-          <div className="w-[15%] h-full border-r overflow-y-auto bg-muted">
+          <aside className="w-[15%] h-full border-r overflow-y-auto bg-gray-100 flex-shrink-0">
             <PageThumbnailList
               thumbnails={pageThumbnails}
               currentPage={currentPage}
@@ -203,10 +221,10 @@ export default function Page() {
               onRotatePage={handleRotatePage}
               onReorderPages={handleReorderPages}
             />
-          </div>
+          </aside>
         )}
 
-        <div className={`h-full overflow-auto bg-muted ${pdfDoc ? 'w-[85%]' : 'w-full'}`}>
+        <main className={`h-full overflow-auto bg-muted flex-grow`}>
           <InteractivePdfCanvas
             pdfDoc={pdfDoc}
             docVersion={docVersion}
@@ -222,7 +240,7 @@ export default function Page() {
             setPageObjects={setPageObjects}
             setPdfLoaded={setPdfLoaded}
           />
-        </div>
+        </main>
         
         {pdfDoc && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50">

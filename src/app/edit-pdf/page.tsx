@@ -42,6 +42,7 @@ export default function Page() {
   const { toast } = useToast();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mainContainerRef = useRef<HTMLDivElement>(null);
 
   const handleTextEditStart = useCallback(() => setIsEditingText(true), []);
   const handleTextEditEnd = useCallback(() => setIsEditingText(false), []);
@@ -81,7 +82,6 @@ export default function Page() {
         setCurrentPage(1);
         setScale(1);
         setDocVersion(v => v + 1);
-        toast({ title: "PDF Loaded", description: `${file.name} is ready for editing.` });
       } catch (error) {
         console.error("Failed to load PDF", error);
         toast({ title: "Error Loading PDF", description: "Could not load the selected file.", variant: "destructive" });
@@ -106,7 +106,6 @@ export default function Page() {
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-      toast({ title: "Download Started", description: "Your edited PDF is downloading." });
     } catch (error) {
       console.error("Failed to download PDF", error);
       toast({ title: "Download Error", description: "Could not save the PDF.", variant: "destructive" });
@@ -152,7 +151,6 @@ export default function Page() {
   const handlePageClick = useCallback((pageNumber: number) => {
     const pageElement = document.getElementById(`pdf-page-${pageNumber}`);
     pageElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    setCurrentPage(pageNumber);
   }, []);
 
   const triggerFileUpload = useCallback(() => {
@@ -162,8 +160,7 @@ export default function Page() {
  const onAddBlankPage = useCallback(async (index: number) => {
     if (!pdfDoc) return;
     const newDoc = await pdfDoc.copy();
-    const pageToCopy = newDoc.getPage(index > 0 ? index - 1 : 0);
-    const { width, height } = pageToCopy.getSize();
+    const { width, height } = newDoc.getPage(index > 0 ? index - 1 : 0).getSize();
     newDoc.addPage(index, [width, height]);
     setPdfDoc(newDoc);
     setDocVersion(v => v + 1);
@@ -208,6 +205,33 @@ export default function Page() {
     setPdfDoc(newDoc);
     setDocVersion(v => v + 1);
   }, [pdfDoc]);
+
+  useEffect(() => {
+    const container = mainContainerRef.current;
+    if (!container || !pdfLoaded) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const pageNum = parseInt(entry.target.id.split('-')[2]);
+            if (!isNaN(pageNum)) {
+              setCurrentPage(pageNum);
+              return; 
+            }
+          }
+        }
+      },
+      { root: container, threshold: 0.4 }
+    );
+
+    const pageElements = Array.from(container.querySelectorAll('div[id^="pdf-page-"]'));
+    pageElements.forEach(el => observer.observe(el));
+
+    return () => {
+      pageElements.forEach(el => observer.unobserve(el));
+    };
+  }, [pdfLoaded, docVersion, scale]);
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground font-sans">
@@ -274,7 +298,7 @@ export default function Page() {
                     />
                 </aside>
                 
-                <div className="flex-grow h-full overflow-auto bg-muted relative">
+                <div ref={mainContainerRef} className="flex-grow h-full overflow-auto bg-muted relative">
                     <InteractivePdfCanvas
                         pdfDoc={pdfDoc}
                         docVersion={docVersion}

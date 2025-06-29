@@ -40,6 +40,7 @@ const PageThumbnailList: React.FC<PageThumbnailListProps> = ({
 }) => {
   const listRef = useRef<HTMLDivElement>(null);
   const insertPdfRef = useRef<HTMLInputElement>(null);
+  const thumbnailRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
     if (listRef.current) {
@@ -56,12 +57,21 @@ const PageThumbnailList: React.FC<PageThumbnailListProps> = ({
     }
   }, [onReorderPages]);
 
+  useEffect(() => {
+    if (currentPage > 0 && thumbnailRefs.current[currentPage - 1]) {
+      thumbnailRefs.current[currentPage - 1]?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+      });
+    }
+  }, [currentPage]);
+
   return (
     <TooltipProvider>
       <ScrollArea className="h-full">
         <div ref={listRef} className="flex flex-col gap-4 p-2">
           {thumbnails.map((thumbnail, i) => (
-            <div key={thumbnail} className="flex flex-col gap-1 items-center" data-id={i}>
+            <div key={i} ref={el => thumbnailRefs.current[i] = el} className="flex flex-col gap-1 items-center" data-id={i}>
               <Button
                 variant="outline"
                 className={cn(

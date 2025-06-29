@@ -1519,7 +1519,7 @@ const PageThumbnailList = ({ thumbnails, currentPage, onPageClick, onAddBlankPag
                                     columnNumber: 15
                                 }, this)
                             ]
-                        }, i, true, {
+                        }, thumbnail, true, {
                             fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
                             lineNumber: 64,
                             columnNumber: 13

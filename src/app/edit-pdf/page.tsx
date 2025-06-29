@@ -1,7 +1,7 @@
 // File: page.tsx
 "use client";
 
-import { degrees, PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts, degrees } from 'pdf-lib';
 import { useEffect, useRef, useState, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import * as pdfjsWorker from "pdfjs-dist/build/pdf.worker.entry";
@@ -39,7 +39,6 @@ export default function Page() {
   const [scale, setScale] = useState(1);
   const [numPages, setNumPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const { toast } = useToast();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mainContainerRef = useRef<HTMLDivElement>(null);
@@ -84,13 +83,12 @@ export default function Page() {
         setDocVersion(v => v + 1);
       } catch (error) {
         console.error("Failed to load PDF", error);
-        toast({ title: "Error Loading PDF", description: "Could not load the selected file.", variant: "destructive" });
       } finally {
         setIsLoading(false);
       }
     }
      if (fileInputRef.current) fileInputRef.current.value = '';
-  }, [toast]);
+  }, []);
 
   const handleDownload = useCallback(async () => {
     if (!pdfDoc) return;
@@ -108,11 +106,10 @@ export default function Page() {
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Failed to download PDF", error);
-      toast({ title: "Download Error", description: "Could not save the PDF.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
-  }, [pdfDoc, toast]);
+  }, [pdfDoc]);
 
   const updateThumbnails = useCallback(async () => {
     if (!pdfDoc) {
@@ -138,11 +135,10 @@ export default function Page() {
       setPageThumbnails(thumbs);
     } catch (error) {
        console.error("Failed to update thumbnails", error);
-       toast({ title: "Thumbnail Error", description: "Could not generate page thumbnails.", variant: "destructive"});
     } finally {
       setIsLoading(false);
     }
-  }, [pdfDoc, toast]);
+  }, [pdfDoc]);
 
   useEffect(() => {
     updateThumbnails();
@@ -160,22 +156,22 @@ export default function Page() {
  const onAddBlankPage = useCallback(async (index: number) => {
     if (!pdfDoc) return;
     const newDoc = await pdfDoc.copy();
-    const { width, height } = newDoc.getPage(index > 0 ? index - 1 : 0).getSize();
-    newDoc.addPage(index, [width, height]);
+    const pageToCopyDim = newDoc.getPage(index > 0 ? index - 1 : 0);
+    const { width, height } = pageToCopyDim.getSize();
+    newDoc.insertPage(index, [width, height]);
     setPdfDoc(newDoc);
     setDocVersion(v => v + 1);
   }, [pdfDoc]);
 
   const onDeletePage = useCallback(async (index: number) => {
     if (!pdfDoc || pdfDoc.getPageCount() <= 1) {
-        toast({ title: "Action Not Allowed", description: "Cannot delete the last page of the document.", variant: "destructive" });
         return;
     };
     const newDoc = await pdfDoc.copy();
     newDoc.removePage(index);
     setPdfDoc(newDoc);
     setDocVersion(v => v + 1);
-  }, [pdfDoc, toast]);
+  }, [pdfDoc]);
 
   const onRotatePage = useCallback(async (index: number) => {
      if (!pdfDoc) return;
@@ -288,6 +284,7 @@ export default function Page() {
             <>
                 <aside className="w-[15%] h-full border-r overflow-y-auto bg-gray-100 flex-shrink-0">
                     <PageThumbnailList
+                        key={docVersion}
                         thumbnails={pageThumbnails}
                         currentPage={currentPage}
                         onPageClick={handlePageClick}

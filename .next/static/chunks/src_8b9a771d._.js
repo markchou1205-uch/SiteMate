@@ -1238,6 +1238,7 @@ const PageThumbnailList = ({ thumbnails, currentPage, onPageClick, onAddBlankPag
     _s();
     const listRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])(null);
     const insertPdfRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])(null);
+    const thumbnailRefs = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])([]);
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
         "PageThumbnailList.useEffect": ()=>{
             if (listRef.current) {
@@ -1260,6 +1261,18 @@ const PageThumbnailList = ({ thumbnails, currentPage, onPageClick, onAddBlankPag
     }["PageThumbnailList.useEffect"], [
         onReorderPages
     ]);
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
+        "PageThumbnailList.useEffect": ()=>{
+            if (currentPage > 0 && thumbnailRefs.current[currentPage - 1]) {
+                thumbnailRefs.current[currentPage - 1]?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest'
+                });
+            }
+        }
+    }["PageThumbnailList.useEffect"], [
+        currentPage
+    ]);
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TooltipProvider"], {
         children: [
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$scroll$2d$area$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ScrollArea"], {
@@ -1268,6 +1281,7 @@ const PageThumbnailList = ({ thumbnails, currentPage, onPageClick, onAddBlankPag
                     ref: listRef,
                     className: "flex flex-col gap-4 p-2",
                     children: thumbnails.map((thumbnail, i)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                            ref: (el)=>thumbnailRefs.current[i] = el,
                             className: "flex flex-col gap-1 items-center",
                             "data-id": i,
                             children: [
@@ -1282,14 +1296,14 @@ const PageThumbnailList = ({ thumbnails, currentPage, onPageClick, onAddBlankPag
                                             className: "w-full object-contain"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                                            lineNumber: 74,
+                                            lineNumber: 84,
                                             columnNumber: 19
                                         }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                             className: "w-full h-24 bg-gray-100 flex items-center justify-center text-xs text-gray-400",
                                             children: "Loading..."
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                                            lineNumber: 80,
+                                            lineNumber: 90,
                                             columnNumber: 19
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1297,13 +1311,13 @@ const PageThumbnailList = ({ thumbnails, currentPage, onPageClick, onAddBlankPag
                                             children: i + 1
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                                            lineNumber: 84,
+                                            lineNumber: 94,
                                             columnNumber: 18
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                                    lineNumber: 65,
+                                    lineNumber: 75,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1325,22 +1339,22 @@ const PageThumbnailList = ({ thumbnails, currentPage, onPageClick, onAddBlankPag
                                                                         className: "h-4 w-4"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                                                                        lineNumber: 93,
+                                                                        lineNumber: 103,
                                                                         columnNumber: 27
                                                                     }, this)
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                                                                    lineNumber: 92,
+                                                                    lineNumber: 102,
                                                                     columnNumber: 25
                                                                 }, this)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                                                                lineNumber: 91,
+                                                                lineNumber: 101,
                                                                 columnNumber: 23
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                                                            lineNumber: 90,
+                                                            lineNumber: 100,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TooltipContent"], {
@@ -1348,18 +1362,18 @@ const PageThumbnailList = ({ thumbnails, currentPage, onPageClick, onAddBlankPag
                                                                 children: "插入頁面"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                                                                lineNumber: 98,
+                                                                lineNumber: 108,
                                                                 columnNumber: 23
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                                                            lineNumber: 97,
+                                                            lineNumber: 107,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                                                    lineNumber: 89,
+                                                    lineNumber: 99,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DropdownMenuContent"], {
@@ -1371,20 +1385,20 @@ const PageThumbnailList = ({ thumbnails, currentPage, onPageClick, onAddBlankPag
                                                                     className: "mr-2 h-4 w-4"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                                                                    lineNumber: 103,
+                                                                    lineNumber: 113,
                                                                     columnNumber: 23
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                                     children: "插入空白頁"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                                                                    lineNumber: 104,
+                                                                    lineNumber: 114,
                                                                     columnNumber: 23
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                                                            lineNumber: 102,
+                                                            lineNumber: 112,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DropdownMenuItem"], {
@@ -1394,32 +1408,32 @@ const PageThumbnailList = ({ thumbnails, currentPage, onPageClick, onAddBlankPag
                                                                     className: "mr-2 h-4 w-4"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                                                                    lineNumber: 107,
+                                                                    lineNumber: 117,
                                                                     columnNumber: 23
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                                     children: "插入PDF"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                                                                    lineNumber: 108,
+                                                                    lineNumber: 118,
                                                                     columnNumber: 23
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                                                            lineNumber: 106,
+                                                            lineNumber: 116,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                                                    lineNumber: 101,
+                                                    lineNumber: 111,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                                            lineNumber: 88,
+                                            lineNumber: 98,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
@@ -1435,17 +1449,17 @@ const PageThumbnailList = ({ thumbnails, currentPage, onPageClick, onAddBlankPag
                                                             className: "h-4 w-4"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                                                            lineNumber: 116,
+                                                            lineNumber: 126,
                                                             columnNumber: 23
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                                                        lineNumber: 115,
+                                                        lineNumber: 125,
                                                         columnNumber: 21
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                                                    lineNumber: 114,
+                                                    lineNumber: 124,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TooltipContent"], {
@@ -1453,18 +1467,18 @@ const PageThumbnailList = ({ thumbnails, currentPage, onPageClick, onAddBlankPag
                                                         children: "旋轉"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                                                        lineNumber: 120,
+                                                        lineNumber: 130,
                                                         columnNumber: 21
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                                                    lineNumber: 119,
+                                                    lineNumber: 129,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                                            lineNumber: 113,
+                                            lineNumber: 123,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
@@ -1480,22 +1494,9 @@ const PageThumbnailList = ({ thumbnails, currentPage, onPageClick, onAddBlankPag
                                                             className: "h-4 w-4"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                                                            lineNumber: 132,
+                                                            lineNumber: 142,
                                                             columnNumber: 23
                                                         }, this)
-                                                    }, void 0, false, {
-                                                        fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                                                        lineNumber: 126,
-                                                        columnNumber: 21
-                                                    }, this)
-                                                }, void 0, false, {
-                                                    fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                                                    lineNumber: 125,
-                                                    columnNumber: 19
-                                                }, this),
-                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TooltipContent"], {
-                                                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                        children: "刪除"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
                                                         lineNumber: 136,
@@ -1505,33 +1506,46 @@ const PageThumbnailList = ({ thumbnails, currentPage, onPageClick, onAddBlankPag
                                                     fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
                                                     lineNumber: 135,
                                                     columnNumber: 19
+                                                }, this),
+                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TooltipContent"], {
+                                                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                                        children: "刪除"
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
+                                                        lineNumber: 146,
+                                                        columnNumber: 21
+                                                    }, this)
+                                                }, void 0, false, {
+                                                    fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
+                                                    lineNumber: 145,
+                                                    columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                                            lineNumber: 124,
+                                            lineNumber: 134,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                                    lineNumber: 87,
+                                    lineNumber: 97,
                                     columnNumber: 15
                                 }, this)
                             ]
-                        }, thumbnail, true, {
+                        }, i, true, {
                             fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                            lineNumber: 64,
+                            lineNumber: 74,
                             columnNumber: 13
                         }, this))
                 }, void 0, false, {
                     fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                    lineNumber: 62,
+                    lineNumber: 72,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                lineNumber: 61,
+                lineNumber: 71,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -1541,17 +1555,17 @@ const PageThumbnailList = ({ thumbnails, currentPage, onPageClick, onAddBlankPag
                 accept: "application/pdf"
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-                lineNumber: 144,
+                lineNumber: 154,
                 columnNumber: 8
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/edit-pdf/components/PageThumbnailList.tsx",
-        lineNumber: 60,
+        lineNumber: 70,
         columnNumber: 5
     }, this);
 };
-_s(PageThumbnailList, "95R6mkiRSFlYGlBG2+U1bUmgBXU=");
+_s(PageThumbnailList, "GhlL2CtjIl6FkKEl4YdoqujQXFE=");
 _c = PageThumbnailList;
 const __TURBOPACK__default__export__ = PageThumbnailList;
 var _c;
@@ -1848,6 +1862,7 @@ function Page() {
     const [currentPage, setCurrentPage] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(1);
     const { toast } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$use$2d$toast$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useToast"])();
     const fileInputRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])(null);
+    const mainContainerRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])(null);
     const handleTextEditStart = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
         "Page.useCallback[handleTextEditStart]": ()=>setIsEditingText(true)
     }["Page.useCallback[handleTextEditStart]"], []);
@@ -1912,10 +1927,6 @@ function Page() {
                     setDocVersion({
                         "Page.useCallback[handleFileChange]": (v)=>v + 1
                     }["Page.useCallback[handleFileChange]"]);
-                    toast({
-                        title: "PDF Loaded",
-                        description: `${file.name} is ready for editing.`
-                    });
                 } catch (error) {
                     console.error("Failed to load PDF", error);
                     toast({
@@ -1951,10 +1962,6 @@ function Page() {
                 a.click();
                 a.remove();
                 URL.revokeObjectURL(url);
-                toast({
-                    title: "Download Started",
-                    description: "Your edited PDF is downloading."
-                });
             } catch (error) {
                 console.error("Failed to download PDF", error);
                 toast({
@@ -2030,7 +2037,6 @@ function Page() {
                 behavior: 'smooth',
                 block: 'start'
             });
-            setCurrentPage(pageNumber);
         }
     }["Page.useCallback[handlePageClick]"], []);
     const triggerFileUpload = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
@@ -2042,8 +2048,7 @@ function Page() {
         "Page.useCallback[onAddBlankPage]": async (index)=>{
             if (!pdfDoc) return;
             const newDoc = await pdfDoc.copy();
-            const pageToCopy = newDoc.getPage(index > 0 ? index - 1 : 0);
-            const { width, height } = pageToCopy.getSize();
+            const { width, height } = newDoc.getPage(index > 0 ? index - 1 : 0).getSize();
             newDoc.addPage(index, [
                 width,
                 height
@@ -2119,6 +2124,43 @@ function Page() {
     }["Page.useCallback[onReorderPages]"], [
         pdfDoc
     ]);
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
+        "Page.useEffect": ()=>{
+            const container = mainContainerRef.current;
+            if (!container || !pdfLoaded) return;
+            const observer = new IntersectionObserver({
+                "Page.useEffect": (entries)=>{
+                    for (const entry of entries){
+                        if (entry.isIntersecting) {
+                            const pageNum = parseInt(entry.target.id.split('-')[2]);
+                            if (!isNaN(pageNum)) {
+                                setCurrentPage(pageNum);
+                                return;
+                            }
+                        }
+                    }
+                }
+            }["Page.useEffect"], {
+                root: container,
+                threshold: 0.4
+            });
+            const pageElements = Array.from(container.querySelectorAll('div[id^="pdf-page-"]'));
+            pageElements.forEach({
+                "Page.useEffect": (el)=>observer.observe(el)
+            }["Page.useEffect"]);
+            return ({
+                "Page.useEffect": ()=>{
+                    pageElements.forEach({
+                        "Page.useEffect": (el)=>observer.unobserve(el)
+                    }["Page.useEffect"]);
+                }
+            })["Page.useEffect"];
+        }
+    }["Page.useEffect"], [
+        pdfLoaded,
+        docVersion,
+        scale
+    ]);
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
         className: "flex flex-col h-screen bg-background text-foreground font-sans",
         children: [
@@ -2129,7 +2171,7 @@ function Page() {
                         className: "h-12 w-12 text-primary animate-spin mb-4"
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 216,
+                        lineNumber: 240,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2137,13 +2179,13 @@ function Page() {
                         children: "Processing..."
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 217,
+                        lineNumber: 241,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 215,
+                lineNumber: 239,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("header", {
@@ -2158,14 +2200,14 @@ function Page() {
                                     className: "h-6 w-6"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 224,
+                                    lineNumber: 248,
                                     columnNumber: 17
                                 }, this),
                                 "PDF Editor Pro"
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 223,
+                            lineNumber: 247,
                             columnNumber: 13
                         }, this),
                         pdfDoc && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$edit$2d$pdf$2f$components$2f$toolbar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Toolbar"], {
@@ -2177,18 +2219,18 @@ function Page() {
                             onDownload: handleDownload
                         }, void 0, false, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 228,
+                            lineNumber: 252,
                             columnNumber: 18
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                    lineNumber: 222,
+                    lineNumber: 246,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 221,
+                lineNumber: 245,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("main", {
@@ -2206,32 +2248,32 @@ function Page() {
                                             className: "h-10 w-10 text-primary"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 246,
+                                            lineNumber: 270,
                                             columnNumber: 21
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                        lineNumber: 245,
+                                        lineNumber: 269,
                                         columnNumber: 19
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardTitle"], {
                                         children: "Professional PDF Editor"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                        lineNumber: 248,
+                                        lineNumber: 272,
                                         columnNumber: 19
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardDescription"], {
                                         children: "Upload a file to start editing, signing, and organizing."
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                        lineNumber: 249,
+                                        lineNumber: 273,
                                         columnNumber: 19
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                lineNumber: 244,
+                                lineNumber: 268,
                                 columnNumber: 17
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -2243,7 +2285,7 @@ function Page() {
                                             className: "h-12 w-12 text-muted-foreground mb-3"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 256,
+                                            lineNumber: 280,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2251,7 +2293,7 @@ function Page() {
                                             children: "Click or drag a file to upload"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 257,
+                                            lineNumber: 281,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2259,29 +2301,29 @@ function Page() {
                                             children: "PDF files only"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                            lineNumber: 258,
+                                            lineNumber: 282,
                                             columnNumber: 21
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 252,
+                                    lineNumber: 276,
                                     columnNumber: 19
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                lineNumber: 251,
+                                lineNumber: 275,
                                 columnNumber: 17
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 243,
+                        lineNumber: 267,
                         columnNumber: 15
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                    lineNumber: 242,
+                    lineNumber: 266,
                     columnNumber: 14
                 }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
                     children: [
@@ -2297,15 +2339,16 @@ function Page() {
                                 onReorderPages: onReorderPages
                             }, void 0, false, {
                                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                lineNumber: 266,
+                                lineNumber: 290,
                                 columnNumber: 21
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 265,
+                            lineNumber: 289,
                             columnNumber: 17
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                            ref: mainContainerRef,
                             className: "flex-grow h-full overflow-auto bg-muted relative",
                             children: [
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$edit$2d$pdf$2f$components$2f$InteractivePdfCanvas$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -2323,7 +2366,7 @@ function Page() {
                                     setPdfLoaded: setPdfLoaded
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 278,
+                                    lineNumber: 302,
                                     columnNumber: 21
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2336,12 +2379,12 @@ function Page() {
                                         onRotateRight: ()=>handleRotateActivePage('right')
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                        lineNumber: 294,
+                                        lineNumber: 318,
                                         columnNumber: 25
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 293,
+                                    lineNumber: 317,
                                     columnNumber: 21
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$edit$2d$pdf$2f$components$2f$PropertyPanel$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -2351,20 +2394,20 @@ function Page() {
                                     onStyleChange: handleStyleChange
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/page.tsx",
-                                    lineNumber: 303,
+                                    lineNumber: 327,
                                     columnNumber: 21
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 277,
+                            lineNumber: 301,
                             columnNumber: 17
                         }, this)
                     ]
                 }, void 0, true)
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 240,
+                lineNumber: 264,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -2376,17 +2419,17 @@ function Page() {
                 accept: "application/pdf"
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 314,
+                lineNumber: 338,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/edit-pdf/page.tsx",
-        lineNumber: 213,
+        lineNumber: 237,
         columnNumber: 5
     }, this);
 }
-_s(Page, "Qh4wLhRdc4/Z6Q7WilcfA2ISJWs=", false, function() {
+_s(Page, "VFxq17Ecc3IurNTKMlJY50f1YEM=", false, function() {
     return [
         __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$use$2d$toast$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useToast"]
     ];

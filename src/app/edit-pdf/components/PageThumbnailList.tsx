@@ -61,7 +61,7 @@ const PageThumbnailList: React.FC<PageThumbnailListProps> = ({
       <ScrollArea className="h-full">
         <div ref={listRef} className="flex flex-col gap-4 p-2">
           {thumbnails.map((thumbnail, i) => (
-            <div key={i} className="flex flex-col gap-1 items-center" data-id={i}>
+            <div key={thumbnail} className="flex flex-col gap-1 items-center" data-id={i}>
               <Button
                 variant="outline"
                 className={cn(

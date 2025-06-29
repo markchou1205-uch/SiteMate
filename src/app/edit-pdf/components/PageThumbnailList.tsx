@@ -27,6 +27,7 @@ interface PageThumbnailListProps {
   onDeletePage: (index: number) => void;
   onRotatePage: (index: number) => void;
   onReorderPages: (oldIndex: number, newIndex: number) => void;
+  onPrepareInsertPdf: (index: number) => void;
 }
 
 const PageThumbnailList: React.FC<PageThumbnailListProps> = ({
@@ -37,9 +38,9 @@ const PageThumbnailList: React.FC<PageThumbnailListProps> = ({
   onDeletePage,
   onRotatePage,
   onReorderPages,
+  onPrepareInsertPdf,
 }) => {
   const listRef = useRef<HTMLDivElement>(null);
-  const insertPdfRef = useRef<HTMLInputElement>(null);
   const thumbnailRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
@@ -113,7 +114,7 @@ const PageThumbnailList: React.FC<PageThumbnailListProps> = ({
                       <File className="mr-2 h-4 w-4" />
                       <span>插入空白頁</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => insertPdfRef.current?.click()}>
+                    <DropdownMenuItem onClick={() => onPrepareInsertPdf(i + 1)}>
                       <FilePlus className="mr-2 h-4 w-4" />
                       <span>插入PDF</span>
                     </DropdownMenuItem>
@@ -151,13 +152,6 @@ const PageThumbnailList: React.FC<PageThumbnailListProps> = ({
           ))}
         </div>
       </ScrollArea>
-       <input
-        type="file"
-        ref={insertPdfRef}
-        className="hidden"
-        accept="application/pdf"
-        // onChange would be handled by the parent component logic
-      />
     </TooltipProvider>
   );
 };

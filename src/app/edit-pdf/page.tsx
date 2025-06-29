@@ -5,7 +5,8 @@ import { PDFDocument, rgb, StandardFonts, degrees } from 'pdf-lib';
 import { useEffect, useRef, useState, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import * as pdfjsWorker from "pdfjs-dist/build/pdf.worker.entry";
-import { Loader2, Upload, Edit } from 'lucide-react';
+import { Upload, Edit } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 import { Toolbar } from "./components/toolbar";
 import PropertyPanel from "./components/PropertyPanel";
@@ -14,6 +15,7 @@ import PageThumbnailList from "./components/PageThumbnailList";
 import ZoomControls from "./components/ZoomControls";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
@@ -40,7 +42,12 @@ export default function Page() {
   const [numPages, setNumPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [pageToDeleteIndex, setPageToDeleteIndex] = useState<number | null>(null);
+  const [insertPdfAtIndex, setInsertPdfAtIndex] = useState(0);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const insertPdfFileInputRef = useRef<HTMLInputElement>(null);
   const mainContainerRef = useRef<HTMLDivElement>(null);
 
   const handleTextEditStart = useCallback(() => setIsEditingText(true), []);
@@ -53,20 +60,17 @@ export default function Page() {
   const handleZoomIn = useCallback(() => setScale((s) => Math.min(s + 0.2, 3)), []);
   const handleZoomOut = useCallback(() => setScale((s) => Math.max(s - 0.2, 0.2)), []);
 
-  const handleRotateActivePage = useCallback((direction: 'left' | 'right') => {
+  const handleRotateActivePage = useCallback(async (direction: 'left' | 'right') => {
     if (!pdfDoc || currentPage < 1) return;
     const pageIndex = currentPage - 1;
 
-    const rotate = async () => {
-      const newDoc = await pdfDoc.copy();
-      const page = newDoc.getPage(pageIndex);
-      const currentRotation = page.getRotation().angle;
-      const rotationAmount = direction === 'right' ? 90 : -90;
-      page.setRotation(degrees((currentRotation + rotationAmount + 360) % 360));
-      setPdfDoc(newDoc);
-      setDocVersion(v => v + 1);
-    };
-    rotate();
+    const newDoc = await pdfDoc.copy();
+    const page = newDoc.getPage(pageIndex);
+    const currentRotation = page.getRotation().angle;
+    const rotationAmount = direction === 'right' ? 90 : -90;
+    page.setRotation(degrees((currentRotation + rotationAmount + 360) % 360));
+    setPdfDoc(newDoc);
+    setDocVersion(v => v + 1);
   }, [pdfDoc, currentPage]);
 
   const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -163,15 +167,23 @@ export default function Page() {
     setDocVersion(v => v + 1);
   }, [pdfDoc]);
 
-  const onDeletePage = useCallback(async (index: number) => {
-    if (!pdfDoc || pdfDoc.getPageCount() <= 1) {
+  const onDeletePage = useCallback((index: number) => {
+    setPageToDeleteIndex(index);
+    setIsDeleteConfirmOpen(true);
+  }, []);
+
+  const confirmDeletePage = useCallback(async () => {
+    if (pageToDeleteIndex === null || !pdfDoc || pdfDoc.getPageCount() <= 1) {
+        setIsDeleteConfirmOpen(false);
         return;
     };
     const newDoc = await pdfDoc.copy();
-    newDoc.removePage(index);
+    newDoc.removePage(pageToDeleteIndex);
     setPdfDoc(newDoc);
     setDocVersion(v => v + 1);
-  }, [pdfDoc]);
+    setIsDeleteConfirmOpen(false);
+    setPageToDeleteIndex(null);
+  }, [pdfDoc, pageToDeleteIndex]);
 
   const onRotatePage = useCallback(async (index: number) => {
      if (!pdfDoc) return;
@@ -201,6 +213,38 @@ export default function Page() {
     setPdfDoc(newDoc);
     setDocVersion(v => v + 1);
   }, [pdfDoc]);
+
+  const handlePrepareInsertPdf = useCallback((index: number) => {
+    setInsertPdfAtIndex(index);
+    insertPdfFileInputRef.current?.click();
+  }, []);
+  
+  const onInsertPdfSelected = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !pdfDoc) return;
+
+    setIsLoading(true);
+    try {
+        const newPdfBytes = await file.arrayBuffer();
+        const newPdfToInsert = await PDFDocument.load(newPdfBytes);
+        
+        const newDoc = await pdfDoc.copy();
+        const indicesToCopy = newPdfToInsert.getPageIndices();
+        const copiedPages = await newDoc.copyPages(newPdfToInsert, indicesToCopy);
+
+        copiedPages.forEach((page, i) => {
+            newDoc.insertPage(insertPdfAtIndex + i, page);
+        });
+        
+        setPdfDoc(newDoc);
+        setDocVersion(v => v + 1);
+    } catch (error) {
+        console.error("Failed to insert PDF", error);
+    } finally {
+        setIsLoading(false);
+        if (e.target) e.target.value = '';
+    }
+  }, [pdfDoc, insertPdfAtIndex]);
 
   useEffect(() => {
     const container = mainContainerRef.current;
@@ -238,6 +282,21 @@ export default function Page() {
         </div>
       )}
       
+      <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>確認刪除</AlertDialogTitle>
+            <AlertDialogDescription>
+              您確定要刪除此頁面嗎？此操作無法復原。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeletePage} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">刪除</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <header className="flex-shrink-0 border-b shadow-sm bg-card z-30">
         <div className="container mx-auto px-4 py-2 flex items-center justify-between">
             <h1 className="text-xl font-bold text-primary flex items-center gap-2">
@@ -292,6 +351,7 @@ export default function Page() {
                         onDeletePage={onDeletePage}
                         onRotatePage={onRotatePage}
                         onReorderPages={onReorderPages}
+                        onPrepareInsertPdf={handlePrepareInsertPdf}
                     />
                 </aside>
                 
@@ -339,6 +399,13 @@ export default function Page() {
         className="hidden" 
         onChange={handleFileChange} 
         accept="application/pdf" 
+      />
+      <input
+        type="file"
+        ref={insertPdfFileInputRef}
+        className="hidden"
+        accept="application/pdf"
+        onChange={onInsertPdfSelected}
       />
     </div>
   );

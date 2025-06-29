@@ -1431,6 +1431,7 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
                     const container = containerRef.current;
                     if (!container) return;
                     container.innerHTML = "";
+                    const newCanvases = [];
                     for(let pageNum = 1; pageNum <= pdf.numPages; pageNum++){
                         const page = await pdf.getPage(pageNum);
                         const viewport = page.getViewport({
@@ -1446,6 +1447,7 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
                         pdfCanvasEl.width = viewport.width;
                         pdfCanvasEl.height = viewport.height;
                         fabricCanvasEl.id = `fabric-canvas-${pageNum}`;
+                        fabricCanvasEl.className = "absolute top-0 left-0";
                         pageWrapper.appendChild(pdfCanvasEl);
                         pageWrapper.appendChild(fabricCanvasEl);
                         container.appendChild(pageWrapper);
@@ -1476,11 +1478,15 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
                                 }
                             }
                         }["InteractivePdfCanvas.useEffect.renderPdf"]);
-                        canvasesToSet[pageNum - 1] = fabricCanvas;
+                        newCanvases[pageNum - 1] = fabricCanvas;
                     }
                     if (isMounted) {
-                        setLocalCanvases(canvasesToSet);
-                        setFabricCanvases(canvasesToSet);
+                        // Dispose old canvases before setting new ones
+                        localCanvases.forEach({
+                            "InteractivePdfCanvas.useEffect.renderPdf": (canvas)=>canvas?.dispose()
+                        }["InteractivePdfCanvas.useEffect.renderPdf"]);
+                        setLocalCanvases(newCanvases);
+                        setFabricCanvases(newCanvases);
                         setPdfLoaded(true);
                     }
                 }
@@ -1489,9 +1495,7 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
             return ({
                 "InteractivePdfCanvas.useEffect": ()=>{
                     isMounted = false;
-                    canvasesToSet.forEach({
-                        "InteractivePdfCanvas.useEffect": (canvas)=>canvas?.dispose()
-                    }["InteractivePdfCanvas.useEffect"]);
+                // The cleanup of canvases now happens before setting new ones or on unmount
                 }
             })["InteractivePdfCanvas.useEffect"];
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1506,8 +1510,9 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
             const isDrawingActive = drawingTool !== null;
             const handleMouseDown = {
                 "InteractivePdfCanvas.useEffect.handleMouseDown": (o)=>{
+                    if (!drawingTool || drawingTool === 'freedraw') return;
                     const canvas = o.target?.canvas;
-                    if (!canvas || !drawingTool || drawingTool === 'freedraw') return;
+                    if (!canvas) return;
                     drawingState.current.isDrawing = true;
                     const pointer = canvas.getPointer(o.e);
                     drawingState.current.origX = pointer.x;
@@ -1529,8 +1534,8 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
                         fill: 'transparent',
                         stroke: 'black',
                         strokeWidth: 2,
-                        selectable: false,
-                        evented: false
+                        selectable: true,
+                        evented: true
                     };
                     switch(drawingTool){
                         case 'rect':
@@ -1564,22 +1569,18 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
                     if (shape.type === 'circle') {
                         const radius = Math.sqrt(Math.pow(pointer.x - origX, 2) + Math.pow(pointer.y - origY, 2)) / 2;
                         shape.set({
-                            left: (pointer.x + origX) / 2,
-                            top: (pointer.y + origY) / 2,
+                            left: origX,
+                            top: origY,
                             radius: radius,
                             originX: 'center',
                             originY: 'center'
                         });
                     } else {
-                        const newLeft = Math.min(pointer.x, origX);
-                        const newTop = Math.min(pointer.y, origY);
-                        const newWidth = Math.abs(origX - pointer.x);
-                        const newHeight = Math.abs(origY - pointer.y);
                         shape.set({
-                            left: newLeft,
-                            top: newTop,
-                            width: newWidth,
-                            height: newHeight
+                            left: Math.min(pointer.x, origX),
+                            top: Math.min(pointer.y, origY),
+                            width: Math.abs(origX - pointer.x),
+                            height: Math.abs(origY - pointer.y)
                         });
                     }
                     canvas.requestRenderAll();
@@ -1620,9 +1621,9 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
             localCanvases.forEach({
                 "InteractivePdfCanvas.useEffect": (canvas, index)=>{
                     if (!canvas) return;
-                    canvas.off('mouse:down', handleMouseDown);
-                    canvas.off('mouse:move', handleMouseMove);
-                    canvas.off('mouse:up', handleMouseUp);
+                    canvas.off('mouse:down');
+                    canvas.off('mouse:move');
+                    canvas.off('mouse:up');
                     canvas.off('path:created');
                     canvas.isDrawingMode = drawingTool === 'freedraw';
                     canvas.selection = !isDrawingActive;
@@ -1653,9 +1654,9 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
                     localCanvases.forEach({
                         "InteractivePdfCanvas.useEffect": (canvas)=>{
                             if (canvas) {
-                                canvas.off('mouse:down', handleMouseDown);
-                                canvas.off('mouse:move', handleMouseMove);
-                                canvas.off('mouse:up', handleMouseUp);
+                                canvas.off('mouse:down');
+                                canvas.off('mouse:move');
+                                canvas.off('mouse:up');
                                 canvas.off('path:created');
                             }
                         }
@@ -1676,12 +1677,12 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
             className: "flex flex-col items-center"
         }, void 0, false, {
             fileName: "[project]/src/app/edit-pdf/components/InteractivePdfCanvas.tsx",
-            lineNumber: 292,
+            lineNumber: 293,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/src/app/edit-pdf/components/InteractivePdfCanvas.tsx",
-        lineNumber: 291,
+        lineNumber: 292,
         columnNumber: 5
     }, this);
 }

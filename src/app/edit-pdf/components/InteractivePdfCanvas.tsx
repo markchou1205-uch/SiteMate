@@ -55,7 +55,6 @@ export default function InteractivePdfCanvas({
   });
 
   useEffect(() => {
-    let canvasesToSet: (fabric.Canvas | null)[] = [];
     let isMounted = true;
 
     const renderPdf = async () => {
@@ -120,7 +119,6 @@ export default function InteractivePdfCanvas({
       }
       
       if (isMounted) {
-        // Dispose old canvases before setting new ones
         localCanvases.forEach(canvas => canvas?.dispose());
         setLocalCanvases(newCanvases);
         setFabricCanvases(newCanvases);
@@ -132,7 +130,6 @@ export default function InteractivePdfCanvas({
 
     return () => {
       isMounted = false;
-      // The cleanup of canvases now happens before setting new ones or on unmount
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pdfDoc, docVersion, scale]);
@@ -198,7 +195,7 @@ export default function InteractivePdfCanvas({
       const pointer = canvas.getPointer(o.e);
       const { origX, origY, shape } = drawingState.current;
       
-      if (shape.type === 'circle') {
+      if (shape instanceof fabric.Circle) {
            const radius = Math.sqrt(Math.pow(pointer.x - origX, 2) + Math.pow(pointer.y - origY, 2)) / 2;
            shape.set({
               left: origX,

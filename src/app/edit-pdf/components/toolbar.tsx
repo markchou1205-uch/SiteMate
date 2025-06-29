@@ -1,7 +1,10 @@
+
 // 檔案：Toolbar.tsx
 import { FilePlus, Download, Upload, Circle, Pencil, Text, Trash2, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, Square, Triangle, Pen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+
+type DrawingTool = 'circle' | 'rect' | 'triangle' | 'freedraw' | null;
 
 export function Toolbar({
   onAddText,
@@ -12,7 +15,7 @@ export function Toolbar({
   onDownloadRequest,
 }: {
   onAddText: () => void;
-  onSetDrawingTool: (tool: 'rect' | 'circle' | 'triangle' | 'freedraw') => void;
+  onSetDrawingTool: (tool: DrawingTool) => void;
   onOpenFileRequest: () => void;
   onInsertPdfRequest: (position: 'start' | 'end' | 'before' | 'after', index?: number) => void;
   onDeleteObject: () => void;

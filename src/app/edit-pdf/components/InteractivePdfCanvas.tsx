@@ -136,12 +136,11 @@ export default function InteractivePdfCanvas({
 
   useEffect(() => {
     const isDrawingActive = drawingTool !== null;
-
+    
+    // Define all handlers inside the useEffect to capture the latest props and state
     const handleMouseDown = (o: fabric.IEvent) => {
-      if (!drawingTool || drawingTool === 'freedraw') return;
-
       const canvas = o.target?.canvas;
-      if (!canvas) return;
+      if (!canvas || !drawingTool || drawingTool === 'freedraw') return;
 
       drawingState.current.isDrawing = true;
       const pointer = canvas.getPointer(o.e);
@@ -195,15 +194,15 @@ export default function InteractivePdfCanvas({
       const { origX, origY, shape } = drawingState.current;
       
       if (shape instanceof fabric.Circle) {
-           const dx = pointer.x - origX;
-           const dy = pointer.y - origY;
+           const dx = Math.abs(pointer.x - origX);
+           const dy = Math.abs(pointer.y - origY);
            const radius = Math.sqrt(dx * dx + dy * dy) / 2;
            shape.set({
-              left: origX + dx / 2,
-              top: origY + dy / 2,
+              left: origX > pointer.x ? pointer.x : origX,
+              top: origY > pointer.y ? pointer.y : origY,
               radius: radius,
-              originX: 'center',
-              originY: 'center'
+              originX: 'left',
+              originY: 'top'
           });
       } else {
           shape.set({
@@ -238,8 +237,6 @@ export default function InteractivePdfCanvas({
       }
       
       drawingState.current = { isDrawing: false, origX: 0, origY: 0, shape: null, canvasIndex: null };
-      
-      // Crucially, reset the tool in the parent component to exit drawing mode.
       setDrawingTool(null);
     };
     

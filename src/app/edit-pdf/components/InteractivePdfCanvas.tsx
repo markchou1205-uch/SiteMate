@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { fabric } from 'fabric';
 import * as pdfjsLib from "pdfjs-dist";
 import * as pdfjsWorker from "pdfjs-dist/build/pdf.worker.entry";
@@ -41,7 +41,7 @@ export default function InteractivePdfCanvas({
   onShapeDoubleClick,
 }: InteractivePdfCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const fabricCanvasRefs = useRef<(fabric.Canvas | null)[]>([]);
+  const [localCanvases, setLocalCanvases] = useState<(fabric.Canvas | null)[]>([]);
   const drawingState = useRef<{ isDrawing: boolean; origX: number; origY: number; shape: fabric.Object | null }>({
     isDrawing: false,
     origX: 0,
@@ -52,10 +52,11 @@ export default function InteractivePdfCanvas({
   useEffect(() => {
     if (!pdfDoc) {
         if(containerRef.current) containerRef.current.innerHTML = "";
+        setLocalCanvases([]);
         return;
     };
     
-    let canvases: (fabric.Canvas | null)[] = [];
+    let canvasesToSet: (fabric.Canvas | null)[] = [];
 
     const renderPdf = async () => {
       setPdfLoaded(false);
@@ -68,7 +69,6 @@ export default function InteractivePdfCanvas({
       const container = containerRef.current;
       if (!container) return;
       container.innerHTML = ""; 
-      fabricCanvasRefs.current = [];
 
       for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
         const page = await pdf.getPage(pageNum);
@@ -111,11 +111,11 @@ export default function InteractivePdfCanvas({
             }
         });
         
-        canvases[pageNum - 1] = fabricCanvas;
+        canvasesToSet[pageNum - 1] = fabricCanvas;
       }
       
-      fabricCanvasRefs.current = canvases;
-      setFabricCanvases(canvases);
+      setLocalCanvases(canvasesToSet);
+      setFabricCanvases(canvasesToSet);
       setPdfLoaded(true);
     };
 
@@ -124,7 +124,7 @@ export default function InteractivePdfCanvas({
   }, [pdfDoc, docVersion, scale]);
 
   useEffect(() => {
-    fabricCanvasRefs.current.forEach((canvas, index) => {
+    localCanvases.forEach((canvas, index) => {
         if (!canvas) return;
 
         canvas.isDrawingMode = drawingTool === 'freedraw';
@@ -138,11 +138,11 @@ export default function InteractivePdfCanvas({
         canvas.off('mouse:down');
         canvas.off('mouse:move');
         canvas.off('mouse:up');
-        canvas.renderAll();
+        
 
         if (drawingTool && drawingTool !== 'freedraw') {
             const handleMouseDown = (o: fabric.IEvent) => {
-                const currentCanvas = fabricCanvasRefs.current[index];
+                const currentCanvas = localCanvases[index];
                 if (!currentCanvas || !o.e) return;
 
                 drawingState.current.isDrawing = true;
@@ -187,7 +187,7 @@ export default function InteractivePdfCanvas({
             const handleMouseMove = (o: fabric.IEvent) => {
                 if (!drawingState.current.isDrawing || !drawingState.current.shape || !o.e) return;
 
-                const currentCanvas = fabricCanvasRefs.current[index];
+                const currentCanvas = localCanvases[index];
                 if (!currentCanvas) return;
 
                 const pointer = currentCanvas.getPointer(o.e);
@@ -222,7 +222,7 @@ export default function InteractivePdfCanvas({
             const handleMouseUp = () => {
                 if (!drawingState.current.isDrawing || !drawingState.current.shape) return;
 
-                const currentCanvas = fabricCanvasRefs.current[index];
+                const currentCanvas = localCanvases[index];
                 if (!currentCanvas) return;
                 
                 const { shape } = drawingState.current;
@@ -251,10 +251,12 @@ export default function InteractivePdfCanvas({
             canvas.on('mouse:move', handleMouseMove);
             canvas.on('mouse:up', handleMouseUp);
         }
+
+        canvas.renderAll();
     });
 
     return () => {
-        fabricCanvasRefs.current.forEach(canvas => {
+        localCanvases.forEach(canvas => {
             if (canvas) {
                 canvas.off('mouse:down');
                 canvas.off('mouse:move');
@@ -262,7 +264,7 @@ export default function InteractivePdfCanvas({
             }
         });
     };
-  }, [drawingTool, onUpdateFabricObject, setDrawingTool, onShapeDoubleClick]);
+  }, [drawingTool, localCanvases, onUpdateFabricObject, setDrawingTool, onShapeDoubleClick]);
 
   return (
     <div className="relative w-full h-full p-4">

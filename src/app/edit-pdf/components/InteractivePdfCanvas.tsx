@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -25,13 +24,27 @@ interface InteractivePdfCanvasProps {
 
 export default function InteractivePdfCanvas({
   pdfFile,
+  currentPage,
+  scale,
+  onTextEditStart,
+  onTextEditEnd,
+  selectedStyle,
+  selectedObjectId,
+  setSelectedObjectId,
+  pageObjects,
+  setPageObjects,
+  setPdfLoaded,
   setNumPages,
-  setSelectedObjectId, // Changed from selectedTextRange
 }: InteractivePdfCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [showStylePanel, setShowStylePanel] = useState(false);
   const [selectedTextRange, setSelectedTextRange] = useState<Range | null>(null);
-  const [currentStyle, setCurrentStyle] = useState({ bold: false, italic: false, underline: false, color: "#000000" });
+  const [currentStyle, setCurrentStyle] = useState({
+    bold: false,
+    italic: false,
+    underline: false,
+    color: "#000000",
+  });
 
   useEffect(() => {
     if (!pdfFile) return;
@@ -47,45 +60,26 @@ export default function InteractivePdfCanvas({
         if (!container) return;
         container.innerHTML = "";
 
-        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-          const page = await pdf.getPage(pageNum);
-          const viewport = page.getViewport({ scale: 1.5 });
+        const page = await pdf.getPage(currentPage);
+        const viewport = page.getViewport({ scale });
 
-          const canvas = document.createElement("canvas");
-          canvas.className = "mb-4 border mx-auto";
-          const context = canvas.getContext("2d")!;
-          canvas.width = viewport.width;
-          canvas.height = viewport.height;
+        const canvas = document.createElement("canvas");
+        canvas.className = "mb-4 border mx-auto";
+        const context = canvas.getContext("2d")!;
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
 
-          const renderContext = { canvasContext: context, viewport };
-          await page.render(renderContext).promise;
+        const renderContext = { canvasContext: context, viewport };
+        await page.render(renderContext).promise;
 
-          const textContent = await page.getTextContent();
-          const textLayer = document.createElement("div");
-          textLayer.className = "textLayer absolute top-0 left-0 text-black select-text";
-          textLayer.style.width = `${viewport.width}px`;
-          textLayer.style.height = `${viewport.height}px`;
-
-          pdfjsLib.renderTextLayer({
-            textContent,
-            container: textLayer,
-            viewport,
-            textDivs: [],
-          });
-
-          const wrapper = document.createElement("div");
-          wrapper.className = "relative";
-          wrapper.appendChild(canvas);
-          wrapper.appendChild(textLayer);
-
-          container.appendChild(wrapper);
-        }
+        container.appendChild(canvas);
+        setPdfLoaded(true);
       };
       reader.readAsArrayBuffer(pdfFile);
     };
 
     renderPdf();
-  }, [pdfFile, setNumPages]);
+  }, [pdfFile, currentPage, scale, setNumPages, setPdfLoaded]);
 
   useEffect(() => {
     const handleMouseUp = () => {
@@ -94,14 +88,16 @@ export default function InteractivePdfCanvas({
         const range = selection.getRangeAt(0);
         setSelectedTextRange(range);
         setShowStylePanel(true);
+        onTextEditStart();
       } else {
         setSelectedTextRange(null);
         setShowStylePanel(false);
+        onTextEditEnd();
       }
     };
     document.addEventListener("mouseup", handleMouseUp);
     return () => document.removeEventListener("mouseup", handleMouseUp);
-  }, []);
+  }, [onTextEditStart, onTextEditEnd]);
 
   const applyStyle = (style: { bold?: boolean; italic?: boolean; underline?: boolean; color?: string }) => {
     if (!selectedTextRange) return;

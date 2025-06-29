@@ -21,15 +21,39 @@ export function Toolbar({
 
   return (
     <div className="flex items-center justify-between border-b bg-secondary p-2">
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={onNewFile}><FilePlus className="h-4 w-4" /></Button>
-        <Button variant="ghost" size="icon" onClick={onUpload}><Upload className="h-4 w-4" /></Button>
-        <Button variant="ghost" size="icon" onClick={onDownload}><Download className="h-4 w-4" /></Button>
-        <Button variant="ghost" size="icon" onClick={onErase}><Eraser className="h-4 w-4" /></Button>
-        <Button variant="ghost" size="icon" onClick={onAddRect}><Circle className="h-4 w-4" /></Button>
-        <Button variant="ghost" size="icon" onClick={onAddFreeDraw}><Pencil className="h-4 w-4" /></Button>
-        <Button variant="ghost" size="icon" onClick={onAddText}><Text className="h-4 w-4" /></Button>
-        <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4" /></Button>
+      <div className="flex items-center gap-4 text-center">
+        <div className="flex flex-col items-center w-16">
+            <Button variant="ghost" size="icon" onClick={onNewFile}><FilePlus className="h-5 w-5" /></Button>
+            <span className="text-xs mt-1">新增檔案</span>
+        </div>
+        <div className="flex flex-col items-center w-16">
+            <Button variant="ghost" size="icon" onClick={onUpload}><Upload className="h-5 w-5" /></Button>
+            <span className="text-xs mt-1">上傳</span>
+        </div>
+        <div className="flex flex-col items-center w-16">
+            <Button variant="ghost" size="icon" onClick={onDownload}><Download className="h-5 w-5" /></Button>
+            <span className="text-xs mt-1">下載</span>
+        </div>
+        <div className="flex flex-col items-center w-16">
+            <Button variant="ghost" size="icon" onClick={onErase}><Eraser className="h-5 w-5" /></Button>
+            <span className="text-xs mt-1">橡皮擦</span>
+        </div>
+        <div className="flex flex-col items-center w-16">
+            <Button variant="ghost" size="icon" onClick={onAddRect}><Circle className="h-5 w-5" /></Button>
+            <span className="text-xs mt-1">新增圖形</span>
+        </div>
+        <div className="flex flex-col items-center w-16">
+            <Button variant="ghost" size="icon" onClick={onAddFreeDraw}><Pencil className="h-5 w-5" /></Button>
+            <span className="text-xs mt-1">畫筆</span>
+        </div>
+        <div className="flex flex-col items-center w-16">
+            <Button variant="ghost" size="icon" onClick={onAddText}><Text className="h-5 w-5" /></Button>
+            <span className="text-xs mt-1">文字</span>
+        </div>
+        <div className="flex flex-col items-center w-16">
+            <Button variant="ghost" size="icon"><Trash2 className="h-5 w-5" /></Button>
+            <span className="text-xs mt-1">刪除物件</span>
+        </div>
       </div>
 
       {selectedTextObject && style && (

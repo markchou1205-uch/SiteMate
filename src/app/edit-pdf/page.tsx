@@ -1,3 +1,4 @@
+// File: page.tsx
 
 "use client";
 
@@ -56,7 +57,7 @@ export default function Page() {
 
       <div className="flex flex-1 overflow-hidden">
         <main className="flex-1 relative" onClick={handleClickCanvas}>
-          <div className="absolute left-0 top-0 w-36 h-full border-r overflow-y-auto bg-white z-10">
+          <div className="absolute left-0 top-0 w-[12%] h-full border-r overflow-y-auto bg-white z-10">
             <PageThumbnailList
               numPages={numPages}
               currentPage={currentPage}
@@ -64,12 +65,10 @@ export default function Page() {
             />
           </div>
 
-          <div className="ml-36 h-full overflow-auto">
+          <div className="ml-[12%] h-full overflow-auto">
             <InteractivePdfCanvas
               pdfFile={pdfFile}
               setNumPages={setNumPages}
-              // The props below are for editor functionality not yet implemented in the component,
-              // but are added to the interface to prevent build errors.
               currentPage={currentPage}
               scale={scale}
               onTextEditStart={() => setIsEditingText(true)}

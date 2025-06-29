@@ -1524,42 +1524,49 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, onTextEditStart, onTe
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
         "InteractivePdfCanvas.useEffect": ()=>{
             fabricCanvasRefs.current.forEach({
-                "InteractivePdfCanvas.useEffect": (canvas)=>{
+                "InteractivePdfCanvas.useEffect": (canvas, index)=>{
                     if (!canvas) return;
                     canvas.isDrawingMode = drawingTool === 'freedraw';
-                    canvas.defaultCursor = drawingTool ? 'crosshair' : 'default';
                     canvas.selection = !drawingTool;
+                    canvas.defaultCursor = drawingTool ? 'crosshair' : 'default';
                     canvas.forEachObject({
-                        "InteractivePdfCanvas.useEffect": (obj)=>obj.selectable = !drawingTool
+                        "InteractivePdfCanvas.useEffect": (obj)=>{
+                            obj.selectable = !drawingTool;
+                            obj.evented = !drawingTool;
+                        }
                     }["InteractivePdfCanvas.useEffect"]);
                     canvas.off('mouse:down');
                     canvas.off('mouse:move');
                     canvas.off('mouse:up');
+                    canvas.renderAll();
                     if (drawingTool && drawingTool !== 'freedraw') {
                         const handleMouseDown = {
                             "InteractivePdfCanvas.useEffect.handleMouseDown": (o)=>{
-                                const pointer = canvas.getPointer(o.e);
-                                drawingState.current = {
-                                    isDrawing: true,
-                                    origX: pointer.x,
-                                    origY: pointer.y,
-                                    shape: null
-                                };
+                                const currentCanvas = fabricCanvasRefs.current[index];
+                                if (!currentCanvas) return;
+                                const pointer = currentCanvas.getPointer(o.e);
+                                drawingState.current.isDrawing = true;
+                                drawingState.current.origX = pointer.x;
+                                drawingState.current.origY = pointer.y;
                                 let shape;
                                 const commonProps = {
                                     left: pointer.x,
                                     top: pointer.y,
-                                    width: 0,
-                                    height: 0,
+                                    originX: 'left',
+                                    originY: 'top',
                                     fill: 'transparent',
                                     stroke: 'black',
                                     strokeWidth: 2,
-                                    originX: 'left',
-                                    originY: 'top'
+                                    selectable: false,
+                                    evented: false
                                 };
                                 switch(drawingTool){
                                     case 'rect':
-                                        shape = new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$fabric$2f$dist$2f$fabric$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["fabric"].Rect(commonProps);
+                                        shape = new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$fabric$2f$dist$2f$fabric$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["fabric"].Rect({
+                                            ...commonProps,
+                                            width: 0,
+                                            height: 0
+                                        });
                                         break;
                                     case 'circle':
                                         shape = new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$fabric$2f$dist$2f$fabric$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["fabric"].Circle({
@@ -1568,53 +1575,71 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, onTextEditStart, onTe
                                         });
                                         break;
                                     case 'triangle':
-                                        shape = new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$fabric$2f$dist$2f$fabric$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["fabric"].Triangle(commonProps);
+                                        shape = new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$fabric$2f$dist$2f$fabric$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["fabric"].Triangle({
+                                            ...commonProps,
+                                            width: 0,
+                                            height: 0
+                                        });
                                         break;
                                     default:
                                         return;
                                 }
                                 drawingState.current.shape = shape;
-                                canvas.add(shape);
+                                currentCanvas.add(shape);
                             }
                         }["InteractivePdfCanvas.useEffect.handleMouseDown"];
                         const handleMouseMove = {
                             "InteractivePdfCanvas.useEffect.handleMouseMove": (o)=>{
                                 if (!drawingState.current.isDrawing || !drawingState.current.shape) return;
-                                const pointer = canvas.getPointer(o.e);
+                                const currentCanvas = fabricCanvasRefs.current[index];
+                                if (!currentCanvas) return;
+                                const pointer = currentCanvas.getPointer(o.e);
                                 const { origX, origY, shape } = drawingState.current;
                                 if (shape.type === 'circle') {
                                     const radius = Math.sqrt(Math.pow(pointer.x - origX, 2) + Math.pow(pointer.y - origY, 2)) / 2;
                                     shape.set({
-                                        radius: radius,
+                                        radius,
                                         left: origX + (pointer.x - origX) / 2,
                                         top: origY + (pointer.y - origY) / 2,
                                         originX: 'center',
                                         originY: 'center'
                                     });
                                 } else {
-                                    const width = Math.abs(origX - pointer.x);
-                                    const height = Math.abs(origY - pointer.y);
                                     shape.set({
-                                        width,
-                                        height,
                                         left: Math.min(pointer.x, origX),
-                                        top: Math.min(pointer.y, origY)
+                                        top: Math.min(pointer.y, origY),
+                                        width: Math.abs(origX - pointer.x),
+                                        height: Math.abs(origY - pointer.y)
                                     });
                                 }
-                                canvas.renderAll();
+                                currentCanvas.renderAll();
                             }
                         }["InteractivePdfCanvas.useEffect.handleMouseMove"];
                         const handleMouseUp = {
                             "InteractivePdfCanvas.useEffect.handleMouseUp": ()=>{
-                                if (drawingState.current.isDrawing && drawingState.current.shape) {
-                                    const { shape } = drawingState.current;
-                                    if (shape.type === 'circle') {
-                                        shape.set({
-                                            originX: 'left',
-                                            originY: 'top'
-                                        });
-                                    }
-                                    onUpdateFabricObject(fabricCanvasRefs.current.indexOf(canvas), canvas);
+                                if (!drawingState.current.isDrawing || !drawingState.current.shape) return;
+                                const currentCanvas = fabricCanvasRefs.current[index];
+                                if (!currentCanvas) return;
+                                const { shape } = drawingState.current;
+                                shape.set({
+                                    selectable: true,
+                                    evented: true
+                                });
+                                if (shape.type === 'circle') {
+                                    const s = shape;
+                                    s.set({
+                                        left: s.left - s.radius,
+                                        top: s.top - s.radius,
+                                        originX: 'left',
+                                        originY: 'top'
+                                    });
+                                }
+                                const minSize = 5;
+                                const hasSize = (shape.width ?? 0) > minSize || (shape.height ?? 0) > minSize || (shape.radius ?? 0) > minSize / 2;
+                                if (hasSize) {
+                                    onUpdateFabricObject(index, currentCanvas);
+                                } else {
+                                    currentCanvas.remove(shape);
                                 }
                                 drawingState.current = {
                                     isDrawing: false,
@@ -1622,6 +1647,7 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, onTextEditStart, onTe
                                     origY: 0,
                                     shape: null
                                 };
+                                currentCanvas.renderAll();
                                 setDrawingTool(null);
                             }
                         }["InteractivePdfCanvas.useEffect.handleMouseUp"];
@@ -1631,6 +1657,19 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, onTextEditStart, onTe
                     }
                 }
             }["InteractivePdfCanvas.useEffect"]);
+            return ({
+                "InteractivePdfCanvas.useEffect": ()=>{
+                    fabricCanvasRefs.current.forEach({
+                        "InteractivePdfCanvas.useEffect": (canvas)=>{
+                            if (canvas) {
+                                canvas.off('mouse:down');
+                                canvas.off('mouse:move');
+                                canvas.off('mouse:up');
+                            }
+                        }
+                    }["InteractivePdfCanvas.useEffect"]);
+                }
+            })["InteractivePdfCanvas.useEffect"];
         }
     }["InteractivePdfCanvas.useEffect"], [
         drawingTool,
@@ -1644,12 +1683,12 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, onTextEditStart, onTe
             className: "flex flex-col items-center"
         }, void 0, false, {
             fileName: "[project]/src/app/edit-pdf/components/InteractivePdfCanvas.tsx",
-            lineNumber: 225,
+            lineNumber: 265,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/src/app/edit-pdf/components/InteractivePdfCanvas.tsx",
-        lineNumber: 224,
+        lineNumber: 264,
         columnNumber: 5
     }, this);
 }

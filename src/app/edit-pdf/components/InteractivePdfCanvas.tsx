@@ -143,10 +143,10 @@ export default function InteractivePdfCanvas({
         if (drawingTool && drawingTool !== 'freedraw') {
             const handleMouseDown = (o: fabric.IEvent) => {
                 const currentCanvas = fabricCanvasRefs.current[index];
-                if (!currentCanvas) return;
+                if (!currentCanvas || !o.e) return;
 
-                const pointer = currentCanvas.getPointer(o.e);
                 drawingState.current.isDrawing = true;
+                const pointer = currentCanvas.getPointer(o.e);
                 drawingState.current.origX = pointer.x;
                 drawingState.current.origY = pointer.y;
 
@@ -156,6 +156,9 @@ export default function InteractivePdfCanvas({
                     top: pointer.y,
                     originX: 'left',
                     originY: 'top',
+                    width: 0,
+                    height: 0,
+                    angle: 0,
                     fill: 'transparent',
                     stroke: 'black',
                     strokeWidth: 2,
@@ -165,13 +168,13 @@ export default function InteractivePdfCanvas({
 
                 switch (drawingTool) {
                     case 'rect':
-                        shape = new fabric.Rect({ ...commonProps, width: 0, height: 0 });
+                        shape = new fabric.Rect(commonProps);
                         break;
                     case 'circle':
                         shape = new fabric.Circle({ ...commonProps, radius: 0 });
                         break;
                     case 'triangle':
-                        shape = new fabric.Triangle({ ...commonProps, width: 0, height: 0 });
+                        shape = new fabric.Triangle(commonProps);
                         break;
                     default:
                         return;
@@ -182,31 +185,37 @@ export default function InteractivePdfCanvas({
             };
 
             const handleMouseMove = (o: fabric.IEvent) => {
-                if (!drawingState.current.isDrawing || !drawingState.current.shape) return;
+                if (!drawingState.current.isDrawing || !drawingState.current.shape || !o.e) return;
 
                 const currentCanvas = fabricCanvasRefs.current[index];
                 if (!currentCanvas) return;
 
                 const pointer = currentCanvas.getPointer(o.e);
                 const { origX, origY, shape } = drawingState.current;
+                
+                let newLeft = Math.min(pointer.x, origX);
+                let newTop = Math.min(pointer.y, origY);
+                let newWidth = Math.abs(origX - pointer.x);
+                let newHeight = Math.abs(origY - pointer.y);
 
                 if (shape.type === 'circle') {
-                    const radius = Math.sqrt(Math.pow(pointer.x - origX, 2) + Math.pow(pointer.y - origY, 2)) / 2;
+                    const radius = Math.max(newWidth, newHeight) / 2;
                     shape.set({
-                        radius,
-                        left: origX + (pointer.x - origX) / 2,
-                        top: origY + (pointer.y - origY) / 2,
+                        left: newLeft + newWidth / 2,
+                        top: newTop + newHeight / 2,
+                        radius: radius,
                         originX: 'center',
                         originY: 'center',
                     });
                 } else {
-                    shape.set({
-                        left: Math.min(pointer.x, origX),
-                        top: Math.min(pointer.y, origY),
-                        width: Math.abs(origX - pointer.x),
-                        height: Math.abs(origY - pointer.y),
+                     shape.set({
+                        left: newLeft,
+                        top: newTop,
+                        width: newWidth,
+                        height: newHeight,
                     });
                 }
+                
                 currentCanvas.renderAll();
             };
 
@@ -217,27 +226,22 @@ export default function InteractivePdfCanvas({
                 if (!currentCanvas) return;
                 
                 const { shape } = drawingState.current;
-                shape.set({ selectable: true, evented: true });
+                shape.setCoords();
 
-                if (shape.type === 'circle') {
-                    const s = shape as fabric.Circle;
-                    s.set({
-                        left: s.left! - s.radius!,
-                        top: s.top! - s.radius!,
-                        originX: 'left',
-                        originY: 'top',
-                    });
-                }
-                
                 const minSize = 5;
-                const hasSize = (shape.width ?? 0) > minSize || (shape.height ?? 0) > minSize || ((shape as fabric.Circle).radius ?? 0) > minSize / 2;
+                const width = shape.width ?? 0;
+                const height = shape.height ?? 0;
+                const radius = (shape as fabric.Circle).radius ?? 0;
 
-                if (hasSize) {
+                if (width * (shape.scaleX ?? 1) > minSize || 
+                    height * (shape.scaleY ?? 1) > minSize || 
+                    radius > minSize / 2) {
+                    shape.set({ selectable: true, evented: true });
                     onUpdateFabricObject(index, currentCanvas);
                 } else {
                     currentCanvas.remove(shape);
                 }
-
+                
                 drawingState.current = { isDrawing: false, origX: 0, origY: 0, shape: null };
                 currentCanvas.renderAll();
                 setDrawingTool(null);
@@ -258,7 +262,7 @@ export default function InteractivePdfCanvas({
             }
         });
     };
-  }, [drawingTool, onUpdateFabricObject, setDrawingTool]);
+  }, [drawingTool, onUpdateFabricObject, setDrawingTool, onShapeDoubleClick]);
 
   return (
     <div className="relative w-full h-full p-4">

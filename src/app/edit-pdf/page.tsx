@@ -7,6 +7,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import * as pdfjsLib from "pdfjs-dist";
 import * as pdfjsWorker from "pdfjs-dist/build/pdf.worker.entry";
+import { Loader2 } from 'lucide-react';
 
 import { Toolbar } from "./components/toolbar";
 import PropertyPanel from "./components/PropertyPanel";

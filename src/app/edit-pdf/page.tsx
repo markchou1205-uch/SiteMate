@@ -1,12 +1,11 @@
 // File: page.tsx
-
 "use client";
 
 import { degrees, PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { useEffect, useRef, useState, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import * as pdfjsWorker from "pdfjs-dist/build/pdf.worker.entry";
-import { Loader2 } from 'lucide-react';
+import { Loader2, Upload, Edit } from 'lucide-react';
 
 import { Toolbar } from "./components/toolbar";
 import PropertyPanel from "./components/PropertyPanel";
@@ -14,6 +13,8 @@ import InteractivePdfCanvas from "./components/InteractivePdfCanvas";
 import PageThumbnailList from "./components/PageThumbnailList";
 import ZoomControls from "./components/ZoomControls";
 import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
@@ -25,11 +26,11 @@ export default function Page() {
     underline: false,
     color: "#000000",
   });
-  
+
   const [pdfDoc, setPdfDoc] = useState<PDFDocument | null>(null);
   const [docVersion, setDocVersion] = useState(0);
   const [pageThumbnails, setPageThumbnails] = useState<string[]>([]);
-  
+
   const [pdfLoaded, setPdfLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -39,6 +40,8 @@ export default function Page() {
   const [numPages, setNumPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleTextEditStart = useCallback(() => setIsEditingText(true), []);
   const handleTextEditEnd = useCallback(() => setIsEditingText(false), []);
@@ -87,106 +90,8 @@ export default function Page() {
         setIsLoading(false);
       }
     }
+     if (fileInputRef.current) fileInputRef.current.value = '';
   }, [toast]);
-
-  const updateThumbnails = useCallback(async () => {
-    if (!pdfDoc) {
-      setPageThumbnails([]);
-      return;
-    }
-    setIsLoading(true);
-    const thumbs: string[] = [];
-    try {
-      const pdfBytes = await pdfDoc.save();
-      const pdfJsDoc = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
-    
-      for (let i = 1; i <= pdfJsDoc.numPages; i++) {
-        const page = await pdfJsDoc.getPage(i);
-        const viewport = page.getViewport({ scale: 0.3 });
-        const canvas = document.createElement("canvas");
-        const context = canvas.getContext("2d")!;
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        await page.render({ canvasContext: context, viewport: viewport }).promise;
-        thumbs.push(canvas.toDataURL());
-      }
-      setPageThumbnails(thumbs);
-    } catch (error) {
-       console.error("Failed to update thumbnails", error);
-       toast({ title: "Thumbnail Error", description: "Could not generate page thumbnails.", variant: "destructive"});
-    } finally {
-      setIsLoading(false);
-    }
-  }, [pdfDoc, toast]);
-
-  useEffect(() => {
-    updateThumbnails();
-  }, [docVersion, pdfDoc, updateThumbnails]);
-
-
-  const handleAddBlankPage = useCallback(async (pageIndex: number) => {
-    if (!pdfDoc) return;
-    const newDoc = await pdfDoc.copy();
-    // Copy the first page to get the correct dimensions and orientation
-    const [templatePage] = await newDoc.copyPages(pdfDoc, [0]);
-    const newPage = newDoc.insertPage(pageIndex, templatePage);
-    // Clear the copied content by drawing a white rectangle over it
-    newPage.drawRectangle({
-        x: 0,
-        y: 0,
-        width: newPage.getWidth(),
-        height: newPage.getHeight(),
-        color: rgb(1, 1, 1),
-    });
-    const helveticaFont = await newDoc.embedFont(StandardFonts.Helvetica);
-    newPage.drawText('This is a new blank page.', {
-      x: 50,
-      y: newPage.getHeight() - 50,
-      font: helveticaFont,
-      size: 24,
-      color: rgb(0, 0, 0),
-    });
-    setPdfDoc(newDoc);
-    setNumPages(newDoc.getPageCount());
-    setDocVersion(v => v + 1);
-    toast({ title: "Page Added", description: "A blank page has been inserted." });
-  }, [pdfDoc, toast]);
-
-  const handleDeletePage = useCallback(async (pageIndex: number) => {
-    if (!pdfDoc || pdfDoc.getPageCount() <= 1) {
-      toast({ title: "Cannot Delete", description: "Cannot delete the last page of the document.", variant: "destructive"});
-      return;
-    };
-    const newDoc = await pdfDoc.copy();
-    newDoc.removePage(pageIndex);
-    setPdfDoc(newDoc);
-    setNumPages(newDoc.getPageCount());
-    setDocVersion(v => v + 1);
-    toast({ title: "Page Deleted", description: `Page ${pageIndex + 1} has been removed.` });
-  }, [pdfDoc, toast]);
-  
-  const handleRotatePage = useCallback(async (pageIndex: number) => {
-    if (!pdfDoc) return;
-    const newDoc = await pdfDoc.copy();
-    const page = newDoc.getPage(pageIndex);
-    const currentRotation = page.getRotation().angle;
-    page.setRotation(degrees((currentRotation + 90) % 360));
-    setPdfDoc(newDoc);
-    setDocVersion(v => v + 1);
-    toast({ title: "Page Rotated", description: `Page ${pageIndex + 1} has been rotated.` });
-  }, [pdfDoc, toast]);
-   
-  const handleReorderPages = useCallback(async (oldIndex: number, newIndex: number) => {
-    if (!pdfDoc) return;
-    const newDoc = await pdfDoc.copy();
-    const [page] = await newDoc.copyPages(pdfDoc, [oldIndex]);
-    newDoc.removePage(oldIndex > newIndex ? oldIndex + 1 : oldIndex);
-    newDoc.insertPage(newIndex, page);
-    
-    setPdfDoc(newDoc);
-    setDocVersion(v => v + 1);
-    toast({ title: "Page Moved", description: `Page ${oldIndex + 1} moved to position ${newIndex + 1}.` });
-  }, [pdfDoc, toast]);
 
   const handleDownload = useCallback(async () => {
     if (!pdfDoc) return;
@@ -211,88 +116,205 @@ export default function Page() {
     }
   }, [pdfDoc, toast]);
 
+  const updateThumbnails = useCallback(async () => {
+    if (!pdfDoc) {
+      setPageThumbnails([]);
+      return;
+    }
+    setIsLoading(true);
+    const thumbs: string[] = [];
+    try {
+      const pdfBytes = await pdfDoc.save();
+      const pdfJsDoc = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
+
+      for (let i = 1; i <= pdfJsDoc.numPages; i++) {
+        const page = await pdfJsDoc.getPage(i);
+        const viewport = page.getViewport({ scale: 0.3 });
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d")!;
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        await page.render({ canvasContext: context, viewport: viewport }).promise;
+        thumbs.push(canvas.toDataURL());
+      }
+      setPageThumbnails(thumbs);
+    } catch (error) {
+       console.error("Failed to update thumbnails", error);
+       toast({ title: "Thumbnail Error", description: "Could not generate page thumbnails.", variant: "destructive"});
+    } finally {
+      setIsLoading(false);
+    }
+  }, [pdfDoc, toast]);
+
+  useEffect(() => {
+    updateThumbnails();
+  }, [docVersion, pdfDoc, updateThumbnails]);
+
   const handlePageClick = useCallback((pageNumber: number) => {
     const pageElement = document.getElementById(`pdf-page-${pageNumber}`);
     pageElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     setCurrentPage(pageNumber);
   }, []);
 
-  const handleNewFile = useCallback(() => {
-    const uploadEl = document.getElementById('pdf-upload');
-    if (uploadEl) uploadEl.click();
+  const triggerFileUpload = useCallback(() => {
+    fileInputRef.current?.click();
   }, []);
 
+ const onAddBlankPage = useCallback(async (index: number) => {
+    if (!pdfDoc) return;
+    const newDoc = await pdfDoc.copy();
+    const pageToCopy = newDoc.getPage(index > 0 ? index - 1 : 0);
+    const { width, height } = pageToCopy.getSize();
+    newDoc.addPage(index, [width, height]);
+    setPdfDoc(newDoc);
+    setDocVersion(v => v + 1);
+    toast({ title: "Blank Page Added", description: `A new blank page was inserted at position ${index + 1}.` });
+  }, [pdfDoc, toast]);
+
+  const onDeletePage = useCallback(async (index: number) => {
+    if (!pdfDoc || pdfDoc.getPageCount() <= 1) {
+        toast({ title: "Action Not Allowed", description: "Cannot delete the last page of the document.", variant: "destructive" });
+        return;
+    };
+    const newDoc = await pdfDoc.copy();
+    newDoc.removePage(index);
+    setPdfDoc(newDoc);
+    setDocVersion(v => v + 1);
+    toast({ title: "Page Deleted", description: `Page ${index + 1} has been deleted.` });
+  }, [pdfDoc, toast]);
+
+  const onRotatePage = useCallback(async (index: number) => {
+     if (!pdfDoc) return;
+    const newDoc = await pdfDoc.copy();
+    const page = newDoc.getPage(index);
+    const currentRotation = page.getRotation().angle;
+    page.setRotation(degrees((currentRotation + 90) % 360));
+    setPdfDoc(newDoc);
+    setDocVersion(v => v + 1);
+    toast({ title: "Page Rotated", description: `Page ${index + 1} has been rotated.` });
+  }, [pdfDoc, toast]);
+  
+  const onReorderPages = useCallback(async (oldIndex: number, newIndex: number) => {
+     if (!pdfDoc) return;
+    const newDoc = await pdfDoc.copy();
+    const [page] = await newDoc.copyPages(pdfDoc, [oldIndex]);
+    newDoc.removePage(oldIndex < newIndex ? oldIndex : oldIndex + 1);
+    newDoc.insertPage(newIndex, page);
+    setPdfDoc(newDoc);
+    setDocVersion(v => v + 1);
+    toast({ title: "Page Moved", description: `Page ${oldIndex + 1} moved to position ${newIndex + 1}.` });
+  }, [pdfDoc, toast]);
+
   return (
-    <div className="flex h-screen bg-background text-foreground font-sans">
-       {isLoading && (
+    <div className="flex flex-col h-screen bg-background text-foreground font-sans">
+      {isLoading && (
         <div className="fixed inset-0 bg-black/50 z-[100] flex flex-col items-center justify-center">
           <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
           <p className="text-white text-lg">Processing...</p>
         </div>
       )}
-      <header className="relative z-20 flex items-center justify-between border-b bg-secondary p-2 shadow-md">
-        <Toolbar 
-          selectedTextObject={!!selectedObjectId}
-          style={selectedTextStyle}
-          onTextStyleChange={handleStyleChange}
-          onNewFile={handleNewFile}
-          onUpload={handleNewFile}
-          onDownload={handleDownload}
-        />
+      
+      <header className="flex-shrink-0 border-b shadow-sm bg-card z-30">
+        <div className="container mx-auto px-4 py-2 flex items-center justify-between">
+            <h1 className="text-xl font-bold text-primary flex items-center gap-2">
+                <Edit className="h-6 w-6"/>
+                PDF Editor Pro
+            </h1>
+            {pdfDoc && (
+                 <Toolbar 
+                    selectedTextObject={!!selectedObjectId}
+                    style={selectedTextStyle}
+                    onTextStyleChange={handleStyleChange}
+                    onNewFile={triggerFileUpload}
+                    onUpload={triggerFileUpload}
+                    onDownload={handleDownload}
+                 />
+            )}
+        </div>
       </header>
-      <input type="file" id="pdf-upload" className="hidden" onChange={handleFileChange} accept="application/pdf" />
+      
+      <main className="flex-grow flex overflow-hidden">
+        {!pdfDoc ? (
+             <div className="flex-grow flex items-center justify-center p-6">
+              <Card className="w-full max-w-2xl text-center">
+                <CardHeader>
+                  <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4">
+                    <Edit className="h-10 w-10 text-primary" />
+                  </div>
+                  <CardTitle>Professional PDF Editor</CardTitle>
+                  <CardDescription>Upload a file to start editing, signing, and organizing.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div
+                    className="flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20"
+                    onClick={triggerFileUpload}
+                  >
+                    <Upload className="h-12 w-12 text-muted-foreground mb-3" />
+                    <p className="text-md text-muted-foreground text-center">Click or drag a file to upload</p>
+                    <p className="text-xs text-muted-foreground mt-2">PDF files only</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+        ) : (
+            <>
+                <aside className="w-[15%] h-full border-r overflow-y-auto bg-gray-100 flex-shrink-0">
+                    <PageThumbnailList
+                        thumbnails={pageThumbnails}
+                        currentPage={currentPage}
+                        onPageClick={handlePageClick}
+                        onAddBlankPage={onAddBlankPage}
+                        onDeletePage={onDeletePage}
+                        onRotatePage={onRotatePage}
+                        onReorderPages={onReorderPages}
+                    />
+                </aside>
+                
+                <div className="flex-grow h-full overflow-auto bg-muted relative">
+                    <InteractivePdfCanvas
+                        pdfDoc={pdfDoc}
+                        docVersion={docVersion}
+                        setNumPages={setNumPages}
+                        scale={scale}
+                        onTextEditStart={handleTextEditStart}
+                        onTextEditEnd={handleTextEditEnd}
+                        selectedStyle={selectedTextStyle}
+                        selectedObjectId={selectedObjectId}
+                        setSelectedObjectId={setSelectedObjectId}
+                        pageObjects={pageObjects}
+                        setPageObjects={setPageObjects}
+                        setPdfLoaded={setPdfLoaded}
+                    />
 
-      <div className="flex flex-1 overflow-hidden">
-        {pdfDoc && (
-          <aside className="w-[15%] h-full border-r overflow-y-auto bg-gray-100 flex-shrink-0">
-            <PageThumbnailList
-              thumbnails={pageThumbnails}
-              currentPage={currentPage}
-              onPageClick={handlePageClick}
-              onAddBlankPage={handleAddBlankPage}
-              onDeletePage={handleDeletePage}
-              onRotatePage={handleRotatePage}
-              onReorderPages={handleReorderPages}
-            />
-          </aside>
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50">
+                        <ZoomControls 
+                            scale={scale} 
+                            onZoomIn={handleZoomIn} 
+                            onZoomOut={handleZoomOut}
+                            onRotateLeft={() => handleRotateActivePage('left')}
+                            onRotateRight={() => handleRotateActivePage('right')}
+                        />
+                    </div>
+
+                    <PropertyPanel
+                        isVisible={isEditingText}
+                        onClose={handleTextEditEnd}
+                        currentStyle={selectedTextStyle}
+                        onStyleChange={handleStyleChange}
+                    />
+                </div>
+            </>
         )}
+      </main>
 
-        <main className={`h-full overflow-auto bg-muted flex-grow`}>
-          <InteractivePdfCanvas
-            pdfDoc={pdfDoc}
-            docVersion={docVersion}
-            setNumPages={setNumPages}
-            scale={scale}
-            onTextEditStart={handleTextEditStart}
-            onTextEditEnd={handleTextEditEnd}
-            selectedStyle={selectedTextStyle}
-            selectedObjectId={selectedObjectId}
-            setSelectedObjectId={setSelectedObjectId}
-            pageObjects={pageObjects}
-            setPageObjects={setPageObjects}
-            setPdfLoaded={setPdfLoaded}
-          />
-        </main>
-        
-        {pdfDoc && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50">
-            <ZoomControls 
-              scale={scale} 
-              onZoomIn={handleZoomIn} 
-              onZoomOut={handleZoomOut}
-              onRotateLeft={() => handleRotateActivePage('left')}
-              onRotateRight={() => handleRotateActivePage('right')}
-            />
-          </div>
-        )}
-
-        <PropertyPanel
-          isVisible={isEditingText}
-          onClose={handleTextEditEnd}
-          currentStyle={selectedTextStyle}
-          onStyleChange={handleStyleChange}
-        />
-      </div>
+      <input 
+        type="file" 
+        id="pdf-upload" 
+        ref={fileInputRef}
+        className="hidden" 
+        onChange={handleFileChange} 
+        accept="application/pdf" 
+      />
     </div>
   );
 }

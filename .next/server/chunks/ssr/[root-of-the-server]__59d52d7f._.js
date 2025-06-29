@@ -1621,10 +1621,8 @@ __turbopack_context__.s({
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react-jsx-dev-runtime.js [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$pdf$2d$lib$2f$es$2f$index$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$module__evaluation$3e$__ = __turbopack_context__.i("[project]/node_modules/pdf-lib/es/index.js [app-ssr] (ecmascript) <module evaluation>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$pdf$2d$lib$2f$es$2f$api$2f$rotations$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/pdf-lib/es/api/rotations.js [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react.js [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$pdf$2d$lib$2f$es$2f$api$2f$PDFDocument$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__PDFDocument$3e$__ = __turbopack_context__.i("[project]/node_modules/pdf-lib/es/api/PDFDocument.js [app-ssr] (ecmascript) <export default as PDFDocument>");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$pdf$2d$lib$2f$es$2f$api$2f$colors$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/pdf-lib/es/api/colors.js [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$pdf$2d$lib$2f$es$2f$api$2f$StandardFonts$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/pdf-lib/es/api/StandardFonts.js [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react.js [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$pdfjs$2d$dist$2f$build$2f$pdf$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/pdfjs-dist/build/pdf.js [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$pdfjs$2d$dist$2f$build$2f$pdf$2e$worker$2e$entry$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/pdfjs-dist/build/pdf.worker.entry.js [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$loader$2d$circle$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Loader2$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/loader-circle.js [app-ssr] (ecmascript) <export default as Loader2>");
@@ -1635,7 +1633,6 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$edit$2d$pdf$2f
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$edit$2d$pdf$2f$components$2f$ZoomControls$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/edit-pdf/components/ZoomControls.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$use$2d$toast$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/hooks/use-toast.ts [app-ssr] (ecmascript)");
 "use client";
-;
 ;
 ;
 ;
@@ -1668,19 +1665,17 @@ function Page() {
     const [numPages, setNumPages] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(0);
     const [currentPage, setCurrentPage] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(1);
     const { toast } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$use$2d$toast$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useToast"])();
-    const handleStyleChange = (styleUpdate)=>{
+    const handleTextEditStart = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(()=>setIsEditingText(true), []);
+    const handleTextEditEnd = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(()=>setIsEditingText(false), []);
+    const handleStyleChange = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])((styleUpdate)=>{
         setSelectedTextStyle((prev)=>({
                 ...prev,
                 ...styleUpdate
             }));
-    };
-    const handleClickCanvas = ()=>{
-        setIsEditingText(false);
-        setSelectedObjectId(null);
-    };
-    const handleZoomIn = ()=>setScale((s)=>Math.min(s + 0.2, 3));
-    const handleZoomOut = ()=>setScale((s)=>Math.max(s - 0.2, 0.2));
-    const handleRotateActivePage = (direction)=>{
+    }, []);
+    const handleZoomIn = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(()=>setScale((s)=>Math.min(s + 0.2, 3)), []);
+    const handleZoomOut = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(()=>setScale((s)=>Math.max(s - 0.2, 0.2)), []);
+    const handleRotateActivePage = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])((direction)=>{
         if (!pdfDoc || currentPage < 1) return;
         const pageIndex = currentPage - 1;
         const rotate = async ()=>{
@@ -1697,8 +1692,12 @@ function Page() {
             });
         };
         rotate();
-    };
-    const handleFileChange = async (e)=>{
+    }, [
+        pdfDoc,
+        currentPage,
+        toast
+    ]);
+    const handleFileChange = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(async (e)=>{
         const file = e.target.files?.[0];
         if (file && file.type === "application/pdf") {
             setIsLoading(true);
@@ -1725,112 +1724,10 @@ function Page() {
                 setIsLoading(false);
             }
         }
-    };
-    const updateThumbnails = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(async ()=>{
-        if (!pdfDoc) return;
-        setIsLoading(true);
-        const thumbs = [];
-        const pdfBytes = await pdfDoc.save();
-        const pdfJsDoc = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$pdfjs$2d$dist$2f$build$2f$pdf$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getDocument"])({
-            data: pdfBytes
-        }).promise;
-        for(let i = 1; i <= pdfJsDoc.numPages; i++){
-            const page = await pdfJsDoc.getPage(i);
-            const viewport = page.getViewport({
-                scale: 0.3
-            });
-            const canvas = document.createElement("canvas");
-            const context = canvas.getContext("2d");
-            canvas.width = viewport.width;
-            canvas.height = viewport.height;
-            await page.render({
-                canvasContext: context,
-                viewport: viewport
-            }).promise;
-            thumbs.push(canvas.toDataURL());
-        }
-        setPageThumbnails(thumbs);
-        setIsLoading(false);
     }, [
-        pdfDoc
+        toast
     ]);
-    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
-        updateThumbnails();
-    }, [
-        docVersion,
-        pdfDoc,
-        updateThumbnails
-    ]);
-    const handleAddBlankPage = async (pageIndex)=>{
-        if (!pdfDoc) return;
-        const newDoc = await pdfDoc.copy();
-        const newPage = newDoc.insertPage(pageIndex);
-        const { width, height } = newPage.getSize();
-        const helveticaFont = await newDoc.embedFont(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$pdf$2d$lib$2f$es$2f$api$2f$StandardFonts$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["StandardFonts"].Helvetica);
-        newPage.drawText('This is a new blank page.', {
-            x: 50,
-            y: height - 50,
-            font: helveticaFont,
-            size: 24,
-            color: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$pdf$2d$lib$2f$es$2f$api$2f$colors$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["rgb"])(0, 0, 0)
-        });
-        setPdfDoc(newDoc);
-        setNumPages(newDoc.getPageCount());
-        setDocVersion((v)=>v + 1);
-        toast({
-            title: "Page Added",
-            description: "A blank page has been inserted."
-        });
-    };
-    const handleDeletePage = async (pageIndex)=>{
-        if (!pdfDoc || pdfDoc.getPageCount() <= 1) {
-            toast({
-                title: "Cannot Delete",
-                description: "Cannot delete the last page of the document.",
-                variant: "destructive"
-            });
-            return;
-        }
-        ;
-        const newDoc = await pdfDoc.copy();
-        newDoc.removePage(pageIndex);
-        setPdfDoc(newDoc);
-        setNumPages(newDoc.getPageCount());
-        setDocVersion((v)=>v + 1);
-        toast({
-            title: "Page Deleted",
-            description: `Page ${pageIndex + 1} has been removed.`
-        });
-    };
-    const handleRotatePage = async (pageIndex)=>{
-        if (!pdfDoc) return;
-        const newDoc = await pdfDoc.copy();
-        const page = newDoc.getPage(pageIndex);
-        const currentRotation = page.getRotation().angle;
-        page.setRotation((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$pdf$2d$lib$2f$es$2f$api$2f$rotations$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["degrees"])((currentRotation + 90) % 360));
-        setPdfDoc(newDoc);
-        setDocVersion((v)=>v + 1);
-        toast({
-            title: "Page Rotated",
-            description: `Page ${pageIndex + 1} has been rotated.`
-        });
-    };
-    const handleReorderPages = async (oldIndex, newIndex)=>{
-        if (!pdfDoc) return;
-        const newDoc = await pdfDoc.copy();
-        const [page] = await newDoc.copyPages(pdfDoc, [
-            oldIndex
-        ]);
-        newDoc.removePage(oldIndex > newIndex ? oldIndex + 1 : oldIndex);
-        newDoc.insertPage(newIndex, page);
-        setPdfDoc(newDoc);
-        setDocVersion((v)=>v + 1);
-        toast({
-            title: "Page Moved",
-            description: `Page ${oldIndex + 1} moved to position ${newIndex + 1}.`
-        });
-    };
-    const handleDownload = async ()=>{
+    const handleDownload = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(async ()=>{
         if (!pdfDoc) return;
         setIsLoading(true);
         try {
@@ -1862,17 +1759,73 @@ function Page() {
         } finally{
             setIsLoading(false);
         }
-    };
-    const handlePageClick = (pageNumber)=>{
+    }, [
+        pdfDoc,
+        toast
+    ]);
+    const updateThumbnails = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(async ()=>{
+        if (!pdfDoc) {
+            setPageThumbnails([]);
+            return;
+        }
+        setIsLoading(true);
+        const thumbs = [];
+        try {
+            const pdfBytes = await pdfDoc.save();
+            const pdfJsDoc = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$pdfjs$2d$dist$2f$build$2f$pdf$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getDocument"])({
+                data: pdfBytes
+            }).promise;
+            for(let i = 1; i <= pdfJsDoc.numPages; i++){
+                const page = await pdfJsDoc.getPage(i);
+                const viewport = page.getViewport({
+                    scale: 0.3
+                });
+                const canvas = document.createElement("canvas");
+                const context = canvas.getContext("2d");
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                await page.render({
+                    canvasContext: context,
+                    viewport: viewport
+                }).promise;
+                thumbs.push(canvas.toDataURL());
+            }
+            setPageThumbnails(thumbs);
+        } catch (error) {
+            console.error("Failed to update thumbnails", error);
+            toast({
+                title: "Thumbnail Error",
+                description: "Could not generate page thumbnails.",
+                variant: "destructive"
+            });
+        } finally{
+            setIsLoading(false);
+        }
+    }, [
+        pdfDoc,
+        toast
+    ]);
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
+        updateThumbnails();
+    }, [
+        docVersion,
+        pdfDoc,
+        updateThumbnails
+    ]);
+    const handlePageClick = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])((pageNumber)=>{
         const pageElement = document.getElementById(`pdf-page-${pageNumber}`);
         pageElement?.scrollIntoView({
             behavior: 'smooth',
             block: 'start'
         });
         setCurrentPage(pageNumber);
-    };
+    }, []);
+    const handleNewFile = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(()=>{
+        const uploadEl = document.getElementById('pdf-upload');
+        if (uploadEl) uploadEl.click();
+    }, []);
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-        className: "flex flex-col h-screen bg-background text-foreground font-sans",
+        className: "flex h-screen bg-background text-foreground font-sans",
         children: [
             isLoading && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                 className: "fixed inset-0 bg-black/50 z-[100] flex flex-col items-center justify-center",
@@ -1881,7 +1834,7 @@ function Page() {
                         className: "h-12 w-12 text-primary animate-spin mb-4"
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 210,
+                        lineNumber: 164,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1889,44 +1842,14 @@ function Page() {
                         children: "Processing..."
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 211,
+                        lineNumber: 165,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 209,
+                lineNumber: 163,
                 columnNumber: 9
-            }, this),
-            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("header", {
-                className: "relative z-20 flex items-center justify-between border-b bg-secondary p-2 shadow-md",
-                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$edit$2d$pdf$2f$components$2f$toolbar$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Toolbar"], {
-                    selectedTextObject: !!selectedObjectId,
-                    style: selectedTextStyle,
-                    onTextStyleChange: handleStyleChange,
-                    onNewFile: ()=>document.getElementById('pdf-upload')?.click(),
-                    onUpload: ()=>document.getElementById('pdf-upload')?.click(),
-                    onDownload: handleDownload
-                }, void 0, false, {
-                    fileName: "[project]/src/app/edit-pdf/page.tsx",
-                    lineNumber: 215,
-                    columnNumber: 9
-                }, this)
-            }, void 0, false, {
-                fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 214,
-                columnNumber: 7
-            }, this),
-            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
-                type: "file",
-                id: "pdf-upload",
-                className: "hidden",
-                onChange: handleFileChange,
-                accept: "application/pdf"
-            }, void 0, false, {
-                fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 224,
-                columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                 className: "flex flex-1 overflow-hidden",
@@ -1937,83 +1860,129 @@ function Page() {
                             thumbnails: pageThumbnails,
                             currentPage: currentPage,
                             onPageClick: handlePageClick,
-                            onAddBlankPage: handleAddBlankPage,
-                            onDeletePage: handleDeletePage,
-                            onRotatePage: handleRotatePage,
-                            onReorderPages: handleReorderPages
+                            pdfDoc: pdfDoc,
+                            setPdfDoc: setPdfDoc,
+                            setDocVersion: setDocVersion,
+                            toast: toast
                         }, void 0, false, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 229,
+                            lineNumber: 172,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 228,
+                        lineNumber: 171,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("main", {
-                        className: `h-full overflow-auto bg-muted flex-grow`,
-                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$edit$2d$pdf$2f$components$2f$InteractivePdfCanvas$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
-                            pdfDoc: pdfDoc,
-                            docVersion: docVersion,
-                            setNumPages: setNumPages,
-                            scale: scale,
-                            onTextEditStart: ()=>setIsEditingText(true),
-                            onTextEditEnd: ()=>setIsEditingText(false),
-                            selectedStyle: selectedTextStyle,
-                            selectedObjectId: selectedObjectId,
-                            setSelectedObjectId: setSelectedObjectId,
-                            pageObjects: pageObjects,
-                            setPageObjects: setPageObjects,
-                            setPdfLoaded: setPdfLoaded
-                        }, void 0, false, {
-                            fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 242,
-                            columnNumber: 11
-                        }, this)
-                    }, void 0, false, {
+                        className: `h-full overflow-auto bg-muted flex-grow relative`,
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("header", {
+                                className: "w-full fixed top-0 left-0 z-20 bg-blue-50 border-b shadow-sm",
+                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                    className: "mx-auto max-w-7xl px-4 py-2 grid grid-cols-3 items-center gap-4",
+                                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$edit$2d$pdf$2f$components$2f$toolbar$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Toolbar"], {
+                                        selectedTextObject: !!selectedObjectId,
+                                        style: selectedTextStyle,
+                                        onTextStyleChange: handleStyleChange,
+                                        onNewFile: handleNewFile,
+                                        onUpload: handleNewFile,
+                                        onDownload: handleDownload
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/app/edit-pdf/page.tsx",
+                                        lineNumber: 187,
+                                        columnNumber: 15
+                                    }, this)
+                                }, void 0, false, {
+                                    fileName: "[project]/src/app/edit-pdf/page.tsx",
+                                    lineNumber: 186,
+                                    columnNumber: 13
+                                }, this)
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/edit-pdf/page.tsx",
+                                lineNumber: 185,
+                                columnNumber: 11
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                className: "pt-[70px]",
+                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$edit$2d$pdf$2f$components$2f$InteractivePdfCanvas$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
+                                    pdfDoc: pdfDoc,
+                                    docVersion: docVersion,
+                                    setNumPages: setNumPages,
+                                    scale: scale,
+                                    onTextEditStart: handleTextEditStart,
+                                    onTextEditEnd: handleTextEditEnd,
+                                    selectedStyle: selectedTextStyle,
+                                    selectedObjectId: selectedObjectId,
+                                    setSelectedObjectId: setSelectedObjectId,
+                                    pageObjects: pageObjects,
+                                    setPageObjects: setPageObjects,
+                                    setPdfLoaded: setPdfLoaded
+                                }, void 0, false, {
+                                    fileName: "[project]/src/app/edit-pdf/page.tsx",
+                                    lineNumber: 199,
+                                    columnNumber: 13
+                                }, this)
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/edit-pdf/page.tsx",
+                                lineNumber: 198,
+                                columnNumber: 11
+                            }, this),
+                            pdfDoc && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                className: "absolute bottom-4 left-1/2 -translate-x-1/2 z-50",
+                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$edit$2d$pdf$2f$components$2f$ZoomControls$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
+                                    scale: scale,
+                                    onZoomIn: handleZoomIn,
+                                    onZoomOut: handleZoomOut,
+                                    onRotateLeft: ()=>handleRotateActivePage('left'),
+                                    onRotateRight: ()=>handleRotateActivePage('right')
+                                }, void 0, false, {
+                                    fileName: "[project]/src/app/edit-pdf/page.tsx",
+                                    lineNumber: 217,
+                                    columnNumber: 15
+                                }, this)
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/edit-pdf/page.tsx",
+                                lineNumber: 216,
+                                columnNumber: 13
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$edit$2d$pdf$2f$components$2f$PropertyPanel$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
+                                isVisible: isEditingText,
+                                onClose: handleTextEditEnd,
+                                currentStyle: selectedTextStyle,
+                                onStyleChange: handleStyleChange
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/edit-pdf/page.tsx",
+                                lineNumber: 227,
+                                columnNumber: 11
+                            }, this)
+                        ]
+                    }, void 0, true, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 241,
-                        columnNumber: 9
-                    }, this),
-                    pdfDoc && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "absolute bottom-4 left-1/2 -translate-x-1/2 z-50",
-                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$edit$2d$pdf$2f$components$2f$ZoomControls$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
-                            scale: scale,
-                            onZoomIn: handleZoomIn,
-                            onZoomOut: handleZoomOut,
-                            onRotateLeft: ()=>handleRotateActivePage('left'),
-                            onRotateRight: ()=>handleRotateActivePage('right')
-                        }, void 0, false, {
-                            fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 260,
-                            columnNumber: 13
-                        }, this)
-                    }, void 0, false, {
-                        fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 259,
-                        columnNumber: 11
-                    }, this),
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$edit$2d$pdf$2f$components$2f$PropertyPanel$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
-                        isVisible: isEditingText,
-                        onClose: ()=>setIsEditingText(false),
-                        currentStyle: selectedTextStyle,
-                        onStyleChange: handleStyleChange
-                    }, void 0, false, {
-                        fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 270,
+                        lineNumber: 184,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 226,
+                lineNumber: 169,
+                columnNumber: 7
+            }, this),
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
+                type: "file",
+                id: "pdf-upload",
+                className: "hidden",
+                onChange: handleFileChange,
+                accept: "application/pdf"
+            }, void 0, false, {
+                fileName: "[project]/src/app/edit-pdf/page.tsx",
+                lineNumber: 236,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/edit-pdf/page.tsx",
-        lineNumber: 207,
+        lineNumber: 161,
         columnNumber: 5
     }, this);
 }

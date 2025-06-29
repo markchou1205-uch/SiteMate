@@ -1,4 +1,3 @@
-
 // 檔案：Toolbar.tsx
 import { FilePlus, Download, Upload, Eraser, Circle, Pencil, Text, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,8 +19,8 @@ export function Toolbar({
   const setStyle = onTextStyleChange;
 
   return (
-    <div className="relative z-20 flex items-center justify-between border-b bg-secondary p-2 shadow-md">
-      <div className="flex items-center gap-4 text-center">
+    <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center gap-1 text-center">
         <div className="flex flex-col items-center w-16">
             <Button variant="ghost" size="icon" onClick={onNewFile}><FilePlus className="h-5 w-5" /></Button>
             <span className="text-xs mt-1">新增檔案</span>

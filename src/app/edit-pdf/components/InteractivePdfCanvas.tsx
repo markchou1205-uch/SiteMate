@@ -56,6 +56,7 @@ export default function InteractivePdfCanvas({
 
   useEffect(() => {
     let canvasesToSet: (fabric.Canvas | null)[] = [];
+    let isMounted = true;
 
     const renderPdf = async () => {
       setPdfLoaded(false);
@@ -64,6 +65,8 @@ export default function InteractivePdfCanvas({
       const pdfBytes = await pdfDoc.save();
       const typedarray = new Uint8Array(pdfBytes);
       const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
+      
+      if (!isMounted) return;
       setNumPages(pdf.numPages);
 
       const container = containerRef.current;
@@ -98,7 +101,7 @@ export default function InteractivePdfCanvas({
             width: viewport.width,
             height: viewport.height,
         });
-
+        
         fabricCanvas.loadFromJSON(fabricObjects[pageNum - 1] || '{}', () => {
             fabricCanvas.renderAll();
         });
@@ -114,13 +117,20 @@ export default function InteractivePdfCanvas({
         canvasesToSet[pageNum - 1] = fabricCanvas;
       }
       
-      setLocalCanvases(canvasesToSet);
-      setFabricCanvases(canvasesToSet);
-      setPdfLoaded(true);
+      if (isMounted) {
+        setLocalCanvases(canvasesToSet);
+        setFabricCanvases(canvasesToSet);
+        setPdfLoaded(true);
+      }
     };
 
     renderPdf();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    return () => {
+      isMounted = false;
+      canvasesToSet.forEach(canvas => canvas?.dispose());
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pdfDoc, docVersion, scale]);
 
   useEffect(() => {
@@ -179,21 +189,20 @@ export default function InteractivePdfCanvas({
         const pointer = canvas.getPointer(o.e);
         const { origX, origY, shape } = drawingState.current;
         
-        let newLeft = Math.min(pointer.x, origX);
-        let newTop = Math.min(pointer.y, origY);
-        let newWidth = Math.abs(origX - pointer.x);
-        let newHeight = Math.abs(origY - pointer.y);
-
         if (shape.type === 'circle') {
-            const radius = Math.max(newWidth, newHeight) / 2;
-            shape.set({
-                left: newLeft + newWidth / 2,
-                top: newTop + newHeight / 2,
+            const radius = Math.sqrt(Math.pow(pointer.x - origX, 2) + Math.pow(pointer.y - origY, 2)) / 2;
+             shape.set({
+                left: (pointer.x + origX) / 2,
+                top: (pointer.y + origY) / 2,
                 radius: radius,
                 originX: 'center',
-                originY: 'center',
+                originY: 'center'
             });
         } else {
+            const newLeft = Math.min(pointer.x, origX);
+            const newTop = Math.min(pointer.y, origY);
+            const newWidth = Math.abs(origX - pointer.x);
+            const newHeight = Math.abs(origY - pointer.y);
             shape.set({
                 left: newLeft,
                 top: newTop,
@@ -239,14 +248,9 @@ export default function InteractivePdfCanvas({
         canvas.off('mouse:down');
         canvas.off('mouse:move');
         canvas.off('mouse:up');
+        canvas.isDrawingMode = false;
         
         const isDrawingActive = drawingTool !== null;
-        
-        canvas.isDrawingMode = (drawingTool === 'freedraw');
-        if (canvas.isDrawingMode) {
-            canvas.freeDrawingBrush.width = 2;
-            canvas.freeDrawingBrush.color = 'black';
-        }
         
         canvas.selection = !isDrawingActive;
         canvas.defaultCursor = isDrawingActive ? 'crosshair' : 'default';
@@ -255,7 +259,11 @@ export default function InteractivePdfCanvas({
             obj.evented = !isDrawingActive;
         });
 
-        if (isDrawingActive && drawingTool !== 'freedraw') {
+        if (drawingTool === 'freedraw') {
+            canvas.isDrawingMode = true;
+            canvas.freeDrawingBrush.width = 2;
+            canvas.freeDrawingBrush.color = 'black';
+        } else if (isDrawingActive) {
             canvas.on('mouse:down', (o) => handleMouseDown(o, index));
             canvas.on('mouse:move', handleMouseMove);
             canvas.on('mouse:up', handleMouseUp);

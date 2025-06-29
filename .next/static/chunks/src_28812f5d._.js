@@ -1415,16 +1415,11 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
     });
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
         "InteractivePdfCanvas.useEffect": ()=>{
-            if (!pdfDoc) {
-                if (containerRef.current) containerRef.current.innerHTML = "";
-                setLocalCanvases([]);
-                return;
-            }
-            ;
             let canvasesToSet = [];
             const renderPdf = {
                 "InteractivePdfCanvas.useEffect.renderPdf": async ()=>{
                     setPdfLoaded(false);
+                    if (!pdfDoc) return;
                     const pdfBytes = await pdfDoc.save();
                     const typedarray = new Uint8Array(pdfBytes);
                     const pdf = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$pdfjs$2d$dist$2f$build$2f$pdf$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["getDocument"])({
@@ -1613,6 +1608,10 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
                     canvas.off('mouse:up');
                     const isDrawingActive = drawingTool !== null;
                     canvas.isDrawingMode = drawingTool === 'freedraw';
+                    if (canvas.isDrawingMode) {
+                        canvas.freeDrawingBrush.width = 2;
+                        canvas.freeDrawingBrush.color = 'black';
+                    }
                     canvas.selection = !isDrawingActive;
                     canvas.defaultCursor = isDrawingActive ? 'crosshair' : 'default';
                     canvas.forEachObject({

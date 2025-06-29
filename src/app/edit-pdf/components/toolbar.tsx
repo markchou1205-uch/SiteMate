@@ -49,9 +49,9 @@ export function Toolbar({
 
        <DropdownMenu>
         <DropdownMenuTrigger asChild>
-            <Button variant="destructive">
+            <Button variant="destructive" size="lg">
                 <Download className="h-4 w-4 mr-2" />
-                下載
+                下載成各種格式
             </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">

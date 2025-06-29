@@ -5,8 +5,7 @@ import { PDFDocument, rgb, StandardFonts, degrees } from 'pdf-lib';
 import { useEffect, useRef, useState, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import * as pdfjsWorker from "pdfjs-dist/build/pdf.worker.entry";
-import { Upload, Edit, Download } from 'lucide-react';
-import { Loader2 } from 'lucide-react';
+import { Upload, Edit, Download, Loader2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Toolbar } from "./components/toolbar";
 import PropertyPanel from "./components/PropertyPanel";
@@ -353,8 +352,8 @@ export default function Page() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <header className="flex-shrink-0 border-b bg-card z-40">
-        <div className="container mx-auto px-4 py-3 flex items-center">
+      <header className="flex-shrink-0 bg-card z-40">
+        <div className="px-4 py-3 flex items-center">
             <h1 className="text-xl font-bold text-primary flex items-center gap-2">
                 <Edit className="h-6 w-6"/>
                 PDF Editor Pro
@@ -364,7 +363,7 @@ export default function Page() {
 
       {pdfDoc && (
         <div className="flex-shrink-0 border-b shadow-sm bg-card z-30 sticky top-0">
-            <div className="container mx-auto px-4 py-2">
+            <div className="px-4 py-2">
                  <Toolbar
                     onUpload={triggerFileUpload}
                     onNewFile={triggerFileUpload}

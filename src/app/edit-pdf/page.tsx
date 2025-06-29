@@ -65,10 +65,9 @@ export default function Page() {
       page.setRotation(degrees((currentRotation + rotationAmount + 360) % 360));
       setPdfDoc(newDoc);
       setDocVersion(v => v + 1);
-      toast({ title: "Page Rotated", description: `Page ${pageIndex + 1} has been rotated.` });
     };
     rotate();
-  }, [pdfDoc, currentPage, toast]);
+  }, [pdfDoc, currentPage]);
 
   const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -168,8 +167,7 @@ export default function Page() {
     newDoc.addPage(index, [width, height]);
     setPdfDoc(newDoc);
     setDocVersion(v => v + 1);
-    toast({ title: "Blank Page Added", description: `A new blank page was inserted at position ${index + 1}.` });
-  }, [pdfDoc, toast]);
+  }, [pdfDoc]);
 
   const onDeletePage = useCallback(async (index: number) => {
     if (!pdfDoc || pdfDoc.getPageCount() <= 1) {
@@ -180,7 +178,6 @@ export default function Page() {
     newDoc.removePage(index);
     setPdfDoc(newDoc);
     setDocVersion(v => v + 1);
-    toast({ title: "Page Deleted", description: `Page ${index + 1} has been deleted.` });
   }, [pdfDoc, toast]);
 
   const onRotatePage = useCallback(async (index: number) => {
@@ -191,19 +188,26 @@ export default function Page() {
     page.setRotation(degrees((currentRotation + 90) % 360));
     setPdfDoc(newDoc);
     setDocVersion(v => v + 1);
-    toast({ title: "Page Rotated", description: `Page ${index + 1} has been rotated.` });
-  }, [pdfDoc, toast]);
+  }, [pdfDoc]);
   
   const onReorderPages = useCallback(async (oldIndex: number, newIndex: number) => {
-     if (!pdfDoc) return;
-    const newDoc = await pdfDoc.copy();
-    const [page] = await newDoc.copyPages(pdfDoc, [oldIndex]);
-    newDoc.removePage(oldIndex < newIndex ? oldIndex : oldIndex + 1);
-    newDoc.insertPage(newIndex, page);
+    if (!pdfDoc) return;
+
+    const pageCount = pdfDoc.getPageCount();
+    const indices = Array.from({ length: pageCount }, (_, i) => i);
+
+    const [movedIndex] = indices.splice(oldIndex, 1);
+    indices.splice(newIndex, 0, movedIndex);
+
+    const newDoc = await PDFDocument.create();
+    const pagesToCopy = await newDoc.copyPages(pdfDoc, indices);
+    pagesToCopy.forEach(page => {
+        newDoc.addPage(page);
+    });
+    
     setPdfDoc(newDoc);
     setDocVersion(v => v + 1);
-    toast({ title: "Page Moved", description: `Page ${oldIndex + 1} moved to position ${newIndex + 1}.` });
-  }, [pdfDoc, toast]);
+  }, [pdfDoc]);
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground font-sans">

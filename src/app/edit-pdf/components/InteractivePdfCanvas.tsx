@@ -142,7 +142,17 @@ export default function InteractivePdfCanvas({
                 drawingState.current = { isDrawing: true, origX: pointer.x, origY: pointer.y, shape: null };
                 
                 let shape;
-                const commonProps = { left: pointer.x, top: pointer.y, width: 0, height: 0, fill: 'transparent', stroke: 'black', strokeWidth: 2 };
+                const commonProps = { 
+                    left: pointer.x, 
+                    top: pointer.y, 
+                    width: 0, 
+                    height: 0, 
+                    fill: 'transparent', 
+                    stroke: 'black', 
+                    strokeWidth: 2,
+                    originX: 'left',
+                    originY: 'top'
+                };
 
                 switch (drawingTool) {
                     case 'rect':
@@ -168,17 +178,34 @@ export default function InteractivePdfCanvas({
 
                 if (shape.type === 'circle') {
                     const radius = Math.sqrt(Math.pow(pointer.x - origX, 2) + Math.pow(pointer.y - origY, 2)) / 2;
-                    shape.set({ radius: radius, left: origX, top: origY });
+                    shape.set({ 
+                        radius: radius, 
+                        left: origX + (pointer.x - origX) / 2,
+                        top: origY + (pointer.y - origY) / 2,
+                        originX: 'center',
+                        originY: 'center',
+                     });
                 } else {
                     const width = Math.abs(origX - pointer.x);
                     const height = Math.abs(origY - pointer.y);
-                    shape.set({ width, height, left: Math.min(pointer.x, origX), top: Math.min(pointer.y, origY) });
+                    shape.set({ 
+                        width, 
+                        height, 
+                        left: Math.min(pointer.x, origX), 
+                        top: Math.min(pointer.y, origY) 
+                    });
                 }
                 canvas.renderAll();
             };
 
             const handleMouseUp = () => {
                 if (drawingState.current.isDrawing && drawingState.current.shape) {
+                    if (shape.type === 'circle') {
+                        shape.set({
+                            originX: 'left',
+                            originY: 'top'
+                        });
+                    }
                     onUpdateFabricObject(fabricCanvasRefs.current.indexOf(canvas), canvas);
                 }
                 drawingState.current = { isDrawing: false, origX: 0, origY: 0, shape: null };

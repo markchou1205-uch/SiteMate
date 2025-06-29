@@ -54,7 +54,7 @@ export default function PdfEditor() {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [pageToDeleteIndex, setPageToDeleteIndex] = useState<number | null>(null);
   const [isOpenFileConfirmOpen, setIsOpenFileConfirmOpen] = useState(false);
-  const [insertPdfPosition, setInsertPdfPosition] = useState<InsertPosition>('end');
+  const [insertPdfPosition, setInsertPdfPosition] = useState<{ position: InsertPosition, index?: number }>({ position: 'end' });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const insertPdfFileInputRef = useRef<HTMLInputElement>(null);
@@ -109,15 +109,15 @@ export default function PdfEditor() {
      setIsOpenFileConfirmOpen(false);
   }, [toast]);
   
-  const handleOpenFileRequest = () => {
+  const handleOpenFileRequest = useCallback(() => {
     if (pdfDoc) {
       setIsOpenFileConfirmOpen(true);
     } else {
       fileInputRef.current?.click();
     }
-  };
+  }, [pdfDoc]);
 
-  const confirmOpenFile = () => {
+  const confirmOpenFile = useCallback(() => {
     setPdfDoc(null);
     setPageThumbnails([]);
     setFabricObjects([]);
@@ -125,7 +125,7 @@ export default function PdfEditor() {
     setCurrentPage(1);
     fileInputRef.current?.click();
     setIsOpenFileConfirmOpen(false);
-  };
+  }, []);
 
   const handleDownload = useCallback(async () => {
     if (!pdfDoc) return;
@@ -227,7 +227,6 @@ export default function PdfEditor() {
       setPageThumbnails([]);
       return;
     }
-    setIsLoading(true);
     const thumbs: string[] = [];
     try {
       const pdfBytes = await pdfDoc.save();
@@ -247,7 +246,6 @@ export default function PdfEditor() {
     } catch (error) {
        console.error("Failed to update thumbnails", error);
     } finally {
-      setIsLoading(false);
     }
   }, [pdfDoc]);
 
@@ -317,12 +315,12 @@ export default function PdfEditor() {
 
     const pageCount = pdfDoc.getPageCount();
     if (oldIndex < 0 || oldIndex >= pageCount || newIndex < 0 || newIndex >= pageCount) return;
-
+    
+    const newDoc = await PDFDocument.create();
+    
     const indices = Array.from({ length: pageCount }, (_, i) => i);
     const [movedIndex] = indices.splice(oldIndex, 1);
     indices.splice(newIndex, 0, movedIndex);
-
-    const newDoc = await PDFDocument.create();
     const pagesToCopy = await newDoc.copyPages(pdfDoc, indices);
     pagesToCopy.forEach(page => newDoc.addPage(page));
     
@@ -337,8 +335,8 @@ export default function PdfEditor() {
     setDocVersion(v => v + 1);
   }, [pdfDoc]);
 
-  const handleInsertPdfRequest = useCallback((position: InsertPosition) => {
-    setInsertPdfPosition(position);
+  const handleInsertPdfRequest = useCallback((position: InsertPosition, index?: number) => {
+    setInsertPdfPosition({ position, index });
     insertPdfFileInputRef.current?.click();
   }, []);
   
@@ -352,15 +350,15 @@ export default function PdfEditor() {
         const newPdfToInsert = await PDFDocument.load(newPdfBytes);
         
         let insertAtIndex = 0;
-        switch(insertPdfPosition) {
+        switch(insertPdfPosition.position) {
             case 'start':
                 insertAtIndex = 0;
                 break;
             case 'before':
-                insertAtIndex = currentPage > 1 ? currentPage - 1 : 0;
+                insertAtIndex = insertPdfPosition.index !== undefined ? insertPdfPosition.index : 0;
                 break;
             case 'after':
-                insertAtIndex = currentPage;
+                insertAtIndex = insertPdfPosition.index !== undefined ? insertPdfPosition.index + 1 : pdfDoc.getPageCount();
                 break;
             case 'end':
                 insertAtIndex = pdfDoc.getPageCount();
@@ -389,7 +387,7 @@ export default function PdfEditor() {
         setIsLoading(false);
         if (e.target) e.target.value = '';
     }
-  }, [pdfDoc, currentPage, insertPdfPosition, toast]);
+  }, [pdfDoc, insertPdfPosition, toast]);
 
   useEffect(() => {
     const container = mainContainerRef.current;
@@ -565,48 +563,50 @@ export default function PdfEditor() {
                     />
                 </aside>
                 
-                <div ref={mainContainerRef} className="flex-grow h-full overflow-auto bg-muted relative">
-                    <InteractivePdfCanvas
-                        pdfDoc={pdfDoc}
-                        docVersion={docVersion}
-                        setNumPages={setNumPages}
-                        scale={scale}
-                        onTextEditStart={handleTextEditStart}
-                        onTextEditEnd={handleTextEditEnd}
-                        setPdfLoaded={setPdfLoaded}
-                        fabricObjects={fabricObjects}
-                        onUpdateFabricObject={handleUpdateFabricObject}
-                        setFabricCanvases={setFabricCanvases}
-                        drawingTool={drawingTool}
-                        setDrawingTool={setDrawingTool}
-                        onShapeDoubleClick={handleShapeDoubleClick}
-                    />
+                <div className="flex-grow h-full relative">
+                  <div ref={mainContainerRef} className="h-full overflow-auto bg-muted">
+                      <InteractivePdfCanvas
+                          pdfDoc={pdfDoc}
+                          docVersion={docVersion}
+                          setNumPages={setNumPages}
+                          scale={scale}
+                          onTextEditStart={handleTextEditStart}
+                          onTextEditEnd={handleTextEditEnd}
+                          setPdfLoaded={setPdfLoaded}
+                          fabricObjects={fabricObjects}
+                          onUpdateFabricObject={handleUpdateFabricObject}
+                          setFabricCanvases={setFabricCanvases}
+                          drawingTool={drawingTool}
+                          setDrawingTool={setDrawingTool}
+                          onShapeDoubleClick={handleShapeDoubleClick}
+                      />
+                  </div>
 
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50">
-                        <ZoomControls 
-                            scale={scale} 
-                            onZoomIn={handleZoomIn} 
-                            onZoomOut={handleZoomOut}
-                            onRotateLeft={() => handleRotateActivePage('left')}
-                            onRotateRight={() => handleRotateActivePage('right')}
-                        />
-                    </div>
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50">
+                      <ZoomControls 
+                          scale={scale} 
+                          onZoomIn={handleZoomIn} 
+                          onZoomOut={handleZoomOut}
+                          onRotateLeft={() => handleRotateActivePage('left')}
+                          onRotateRight={() => handleRotateActivePage('right')}
+                      />
+                  </div>
 
-                    <PropertyPanel
-                        isVisible={isEditingText}
-                        onClose={handleTextEditEnd}
-                        currentStyle={selectedTextStyle}
-                        onStyleChange={handleStyleChange}
-                    />
+                  <PropertyPanel
+                      isVisible={isEditingText}
+                      onClose={handleTextEditEnd}
+                      currentStyle={selectedTextStyle}
+                      onStyleChange={handleStyleChange}
+                  />
 
-                    {activeShape && (
-                        <ShapePropertyPanel
-                            isVisible={isShapePanelOpen}
-                            onClose={handleCloseShapePanel}
-                            shape={activeShape}
-                            onModify={() => fabricCanvases[currentPage - 1]?.renderAll()}
-                        />
-                    )}
+                  {activeShape && (
+                      <ShapePropertyPanel
+                          isVisible={isShapePanelOpen}
+                          onClose={handleCloseShapePanel}
+                          shape={activeShape}
+                          onModify={() => fabricCanvases[currentPage - 1]?.renderAll()}
+                      />
+                  )}
                 </div>
             </>
         )}

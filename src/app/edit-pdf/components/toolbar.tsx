@@ -62,13 +62,14 @@ export function Toolbar({
                     <Triangle className="mr-2 h-4 w-4" />
                     <span>三角形</span>
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onSetDrawingTool('freedraw')}>
+                    <Pen className="mr-2 h-4 w-4" />
+                    <span>畫筆</span>
+                </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
 
-        <div className="flex flex-col items-center w-16">
-            <Button variant="ghost" size="icon" onClick={() => onSetDrawingTool('freedraw')}><Pen className="h-5 w-5" /></Button>
-            <span className="text-xs mt-1">畫筆</span>
-        </div>
         <div className="flex flex-col items-center w-16">
             <Button variant="ghost" size="icon" onClick={onAddText}><Text className="h-5 w-5" /></Button>
             <span className="text-xs mt-1">文字</span>

@@ -686,6 +686,10 @@ body {
   margin-left: 15%;
 }
 
+.ml-2 {
+  margin-left: .5rem;
+}
+
 .block {
   display: block;
 }

@@ -1,9 +1,10 @@
+
 // File: page.tsx
 
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts, RotationTypes } from 'pdf-lib';
 import * as pdfjsLib from "pdfjs-dist";
 import * as pdfjsWorker from "pdfjs-dist/build/pdf.worker.entry";
 
@@ -135,7 +136,7 @@ export default function Page() {
     if (!pdfDoc) return;
     const page = pdfDoc.getPage(pageIndex);
     const currentRotation = page.getRotation().angle;
-    page.setRotation({ angle: (currentRotation + 90) % 360, type: 'page' });
+    page.setRotation({ angle: (currentRotation + 90) % 360, type: RotationTypes.Page });
     setDocVersion(v => v + 1);
     toast({ title: "Page Rotated", description: `Page ${pageIndex + 1} has been rotated.` });
   };

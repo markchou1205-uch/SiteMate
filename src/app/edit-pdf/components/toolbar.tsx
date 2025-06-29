@@ -10,7 +10,14 @@ export function Toolbar({
   onInsertPdfRequest,
   onDeleteObject,
   onDownloadRequest,
-}: any) {
+}: {
+  onAddText: () => void;
+  onSetDrawingTool: (tool: 'rect' | 'circle' | 'triangle' | 'freedraw') => void;
+  onOpenFileRequest: () => void;
+  onInsertPdfRequest: (position: 'start' | 'end' | 'before' | 'after', index?: number) => void;
+  onDeleteObject: () => void;
+  onDownloadRequest: (format: string) => void;
+}) {
 
   return (
     <div className="flex items-center justify-between w-full">
@@ -29,12 +36,6 @@ export function Toolbar({
             <DropdownMenuContent>
                 <DropdownMenuItem onClick={() => onInsertPdfRequest('start')}>
                     <span>插入至開頭</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onInsertPdfRequest('before')}>
-                    <span>插入至所選頁面前</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onInsertPdfRequest('after')}>
-                    <span>插入至所選頁面後</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onInsertPdfRequest('end')}>
                     <span>插入至結尾</span>

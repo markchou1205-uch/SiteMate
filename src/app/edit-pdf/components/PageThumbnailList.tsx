@@ -27,7 +27,7 @@ interface PageThumbnailListProps {
   onDeletePage: (index: number) => void;
   onRotatePage: (index: number) => void;
   onReorderPages: (oldIndex: number, newIndex: number) => void;
-  onPrepareInsertPdf: (index: number) => void;
+  onPrepareInsertPdf: (position: 'start' | 'before' | 'after' | 'end', index?: number) => void;
 }
 
 const PageThumbnailList: React.FC<PageThumbnailListProps> = ({
@@ -114,7 +114,7 @@ const PageThumbnailList: React.FC<PageThumbnailListProps> = ({
                       <File className="mr-2 h-4 w-4" />
                       <span>插入空白頁</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onPrepareInsertPdf(i + 1)}>
+                    <DropdownMenuItem onClick={() => onPrepareInsertPdf('after', i)}>
                       <FilePlus className="mr-2 h-4 w-4" />
                       <span>插入PDF</span>
                     </DropdownMenuItem>

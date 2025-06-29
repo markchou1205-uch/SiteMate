@@ -1615,23 +1615,25 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, onTextEditStart, onTe
                         }["InteractivePdfCanvas.useEffect.handleMouseMove"];
                         const handleMouseUp = {
                             "InteractivePdfCanvas.useEffect.handleMouseUp": ()=>{
-                                if (!drawingState.current.isDrawing || !drawingState.current.shape) return;
+                                if (!drawingState.current.isDrawing) return;
                                 const currentCanvas = localCanvases[index];
-                                if (!currentCanvas) return;
+                                if (!currentCanvas || !drawingState.current.shape) {
+                                    setDrawingTool(null);
+                                    return;
+                                }
                                 const { shape } = drawingState.current;
                                 shape.setCoords();
                                 const minSize = 5;
-                                const width = shape.width ?? 0;
-                                const height = shape.height ?? 0;
-                                const radius = shape.radius ?? 0;
-                                if (width * (shape.scaleX ?? 1) > minSize || height * (shape.scaleY ?? 1) > minSize || radius > minSize / 2) {
+                                const width = shape.getScaledWidth();
+                                const height = shape.getScaledHeight();
+                                if (width < minSize && height < minSize) {
+                                    currentCanvas.remove(shape);
+                                } else {
                                     shape.set({
                                         selectable: true,
                                         evented: true
                                     });
                                     onUpdateFabricObject(index, currentCanvas);
-                                } else {
-                                    currentCanvas.remove(shape);
                                 }
                                 drawingState.current = {
                                     isDrawing: false,
@@ -1668,8 +1670,7 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, onTextEditStart, onTe
         drawingTool,
         localCanvases,
         onUpdateFabricObject,
-        setDrawingTool,
-        onShapeDoubleClick
+        setDrawingTool
     ]);
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
         className: "relative w-full h-full p-4",

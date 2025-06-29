@@ -135,8 +135,7 @@ export default function Page() {
   const handleRotatePage = async (pageIndex: number) => {
     if (!pdfDoc) return;
     const page = pdfDoc.getPage(pageIndex);
-    const currentRotation = page.getRotation().angle;
-    page.setRotation({ angle: (currentRotation + 90) % 360, type: RotationTypes.Page });
+    page.setRotation({ type: RotationTypes.Relative, angle: 90 });
     setDocVersion(v => v + 1);
     toast({ title: "Page Rotated", description: `Page ${pageIndex + 1} has been rotated.` });
   };

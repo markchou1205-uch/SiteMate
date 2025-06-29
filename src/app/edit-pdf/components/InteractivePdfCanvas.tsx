@@ -12,7 +12,6 @@ interface InteractivePdfCanvasProps {
   pdfDoc: PDFDocument | null;
   docVersion: number;
   scale: number;
-  rotation: number;
   onTextEditStart: () => void;
   onTextEditEnd: () => void;
   selectedStyle: any;
@@ -28,7 +27,6 @@ export default function InteractivePdfCanvas({
   pdfDoc,
   docVersion,
   scale,
-  rotation,
   onTextEditStart,
   onTextEditEnd,
   setPdfLoaded,
@@ -65,8 +63,8 @@ export default function InteractivePdfCanvas({
       // Loop to render all pages
       for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
         const page = await pdf.getPage(pageNum);
-        // Use global rotation for view, page-specific rotation is handled by pdf-lib
-        const viewport = page.getViewport({ scale, rotation: (page.rotate + rotation) % 360 });
+        // The rotation is baked into the page object itself via pdf-lib
+        const viewport = page.getViewport({ scale });
         
         const canvasWrapper = document.createElement("div");
         canvasWrapper.id = `pdf-page-${pageNum}`;
@@ -101,7 +99,7 @@ export default function InteractivePdfCanvas({
     };
 
     renderPdf();
-  }, [pdfDoc, docVersion, scale, rotation, setNumPages, setPdfLoaded]);
+  }, [pdfDoc, docVersion, scale, setNumPages, setPdfLoaded]);
 
   useEffect(() => {
     const handleMouseUp = () => {

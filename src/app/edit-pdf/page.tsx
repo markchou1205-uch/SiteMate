@@ -39,7 +39,6 @@ export default function Page() {
   const [scale, setScale] = useState(1);
   const [numPages, setNumPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [rotation, setRotation] = useState(0);
   const { toast } = useToast();
 
   const handleStyleChange = (styleUpdate: Partial<typeof selectedTextStyle>) => {
@@ -53,8 +52,23 @@ export default function Page() {
 
   const handleZoomIn = () => setScale((s) => Math.min(s + 0.2, 3));
   const handleZoomOut = () => setScale((s) => Math.max(s - 0.2, 0.2));
-  const handleRotateRight = () => setRotation((r) => (r + 90) % 360);
-  const handleRotateLeft = () => setRotation((r) => (r - 90 + 360) % 360);
+
+  const handleRotateActivePage = (direction: 'left' | 'right') => {
+    if (!pdfDoc || currentPage < 1) return;
+    const pageIndex = currentPage - 1;
+
+    const rotate = async () => {
+      const newDoc = await pdfDoc.copy();
+      const page = newDoc.getPage(pageIndex);
+      const currentRotation = page.getRotation().angle;
+      const rotationAmount = direction === 'right' ? 90 : -90;
+      page.setRotation(degrees((currentRotation + rotationAmount + 360) % 360));
+      setPdfDoc(newDoc);
+      setDocVersion(v => v + 1);
+      toast({ title: "Page Rotated", description: `Page ${pageIndex + 1} has been rotated.` });
+    };
+    rotate();
+  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -65,7 +79,6 @@ export default function Page() {
         const doc = await PDFDocument.load(arrayBuffer);
         setPdfDoc(doc);
         setNumPages(doc.getPageCount());
-        setRotation(0);
         setCurrentPage(1);
         setScale(1);
         setDocVersion(v => v + 1);
@@ -231,7 +244,6 @@ export default function Page() {
             docVersion={docVersion}
             setNumPages={setNumPages}
             scale={scale}
-            rotation={rotation}
             onTextEditStart={() => setIsEditingText(true)}
             onTextEditEnd={() => setIsEditingText(false)}
             selectedStyle={selectedTextStyle}
@@ -249,8 +261,8 @@ export default function Page() {
               scale={scale} 
               onZoomIn={handleZoomIn} 
               onZoomOut={handleZoomOut}
-              onRotateLeft={handleRotateLeft}
-              onRotateRight={handleRotateRight}
+              onRotateLeft={() => handleRotateActivePage('left')}
+              onRotateRight={() => handleRotateActivePage('right')}
             />
           </div>
         )}

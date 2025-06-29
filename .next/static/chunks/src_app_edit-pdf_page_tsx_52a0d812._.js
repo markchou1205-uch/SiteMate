@@ -10,7 +10,7 @@
   "static/chunks/node_modules_pdfjs-dist_build_pdf_5e5dd1fa.js",
   "static/chunks/node_modules_pdfjs-dist_build_pdf_worker_c58b4303.js",
   "static/chunks/node_modules_pdfjs-dist_build_pdf_worker_entry_7dfea33e.js",
-  "static/chunks/node_modules_1491a043._.js"
+  "static/chunks/node_modules_533f26ee._.js"
 ],
     source: "dynamic"
 });

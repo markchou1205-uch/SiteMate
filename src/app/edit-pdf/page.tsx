@@ -3,12 +3,15 @@
 
 import { PDFDocument, rgb, StandardFonts, degrees } from 'pdf-lib';
 import { useEffect, useRef, useState, useCallback } from "react";
+import { fabric } from 'fabric';
 import * as pdfjsLib from "pdfjs-dist";
 import * as pdfjsWorker from "pdfjs-dist/build/pdf.worker.entry";
-import { Upload, Edit, Download, Loader2 } from 'lucide-react';
+
+import { Upload, Edit, Download, Loader2, FilePlus, AlertCircle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Toolbar } from "./components/toolbar";
 import PropertyPanel from "./components/PropertyPanel";
+import ShapePropertyPanel from "./components/ShapePropertyPanel";
 import InteractivePdfCanvas from "./components/InteractivePdfCanvas";
 import PageThumbnailList from "./components/PageThumbnailList";
 import ZoomControls from "./components/ZoomControls";
@@ -18,6 +21,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+
+type DrawingTool = 'circle' | 'rect' | 'triangle' | 'freedraw' | null;
+type InsertPosition = 'start' | 'end' | 'before' | 'after';
 
 export default function Page() {
   const [isEditingText, setIsEditingText] = useState(false);
@@ -31,23 +37,29 @@ export default function Page() {
   const [pdfDoc, setPdfDoc] = useState<PDFDocument | null>(null);
   const [docVersion, setDocVersion] = useState(0);
   const [pageThumbnails, setPageThumbnails] = useState<string[]>([]);
+  const [fabricCanvases, setFabricCanvases] = useState<(fabric.Canvas | null)[]>([]);
+  const [fabricObjects, setFabricObjects] = useState<string[]>([]);
 
   const [pdfLoaded, setPdfLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  
+  const [drawingTool, setDrawingTool] = useState<DrawingTool>(null);
+  const [isShapePanelOpen, setIsShapePanelOpen] = useState(false);
+  const [activeShape, setActiveShape] = useState<fabric.Object | null>(null);
 
-  const [pageObjects, setPageObjects] = useState<any[]>([]);
-  const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
   const [scale, setScale] = useState(1);
   const [numPages, setNumPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [pageToDeleteIndex, setPageToDeleteIndex] = useState<number | null>(null);
-  const [insertPdfAtIndex, setInsertPdfAtIndex] = useState(0);
+  const [isOpenFileConfirmOpen, setIsOpenFileConfirmOpen] = useState(false);
+  const [insertPdfPosition, setInsertPdfPosition] = useState<InsertPosition>('end');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const insertPdfFileInputRef = useRef<HTMLInputElement>(null);
   const mainContainerRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   const handleTextEditStart = useCallback(() => setIsEditingText(true), []);
   const handleTextEditEnd = useCallback(() => setIsEditingText(false), []);
@@ -79,25 +91,63 @@ export default function Page() {
       try {
         const arrayBuffer = await file.arrayBuffer();
         const doc = await PDFDocument.load(arrayBuffer);
+        const pageCount = doc.getPageCount();
         setPdfDoc(doc);
-        setNumPages(doc.getPageCount());
+        setNumPages(pageCount);
+        setFabricObjects(new Array(pageCount).fill('{}'));
         setCurrentPage(1);
         setScale(1);
         setDocVersion(v => v + 1);
       } catch (error) {
         console.error("Failed to load PDF", error);
+        toast({ variant: 'destructive', title: 'Error loading PDF', description: 'The file might be corrupt or invalid.' });
       } finally {
         setIsLoading(false);
       }
     }
      if (fileInputRef.current) fileInputRef.current.value = '';
-  }, []);
+     setIsOpenFileConfirmOpen(false);
+  }, [toast]);
+  
+  const handleOpenFileRequest = () => {
+    if (pdfDoc) {
+      setIsOpenFileConfirmOpen(true);
+    } else {
+      fileInputRef.current?.click();
+    }
+  };
+
+  const confirmOpenFile = () => {
+    setPdfDoc(null);
+    setPageThumbnails([]);
+    setFabricObjects([]);
+    setNumPages(0);
+    setCurrentPage(1);
+    fileInputRef.current?.click();
+    setIsOpenFileConfirmOpen(false);
+  };
 
   const handleDownload = useCallback(async () => {
     if (!pdfDoc) return;
     setIsLoading(true);
     try {
-      const pdfBytes = await pdfDoc.save();
+      const finalDoc = await pdfDoc.copy();
+      for (let i = 0; i < finalDoc.getPageCount(); i++) {
+        const canvas = fabricCanvases[i];
+        if (canvas && !canvas.isEmpty()) {
+          const page = finalDoc.getPage(i);
+          const { width, height } = page.getSize();
+          const pngDataUrl = canvas.toDataURL({ format: 'png', multiplier: 2 });
+          const pngImage = await finalDoc.embedPng(pngDataUrl);
+          page.drawImage(pngImage, {
+            x: 0,
+            y: 0,
+            width,
+            height,
+          });
+        }
+      }
+      const pdfBytes = await finalDoc.save();
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -109,10 +159,11 @@ export default function Page() {
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Failed to download PDF", error);
+      toast({ variant: 'destructive', title: 'Download Failed', description: 'Could not generate the final PDF.' });
     } finally {
       setIsLoading(false);
     }
-  }, [pdfDoc]);
+  }, [pdfDoc, fabricCanvases, toast]);
 
   const handleDownloadRequest = useCallback(async (format: string) => {
     if (!pdfDoc) return;
@@ -164,10 +215,11 @@ export default function Page() {
 
     } catch (error) {
       console.error(`Failed to convert to ${format}`, error);
+      toast({ variant: 'destructive', title: `Failed to convert to ${format}`, description: 'An error occurred during conversion.' });
     } finally {
       setIsLoading(false);
     }
-  }, [pdfDoc, handleDownload]);
+  }, [pdfDoc, handleDownload, toast]);
 
 
   const updateThumbnails = useCallback(async () => {
@@ -208,16 +260,19 @@ export default function Page() {
     pageElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
 
-  const triggerFileUpload = useCallback(() => {
-    fileInputRef.current?.click();
-  }, []);
-
  const onAddBlankPage = useCallback(async (index: number) => {
     if (!pdfDoc) return;
     const newDoc = await pdfDoc.copy();
     const pageToCopyDim = newDoc.getPage(index > 0 ? index - 1 : 0);
     const { width, height } = pageToCopyDim.getSize();
     newDoc.insertPage(index, [width, height]);
+    
+    setFabricObjects(currentFabricObjects => {
+        const newFabricObjects = [...currentFabricObjects];
+        newFabricObjects.splice(index, 0, '{}');
+        return newFabricObjects;
+    });
+
     setPdfDoc(newDoc);
     setDocVersion(v => v + 1);
   }, [pdfDoc]);
@@ -234,6 +289,13 @@ export default function Page() {
     };
     const newDoc = await pdfDoc.copy();
     newDoc.removePage(pageToDeleteIndex);
+    
+    setFabricObjects(currentFabricObjects => {
+        const newFabricObjects = [...currentFabricObjects];
+        newFabricObjects.splice(pageToDeleteIndex, 1);
+        return newFabricObjects;
+    });
+
     setPdfDoc(newDoc);
     setDocVersion(v => v + 1);
     setIsDeleteConfirmOpen(false);
@@ -254,23 +316,29 @@ export default function Page() {
     if (!pdfDoc) return;
 
     const pageCount = pdfDoc.getPageCount();
-    const indices = Array.from({ length: pageCount }, (_, i) => i);
+    if (oldIndex < 0 || oldIndex >= pageCount || newIndex < 0 || newIndex >= pageCount) return;
 
+    const indices = Array.from({ length: pageCount }, (_, i) => i);
     const [movedIndex] = indices.splice(oldIndex, 1);
     indices.splice(newIndex, 0, movedIndex);
 
     const newDoc = await PDFDocument.create();
     const pagesToCopy = await newDoc.copyPages(pdfDoc, indices);
-    pagesToCopy.forEach(page => {
-        newDoc.addPage(page);
+    pagesToCopy.forEach(page => newDoc.addPage(page));
+    
+    setFabricObjects(currentFabricObjects => {
+        const newFabricObjects = Array.from(currentFabricObjects);
+        const [movedObject] = newFabricObjects.splice(oldIndex, 1);
+        newFabricObjects.splice(newIndex, 0, movedObject);
+        return newFabricObjects;
     });
     
     setPdfDoc(newDoc);
     setDocVersion(v => v + 1);
   }, [pdfDoc]);
 
-  const handlePrepareInsertPdf = useCallback((index: number) => {
-    setInsertPdfAtIndex(index);
+  const handleInsertPdfRequest = useCallback((position: InsertPosition) => {
+    setInsertPdfPosition(position);
     insertPdfFileInputRef.current?.click();
   }, []);
   
@@ -283,23 +351,45 @@ export default function Page() {
         const newPdfBytes = await file.arrayBuffer();
         const newPdfToInsert = await PDFDocument.load(newPdfBytes);
         
+        let insertAtIndex = 0;
+        switch(insertPdfPosition) {
+            case 'start':
+                insertAtIndex = 0;
+                break;
+            case 'before':
+                insertAtIndex = currentPage > 1 ? currentPage - 1 : 0;
+                break;
+            case 'after':
+                insertAtIndex = currentPage;
+                break;
+            case 'end':
+                insertAtIndex = pdfDoc.getPageCount();
+                break;
+        }
+
         const newDoc = await pdfDoc.copy();
         const indicesToCopy = newPdfToInsert.getPageIndices();
         const copiedPages = await newDoc.copyPages(newPdfToInsert, indicesToCopy);
 
-        copiedPages.forEach((page, i) => {
-            newDoc.insertPage(insertPdfAtIndex + i, page);
-        });
+        copiedPages.forEach((page, i) => newDoc.insertPage(insertAtIndex + i, page));
         
+        const newFabricObjectsData = new Array(copiedPages.length).fill('{}');
+        setFabricObjects(currentFabricObjects => {
+            const newArray = [...currentFabricObjects];
+            newArray.splice(insertAtIndex, 0, ...newFabricObjectsData);
+            return newArray;
+        });
+
         setPdfDoc(newDoc);
         setDocVersion(v => v + 1);
     } catch (error) {
         console.error("Failed to insert PDF", error);
+        toast({ variant: 'destructive', title: 'Failed to insert PDF' });
     } finally {
         setIsLoading(false);
         if (e.target) e.target.value = '';
     }
-  }, [pdfDoc, insertPdfAtIndex]);
+  }, [pdfDoc, currentPage, insertPdfPosition, toast]);
 
   useEffect(() => {
     const container = mainContainerRef.current;
@@ -327,6 +417,51 @@ export default function Page() {
       pageElements.forEach(el => observer.unobserve(el));
     };
   }, [pdfLoaded, docVersion, scale]);
+  
+  const handleUpdateFabricObject = useCallback((index: number, canvas: fabric.Canvas) => {
+    setFabricObjects(currentObjects => {
+      const newObjects = [...currentObjects];
+      newObjects[index] = JSON.stringify(canvas.toJSON());
+      return newObjects;
+    });
+  }, []);
+  
+  const handleShapeDoubleClick = (object: fabric.Object) => {
+      setActiveShape(object);
+      setIsShapePanelOpen(true);
+  };
+  
+  const handleCloseShapePanel = () => {
+      setIsShapePanelOpen(false);
+      setActiveShape(null);
+  };
+
+  const handleDeleteObject = () => {
+    fabricCanvases.forEach(canvas => {
+        if (canvas && canvas.getActiveObject()) {
+            canvas.remove(canvas.getActiveObject()!);
+            canvas.renderAll();
+        }
+    });
+  };
+
+  const handleAddText = () => {
+    const canvas = fabricCanvases[currentPage - 1];
+    if (!canvas) return;
+
+    const textbox = new fabric.IText('請輸入文字', {
+        left: 50,
+        top: 50,
+        fontSize: 24,
+        fill: 'black',
+        fontFamily: 'Arial',
+        padding: 5,
+    });
+    canvas.add(textbox);
+    canvas.setActiveObject(textbox);
+    textbox.enterEditing();
+    canvas.renderAll();
+  }
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground font-sans">
@@ -352,6 +487,21 @@ export default function Page() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <AlertDialog open={isOpenFileConfirmOpen} onOpenChange={setIsOpenFileConfirmOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>開啟新檔案</AlertDialogTitle>
+                <AlertDialogDescription>
+                    將會關閉目前開啟的文件，請確認已經下載目前的文件。
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>取消</AlertDialogCancel>
+                <AlertDialogAction onClick={confirmOpenFile}>確定</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
       <header className="flex-shrink-0 bg-card z-40">
         <div className="px-4 py-3 flex items-center">
             <h1 className="text-xl font-bold text-primary flex items-center gap-2">
@@ -365,9 +515,12 @@ export default function Page() {
         <div className="flex-shrink-0 border-b shadow-sm bg-card z-30 sticky top-0">
             <div className="px-4 py-2">
                  <Toolbar
-                    onUpload={triggerFileUpload}
-                    onNewFile={triggerFileUpload}
+                    onOpenFileRequest={handleOpenFileRequest}
+                    onInsertPdfRequest={handleInsertPdfRequest}
                     onDownloadRequest={handleDownloadRequest}
+                    onSetDrawingTool={setDrawingTool}
+                    onDeleteObject={handleDeleteObject}
+                    onAddText={handleAddText}
                  />
             </div>
         </div>
@@ -387,7 +540,7 @@ export default function Page() {
                 <CardContent>
                   <div
                     className="flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20"
-                    onClick={triggerFileUpload}
+                    onClick={handleOpenFileRequest}
                   >
                     <Upload className="h-12 w-12 text-muted-foreground mb-3" />
                     <p className="text-md text-muted-foreground text-center">Click or drag a file to upload</p>
@@ -408,7 +561,7 @@ export default function Page() {
                         onDeletePage={onDeletePage}
                         onRotatePage={onRotatePage}
                         onReorderPages={onReorderPages}
-                        onPrepareInsertPdf={handlePrepareInsertPdf}
+                        onPrepareInsertPdf={handleInsertPdfRequest}
                     />
                 </aside>
                 
@@ -420,12 +573,13 @@ export default function Page() {
                         scale={scale}
                         onTextEditStart={handleTextEditStart}
                         onTextEditEnd={handleTextEditEnd}
-                        selectedStyle={selectedTextStyle}
-                        selectedObjectId={selectedObjectId}
-                        setSelectedObjectId={setSelectedObjectId}
-                        pageObjects={pageObjects}
-                        setPageObjects={setPageObjects}
                         setPdfLoaded={setPdfLoaded}
+                        fabricObjects={fabricObjects}
+                        onUpdateFabricObject={handleUpdateFabricObject}
+                        setFabricCanvases={setFabricCanvases}
+                        drawingTool={drawingTool}
+                        setDrawingTool={setDrawingTool}
+                        onShapeDoubleClick={handleShapeDoubleClick}
                     />
 
                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50">
@@ -444,6 +598,15 @@ export default function Page() {
                         currentStyle={selectedTextStyle}
                         onStyleChange={handleStyleChange}
                     />
+
+                    {activeShape && (
+                        <ShapePropertyPanel
+                            isVisible={isShapePanelOpen}
+                            onClose={handleCloseShapePanel}
+                            shape={activeShape}
+                            onModify={() => fabricCanvases[currentPage - 1]?.renderAll()}
+                        />
+                    )}
                 </div>
             </>
         )}

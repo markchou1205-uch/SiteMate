@@ -1,40 +1,72 @@
 // 檔案：Toolbar.tsx
-import { FilePlus, Download, Upload, Eraser, Circle, Pencil, Text, Trash2, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage } from "lucide-react";
+import { FilePlus, Download, Upload, Circle, Pencil, Text, Trash2, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, Square, Triangle, Pen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 
 export function Toolbar({
   onAddText,
-  onAddRect,
-  onAddFreeDraw,
-  onErase,
-  onUpload,
-  onNewFile,
-  onDownloadRequest,
+  onSetDrawingTool,
+  onOpenFileRequest,
+  onInsertPdfRequest,
   onDeleteObject,
+  onDownloadRequest,
 }: any) {
 
   return (
     <div className="flex items-center justify-between w-full">
       <div className="flex items-center gap-1 text-center">
         <div className="flex flex-col items-center w-16">
-            <Button variant="ghost" size="icon" onClick={onNewFile}><FilePlus className="h-5 w-5" /></Button>
-            <span className="text-xs mt-1">新增檔案</span>
+            <Button variant="ghost" size="icon" onClick={onOpenFileRequest}><FilePlus className="h-5 w-5" /></Button>
+            <span className="text-xs mt-1">開啟檔案</span>
         </div>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <div className="flex flex-col items-center w-16 cursor-pointer">
+                    <Button variant="ghost" size="icon"><Upload className="h-5 w-5" /></Button>
+                    <span className="text-xs mt-1">插入文件</span>
+                </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => onInsertPdfRequest('start')}>
+                    <span>插入至開頭</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onInsertPdfRequest('before')}>
+                    <span>插入至所選頁面前</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onInsertPdfRequest('after')}>
+                    <span>插入至所選頁面後</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onInsertPdfRequest('end')}>
+                    <span>插入至結尾</span>
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+             <DropdownMenuTrigger asChild>
+                <div className="flex flex-col items-center w-16 cursor-pointer">
+                    <Button variant="ghost" size="icon"><Circle className="h-5 w-5" /></Button>
+                    <span className="text-xs mt-1">新增圖形</span>
+                </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => onSetDrawingTool('rect')}>
+                    <Square className="mr-2 h-4 w-4" />
+                    <span>方形</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onSetDrawingTool('circle')}>
+                    <Circle className="mr-2 h-4 w-4" />
+                    <span>圓形</span>
+                </DropdownMenuItem>
+                 <DropdownMenuItem onClick={() => onSetDrawingTool('triangle')}>
+                    <Triangle className="mr-2 h-4 w-4" />
+                    <span>三角形</span>
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+
         <div className="flex flex-col items-center w-16">
-            <Button variant="ghost" size="icon" onClick={onUpload}><Upload className="h-5 w-5" /></Button>
-            <span className="text-xs mt-1">上傳</span>
-        </div>
-        <div className="flex flex-col items-center w-16">
-            <Button variant="ghost" size="icon" onClick={onErase}><Eraser className="h-5 w-5" /></Button>
-            <span className="text-xs mt-1">橡皮擦</span>
-        </div>
-        <div className="flex flex-col items-center w-16">
-            <Button variant="ghost" size="icon" onClick={onAddRect}><Circle className="h-5 w-5" /></Button>
-            <span className="text-xs mt-1">新增圖形</span>
-        </div>
-        <div className="flex flex-col items-center w-16">
-            <Button variant="ghost" size="icon" onClick={onAddFreeDraw}><Pencil className="h-5 w-5" /></Button>
+            <Button variant="ghost" size="icon" onClick={() => onSetDrawingTool('freedraw')}><Pen className="h-5 w-5" /></Button>
             <span className="text-xs mt-1">畫筆</span>
         </div>
         <div className="flex flex-col items-center w-16">

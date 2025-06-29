@@ -1786,10 +1786,9 @@ function Page() {
     const handleRotatePage = async (pageIndex)=>{
         if (!pdfDoc) return;
         const page = pdfDoc.getPage(pageIndex);
-        const currentRotation = page.getRotation().angle;
         page.setRotation({
-            angle: (currentRotation + 90) % 360,
-            type: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$pdf$2d$lib$2f$es$2f$api$2f$rotations$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["RotationTypes"].Page
+            type: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$pdf$2d$lib$2f$es$2f$api$2f$rotations$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["RotationTypes"].Relative,
+            angle: 90
         });
         setDocVersion((v)=>v + 1);
         toast({
@@ -1863,7 +1862,7 @@ function Page() {
                 onDownload: handleDownload
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 185,
+                lineNumber: 184,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -1874,7 +1873,7 @@ function Page() {
                 accept: "application/pdf"
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 193,
+                lineNumber: 192,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1892,12 +1891,12 @@ function Page() {
                             onReorderPages: handleReorderPages
                         }, void 0, false, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 198,
+                            lineNumber: 197,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 197,
+                        lineNumber: 196,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1918,12 +1917,12 @@ function Page() {
                             setPdfLoaded: setPdfLoaded
                         }, void 0, false, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 211,
+                            lineNumber: 210,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 210,
+                        lineNumber: 209,
                         columnNumber: 9
                     }, this),
                     pdfDoc && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1936,12 +1935,12 @@ function Page() {
                             onRotateRight: handleRotateRight
                         }, void 0, false, {
                             fileName: "[project]/src/app/edit-pdf/page.tsx",
-                            lineNumber: 230,
+                            lineNumber: 229,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 229,
+                        lineNumber: 228,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$edit$2d$pdf$2f$components$2f$PropertyPanel$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
@@ -1951,19 +1950,19 @@ function Page() {
                         onStyleChange: handleStyleChange
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/page.tsx",
-                        lineNumber: 240,
+                        lineNumber: 239,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/edit-pdf/page.tsx",
-                lineNumber: 195,
+                lineNumber: 194,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/edit-pdf/page.tsx",
-        lineNumber: 184,
+        lineNumber: 183,
         columnNumber: 5
     }, this);
 }

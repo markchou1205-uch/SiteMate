@@ -1,6 +1,7 @@
 // components/PageThumbnailList.tsx
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef } from "react";
+import Sortable from 'sortablejs';
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -19,79 +20,68 @@ import {
 import { FilePlus2, RotateCw, Trash2, File, FilePlus } from "lucide-react";
 
 interface PageThumbnailListProps {
-  numPages: number;
+  thumbnails: string[];
   currentPage: number;
-  onSelectPage: (pageNumber: number) => void;
+  onPageClick: (pageNumber: number) => void;
+  onAddBlankPage: (index: number) => void;
+  onDeletePage: (index: number) => void;
+  onRotatePage: (index: number) => void;
+  onReorderPages: (oldIndex: number, newIndex: number) => void;
 }
 
 const PageThumbnailList: React.FC<PageThumbnailListProps> = ({
-  numPages,
+  thumbnails,
   currentPage,
-  onSelectPage,
+  onPageClick,
+  onAddBlankPage,
+  onDeletePage,
+  onRotatePage,
+  onReorderPages,
 }) => {
-  const [thumbnails, setThumbnails] = useState<string[]>([]);
+  const listRef = useRef<HTMLDivElement>(null);
+  const insertPdfRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const generateThumbnails = async () => {
-      const fileInput = document.getElementById(
-        "pdf-upload"
-      ) as HTMLInputElement;
-      const file = fileInput?.files?.[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const pdfjsLib = await import("pdfjs-dist");
-        const workerSrc = await import("pdfjs-dist/build/pdf.worker.entry");
-        pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc.default;
-
-        const typedarray = new Uint8Array(reader.result as ArrayBuffer);
-        const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
-
-        const thumbs: string[] = [];
-        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-          const page = await pdf.getPage(pageNum);
-          const viewport = page.getViewport({ scale: 0.3 });
-          const canvas = document.createElement("canvas");
-          const context = canvas.getContext("2d")!;
-          canvas.width = viewport.width;
-          canvas.height = viewport.height;
-          await page.render({ canvasContext: context, viewport }).promise;
-          thumbs.push(canvas.toDataURL());
-        }
-        setThumbnails(thumbs);
-      };
-      reader.readAsArrayBuffer(file);
-    };
-    generateThumbnails();
-  }, [numPages]);
+    if (listRef.current) {
+      const sortable = Sortable.create(listRef.current, {
+        animation: 150,
+        ghostClass: 'opacity-50',
+        onEnd: (evt) => {
+          if (evt.oldIndex !== undefined && evt.newIndex !== undefined) {
+            onReorderPages(evt.oldIndex, evt.newIndex);
+          }
+        },
+      });
+      return () => sortable.destroy();
+    }
+  }, [onReorderPages]);
 
   return (
     <TooltipProvider>
       <ScrollArea className="h-full">
-        <div className="flex flex-col gap-4 p-2">
-          {Array.from({ length: numPages }, (_, i) => (
-            <div key={i + 1} className="flex flex-col gap-1 items-center">
+        <div ref={listRef} className="flex flex-col gap-4 p-2">
+          {thumbnails.map((thumbnail, i) => (
+            <div key={i} className="flex flex-col gap-1 items-center" data-id={i}>
               <Button
-                key={i + 1}
                 variant="outline"
                 className={cn(
                   "w-full flex flex-col items-center h-auto p-1",
                   currentPage === i + 1 && "border-2 border-primary"
                 )}
-                onClick={() => onSelectPage(i + 1)}
+                onClick={() => onPageClick(i + 1)}
               >
-                {thumbnails[i] ? (
+                {thumbnail ? (
                   <img
-                    src={thumbnails[i]}
+                    src={thumbnail}
                     alt={`Page ${i + 1}`}
                     className="w-full object-contain"
                   />
                 ) : (
                   <div className="w-full h-24 bg-gray-100 flex items-center justify-center text-xs text-gray-400">
-                    產生中...
+                    Loading...
                   </div>
                 )}
+                 <p className="text-xs mt-1">{i + 1}</p>
               </Button>
 
               <div className="flex gap-1 text-xs">
@@ -109,11 +99,11 @@ const PageThumbnailList: React.FC<PageThumbnailListProps> = ({
                     </TooltipContent>
                   </Tooltip>
                   <DropdownMenuContent>
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onAddBlankPage(i + 1)}>
                       <File className="mr-2 h-4 w-4" />
                       <span>插入空白頁</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => insertPdfRef.current?.click()}>
                       <FilePlus className="mr-2 h-4 w-4" />
                       <span>插入PDF</span>
                     </DropdownMenuItem>
@@ -122,7 +112,7 @@ const PageThumbnailList: React.FC<PageThumbnailListProps> = ({
 
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button size="icon" variant="ghost" className="h-7 w-7">
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => onRotatePage(i)}>
                       <RotateCw className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
@@ -137,6 +127,7 @@ const PageThumbnailList: React.FC<PageThumbnailListProps> = ({
                       size="icon"
                       variant="ghost"
                       className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => onDeletePage(i)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -150,6 +141,13 @@ const PageThumbnailList: React.FC<PageThumbnailListProps> = ({
           ))}
         </div>
       </ScrollArea>
+       <input
+        type="file"
+        ref={insertPdfRef}
+        className="hidden"
+        accept="application/pdf"
+        // onChange would be handled by the parent component logic
+      />
     </TooltipProvider>
   );
 };

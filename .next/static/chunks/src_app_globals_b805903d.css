@@ -682,6 +682,10 @@ body {
   margin-left: 12%;
 }
 
+.ml-\[15\%\] {
+  margin-left: 15%;
+}
+
 .block {
   display: block;
 }
@@ -1021,6 +1025,10 @@ body {
 
 .w-px {
   width: 1px;
+}
+
+.w-\[15\%\] {
+  width: 15%;
 }
 
 .min-w-0 {

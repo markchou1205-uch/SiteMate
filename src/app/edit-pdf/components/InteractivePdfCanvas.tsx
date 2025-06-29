@@ -2,14 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import * as pdfjsLib from "pdfjs-dist";
+import { PDFDocument } from 'pdf-lib';
 import * as pdfjsWorker from "pdfjs-dist/build/pdf.worker.entry";
 import PropertyPanel from "./PropertyPanel";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 interface InteractivePdfCanvasProps {
-  pdfFile: File | null;
-  currentPage: number;
+  pdfDoc: PDFDocument | null;
+  docVersion: number;
   scale: number;
   rotation: number;
   onTextEditStart: () => void;
@@ -24,7 +25,8 @@ interface InteractivePdfCanvasProps {
 }
 
 export default function InteractivePdfCanvas({
-  pdfFile,
+  pdfDoc,
+  docVersion,
   scale,
   rotation,
   onTextEditStart,
@@ -43,58 +45,63 @@ export default function InteractivePdfCanvas({
   });
 
   useEffect(() => {
-    if (!pdfFile) return;
+    if (!pdfDoc) {
+        if(containerRef.current) containerRef.current.innerHTML = "";
+        return;
+    };
 
     const renderPdf = async () => {
       setPdfLoaded(false);
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const typedarray = new Uint8Array(reader.result as ArrayBuffer);
-        const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
-        setNumPages(pdf.numPages);
+      
+      const pdfBytes = await pdfDoc.save();
+      const typedarray = new Uint8Array(pdfBytes);
+      const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
+      setNumPages(pdf.numPages);
 
-        const container = containerRef.current;
-        if (!container) return;
-        container.innerHTML = ""; // Clear previous renders
+      const container = containerRef.current;
+      if (!container) return;
+      container.innerHTML = ""; // Clear previous renders
 
-        // Loop to render all pages
-        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-          const page = await pdf.getPage(pageNum);
-          const viewport = page.getViewport({ scale, rotation });
-          
-          const canvas = document.createElement("canvas");
-          const context = canvas.getContext("2d", { willReadFrequently: true });
-          if (!context) continue;
-
-          // For crisp rendering on high-DPI screens
-          const outputScale = window.devicePixelRatio || 1;
-
-          canvas.width = Math.floor(viewport.width * outputScale);
-          canvas.height = Math.floor(viewport.height * outputScale);
-          canvas.style.width = `${Math.floor(viewport.width)}px`;
-          canvas.style.height = `${Math.floor(viewport.height)}px`;
-          
-          canvas.className = "mb-4 border mx-auto shadow-lg";
-          
-          const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
-
-          const renderContext = { 
-            canvasContext: context, 
-            viewport,
-            transform,
-          };
-          
-          await page.render(renderContext).promise;
-          container.appendChild(canvas);
-        }
+      // Loop to render all pages
+      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        // Use global rotation for view, page-specific rotation is handled by pdf-lib
+        const viewport = page.getViewport({ scale, rotation: (page.rotate + rotation) % 360 });
         
-        setPdfLoaded(true);
-      };
-      reader.readAsArrayBuffer(pdfFile);
+        const canvasWrapper = document.createElement("div");
+        canvasWrapper.id = `pdf-page-${pageNum}`;
+        canvasWrapper.className = "mb-4 mx-auto shadow-lg";
+
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d", { willReadFrequently: true });
+        if (!context) continue;
+
+        // For crisp rendering on high-DPI screens
+        const outputScale = window.devicePixelRatio || 1;
+
+        canvas.width = Math.floor(viewport.width * outputScale);
+        canvas.height = Math.floor(viewport.height * outputScale);
+        canvas.style.width = `${Math.floor(viewport.width)}px`;
+        canvas.style.height = `${Math.floor(viewport.height)}px`;
+        
+        const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
+
+        const renderContext = { 
+          canvasContext: context, 
+          viewport,
+          transform,
+        };
+        
+        await page.render(renderContext).promise;
+        canvasWrapper.appendChild(canvas)
+        container.appendChild(canvasWrapper);
+      }
+      
+      setPdfLoaded(true);
     };
 
     renderPdf();
-  }, [pdfFile, scale, rotation, setNumPages, setPdfLoaded]);
+  }, [pdfDoc, docVersion, scale, rotation, setNumPages, setPdfLoaded]);
 
   useEffect(() => {
     const handleMouseUp = () => {

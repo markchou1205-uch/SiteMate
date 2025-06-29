@@ -145,7 +145,6 @@ export default function InteractivePdfCanvas({
       drawingState.current.origX = pointer.x;
       drawingState.current.origY = pointer.y;
 
-      // Find canvas index
       const canvasIndex = localCanvases.findIndex(c => c === canvas);
       if (canvasIndex === -1) return;
       drawingState.current.canvasIndex = canvasIndex;
@@ -162,7 +161,7 @@ export default function InteractivePdfCanvas({
           fill: 'transparent',
           stroke: 'black',
           strokeWidth: 2,
-          selectable: false, // Not selectable while drawing
+          selectable: false,
           evented: false,
       };
 
@@ -248,13 +247,11 @@ export default function InteractivePdfCanvas({
     localCanvases.forEach((canvas, index) => {
       if (!canvas) return;
 
-      // --- Cleanup all previous listeners ---
       canvas.off('mouse:down', handleMouseDown);
       canvas.off('mouse:move', handleMouseMove);
       canvas.off('mouse:up', handleMouseUp);
       canvas.off('path:created');
       
-      // --- Set canvas mode based on drawingTool ---
       canvas.isDrawingMode = (drawingTool === 'freedraw');
       canvas.selection = !isDrawingActive;
       canvas.defaultCursor = isDrawingActive ? 'crosshair' : 'default';
@@ -265,7 +262,6 @@ export default function InteractivePdfCanvas({
           obj.evented = !isDrawingActive;
       });
 
-      // --- Bind new listeners based on mode ---
       if (drawingTool === 'freedraw') {
           canvas.freeDrawingBrush.width = 2;
           canvas.freeDrawingBrush.color = 'black';
@@ -296,5 +292,4 @@ export default function InteractivePdfCanvas({
       <div ref={containerRef} className="flex flex-col items-center" />
     </div>
   );
-
-    
+}

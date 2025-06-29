@@ -1503,19 +1503,21 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
     ]);
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
         "InteractivePdfCanvas.useEffect": ()=>{
-            console.log(`[DRAW-EFFECT] Running for tool: "${drawingTool}". Canvases available: ${localCanvases.length}`);
+            const isDrawingActive = drawingTool !== null;
             const handleMouseDown = {
-                "InteractivePdfCanvas.useEffect.handleMouseDown": (o, canvasIndex)=>{
-                    const currentTool = drawingTool;
-                    console.log(`[MOUSE-DOWN] Fired on canvas ${canvasIndex} with tool: "${currentTool}"`);
-                    if (!currentTool || currentTool === 'freedraw') return;
-                    const canvas = localCanvases[canvasIndex];
-                    if (!canvas) return;
+                "InteractivePdfCanvas.useEffect.handleMouseDown": (o)=>{
+                    const canvas = o.target?.canvas;
+                    if (!canvas || !drawingTool || drawingTool === 'freedraw') return;
                     drawingState.current.isDrawing = true;
-                    drawingState.current.canvasIndex = canvasIndex;
                     const pointer = canvas.getPointer(o.e);
                     drawingState.current.origX = pointer.x;
                     drawingState.current.origY = pointer.y;
+                    // Find canvas index
+                    const canvasIndex = localCanvases.findIndex({
+                        "InteractivePdfCanvas.useEffect.handleMouseDown.canvasIndex": (c)=>c === canvas
+                    }["InteractivePdfCanvas.useEffect.handleMouseDown.canvasIndex"]);
+                    if (canvasIndex === -1) return;
+                    drawingState.current.canvasIndex = canvasIndex;
                     let shape;
                     const commonProps = {
                         left: pointer.x,
@@ -1531,7 +1533,7 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
                         selectable: false,
                         evented: false
                     };
-                    switch(currentTool){
+                    switch(drawingTool){
                         case 'rect':
                             shape = new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$fabric$2f$dist$2f$fabric$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["fabric"].Rect(commonProps);
                             break;
@@ -1549,7 +1551,6 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
                     }
                     drawingState.current.shape = shape;
                     canvas.add(shape);
-                    console.log(`[MOUSE-DOWN] Shape added to canvas ${canvasIndex}`);
                 }
             }["InteractivePdfCanvas.useEffect.handleMouseDown"];
             const handleMouseMove = {
@@ -1588,7 +1589,6 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
             const handleMouseUp = {
                 "InteractivePdfCanvas.useEffect.handleMouseUp": ()=>{
                     if (!drawingState.current.isDrawing || !drawingState.current.shape) return;
-                    console.log(`[MOUSE-UP] Fired. Finalizing shape.`);
                     const canvasIndex = drawingState.current.canvasIndex;
                     if (canvasIndex === null) return;
                     const canvas = localCanvases[canvasIndex];
@@ -1616,39 +1616,36 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
                     };
                     canvas.requestRenderAll();
                     setDrawingTool(null);
-                    console.log(`[MOUSE-UP] Drawing tool reset to null.`);
                 }
             }["InteractivePdfCanvas.useEffect.handleMouseUp"];
             localCanvases.forEach({
                 "InteractivePdfCanvas.useEffect": (canvas, index)=>{
                     if (!canvas) return;
-                    canvas.off('mouse:down');
-                    canvas.off('mouse:move');
-                    canvas.off('mouse:up');
+                    // --- Cleanup all previous listeners ---
+                    canvas.off('mouse:down', handleMouseDown);
+                    canvas.off('mouse:move', handleMouseMove);
+                    canvas.off('mouse:up', handleMouseUp);
                     canvas.off('path:created');
-                    canvas.isDrawingMode = false;
-                    const isDrawingActive = drawingTool !== null;
+                    // --- Set canvas mode based on drawingTool ---
+                    canvas.isDrawingMode = drawingTool === 'freedraw';
                     canvas.selection = !isDrawingActive;
                     canvas.defaultCursor = isDrawingActive ? 'crosshair' : 'default';
+                    canvas.skipTargetFind = isDrawingActive;
                     canvas.forEachObject({
                         "InteractivePdfCanvas.useEffect": (obj)=>{
                             obj.selectable = !isDrawingActive;
                             obj.evented = !isDrawingActive;
                         }
                     }["InteractivePdfCanvas.useEffect"]);
+                    // --- Bind new listeners based on mode ---
                     if (drawingTool === 'freedraw') {
-                        console.log(`[DRAW-EFFECT] Enabling freedraw mode for canvas ${index}`);
-                        canvas.isDrawingMode = true;
                         canvas.freeDrawingBrush.width = 2;
                         canvas.freeDrawingBrush.color = 'black';
                         canvas.on('path:created', {
                             "InteractivePdfCanvas.useEffect": ()=>onUpdateFabricObject(index, canvas)
                         }["InteractivePdfCanvas.useEffect"]);
                     } else if (isDrawingActive) {
-                        console.log(`[DRAW-EFFECT] Binding drawing events for tool "${drawingTool}" to canvas ${index}`);
-                        canvas.on('mouse:down', {
-                            "InteractivePdfCanvas.useEffect": (o)=>handleMouseDown(o, index)
-                        }["InteractivePdfCanvas.useEffect"]);
+                        canvas.on('mouse:down', handleMouseDown);
                         canvas.on('mouse:move', handleMouseMove);
                         canvas.on('mouse:up', handleMouseUp);
                     }
@@ -1657,15 +1654,13 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
             }["InteractivePdfCanvas.useEffect"]);
             return ({
                 "InteractivePdfCanvas.useEffect": ()=>{
-                    console.log('[DRAW-EFFECT] Cleanup function running.');
                     localCanvases.forEach({
-                        "InteractivePdfCanvas.useEffect": (canvas, index)=>{
+                        "InteractivePdfCanvas.useEffect": (canvas)=>{
                             if (canvas) {
-                                canvas.off('mouse:down');
-                                canvas.off('mouse:move');
-                                canvas.off('mouse:up');
+                                canvas.off('mouse:down', handleMouseDown);
+                                canvas.off('mouse:move', handleMouseMove);
+                                canvas.off('mouse:up', handleMouseUp);
                                 canvas.off('path:created');
-                                console.log(`[DRAW-EFFECT] All events cleaned from canvas ${index}`);
                             }
                         }
                     }["InteractivePdfCanvas.useEffect"]);
@@ -1685,12 +1680,12 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
             className: "flex flex-col items-center"
         }, void 0, false, {
             fileName: "[project]/src/app/edit-pdf/components/InteractivePdfCanvas.tsx",
-            lineNumber: 303,
+            lineNumber: 296,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/src/app/edit-pdf/components/InteractivePdfCanvas.tsx",
-        lineNumber: 302,
+        lineNumber: 295,
         columnNumber: 5
     }, this);
 }

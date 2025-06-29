@@ -1,4 +1,3 @@
-
 // File: PdfEditor.tsx
 "use client";
 
@@ -61,6 +60,11 @@ export default function PdfEditor() {
   const insertPdfFileInputRef = useRef<HTMLInputElement>(null);
   const mainContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  const handleSetDrawingTool = useCallback((tool: DrawingTool) => {
+    console.log('PdfEditor: Setting drawing tool to:', tool);
+    setDrawingTool(tool);
+  }, []);
 
   const handleTextEditStart = useCallback(() => setIsEditingText(true), []);
   const handleTextEditEnd = useCallback(() => setIsEditingText(false), []);
@@ -517,7 +521,7 @@ export default function PdfEditor() {
                     onOpenFileRequest={handleOpenFileRequest}
                     onInsertPdfRequest={handleInsertPdfRequest}
                     onDownloadRequest={handleDownloadRequest}
-                    onSetDrawingTool={setDrawingTool}
+                    onSetDrawingTool={handleSetDrawingTool}
                     onDeleteObject={handleDeleteObject}
                     onAddText={handleAddText}
                  />
@@ -576,7 +580,7 @@ export default function PdfEditor() {
                           onUpdateFabricObject={handleUpdateFabricObject}
                           setFabricCanvases={setFabricCanvases}
                           drawingTool={drawingTool}
-                          setDrawingTool={setDrawingTool}
+                          setDrawingTool={handleSetDrawingTool}
                           onShapeDoubleClick={handleShapeDoubleClick}
                       />
                   </div>

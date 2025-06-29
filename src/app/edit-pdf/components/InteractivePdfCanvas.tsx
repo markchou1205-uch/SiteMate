@@ -134,10 +134,16 @@ export default function InteractivePdfCanvas({
   }, [pdfDoc, docVersion, scale]);
 
   useEffect(() => {
+    console.log(`[DRAW-EFFECT] Running for tool: "${drawingTool}". Canvases available: ${localCanvases.length}`);
+
     const handleMouseDown = (o: fabric.IEvent, canvasIndex: number) => {
-        const canvas = localCanvases[canvasIndex];
-        if (!canvas || !drawingTool || drawingTool === 'freedraw') return;
+        const currentTool = drawingTool;
+        console.log(`[MOUSE-DOWN] Fired on canvas ${canvasIndex} with tool: "${currentTool}"`);
+        if (!currentTool || currentTool === 'freedraw') return;
         
+        const canvas = localCanvases[canvasIndex];
+        if (!canvas) return;
+
         drawingState.current.isDrawing = true;
         drawingState.current.canvasIndex = canvasIndex;
         const pointer = canvas.getPointer(o.e);
@@ -148,8 +154,8 @@ export default function InteractivePdfCanvas({
         const commonProps = {
             left: pointer.x,
             top: pointer.y,
-            originX: 'left' as 'left',
-            originY: 'top' as 'top',
+            originX: 'left' as const,
+            originY: 'top' as const,
             width: 0,
             height: 0,
             angle: 0,
@@ -160,7 +166,7 @@ export default function InteractivePdfCanvas({
             evented: false,
         };
 
-        switch (drawingTool) {
+        switch (currentTool) {
             case 'rect':
                 shape = new fabric.Rect(commonProps);
                 break;
@@ -175,6 +181,7 @@ export default function InteractivePdfCanvas({
         
         drawingState.current.shape = shape;
         canvas.add(shape);
+        console.log(`[MOUSE-DOWN] Shape added to canvas ${canvasIndex}`);
     };
 
     const handleMouseMove = (o: fabric.IEvent) => {
@@ -190,7 +197,7 @@ export default function InteractivePdfCanvas({
         const { origX, origY, shape } = drawingState.current;
         
         if (shape.type === 'circle') {
-            const radius = Math.sqrt(Math.pow(pointer.x - origX, 2) + Math.pow(pointer.y - origY, 2)) / 2;
+             const radius = Math.sqrt(Math.pow(pointer.x - origX, 2) + Math.pow(pointer.y - origY, 2)) / 2;
              shape.set({
                 left: (pointer.x + origX) / 2,
                 top: (pointer.y + origY) / 2,
@@ -216,6 +223,7 @@ export default function InteractivePdfCanvas({
 
     const handleMouseUp = () => {
         if (!drawingState.current.isDrawing || !drawingState.current.shape) return;
+        console.log(`[MOUSE-UP] Fired. Finalizing shape.`);
 
         const canvasIndex = drawingState.current.canvasIndex;
         if (canvasIndex === null) return;
@@ -240,6 +248,7 @@ export default function InteractivePdfCanvas({
         drawingState.current = { isDrawing: false, origX: 0, origY: 0, shape: null, canvasIndex: null };
         canvas.requestRenderAll();
         setDrawingTool(null);
+        console.log(`[MOUSE-UP] Drawing tool reset to null.`);
     };
     
     localCanvases.forEach((canvas, index) => {
@@ -248,6 +257,7 @@ export default function InteractivePdfCanvas({
         canvas.off('mouse:down');
         canvas.off('mouse:move');
         canvas.off('mouse:up');
+        canvas.off('path:created');
         canvas.isDrawingMode = false;
         
         const isDrawingActive = drawingTool !== null;
@@ -260,10 +270,13 @@ export default function InteractivePdfCanvas({
         });
 
         if (drawingTool === 'freedraw') {
+            console.log(`[DRAW-EFFECT] Enabling freedraw mode for canvas ${index}`);
             canvas.isDrawingMode = true;
             canvas.freeDrawingBrush.width = 2;
             canvas.freeDrawingBrush.color = 'black';
+            canvas.on('path:created', () => onUpdateFabricObject(index, canvas));
         } else if (isDrawingActive) {
+            console.log(`[DRAW-EFFECT] Binding drawing events for tool "${drawingTool}" to canvas ${index}`);
             canvas.on('mouse:down', (o) => handleMouseDown(o, index));
             canvas.on('mouse:move', handleMouseMove);
             canvas.on('mouse:up', handleMouseUp);
@@ -272,11 +285,14 @@ export default function InteractivePdfCanvas({
     });
 
     return () => {
-        localCanvases.forEach(canvas => {
+        console.log('[DRAW-EFFECT] Cleanup function running.');
+        localCanvases.forEach((canvas, index) => {
             if (canvas) {
                 canvas.off('mouse:down');
                 canvas.off('mouse:move');
                 canvas.off('mouse:up');
+                canvas.off('path:created');
+                console.log(`[DRAW-EFFECT] All events cleaned from canvas ${index}`);
             }
         });
     };

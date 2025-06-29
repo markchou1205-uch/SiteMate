@@ -2350,6 +2350,10 @@ body {
   animation-timing-function: linear;
 }
 
+.running {
+  animation-play-state: running;
+}
+
 .\[animation-duration\:20s\] {
   animation-duration: 20s;
 }

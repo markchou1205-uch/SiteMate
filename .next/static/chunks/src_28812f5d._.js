@@ -1416,6 +1416,7 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
         "InteractivePdfCanvas.useEffect": ()=>{
             let canvasesToSet = [];
+            let isMounted = true;
             const renderPdf = {
                 "InteractivePdfCanvas.useEffect.renderPdf": async ()=>{
                     setPdfLoaded(false);
@@ -1425,6 +1426,7 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
                     const pdf = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$pdfjs$2d$dist$2f$build$2f$pdf$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["getDocument"])({
                         data: typedarray
                     }).promise;
+                    if (!isMounted) return;
                     setNumPages(pdf.numPages);
                     const container = containerRef.current;
                     if (!container) return;
@@ -1476,12 +1478,22 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
                         }["InteractivePdfCanvas.useEffect.renderPdf"]);
                         canvasesToSet[pageNum - 1] = fabricCanvas;
                     }
-                    setLocalCanvases(canvasesToSet);
-                    setFabricCanvases(canvasesToSet);
-                    setPdfLoaded(true);
+                    if (isMounted) {
+                        setLocalCanvases(canvasesToSet);
+                        setFabricCanvases(canvasesToSet);
+                        setPdfLoaded(true);
+                    }
                 }
             }["InteractivePdfCanvas.useEffect.renderPdf"];
             renderPdf();
+            return ({
+                "InteractivePdfCanvas.useEffect": ()=>{
+                    isMounted = false;
+                    canvasesToSet.forEach({
+                        "InteractivePdfCanvas.useEffect": (canvas)=>canvas?.dispose()
+                    }["InteractivePdfCanvas.useEffect"]);
+                }
+            })["InteractivePdfCanvas.useEffect"];
         // eslint-disable-next-line react-hooks/exhaustive-deps
         }
     }["InteractivePdfCanvas.useEffect"], [
@@ -1544,20 +1556,20 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
                     if (!canvas) return;
                     const pointer = canvas.getPointer(o.e);
                     const { origX, origY, shape } = drawingState.current;
-                    let newLeft = Math.min(pointer.x, origX);
-                    let newTop = Math.min(pointer.y, origY);
-                    let newWidth = Math.abs(origX - pointer.x);
-                    let newHeight = Math.abs(origY - pointer.y);
                     if (shape.type === 'circle') {
-                        const radius = Math.max(newWidth, newHeight) / 2;
+                        const radius = Math.sqrt(Math.pow(pointer.x - origX, 2) + Math.pow(pointer.y - origY, 2)) / 2;
                         shape.set({
-                            left: newLeft + newWidth / 2,
-                            top: newTop + newHeight / 2,
+                            left: (pointer.x + origX) / 2,
+                            top: (pointer.y + origY) / 2,
                             radius: radius,
                             originX: 'center',
                             originY: 'center'
                         });
                     } else {
+                        const newLeft = Math.min(pointer.x, origX);
+                        const newTop = Math.min(pointer.y, origY);
+                        const newWidth = Math.abs(origX - pointer.x);
+                        const newHeight = Math.abs(origY - pointer.y);
                         shape.set({
                             left: newLeft,
                             top: newTop,
@@ -1606,12 +1618,8 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
                     canvas.off('mouse:down');
                     canvas.off('mouse:move');
                     canvas.off('mouse:up');
+                    canvas.isDrawingMode = false;
                     const isDrawingActive = drawingTool !== null;
-                    canvas.isDrawingMode = drawingTool === 'freedraw';
-                    if (canvas.isDrawingMode) {
-                        canvas.freeDrawingBrush.width = 2;
-                        canvas.freeDrawingBrush.color = 'black';
-                    }
                     canvas.selection = !isDrawingActive;
                     canvas.defaultCursor = isDrawingActive ? 'crosshair' : 'default';
                     canvas.forEachObject({
@@ -1620,7 +1628,11 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
                             obj.evented = !isDrawingActive;
                         }
                     }["InteractivePdfCanvas.useEffect"]);
-                    if (isDrawingActive && drawingTool !== 'freedraw') {
+                    if (drawingTool === 'freedraw') {
+                        canvas.isDrawingMode = true;
+                        canvas.freeDrawingBrush.width = 2;
+                        canvas.freeDrawingBrush.color = 'black';
+                    } else if (isDrawingActive) {
                         canvas.on('mouse:down', {
                             "InteractivePdfCanvas.useEffect": (o)=>handleMouseDown(o, index)
                         }["InteractivePdfCanvas.useEffect"]);
@@ -1657,12 +1669,12 @@ function InteractivePdfCanvas({ pdfDoc, docVersion, scale, setPdfLoaded, setNumP
             className: "flex flex-col items-center"
         }, void 0, false, {
             fileName: "[project]/src/app/edit-pdf/components/InteractivePdfCanvas.tsx",
-            lineNumber: 279,
+            lineNumber: 287,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/src/app/edit-pdf/components/InteractivePdfCanvas.tsx",
-        lineNumber: 278,
+        lineNumber: 286,
         columnNumber: 5
     }, this);
 }

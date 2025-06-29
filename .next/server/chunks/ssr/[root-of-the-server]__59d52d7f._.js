@@ -1786,9 +1786,10 @@ function Page() {
     const handleRotatePage = async (pageIndex)=>{
         if (!pdfDoc) return;
         const page = pdfDoc.getPage(pageIndex);
+        const currentRotation = page.getRotation().angle;
         page.setRotation({
-            type: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$pdf$2d$lib$2f$es$2f$api$2f$rotations$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["RotationTypes"].Relative,
-            angle: 90
+            type: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$pdf$2d$lib$2f$es$2f$api$2f$rotations$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["RotationTypes"].Absolute,
+            angle: (currentRotation + 90) % 360
         });
         setDocVersion((v)=>v + 1);
         toast({

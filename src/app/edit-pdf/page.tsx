@@ -191,9 +191,9 @@ export default function Page() {
       />
       <input type="file" id="pdf-upload" className="hidden" onChange={handleFileChange} accept="application/pdf" />
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
         {pdfDoc && (
-          <div className="absolute left-0 top-0 w-[15%] h-full border-r overflow-y-auto bg-muted z-10">
+          <div className="w-[15%] h-full border-r overflow-y-auto bg-muted">
             <PageThumbnailList
               thumbnails={pageThumbnails}
               currentPage={currentPage}
@@ -206,7 +206,7 @@ export default function Page() {
           </div>
         )}
 
-        <div className={`h-full overflow-auto bg-muted ${pdfDoc ? 'ml-[15%]' : 'w-full'}`}>
+        <div className={`h-full overflow-auto bg-muted ${pdfDoc ? 'w-[85%]' : 'w-full'}`}>
           <InteractivePdfCanvas
             pdfDoc={pdfDoc}
             docVersion={docVersion}

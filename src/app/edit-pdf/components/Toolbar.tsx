@@ -1,55 +1,22 @@
+
 "use client";
 
 import React from "react";
-import Sidebar from "./Sidebar";
-import {
-  FaMousePointer,
-  FaFont,
-  FaPen,
-  FaSquare,
-  FaPalette,
-  FaShapes,
-  FaUndo,
-  FaRedo,
-  FaImage,
-  FaSignature,
-  FaEyeSlash,
-  FaDownload,
-  FaBold,
-  FaItalic,
-  FaUnderline,
-  FaTextHeight,
-  FaBorderAll,
-} from "react-icons/fa";
+import { MousePointer, Type, Pen, Square, Circle, Triangle, Download, Palette } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
-import { TbRectangle, TbCircle, TbTriangle } from "react-icons/tb";
-import { MdOutlineInsertPhoto } from "react-icons/md";
-import { BiSolidMosaic } from "react-icons/bi";
-import { IoMdText } from "react-icons/io";
-import { RiFontSize2 } from "react-icons/ri";
+export type Tool = "select" | "text" | "draw" | "rect" | "circle" | "triangle";
 
-// 工具列功能類型
-export type Tool =
-  | "select"
-  | "text"
-  | "draw"
-  | "rect"
-  | "signature"
-  | "mosaic"
-  | "image"
-  | "shape";
-
-const colors = ["#000000", "#FF0000", "#008000", "#0000FF", "#FFA500", "#800080"];
+const colors = ["#000000", "#ef4444", "#22c55e", "#3b82f6", "#f97316", "#a855f7"];
 
 interface ToolbarProps {
   currentTool: Tool;
   setTool: (tool: Tool) => void;
   color: string;
   setColor: (color: string) => void;
-  onExport: () => void;
-  onUndo: () => void;
-  onRedo: () => void;
-  onUploadImage: () => void;
+  onDownload: () => void;
 }
 
 const Toolbar: React.FC<ToolbarProps> = ({
@@ -57,50 +24,63 @@ const Toolbar: React.FC<ToolbarProps> = ({
   setTool,
   color,
   setColor,
-  onExport,
-  onUndo,
-  onRedo,
-  onUploadImage,
+  onDownload,
 }) => {
   return (
-    <div className="flex flex-wrap gap-2 p-2 bg-gray-100 border-b border-gray-300 items-center">
-      <button onClick={() => setTool("select")} className={`p-2 rounded ${currentTool === "select" ? "bg-blue-200" : "bg-white"}`}><FaMousePointer /></button>
-      <button onClick={() => setTool("text")} className={`p-2 rounded ${currentTool === "text" ? "bg-blue-200" : "bg-white"}`}><IoMdText /></button>
-      <button onClick={() => setTool("draw")} className={`p-2 rounded ${currentTool === "draw" ? "bg-blue-200" : "bg-white"}`}><FaPen /></button>
-      <button onClick={() => setTool("shape")} className={`p-2 rounded ${currentTool === "shape" ? "bg-blue-200" : "bg-white"}`}><FaShapes /></button>
-      <button onClick={() => setTool("signature")} className={`p-2 rounded ${currentTool === "signature" ? "bg-blue-200" : "bg-white"}`}><FaSignature /></button>
-      <button onClick={() => setTool("mosaic")} className={`p-2 rounded ${currentTool === "mosaic" ? "bg-blue-200" : "bg-white"}`}><BiSolidMosaic /></button>
-      <button onClick={onUploadImage} className={`p-2 rounded ${currentTool === "image" ? "bg-blue-200" : "bg-white"}`}><MdOutlineInsertPhoto /></button>
-
-      {/* 顏色選擇器 */}
-      <div className="flex items-center ml-4 gap-1">
-        <FaPalette />
-        {colors.map((c) => (
-          <div
+    <div className="flex flex-wrap gap-4 p-1 items-center">
+      <ToggleGroup 
+        type="single" 
+        value={currentTool} 
+        onValueChange={(value: Tool) => { if(value) setTool(value); }}
+        className="gap-1"
+      >
+        <ToggleGroupItem value="select" aria-label="Select tool" title="選取">
+          <MousePointer className="h-4 w-4" />
+        </ToggleGroupItem>
+        <ToggleGroupItem value="text" aria-label="Text tool" title="文字">
+          <Type className="h-4 w-4" />
+        </ToggleGroupItem>
+        <ToggleGroupItem value="draw" aria-label="Drawing tool" title="手繪">
+          <Pen className="h-4 w-4" />
+        </ToggleGroupItem>
+        <ToggleGroupItem value="rect" aria-label="Rectangle tool" title="矩形">
+          <Square className="h-4 w-4" />
+        </ToggleGroupItem>
+        <ToggleGroupItem value="circle" aria-label="Circle tool" title="圓形">
+          <Circle className="h-4 w-4" />
+        </ToggleGroupItem>
+        <ToggleGroupItem value="triangle" aria-label="Triangle tool" title="三角形">
+          <Triangle className="h-4 w-4" />
+        </ToggleGroupItem>
+      </ToggleGroup>
+      
+      <Separator orientation="vertical" className="h-8" />
+      
+      <div className="flex items-center gap-2">
+         <Palette className="h-5 w-5 text-muted-foreground" />
+         {colors.map((c) => (
+          <button
             key={c}
-            className={`w-5 h-5 rounded-full cursor-pointer border ${color === c ? "border-black" : "border-gray-300"}`}
+            className={`w-6 h-6 rounded-full cursor-pointer border-2 transition-transform hover:scale-110 ${color === c ? 'border-primary ring-2 ring-primary' : 'border-card'}`}
             style={{ backgroundColor: c }}
             onClick={() => setColor(c)}
+            title={c}
           />
         ))}
+        <input
+            type="color"
+            value={color}
+            onChange={(e) => setColor(e.target.value)}
+            className="w-8 h-8 p-0 border-none rounded-full cursor-pointer appearance-none bg-transparent"
+            style={{backgroundColor: 'transparent'}}
+          />
       </div>
 
-      {/* 浮動編輯工具列（樣式） */}
-      <div className="flex items-center gap-2 ml-4">
-        <FaBold className="cursor-pointer" title="粗體" />
-        <FaItalic className="cursor-pointer" title="斜體" />
-        <FaUnderline className="cursor-pointer" title="底線" />
-        <RiFontSize2 className="cursor-pointer" title="字型大小" />
-        <FaBorderAll className="cursor-pointer" title="邊框粗細" />
-      </div>
-
-      {/* 功能按鈕區 */}
-      <div className="ml-auto flex gap-2">
-        <button onClick={onUndo} className="p-2 bg-gray-200 rounded" title="復原"><FaUndo /></button>
-        <button onClick={onRedo} className="p-2 bg-gray-200 rounded" title="重做"><FaRedo /></button>
-        <button onClick={onExport} className="px-2 py-1 bg-green-500 text-white rounded" title="下載 PDF">
-          <FaDownload className="inline mr-1" />下載 PDF
-        </button>
+      <div className="ml-auto">
+         <Button onClick={onDownload}>
+          <Download className="mr-2 h-4 w-4" />
+          下載 PDF
+        </Button>
       </div>
     </div>
   );

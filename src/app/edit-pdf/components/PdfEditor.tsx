@@ -4,15 +4,15 @@
 import React, { useRef, useState } from "react";
 import PdfCanvas from "./PdfCanvas";
 import Sidebar from "./Sidebar";
-import type { Canvas } from "fabric";
+import Toolbar, { type Tool } from "./Toolbar";
+import { Button } from "@/components/ui/button";
 
 const PdfEditor = () => {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [toolMode, setToolMode] = useState<"select" | "text" | "draw" | "rect">("select");
+  const [toolMode, setToolMode] = useState<Tool>("select");
   const [color, setColor] = useState("#000000");
-  const canvasRef = useRef<Canvas | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
@@ -20,10 +20,14 @@ const PdfEditor = () => {
     setCurrentPage(1);
     setTotalPages(0);
   };
+  
+  const handleDownload = () => {
+    console.log("Download clicked");
+  }
 
   return (
-    <div className="flex w-full h-screen bg-gray-100">
-      <div className="w-[280px] flex-shrink-0">
+    <div className="flex w-full h-full bg-muted/40">
+      <div className="w-80 flex-shrink-0 bg-card border-r">
         <Sidebar
           pdfFile={pdfFile}
           currentPage={currentPage}
@@ -32,53 +36,55 @@ const PdfEditor = () => {
         />
       </div>
 
-      <div className="flex-1 flex flex-col p-4">
-        <div className="flex items-center gap-4 mb-4">
-          <input type="file" accept="application/pdf" onChange={handleFileChange} className="bg-white p-2 rounded border" />
-          <button onClick={() => setToolMode("select")} className="px-4 py-2 bg-white rounded border">選取</button>
-          <button onClick={() => setToolMode("text")} className="px-4 py-2 bg-white rounded border">文字</button>
-          <button onClick={() => setToolMode("draw")} className="px-4 py-2 bg-white rounded border">手繪</button>
-          <button onClick={() => setToolMode("rect")} className="px-4 py-2 bg-white rounded border">矩形</button>
-          <input
-            type="color"
-            value={color}
-            onChange={(e) => setColor(e.target.value)}
-            title="選擇顏色"
-            className="w-10 h-10"
+      <div className="flex-1 flex flex-col">
+        <div className="bg-card border-b p-2">
+          <Toolbar 
+            currentTool={toolMode}
+            setTool={setToolMode}
+            color={color}
+            setColor={setColor}
+            onDownload={handleDownload}
           />
         </div>
-
-        <div className="flex-grow bg-gray-200 rounded-lg shadow-inner overflow-hidden">
-          {pdfFile ? (
-            <PdfCanvas
-              pdfFile={pdfFile}
-              currentPage={currentPage}
-              onTotalPages={setTotalPages}
-            />
-          ) : (
-             <div className="flex items-center justify-center h-full text-gray-500">
-                請上傳一個 PDF 檔案以開始編輯
-             </div>
-          )}
+        
+        <div className="flex-grow flex flex-col p-4 overflow-auto">
+          <div className="flex-grow bg-background rounded-lg shadow-inner overflow-hidden">
+            {pdfFile ? (
+              <PdfCanvas
+                pdfFile={pdfFile}
+                currentPage={currentPage}
+                onTotalPages={setTotalPages}
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-10 text-center">
+                  <h2 className="text-xl font-semibold mb-2">開始編輯您的 PDF</h2>
+                  <p className="mb-4">從您的電腦上傳一個檔案，即可開始。</p>
+                  <label className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-4 py-2 cursor-pointer">
+                    選擇檔案
+                    <input type="file" accept="application/pdf" onChange={handleFileChange} className="hidden" />
+                  </label>
+              </div>
+            )}
+          </div>
         </div>
 
         {pdfFile && totalPages > 0 && (
-          <div className="flex justify-center items-center mt-4 gap-4">
-            <button
+          <div className="flex justify-center items-center p-2 gap-4 bg-card border-t">
+            <Button
+              variant="outline"
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               disabled={currentPage <= 1}
-              className="px-4 py-2 bg-white rounded border disabled:opacity-50"
             >
               上一頁
-            </button>
+            </Button>
             <span>第 {currentPage} / {totalPages} 頁</span>
-            <button
+            <Button
+              variant="outline"
               onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
               disabled={currentPage >= totalPages}
-               className="px-4 py-2 bg-white rounded border disabled:opacity-50"
             >
               下一頁
-            </button>
+            </Button>
           </div>
         )}
       </div>

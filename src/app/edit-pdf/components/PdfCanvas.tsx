@@ -71,7 +71,7 @@ const PdfCanvas: React.FC<PdfCanvasProps> = ({
   return (
     <div
       ref={containerRef}
-      className="w-full h-full flex justify-center items-center p-4 overflow-auto"
+      className="w-full h-full flex justify-center items-start p-4 overflow-auto bg-muted"
     />
   );
 };

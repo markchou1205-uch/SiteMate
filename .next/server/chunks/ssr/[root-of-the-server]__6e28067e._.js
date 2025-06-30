@@ -685,6 +685,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$s
 const Sidebar = ({ pdfFile, currentPage, onPageClick, totalPages, rotations })=>{
     const [thumbnails, setThumbnails] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])([]);
     const [isLoading, setIsLoading] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
+    const thumbnailRefs = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])([]);
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         if (!pdfFile) {
             setThumbnails([]);
@@ -692,6 +693,7 @@ const Sidebar = ({ pdfFile, currentPage, onPageClick, totalPages, rotations })=>
         }
         ;
         setIsLoading(true);
+        thumbnailRefs.current = []; // Reset refs on new file
         const reader = new FileReader();
         reader.onload = async ()=>{
             const data = new Uint8Array(reader.result);
@@ -704,8 +706,13 @@ const Sidebar = ({ pdfFile, currentPage, onPageClick, totalPages, rotations })=>
             for(let i = 1; i <= pdf.numPages; i++){
                 const page = await pdf.getPage(i);
                 const rotation = rotations[i] || 0;
+                const originalViewport = page.getViewport({
+                    scale: 1,
+                    rotation
+                });
+                const fixedWidth = 150; // Render at a higher resolution for clarity
                 const viewport = page.getViewport({
-                    scale: 1.0,
+                    scale: fixedWidth / originalViewport.width,
                     rotation
                 });
                 const canvas = document.createElement("canvas");
@@ -726,6 +733,17 @@ const Sidebar = ({ pdfFile, currentPage, onPageClick, totalPages, rotations })=>
         pdfFile,
         rotations
     ]);
+    // This new effect scrolls the active thumbnail into view whenever currentPage changes
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
+        if (thumbnailRefs.current[currentPage - 1]) {
+            thumbnailRefs.current[currentPage - 1]?.scrollIntoView({
+                behavior: "smooth",
+                block: "nearest"
+            });
+        }
+    }, [
+        currentPage
+    ]);
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
         className: "h-full flex flex-col",
         children: [
@@ -734,12 +752,12 @@ const Sidebar = ({ pdfFile, currentPage, onPageClick, totalPages, rotations })=>
                     children: "文件預覽"
                 }, void 0, false, {
                     fileName: "[project]/src/app/edit-pdf/components/Sidebar.tsx",
-                    lineNumber: 62,
+                    lineNumber: 79,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/components/Sidebar.tsx",
-                lineNumber: 61,
+                lineNumber: 78,
                 columnNumber: 8
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$scroll$2d$area$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["ScrollArea"], {
@@ -757,29 +775,30 @@ const Sidebar = ({ pdfFile, currentPage, onPageClick, totalPages, rotations })=>
                                         className: "h-40 w-full"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/edit-pdf/components/Sidebar.tsx",
-                                        lineNumber: 70,
+                                        lineNumber: 87,
                                         columnNumber: 21
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$skeleton$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Skeleton"], {
                                         className: "h-4 w-1/2 mx-auto"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/edit-pdf/components/Sidebar.tsx",
-                                        lineNumber: 71,
+                                        lineNumber: 88,
                                         columnNumber: 21
                                     }, this)
                                 ]
                             }, i, true, {
                                 fileName: "[project]/src/app/edit-pdf/components/Sidebar.tsx",
-                                lineNumber: 69,
+                                lineNumber: 86,
                                 columnNumber: 17
                             }, this))
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/components/Sidebar.tsx",
-                        lineNumber: 67,
+                        lineNumber: 84,
                         columnNumber: 13
                     }, this) : thumbnails.length > 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                         className: "space-y-4",
                         children: thumbnails.map((src, index)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                ref: (el)=>thumbnailRefs.current[index] = el,
                                 className: `border-2 rounded-lg cursor-pointer transition-all overflow-hidden shadow-sm ${currentPage === index + 1 ? "border-primary ring-2 ring-primary/50" : "border-border hover:border-primary/50"}`,
                                 onClick: ()=>onPageClick(index + 1),
                                 children: [
@@ -789,7 +808,7 @@ const Sidebar = ({ pdfFile, currentPage, onPageClick, totalPages, rotations })=>
                                         className: "w-full block"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/edit-pdf/components/Sidebar.tsx",
-                                        lineNumber: 85,
+                                        lineNumber: 103,
                                         columnNumber: 19
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -800,41 +819,41 @@ const Sidebar = ({ pdfFile, currentPage, onPageClick, totalPages, rotations })=>
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/edit-pdf/components/Sidebar.tsx",
-                                        lineNumber: 86,
+                                        lineNumber: 104,
                                         columnNumber: 19
                                     }, this)
                                 ]
                             }, index, true, {
                                 fileName: "[project]/src/app/edit-pdf/components/Sidebar.tsx",
-                                lineNumber: 78,
+                                lineNumber: 95,
                                 columnNumber: 17
                             }, this))
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/components/Sidebar.tsx",
-                        lineNumber: 76,
+                        lineNumber: 93,
                         columnNumber: 13
                     }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                         className: "text-center text-muted-foreground mt-4 text-sm",
                         children: "請從主面板上傳檔案"
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/components/Sidebar.tsx",
-                        lineNumber: 91,
+                        lineNumber: 109,
                         columnNumber: 13
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/src/app/edit-pdf/components/Sidebar.tsx",
-                    lineNumber: 65,
+                    lineNumber: 82,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/components/Sidebar.tsx",
-                lineNumber: 64,
+                lineNumber: 81,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/edit-pdf/components/Sidebar.tsx",
-        lineNumber: 60,
+        lineNumber: 77,
         columnNumber: 5
     }, this);
 };

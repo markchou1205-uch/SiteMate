@@ -25,7 +25,6 @@ const PdfCanvas: React.FC<PdfCanvasProps> = ({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [pdfDoc, setPdfDoc] = useState<any>(null);
-  const observerRef = useRef<IntersectionObserver | null>(null);
 
   // Load PDF document from file
   useEffect(() => {
@@ -52,17 +51,36 @@ const PdfCanvas: React.FC<PdfCanvasProps> = ({
     reader.readAsArrayBuffer(pdfFile);
   }, [pdfFile, onTotalPages]);
 
-  // Render all pages into the container
+  // Render all pages and set up IntersectionObserver
   useEffect(() => {
     if (!pdfDoc || !containerRef.current || !pdfFile) return;
 
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visibleEntries = entries.filter((e) => e.isIntersecting);
+        if (visibleEntries.length > 0) {
+          // Find the page that is most visible at the top of the container
+          visibleEntries.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+          const topVisiblePage = visibleEntries[0];
+          const pageNum = Number((topVisiblePage.target as HTMLElement).dataset.pageNumber);
+          if (pageNum) {
+            onCurrentPageChange(pageNum);
+          }
+        }
+      },
+      {
+        root: containerRef.current,
+        rootMargin: "-50% 0px -50% 0px", // A horizontal line at the center
+        threshold: 0,
+      }
+    );
+
     const renderAllPages = async () => {
       if (!containerRef.current) return;
-      containerRef.current.innerHTML = "";
-      pageRefs.current = [];
+      containerRef.current.innerHTML = ""; // Clear previous renders
+      const newPageRefs: (HTMLDivElement | null)[] = [];
 
-      // Use a fixed width for consistent scaling calculation
-      const availableWidth = containerRef.current.clientWidth - 32; // Subtract padding
+      const availableWidth = containerRef.current.clientWidth - 32;
 
       for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
         const page = await pdfDoc.getPage(pageNum);
@@ -85,14 +103,22 @@ const PdfCanvas: React.FC<PdfCanvasProps> = ({
         
         pageContainer.appendChild(canvas);
         containerRef.current.appendChild(pageContainer);
-        pageRefs.current[pageNum - 1] = pageContainer;
+        newPageRefs[pageNum - 1] = pageContainer;
 
+        // Observe the new page container
+        observer.observe(pageContainer);
+        
         await page.render({ canvasContext: ctx, viewport }).promise;
       }
+      pageRefs.current = newPageRefs;
     };
 
     renderAllPages();
-  }, [pdfDoc, zoom, rotations, pdfFile]);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [pdfDoc, zoom, rotations, pdfFile, onCurrentPageChange]);
 
   // Scroll to a specific page when requested
   useEffect(() => {
@@ -104,42 +130,6 @@ const PdfCanvas: React.FC<PdfCanvasProps> = ({
       onScrollComplete();
     }
   }, [scrollToPage, onScrollComplete]);
-
-  // Observe pages to track the current one
-  useEffect(() => {
-    if (observerRef.current) {
-      observerRef.current.disconnect();
-    }
-
-    if (!containerRef.current || pageRefs.current.length === 0) return;
-
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        const visibleEntries = entries.filter((e) => e.isIntersecting);
-        if (visibleEntries.length > 0) {
-          visibleEntries.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-          const topVisiblePage = visibleEntries[0];
-          const pageNum = Number((topVisiblePage.target as HTMLElement).dataset.pageNumber);
-          if (pageNum) {
-            onCurrentPageChange(pageNum);
-          }
-        }
-      },
-      {
-        root: containerRef.current,
-        rootMargin: "-40% 0px -40% 0px", // Use a central band for detection
-        threshold: 0,
-      }
-    );
-
-    pageRefs.current.forEach((ref) => {
-      if (ref) observerRef.current?.observe(ref);
-    });
-
-    return () => {
-      observerRef.current?.disconnect();
-    };
-  }, [pdfDoc, onCurrentPageChange]); // Reruns when the document/pages are set up
 
   return (
     <div

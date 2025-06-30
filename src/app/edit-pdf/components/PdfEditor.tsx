@@ -148,7 +148,6 @@ const PdfEditor = () => {
   };
   
   const handlePageSelect = (pageNumber: number) => {
-    setCurrentPage(pageNumber);
     setScrollToPage(pageNumber);
   };
 
@@ -330,7 +329,7 @@ const PdfEditor = () => {
           setViewMode={setViewMode}
         />
       </div>
-      <div className="flex-grow overflow-hidden">
+      <div className="flex-grow">
         {renderContent()}
       </div>
     </div>

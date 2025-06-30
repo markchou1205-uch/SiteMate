@@ -84,6 +84,68 @@ const PdfEditor = () => {
   const handleScrollComplete = () => {
     setScrollToPage(null);
   };
+  
+  const handleInsertPdf = async (fileToInsert: File, index: number) => {
+    if (!pdfFile || !fileToInsert) return;
+
+    const existingPdfBytes = await pdfFile.arrayBuffer();
+    const newPdfBytes = await fileToInsert.arrayBuffer();
+    const pdfDoc = await PDFDocument.load(existingPdfBytes);
+    const newPdfDoc = await PDFDocument.load(newPdfBytes);
+
+    const copiedPageIndices = await pdfDoc.copyPages(newPdfDoc, newPdfDoc.getPageIndices());
+    
+    for (let i = 0; i < copiedPageIndices.length; i++) {
+        pdfDoc.insertPage(index + i, copiedPageIndices[i]);
+    }
+    
+    const finalPdfBytes = await pdfDoc.save();
+    const newPdfFile = new File([finalPdfBytes], pdfFile.name, { type: 'application/pdf' });
+    
+    const newRotations: { [key: number]: number } = {};
+    const numInsertedPages = newPdfDoc.getPageCount();
+    for (const pageNumStr in rotations) {
+        const pageNum = parseInt(pageNumStr, 10);
+        if (pageNum <= index) {
+            newRotations[pageNum] = rotations[pageNum];
+        } else {
+            newRotations[pageNum + numInsertedPages] = rotations[pageNum];
+        }
+    }
+    setRotations(newRotations);
+    setPdfFile(newPdfFile);
+  };
+
+  const handleInsertBlankPage = async (index: number) => {
+    if (!pdfFile) return;
+
+    const existingPdfBytes = await pdfFile.arrayBuffer();
+    const pdfDoc = await PDFDocument.load(existingPdfBytes);
+
+    let pageSize: [number, number] = [595.28, 841.89]; // Default A4 size
+    if (index > 0 && index <= pdfDoc.getPageCount()) {
+        const prevPage = pdfDoc.getPage(index - 1);
+        const { width, height } = prevPage.getSize();
+        pageSize = [width, height];
+    }
+
+    pdfDoc.insertPage(index, pageSize);
+
+    const finalPdfBytes = await pdfDoc.save();
+    const newPdfFile = new File([finalPdfBytes], pdfFile.name, { type: 'application/pdf' });
+
+    const newRotations: { [key: number]: number } = {};
+    for (const pageNumStr in rotations) {
+        const pageNum = parseInt(pageNumStr, 10);
+        if (pageNum <= index) {
+            newRotations[pageNum] = rotations[pageNum];
+        } else {
+            newRotations[pageNum + 1] = rotations[pageNum];
+        }
+    }
+    setRotations(newRotations);
+    setPdfFile(newPdfFile);
+  };
 
   return (
     <div className="flex w-full h-full bg-muted/40">
@@ -94,6 +156,8 @@ const PdfEditor = () => {
           onPageClick={handlePageSelect}
           totalPages={totalPages}
           rotations={rotations}
+          onInsertPdf={handleInsertPdf}
+          onInsertBlankPage={handleInsertBlankPage}
         />
       </div>
 

@@ -362,7 +362,6 @@ const PdfCanvas = ({ pdfFile, onTotalPages, onCurrentPageChange, zoom, rotations
     const containerRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])(null);
     const pageRefs = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])([]);
     const [pdfDoc, setPdfDoc] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(null);
-    const observerRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])(null);
     // Load PDF document from file
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         if (!pdfFile) {
@@ -391,15 +390,30 @@ const PdfCanvas = ({ pdfFile, onTotalPages, onCurrentPageChange, zoom, rotations
         pdfFile,
         onTotalPages
     ]);
-    // Render all pages into the container
+    // Render all pages and set up IntersectionObserver
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         if (!pdfDoc || !containerRef.current || !pdfFile) return;
+        const observer = new IntersectionObserver((entries)=>{
+            const visibleEntries = entries.filter((e)=>e.isIntersecting);
+            if (visibleEntries.length > 0) {
+                // Find the page that is most visible at the top of the container
+                visibleEntries.sort((a, b)=>a.boundingClientRect.top - b.boundingClientRect.top);
+                const topVisiblePage = visibleEntries[0];
+                const pageNum = Number(topVisiblePage.target.dataset.pageNumber);
+                if (pageNum) {
+                    onCurrentPageChange(pageNum);
+                }
+            }
+        }, {
+            root: containerRef.current,
+            rootMargin: "-50% 0px -50% 0px",
+            threshold: 0
+        });
         const renderAllPages = async ()=>{
             if (!containerRef.current) return;
-            containerRef.current.innerHTML = "";
-            pageRefs.current = [];
-            // Use a fixed width for consistent scaling calculation
-            const availableWidth = containerRef.current.clientWidth - 32; // Subtract padding
+            containerRef.current.innerHTML = ""; // Clear previous renders
+            const newPageRefs = [];
+            const availableWidth = containerRef.current.clientWidth - 32;
             for(let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++){
                 const page = await pdfDoc.getPage(pageNum);
                 const rotation = rotations[pageNum] || 0;
@@ -421,19 +435,26 @@ const PdfCanvas = ({ pdfFile, onTotalPages, onCurrentPageChange, zoom, rotations
                 canvas.height = viewport.height;
                 pageContainer.appendChild(canvas);
                 containerRef.current.appendChild(pageContainer);
-                pageRefs.current[pageNum - 1] = pageContainer;
+                newPageRefs[pageNum - 1] = pageContainer;
+                // Observe the new page container
+                observer.observe(pageContainer);
                 await page.render({
                     canvasContext: ctx,
                     viewport
                 }).promise;
             }
+            pageRefs.current = newPageRefs;
         };
         renderAllPages();
+        return ()=>{
+            observer.disconnect();
+        };
     }, [
         pdfDoc,
         zoom,
         rotations,
-        pdfFile
+        pdfFile,
+        onCurrentPageChange
     ]);
     // Scroll to a specific page when requested
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
@@ -448,43 +469,12 @@ const PdfCanvas = ({ pdfFile, onTotalPages, onCurrentPageChange, zoom, rotations
         scrollToPage,
         onScrollComplete
     ]);
-    // Observe pages to track the current one
-    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
-        if (observerRef.current) {
-            observerRef.current.disconnect();
-        }
-        if (!containerRef.current || pageRefs.current.length === 0) return;
-        observerRef.current = new IntersectionObserver((entries)=>{
-            const visibleEntries = entries.filter((e)=>e.isIntersecting);
-            if (visibleEntries.length > 0) {
-                visibleEntries.sort((a, b)=>a.boundingClientRect.top - b.boundingClientRect.top);
-                const topVisiblePage = visibleEntries[0];
-                const pageNum = Number(topVisiblePage.target.dataset.pageNumber);
-                if (pageNum) {
-                    onCurrentPageChange(pageNum);
-                }
-            }
-        }, {
-            root: containerRef.current,
-            rootMargin: "-40% 0px -40% 0px",
-            threshold: 0
-        });
-        pageRefs.current.forEach((ref)=>{
-            if (ref) observerRef.current?.observe(ref);
-        });
-        return ()=>{
-            observerRef.current?.disconnect();
-        };
-    }, [
-        pdfDoc,
-        onCurrentPageChange
-    ]); // Reruns when the document/pages are set up
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
         ref: containerRef,
         className: "w-full h-full flex flex-col items-center overflow-auto bg-muted p-4"
     }, void 0, false, {
         fileName: "[project]/src/app/edit-pdf/components/PdfCanvas.tsx",
-        lineNumber: 145,
+        lineNumber: 135,
         columnNumber: 5
     }, this);
 };

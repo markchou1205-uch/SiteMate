@@ -766,6 +766,10 @@ video {
   margin-top: 2rem;
   margin-bottom: 2rem;
 }
+.-mx-3 {
+  margin-left: -0.75rem;
+  margin-right: -0.75rem;
+}
 .mb-1 {
   margin-bottom: 0.25rem;
 }
@@ -2280,8 +2284,16 @@ body {
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
+.group\/insertion:hover .group-hover\/insertion\:bg-primary {
+  background-color: hsl(var(--primary));
+}
+
 .group:hover .group-hover\:text-primary {
   color: hsl(var(--primary));
+}
+
+.group\/insertion:hover .group-hover\/insertion\:text-primary-foreground {
+  color: hsl(var(--primary-foreground));
 }
 
 .group\/menu-item:hover .group-hover\/menu-item\:opacity-100 {

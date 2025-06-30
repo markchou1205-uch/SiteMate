@@ -3,13 +3,11 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { PDFDocument } from 'pdf-lib';
-import type { fabric } from 'fabric';
 import PdfCanvas from "./PdfCanvas";
 import Sidebar from "./Sidebar";
-import Toolbar, { type Tool } from "./Toolbar";
+import Toolbar from "./Toolbar";
 import FloatingToolbar from "./FloatingToolbar";
 import ReorderView from "./ReorderView";
-import TextToolbar from "./TextToolbar";
 
 type ViewMode = 'edit' | 'reorder';
 
@@ -17,8 +15,6 @@ const PdfEditor = () => {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [toolMode, setToolMode] = useState<Tool>("select");
-  const [color, setColor] = useState("#ef4444");
   
   const [zoom, setZoom] = useState(1);
   const [rotations, setRotations] = useState<{ [key: number]: number }>({});
@@ -27,11 +23,6 @@ const PdfEditor = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('edit');
   const [thumbnails, setThumbnails] = useState<string[]>([]);
   const [isLoadingThumbnails, setIsLoadingThumbnails] = useState(false);
-
-  const [activeObject, setActiveObject] = useState<fabric.Object | null>(null);
-  const [isTextEditing, setIsTextEditing] = useState(false);
-  const pdfEditorRef = useRef<HTMLDivElement>(null);
-
 
   const generateThumbnails = useCallback(async (file: File) => {
     if (!file) {
@@ -97,8 +88,6 @@ const PdfEditor = () => {
     setZoom(1);
     setRotations({});
     setViewMode('edit');
-    setActiveObject(null);
-    setIsTextEditing(false);
   };
   
   const handleDownload = () => {
@@ -233,20 +222,6 @@ const PdfEditor = () => {
     setPdfFile(newPdfFile);
   };
   
-   const handleActiveObjectUpdate = useCallback((obj: fabric.Object | null) => {
-    setActiveObject(obj);
-    if (!obj) {
-      setIsTextEditing(false);
-    }
-  }, []);
-
-  const handleTextEditEnter = useCallback((obj: fabric.Object) => {
-    if (obj.type === 'i-text') {
-      setActiveObject(obj);
-      setIsTextEditing(true);
-    }
-  }, []);
-
   const renderContent = () => {
     if (!pdfFile) {
       return (
@@ -277,7 +252,7 @@ const PdfEditor = () => {
             isLoading={isLoadingThumbnails}
           />
         </div>
-        <div className="flex-grow flex flex-col relative" ref={pdfEditorRef}>
+        <div className="flex-grow flex flex-col relative">
           <div className="flex-grow bg-background shadow-inner">
             <PdfCanvas
               pdfFile={pdfFile}
@@ -287,20 +262,8 @@ const PdfEditor = () => {
               rotations={rotations}
               scrollToPage={scrollToPage}
               onScrollComplete={handleScrollComplete}
-              toolMode={toolMode}
-              color={color}
-              activeObject={activeObject}
-              setActiveObject={handleActiveObjectUpdate}
-              isTextEditing={isTextEditing}
-              setIsTextEditing={handleTextEditEnter}
             />
           </div>
-           {isTextEditing && activeObject && (
-            <TextToolbar
-                activeObject={activeObject}
-                editorRef={pdfEditorRef}
-            />
-           )}
           {pdfFile && (
             <FloatingToolbar
               zoom={zoom}
@@ -320,10 +283,6 @@ const PdfEditor = () => {
     <div className="w-full h-full flex flex-col bg-muted/40">
       <div className="bg-card border-b p-2">
         <Toolbar 
-          currentTool={toolMode}
-          setTool={setToolMode}
-          color={color}
-          setColor={setColor}
           onDownload={handleDownload}
           viewMode={viewMode}
           setViewMode={setViewMode}

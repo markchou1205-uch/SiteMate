@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist/build/pdf";
 import type { fabric } from 'fabric'; // Use type import to avoid server-side execution
 import { cn } from "@/lib/utils";
@@ -138,6 +138,11 @@ const PageRenderer = React.forwardRef<HTMLDivElement, PageRendererProps>(({ page
     const fabricCanvasRef = useRef<HTMLCanvasElement>(null);
     const fabricInstanceRef = useRef<fabric.Canvas | null>(null);
 
+    // Refs for text drawing state
+    const isDrawingRef = useRef(false);
+    const startPosRef = useRef<{x: number, y: number} | null>(null);
+    const rectRef = useRef<fabric.Rect | null>(null);
+
     // Render PDF background and initialize Fabric canvas
     useEffect(() => {
         let renderTask: pdfjsLib.RenderTask | null = null;
@@ -195,83 +200,109 @@ const PageRenderer = React.forwardRef<HTMLDivElement, PageRendererProps>(({ page
         };
     }, [page, zoom, rotation, onObjectSelected]);
 
+
+    // --- STABLE MOUSE HANDLERS for text drawing ---
+    const handleTextMouseDown = useCallback(async (o: fabric.IEvent) => {
+        const fCanvas = fabricInstanceRef.current;
+        if (!fCanvas || !o.pointer) return;
+
+        isDrawingRef.current = true;
+        startPosRef.current = { x: o.pointer.x, y: o.pointer.y };
+        
+        const { fabric } = await import('fabric');
+        const rect = new fabric.Rect({
+            left: startPosRef.current.x,
+            top: startPosRef.current.y,
+            width: 0,
+            height: 0,
+            stroke: 'blue',
+            strokeDashArray: [5, 5],
+            fill: 'transparent',
+            selectable: false,
+            evented: false,
+        });
+        rectRef.current = rect;
+        fCanvas.add(rect);
+    }, []);
+
+    const handleTextMouseMove = useCallback((o: fabric.IEvent) => {
+        const fCanvas = fabricInstanceRef.current;
+        if (!isDrawingRef.current || !startPosRef.current || !o.pointer || !rectRef.current || !fCanvas) return;
+        
+        rectRef.current.set({ 
+            width: o.pointer.x - startPosRef.current.x, 
+            height: o.pointer.y - startPosRef.current.y 
+        });
+        fCanvas.renderAll();
+    }, []);
+
+    const handleTextMouseUp = useCallback(async (o: fabric.IEvent) => {
+        const fCanvas = fabricInstanceRef.current;
+        if (!isDrawingRef.current || !startPosRef.current || !o.pointer || !fCanvas) return;
+
+        isDrawingRef.current = false;
+        
+        if (rectRef.current) {
+            fCanvas.remove(rectRef.current);
+            rectRef.current = null;
+        }
+        
+        const endPos = o.pointer;
+        const width = Math.abs(startPosRef.current.x - endPos.x);
+
+        if (width < 5) {
+            startPosRef.current = null;
+            setActiveTool('select');
+            return;
+        }
+        
+        const { fabric } = await import('fabric');
+        const text = new fabric.IText('輸入文字...', {
+            left: Math.min(startPosRef.current.x, endPos.x),
+            top: Math.min(startPosRef.current.y, endPos.y),
+            width: width,
+            fontSize: 20,
+            fill: '#000000',
+        });
+        
+        fCanvas.add(text);
+        fCanvas.setActiveObject(text);
+        text.enterEditing();
+        
+        startPosRef.current = null;
+        setActiveTool('select');
+    }, [setActiveTool]);
+
+
     // Handle tool changes
     useEffect(() => {
         const fCanvas = fabricInstanceRef.current;
         if (!fCanvas) return;
 
-        const getFabric = () => import('fabric').then(m => m.fabric);
+        // Turn off all drawing listeners first to prevent duplicates
+        fCanvas.off('mouse:down', handleTextMouseDown);
+        fCanvas.off('mouse:move', handleTextMouseMove);
+        fCanvas.off('mouse:up', handleTextMouseUp);
+
+        if (activeTool === 'text') {
+            fCanvas.defaultCursor = 'crosshair';
+            fCanvas.selection = false;
+            fCanvas.on('mouse:down', handleTextMouseDown);
+            fCanvas.on('mouse:move', handleTextMouseMove);
+            fCanvas.on('mouse:up', handleTextMouseUp);
+        } else { // 'select' mode
+            fCanvas.defaultCursor = 'default';
+            fCanvas.selection = true;
+        }
         
-        let cleanupFunc = () => {};
-
-        const setupTool = async () => {
-            fCanvas.off('mouse:down');
-            fCanvas.off('mouse:move');
-            fCanvas.off('mouse:up');
-
-            if (activeTool === 'select') {
-                fCanvas.defaultCursor = 'default';
-                fCanvas.selection = true;
-            } else if (activeTool === 'text') {
-                const fabric = await getFabric();
-                fCanvas.defaultCursor = 'crosshair';
-                fCanvas.selection = false;
-                
-                let isDrawing = false;
-                let startPos: {x: number, y: number} | null = null;
-                let rect: fabric.Rect | null = null;
-
-                const onMouseDown = (o: fabric.IEvent) => {
-                    if (!o.pointer) return;
-                    isDrawing = true;
-                    startPos = { x: o.pointer.x, y: o.pointer.y };
-                    rect = new fabric.Rect({
-                        left: startPos.x, top: startPos.y, width: 0, height: 0,
-                        stroke: 'blue', strokeDashArray: [5, 5], fill: 'transparent',
-                    });
-                    fCanvas.add(rect);
-                };
-
-                const onMouseMove = (o: fabric.IEvent) => {
-                    if (!isDrawing || !startPos || !o.pointer || !rect) return;
-                    rect.set({ width: o.pointer.x - startPos.x, height: o.pointer.y - startPos.y });
-                    fCanvas.renderAll();
-                };
-
-                const onMouseUp = (o: fabric.IEvent) => {
-                    if (!isDrawing || !startPos || !o.pointer || !rect) return;
-                    isDrawing = false;
-                    const endPos = o.pointer;
-                    fCanvas.remove(rect);
-                    
-                    const text = new fabric.IText('輸入文字...', {
-                        left: Math.min(startPos.x, endPos.x), top: Math.min(startPos.y, endPos.y),
-                        width: Math.abs(startPos.x - endPos.x), fontSize: 20, fill: '#000000',
-                    });
-                    
-                    fCanvas.add(text);
-                    fCanvas.setActiveObject(text);
-                    text.enterEditing();
-                    fCanvas.defaultCursor = 'default';
-                    setActiveTool('select');
-                };
-
-                fCanvas.on('mouse:down', onMouseDown);
-                fCanvas.on('mouse:move', onMouseMove);
-                fCanvas.on('mouse:up', onMouseUp);
-
-                cleanupFunc = () => {
-                    fCanvas.off('mouse:down', onMouseDown);
-                    fCanvas.off('mouse:move', onMouseMove);
-                    fCanvas.off('mouse:up', onMouseUp);
-                };
+        return () => {
+            if (fCanvas) {
+                fCanvas.off('mouse:down', handleTextMouseDown);
+                fCanvas.off('mouse:move', handleTextMouseMove);
+                fCanvas.off('mouse:up', handleTextMouseUp);
             }
         };
-
-        setupTool();
-        return cleanupFunc;
-        
-    }, [activeTool, setActiveTool]);
+    }, [activeTool, handleTextMouseDown, handleTextMouseMove, handleTextMouseUp]);
 
 
     return (

@@ -21,29 +21,30 @@ const TextToolbar: React.FC<TextToolbarProps> = ({ activeObject, editorRef }) =>
   const [toolbarStyle, setToolbarStyle] = useState<React.CSSProperties>({});
   const toolbarRef = useRef<HTMLDivElement>(null);
   
-  const textObject = activeObject?.type === 'i-text' ? activeObject as fabric.IText : null;
+  const textObject = activeObject?.type === 'i-text' && activeObject.isEditing ? activeObject as fabric.IText : null;
 
-  const [fontSize, setFontSize] = useState<number>(() => textObject?.fontSize || 20);
-  const [fill, setFill] = useState<string>(() => (textObject?.fill as string) || '#000000');
+  const [fontSize, setFontSize] = useState<number>(20);
+  const [fill, setFill] = useState<string>('#000000');
   const [styles, setStyles] = useState<{ [key: string]: boolean }>({
-    bold: textObject?.fontWeight === 'bold',
-    italic: textObject?.fontStyle === 'italic',
-    underline: !!textObject?.underline,
-    linethrough: !!textObject?.linethrough,
+    bold: false,
+    italic: false,
+    underline: false,
+    linethrough: false,
   });
 
   useEffect(() => {
-      if (textObject) {
-          setFontSize(textObject.fontSize || 20);
-          setFill((textObject.fill as string) || '#000000');
+      const currentTextObject = activeObject as fabric.IText;
+      if (currentTextObject && currentTextObject.type === 'i-text') {
+          setFontSize(currentTextObject.fontSize || 20);
+          setFill((currentTextObject.fill as string) || '#000000');
           setStyles({
-              bold: textObject.fontWeight === 'bold',
-              italic: textObject.fontStyle === 'italic',
-              underline: !!textObject.underline,
-              linethrough: !!textObject.linethrough,
+              bold: currentTextObject.fontWeight === 'bold',
+              italic: currentTextObject.fontStyle === 'italic',
+              underline: !!currentTextObject.underline,
+              linethrough: !!currentTextObject.linethrough,
           });
       }
-  }, [textObject]);
+  }, [activeObject]);
 
   const updateStyle = (style: string, value?: any) => {
     if (!textObject) return;
@@ -79,43 +80,44 @@ const TextToolbar: React.FC<TextToolbarProps> = ({ activeObject, editorRef }) =>
   };
 
   useEffect(() => {
-    if (activeObject && editorRef.current && toolbarRef.current) {
+    if (textObject && editorRef.current && toolbarRef.current) {
       const editorRect = editorRef.current.getBoundingClientRect();
-      const objRect = activeObject.getBoundingRect();
-      const canvas = activeObject.canvas;
+      const canvas = textObject.canvas;
       if (!canvas) return;
 
       const zoom = canvas.getZoom();
-      const canvasOffset = canvas.getElement().getBoundingClientRect();
+      const canvasEl = canvas.getElement();
+      const canvasOffset = canvasEl.getBoundingClientRect();
+      const objBoundingRect = textObject.getBoundingRect();
 
-      let top = canvasOffset.top + (objRect.top + objRect.height) * zoom + 10 - editorRect.top;
-      let left = canvasOffset.left + objRect.left * zoom - editorRect.left;
+      let top = canvasOffset.top + (objBoundingRect.top + objBoundingRect.height) * zoom + 10;
+      let left = canvasOffset.left + objBoundingRect.left * zoom;
 
-      // Adjust if toolbar would go off-screen
       const toolbarWidth = toolbarRef.current.offsetWidth;
-      if (left + toolbarWidth > editorRect.width) {
-        left = editorRect.width - toolbarWidth - 10;
+      if (left + toolbarWidth > editorRect.right) {
+        left = editorRect.right - toolbarWidth - 10;
       }
-       if (left < 0) {
-        left = 10;
+       if (left < editorRect.left) {
+        left = editorRect.left + 10;
       }
       
       const toolbarHeight = toolbarRef.current.offsetHeight;
-      if (top + toolbarHeight > editorRect.height) {
-        top = canvasOffset.top + objRect.top * zoom - toolbarHeight - 10 - editorRect.top;
+      if (top + toolbarHeight > editorRect.bottom) {
+        top = canvasOffset.top + objBoundingRect.top * zoom - toolbarHeight - 10;
       }
 
 
       setToolbarStyle({
-        position: 'absolute',
+        position: 'fixed',
         top: `${top}px`,
         left: `${left}px`,
         opacity: 1,
+        transform: 'none',
       });
     } else {
         setToolbarStyle({ opacity: 0, pointerEvents: 'none' });
     }
-  }, [activeObject, editorRef]);
+  }, [textObject, editorRef]);
   
   if (!textObject) {
     return null;
@@ -126,10 +128,10 @@ const TextToolbar: React.FC<TextToolbarProps> = ({ activeObject, editorRef }) =>
       ref={toolbarRef}
       style={toolbarStyle}
       className="bg-card p-2 rounded-lg shadow-lg border flex items-center gap-4 transition-opacity z-30"
-      onMouseDown={(e) => e.stopPropagation()} // Prevent editor pan/move
+      onMouseDown={(e) => e.stopPropagation()} 
     >
         <div className="flex items-center gap-2">
-            <Label htmlFor="font-size" className="text-sm">Size</Label>
+            <Label htmlFor="font-size" className="text-sm">大小</Label>
             <Input
                 id="font-size"
                 type="number"
@@ -153,7 +155,7 @@ const TextToolbar: React.FC<TextToolbarProps> = ({ activeObject, editorRef }) =>
         </ToggleGroup>
         
          <div className="flex items-center gap-2">
-            <Label htmlFor="color-picker" className="sr-only">Color</Label>
+            <Label htmlFor="color-picker" className="sr-only">顏色</Label>
             <Button variant="ghost" size="icon" className="h-8 w-8 relative" onClick={() => document.getElementById('color-picker-input')?.click()}>
                 <Palette className="h-4 w-4" />
                  <div className="absolute bottom-1 right-1 w-2 h-2 rounded-full border border-card" style={{backgroundColor: fill}} />

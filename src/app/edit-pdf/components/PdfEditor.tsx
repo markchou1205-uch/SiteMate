@@ -3,13 +3,17 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { PDFDocument } from 'pdf-lib';
+import type { fabric } from 'fabric';
+
 import PdfCanvas from "./PdfCanvas";
 import Sidebar from "./Sidebar";
 import Toolbar from "./Toolbar";
 import FloatingToolbar from "./FloatingToolbar";
 import ReorderView from "./ReorderView";
+import TextToolbar from "./TextToolbar";
 
 type ViewMode = 'edit' | 'reorder';
+type ActiveTool = 'select' | 'text';
 
 const PdfEditor = () => {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -23,6 +27,10 @@ const PdfEditor = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('edit');
   const [thumbnails, setThumbnails] = useState<string[]>([]);
   const [isLoadingThumbnails, setIsLoadingThumbnails] = useState(false);
+  
+  const [activeTool, setActiveTool] = useState<ActiveTool>('select');
+  const [activeObject, setActiveObject] = useState<fabric.Object | null>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
 
   const generateThumbnails = useCallback(async (file: File) => {
     if (!file) {
@@ -117,7 +125,6 @@ const PdfEditor = () => {
         const newRotation = (currentRotation + amount + 360) % 360;
         const newRotations = { ...prev, [currentPage]: newRotation };
         
-        // Regenerate the specific thumbnail
         if (pdfFile) {
             regenerateSingleThumbnail(pdfFile, currentPage, newRotations);
         }
@@ -298,7 +305,7 @@ const PdfEditor = () => {
     }
 
     return (
-      <div className="flex w-full h-full">
+      <div className="flex w-full h-full" ref={editorRef}>
         <div className="w-[20%] flex-shrink-0 bg-card border-r h-full">
           <Sidebar
             currentPage={currentPage}
@@ -319,16 +326,22 @@ const PdfEditor = () => {
               rotations={rotations}
               scrollToPage={scrollToPage}
               onScrollComplete={handleScrollComplete}
+              activeTool={activeTool}
+              setActiveTool={setActiveTool}
+              onObjectSelected={setActiveObject}
             />
           </div>
           {pdfFile && (
-            <FloatingToolbar
-              zoom={zoom}
-              onZoomChange={setZoom}
-              onRotate={handleRotate}
-              onDelete={handleDeletePage}
-              canDelete={totalPages > 1}
-            />
+            <>
+              <FloatingToolbar
+                zoom={zoom}
+                onZoomChange={setZoom}
+                onRotate={handleRotate}
+                onDelete={handleDeletePage}
+                canDelete={totalPages > 1}
+              />
+              <TextToolbar activeObject={activeObject} editorRef={editorRef} />
+            </>
           )}
         </div>
       </div>
@@ -343,6 +356,8 @@ const PdfEditor = () => {
           onDownload={handleDownload}
           viewMode={viewMode}
           setViewMode={setViewMode}
+          activeTool={activeTool}
+          onToolChange={setActiveTool}
         />
       </div>
       <div className="flex-grow overflow-hidden">

@@ -84,16 +84,6 @@ const PdfCanvas: React.FC<PdfCanvasProps> = ({
     let isPanning = false;
     let lastPosX: number;
     let lastPosY: number;
-    
-    // Manual scroll handling
-    canvas.on('mouse:wheel', (opt) => {
-        const e = opt.e;
-        if (containerRef.current) {
-            containerRef.current.scrollTop += e.deltaY;
-        }
-        e.preventDefault();
-        e.stopPropagation();
-    });
 
     canvas.on('mouse:down', (o) => {
         if (toolMode === 'move') {
@@ -335,5 +325,3 @@ const PageRenderer = React.forwardRef<HTMLDivElement, PageRendererProps>(({ page
 PageRenderer.displayName = 'PageRenderer';
 
 export default PdfCanvas;
-
-    

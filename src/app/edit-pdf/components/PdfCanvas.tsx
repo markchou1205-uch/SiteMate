@@ -147,14 +147,20 @@ const PdfCanvas: React.FC<PdfCanvasProps> = ({
         }
     });
 
-    canvas.on('mouse:wheel', (opt) => {
-        const e = opt.e as WheelEvent;
+    // This bypasses fabric's event system for the wheel event and attaches a native listener.
+    // This prevents fabric from blocking the scroll event that the parent container needs.
+    const wheelHandler = (e: WheelEvent) => {
         if (containerRef.current) {
             containerRef.current.scrollTop += e.deltaY;
+            // Prevent the default browser action (like page zoom or navigating back/forward)
             e.preventDefault();
-            e.stopPropagation();
         }
-    });
+    };
+    
+    if (canvas.upperCanvasEl) {
+        // We use { passive: false } to signal that we might call preventDefault().
+        canvas.upperCanvasEl.addEventListener('wheel', wheelHandler, { passive: false });
+    }
 
   }, [toolMode, color, setActiveObject, setIsTextEditing]);
 

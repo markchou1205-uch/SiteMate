@@ -77,6 +77,10 @@ export default async (phase: string, { defaultConfig }: { defaultConfig: NextCon
       ...(defaultConfig.env || {}), // Spread env from defaultConfig
       ...envVars, // Then add/override with our parsed vars
     },
+    allowedDevOrigins: [
+      "https://studio.firebase.google.com",
+      "http://localhost:3000"
+    ]
   };
   console.log("[next.config.ts] Final nextConfig.env being returned:", JSON.stringify(nextConfig.env, null, 2));
   return nextConfig;

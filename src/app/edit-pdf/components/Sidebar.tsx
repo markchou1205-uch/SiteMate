@@ -17,8 +17,6 @@ const Sidebar: React.FC<SidebarProps> = ({ pdfFile, currentPage, onPageClick }) 
     const reader = new FileReader();
     reader.onload = async () => {
       const data = new Uint8Array(reader.result as ArrayBuffer);
-
-      // ✅ 這裡改為瀏覽器內才執行的動態 import
       const pdfjsLib = await import("pdfjs-dist/build/pdf");
       pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
@@ -45,7 +43,7 @@ const Sidebar: React.FC<SidebarProps> = ({ pdfFile, currentPage, onPageClick }) 
   }, [pdfFile]);
 
   return (
-    <div className="w-[120px] overflow-y-auto bg-white border-r">
+    <div className="w-full overflow-y-auto bg-white border-r h-full">
       {thumbnails.map((src, index) => (
         <div
           key={index}

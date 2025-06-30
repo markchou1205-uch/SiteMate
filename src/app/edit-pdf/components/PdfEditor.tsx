@@ -1,94 +1,93 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-import Toolbar from "./Toolbar";
-import Sidebar from "./Sidebar";
 import PdfCanvas from "./PdfCanvas";
-import { exportCanvasAsPdf } from "../utils/PdfExporter";
-import { fabric } from "fabric";
+import Sidebar from "./Sidebar";
+import type { Canvas } from "fabric";
 
-type Tool = "select" | "text" | "draw" | "rect";
-
-const PdfEditor: React.FC = () => {
+const PdfEditor = () => {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
-  const [toolMode, setToolMode] = useState<Tool>("select");
-  const [color, setColor] = useState<string>("#000000");
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [totalPages, setTotalPages] = useState<number>(1);
-
-  const fabricCanvasRef = useRef<fabric.Canvas | null>(null); // 儲存當前頁 canvas
+  const [totalPages, setTotalPages] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [toolMode, setToolMode] = useState<"select" | "text" | "draw" | "rect">("select");
+  const [color, setColor] = useState("#000000"); // 修正為合法顏色格式
+  const canvasRef = useRef<Canvas | null>(null);
+  const [updatedPages, setUpdatedPages] = useState<string[]>([]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && file.type === "application/pdf") {
-      setPdfFile(file);
-      setCurrentPage(1);
-    }
+    const file = e.target.files?.[0] || null;
+    setPdfFile(file);
+    setCurrentPage(1);
+  };
+
+  const handleDeletePage = (page: number) => {
+    const updated = updatedPages.filter((_, index) => index !== page - 1);
+    setUpdatedPages(updated);
+  };
+
+  const handleSaveEdits = (dataUrl: string, page: number) => {
+    const newPages = [...updatedPages];
+    newPages[page - 1] = dataUrl;
+    setUpdatedPages(newPages);
   };
 
   return (
-    <div className="flex flex-col h-full w-full">
-      {/* 工具列（含下載） */}
-      <Toolbar
-        currentTool={toolMode}
-        setTool={setToolMode}
-        color={color}
-        setColor={setColor}
-        onExport={() => {
-        if (fabricCanvasRef.current) {
-           exportCanvasAsPdf(fabricCanvasRef.current);
-        } else {
-           alert("尚未載入畫布！");
-        }
-  }}
-/>
-
-      {/* 上傳與頁碼控制列 */}
-      <div className="flex items-center gap-4 p-2 bg-white border-b">
-        <input type="file" accept="application/pdf" onChange={handleFileChange} />
-        <div className="ml-auto flex items-center gap-2">
-          <button
-            disabled={currentPage <= 1}
-            onClick={() => setCurrentPage((p) => p - 1)}
-            className="px-2 py-1 border rounded disabled:opacity-50"
-          >
-            上一頁
-          </button>
-          <span>第 {currentPage} / {totalPages} 頁</span>
-          <button
-            disabled={currentPage >= totalPages}
-            onClick={() => setCurrentPage((p) => p + 1)}
-            className="px-2 py-1 border rounded disabled:opacity-50"
-          >
-            下一頁
-          </button>
-        </div>
-      </div>
-
-      {/* 主編輯區 */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* 左側縮圖 */}
+    <div className="flex w-full h-screen">
+      <div className="w-[120px]">
         <Sidebar
           pdfFile={pdfFile}
           currentPage={currentPage}
           onPageClick={setCurrentPage}
         />
+      </div>
 
-        {/* 畫布區域 */}
-        <div className="flex-1 overflow-auto bg-gray-100">
-          {pdfFile ? (
+      <div className="flex-1 p-4">
+        <input type="file" accept="application/pdf" onChange={handleFileChange} className="mb-4" />
+
+        <div className="mb-4 flex gap-2 items-center">
+          <button onClick={() => setToolMode("select")}>選取</button>
+          <button onClick={() => setToolMode("text")}>文字</button>
+          <button onClick={() => setToolMode("draw")}>手繪</button>
+          <button onClick={() => setToolMode("rect")}>矩形</button>
+          <input
+            type="color"
+            value={color}
+            onChange={(e) => setColor(e.target.value)}
+            title="選擇顏色"
+          />
+        </div>
+
+        {pdfFile && (
+          <>
             <PdfCanvas
               pdfFile={pdfFile}
               currentPage={currentPage}
               onTotalPages={setTotalPages}
               toolMode={toolMode}
               color={color}
-              canvasRef={fabricCanvasRef}
+              canvasRef={canvasRef}
+              onDeletePage={handleDeletePage}
+              onSaveEdits={handleSaveEdits}
+              onUpdatePdf={setUpdatedPages}
             />
-          ) : (
-            <div className="p-4 text-gray-500 text-center">請先上傳 PDF</div>
-          )}
-        </div>
+
+            <div className="flex justify-center mt-4 gap-2">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage <= 1}
+              >
+                上一頁
+              </button>
+              <span>第 {currentPage} / {totalPages} 頁</span>
+              <button
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage >= totalPages}
+              >
+                下一頁
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

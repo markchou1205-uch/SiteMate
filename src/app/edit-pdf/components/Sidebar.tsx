@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,6 +17,8 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ pdfFile, currentPage, onPageClick, totalPages, rotations }) => {
   const [thumbnails, setThumbnails] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const thumbnailRefs = useRef<(HTMLDivElement | null)[]>([]);
+
 
   useEffect(() => {
     if (!pdfFile) {
@@ -25,6 +27,7 @@ const Sidebar: React.FC<SidebarProps> = ({ pdfFile, currentPage, onPageClick, to
     };
     
     setIsLoading(true);
+    thumbnailRefs.current = []; // Reset refs on new file
 
     const reader = new FileReader();
     reader.onload = async () => {
@@ -38,7 +41,10 @@ const Sidebar: React.FC<SidebarProps> = ({ pdfFile, currentPage, onPageClick, to
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const rotation = rotations[i] || 0;
-        const viewport = page.getViewport({ scale: 1.0, rotation });
+        
+        const originalViewport = page.getViewport({ scale: 1, rotation });
+        const fixedWidth = 150; // Render at a higher resolution for clarity
+        const viewport = page.getViewport({ scale: fixedWidth / originalViewport.width, rotation });
 
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d")!;
@@ -55,6 +61,17 @@ const Sidebar: React.FC<SidebarProps> = ({ pdfFile, currentPage, onPageClick, to
 
     reader.readAsArrayBuffer(pdfFile);
   }, [pdfFile, rotations]);
+
+  // This new effect scrolls the active thumbnail into view whenever currentPage changes
+  useEffect(() => {
+    if (thumbnailRefs.current[currentPage - 1]) {
+      thumbnailRefs.current[currentPage - 1]?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    }
+  }, [currentPage]);
+
 
   return (
     <div className="h-full flex flex-col">
@@ -77,6 +94,7 @@ const Sidebar: React.FC<SidebarProps> = ({ pdfFile, currentPage, onPageClick, to
               {thumbnails.map((src, index) => (
                 <div
                   key={index}
+                  ref={(el) => (thumbnailRefs.current[index] = el)}
                   className={`border-2 rounded-lg cursor-pointer transition-all overflow-hidden shadow-sm ${
                     currentPage === index + 1 ? "border-primary ring-2 ring-primary/50" : "border-border hover:border-primary/50"
                   }`}

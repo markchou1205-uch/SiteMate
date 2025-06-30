@@ -388,18 +388,21 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist
 var _s = __turbopack_context__.k.signature();
 "use client";
 ;
-const PdfCanvas = ({ pdfFile, currentPage, onTotalPages, zoom, rotation })=>{
+const PdfCanvas = ({ pdfFile, onTotalPages, onCurrentPageChange, zoom, rotations, scrollToPage, onScrollComplete })=>{
     _s();
     const containerRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])(null);
+    const pageRefs = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])([]);
     const [pdfDoc, setPdfDoc] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
+    const observerRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])(null);
+    // Load PDF document from file
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
         "PdfCanvas.useEffect": ()=>{
             if (!pdfFile) {
                 setPdfDoc(null);
+                pageRefs.current = [];
                 if (containerRef.current) containerRef.current.innerHTML = "";
                 return;
             }
-            ;
             const reader = new FileReader();
             reader.onload = ({
                 "PdfCanvas.useEffect": async ()=>{
@@ -423,60 +426,122 @@ const PdfCanvas = ({ pdfFile, currentPage, onTotalPages, zoom, rotation })=>{
         pdfFile,
         onTotalPages
     ]);
+    // Render all pages into the container
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
         "PdfCanvas.useEffect": ()=>{
             if (!pdfDoc || !containerRef.current || !pdfFile) return;
-            const renderPage = {
-                "PdfCanvas.useEffect.renderPage": async ()=>{
-                    try {
-                        const page = await pdfDoc.getPage(currentPage);
-                        const containerWidth = containerRef.current.clientWidth;
-                        // Use an unrotated viewport to calculate the scale to fit width,
-                        // so that rotation doesn't alter the zoom.
+            const renderAllPages = {
+                "PdfCanvas.useEffect.renderAllPages": async ()=>{
+                    if (!containerRef.current) return;
+                    containerRef.current.innerHTML = "";
+                    pageRefs.current = [];
+                    // Use a fixed width for consistent scaling calculation
+                    const availableWidth = containerRef.current.clientWidth - 32; // Subtract padding
+                    for(let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++){
+                        const page = await pdfDoc.getPage(pageNum);
+                        const rotation = rotations[pageNum] || 0;
                         const unrotatedViewport = page.getViewport({
-                            scale: 1,
-                            rotation: 0
+                            scale: 1
                         });
-                        const scaleToFit = containerWidth / unrotatedViewport.width;
+                        const scaleToFit = availableWidth / unrotatedViewport.width;
                         const viewport = page.getViewport({
                             scale: scaleToFit * zoom,
-                            rotation: rotation
+                            rotation
                         });
+                        const pageContainer = document.createElement("div");
+                        pageContainer.className = "mb-4 bg-background shadow-md";
+                        pageContainer.dataset.pageNumber = String(pageNum);
                         const canvas = document.createElement("canvas");
                         const ctx = canvas.getContext("2d");
-                        if (!ctx) return;
+                        if (!ctx) continue;
                         canvas.width = viewport.width;
                         canvas.height = viewport.height;
-                        containerRef.current.innerHTML = "";
-                        containerRef.current.appendChild(canvas);
+                        pageContainer.appendChild(canvas);
+                        containerRef.current.appendChild(pageContainer);
+                        pageRefs.current[pageNum - 1] = pageContainer;
                         await page.render({
                             canvasContext: ctx,
                             viewport
                         }).promise;
-                    } catch (error) {
-                        console.error(`Error rendering page ${currentPage}:`, error);
                     }
                 }
-            }["PdfCanvas.useEffect.renderPage"];
-            renderPage();
+            }["PdfCanvas.useEffect.renderAllPages"];
+            renderAllPages();
         }
     }["PdfCanvas.useEffect"], [
         pdfDoc,
-        currentPage,
         zoom,
-        rotation,
+        rotations,
         pdfFile
     ]);
+    // Scroll to a specific page when requested
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
+        "PdfCanvas.useEffect": ()=>{
+            if (scrollToPage && pageRefs.current[scrollToPage - 1]) {
+                pageRefs.current[scrollToPage - 1]?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start"
+                });
+                onScrollComplete();
+            }
+        }
+    }["PdfCanvas.useEffect"], [
+        scrollToPage,
+        onScrollComplete
+    ]);
+    // Observe pages to track the current one
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
+        "PdfCanvas.useEffect": ()=>{
+            if (observerRef.current) {
+                observerRef.current.disconnect();
+            }
+            if (!containerRef.current || pageRefs.current.length === 0) return;
+            observerRef.current = new IntersectionObserver({
+                "PdfCanvas.useEffect": (entries)=>{
+                    const visibleEntries = entries.filter({
+                        "PdfCanvas.useEffect.visibleEntries": (e)=>e.isIntersecting
+                    }["PdfCanvas.useEffect.visibleEntries"]);
+                    if (visibleEntries.length > 0) {
+                        visibleEntries.sort({
+                            "PdfCanvas.useEffect": (a, b)=>a.boundingClientRect.top - b.boundingClientRect.top
+                        }["PdfCanvas.useEffect"]);
+                        const topVisiblePage = visibleEntries[0];
+                        const pageNum = Number(topVisiblePage.target.dataset.pageNumber);
+                        if (pageNum) {
+                            onCurrentPageChange(pageNum);
+                        }
+                    }
+                }
+            }["PdfCanvas.useEffect"], {
+                root: containerRef.current,
+                rootMargin: "-40% 0px -40% 0px",
+                threshold: 0
+            });
+            pageRefs.current.forEach({
+                "PdfCanvas.useEffect": (ref)=>{
+                    if (ref) observerRef.current?.observe(ref);
+                }
+            }["PdfCanvas.useEffect"]);
+            return ({
+                "PdfCanvas.useEffect": ()=>{
+                    observerRef.current?.disconnect();
+                }
+            })["PdfCanvas.useEffect"];
+        }
+    }["PdfCanvas.useEffect"], [
+        pdfDoc,
+        onCurrentPageChange
+    ]); // Reruns when the document/pages are set up
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
         ref: containerRef,
-        className: "w-full h-full flex justify-center items-start overflow-auto bg-muted"
+        className: "w-full h-full flex flex-col items-center overflow-auto bg-muted p-4"
     }, void 0, false, {
         fileName: "[project]/src/app/edit-pdf/components/PdfCanvas.tsx",
-        lineNumber: 82,
+        lineNumber: 145,
         columnNumber: 5
     }, this);
 };
-_s(PdfCanvas, "zSBq8epDcw7gGxchI1lXZ39F+x4=");
+_s(PdfCanvas, "ge0kVBAsVIUVt72wCSxmLeKXB6Y=");
 _c = PdfCanvas;
 const __TURBOPACK__default__export__ = PdfCanvas;
 var _c;
@@ -1793,6 +1858,7 @@ const PdfEditor = ()=>{
     const [color, setColor] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])("#000000");
     const [zoom, setZoom] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(1);
     const [rotations, setRotations] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])({});
+    const [scrollToPage, setScrollToPage] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
     const handleFileChange = (e)=>{
         const file = e.target.files?.[0] || null;
         setPdfFile(file);
@@ -1845,6 +1911,13 @@ const PdfEditor = ()=>{
         }
     // The onTotalPages callback in PdfCanvas will update the totalPages state
     };
+    const handlePageSelect = (pageNumber)=>{
+        setCurrentPage(pageNumber);
+        setScrollToPage(pageNumber);
+    };
+    const handleScrollComplete = ()=>{
+        setScrollToPage(null);
+    };
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
         className: "flex w-full h-full bg-muted/40",
         children: [
@@ -1853,17 +1926,17 @@ const PdfEditor = ()=>{
                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$edit$2d$pdf$2f$components$2f$Sidebar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
                     pdfFile: pdfFile,
                     currentPage: currentPage,
-                    onPageClick: setCurrentPage,
+                    onPageClick: handlePageSelect,
                     totalPages: totalPages,
                     rotations: rotations
                 }, void 0, false, {
                     fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                    lineNumber: 82,
+                    lineNumber: 91,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                lineNumber: 81,
+                lineNumber: 90,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1879,12 +1952,12 @@ const PdfEditor = ()=>{
                             onDownload: handleDownload
                         }, void 0, false, {
                             fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                            lineNumber: 93,
+                            lineNumber: 102,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                        lineNumber: 92,
+                        lineNumber: 101,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1894,13 +1967,15 @@ const PdfEditor = ()=>{
                                 className: "flex-grow bg-background rounded-lg shadow-inner overflow-hidden",
                                 children: pdfFile ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$edit$2d$pdf$2f$components$2f$PdfCanvas$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
                                     pdfFile: pdfFile,
-                                    currentPage: currentPage,
                                     onTotalPages: setTotalPages,
+                                    onCurrentPageChange: setCurrentPage,
                                     zoom: zoom,
-                                    rotation: rotations[currentPage] || 0
+                                    rotations: rotations,
+                                    scrollToPage: scrollToPage,
+                                    onScrollComplete: handleScrollComplete
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                    lineNumber: 105,
+                                    lineNumber: 114,
                                     columnNumber: 15
                                 }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                     className: "flex flex-col items-center justify-center h-full text-muted-foreground p-10 text-center",
@@ -1910,7 +1985,7 @@ const PdfEditor = ()=>{
                                             children: "開始編輯您的 PDF"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                            lineNumber: 114,
+                                            lineNumber: 125,
                                             columnNumber: 19
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1918,7 +1993,7 @@ const PdfEditor = ()=>{
                                             children: "從您的電腦上傳一個檔案，即可開始。"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                            lineNumber: 115,
+                                            lineNumber: 126,
                                             columnNumber: 19
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
@@ -1932,24 +2007,24 @@ const PdfEditor = ()=>{
                                                     className: "hidden"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                                    lineNumber: 118,
+                                                    lineNumber: 129,
                                                     columnNumber: 21
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                            lineNumber: 116,
+                                            lineNumber: 127,
                                             columnNumber: 19
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                    lineNumber: 113,
+                                    lineNumber: 124,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                lineNumber: 103,
+                                lineNumber: 112,
                                 columnNumber: 11
                             }, this),
                             pdfFile && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$edit$2d$pdf$2f$components$2f$FloatingToolbar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
@@ -1960,29 +2035,29 @@ const PdfEditor = ()=>{
                                 canDelete: totalPages > 1
                             }, void 0, false, {
                                 fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                lineNumber: 124,
+                                lineNumber: 135,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                        lineNumber: 102,
+                        lineNumber: 111,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                lineNumber: 91,
+                lineNumber: 100,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-        lineNumber: 80,
+        lineNumber: 89,
         columnNumber: 5
     }, this);
 };
-_s(PdfEditor, "O3Db3M1td9tU70BOrt7dg74izBA=");
+_s(PdfEditor, "Md1nKngpUS0ZYF/Kgp+Py0SIkZc=");
 _c = PdfEditor;
 const __TURBOPACK__default__export__ = PdfEditor;
 var _c;

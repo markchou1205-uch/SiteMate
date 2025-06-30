@@ -27,7 +27,7 @@ const PdfEditor = () => {
 
   return (
     <div className="flex w-full h-full bg-muted/40">
-      <div className="w-80 flex-shrink-0 bg-card border-r">
+      <div className="w-[15%] flex-shrink-0 bg-card border-r">
         <Sidebar
           pdfFile={pdfFile}
           currentPage={currentPage}
@@ -68,25 +68,6 @@ const PdfEditor = () => {
           </div>
         </div>
 
-        {pdfFile && totalPages > 0 && (
-          <div className="flex justify-center items-center p-2 gap-4 bg-card border-t">
-            <Button
-              variant="outline"
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage <= 1}
-            >
-              上一頁
-            </Button>
-            <span>第 {currentPage} / {totalPages} 頁</span>
-            <Button
-              variant="outline"
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-              disabled={currentPage >= totalPages}
-            >
-              下一頁
-            </Button>
-          </div>
-        )}
       </div>
     </div>
   );

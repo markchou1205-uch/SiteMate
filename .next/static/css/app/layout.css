@@ -1034,6 +1034,9 @@ video {
 .w-80 {
   width: 20rem;
 }
+.w-\[15\%\] {
+  width: 15%;
+}
 .min-w-0 {
   min-width: 0px;
 }

@@ -16,7 +16,6 @@ const PdfCanvas: React.FC<PdfCanvasProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [pdfDoc, setPdfDoc] = useState<any>(null);
-  const scale = 1.5; 
 
   useEffect(() => {
     if (!pdfFile) {
@@ -47,7 +46,12 @@ const PdfCanvas: React.FC<PdfCanvasProps> = ({
     const renderPage = async () => {
       try {
         const page = await pdfDoc.getPage(currentPage);
-        const viewport = page.getViewport({ scale });
+        
+        const containerWidth = containerRef.current!.clientWidth;
+        const unscaledViewport = page.getViewport({ scale: 1 });
+        const scale = containerWidth / unscaledViewport.width;
+        
+        const viewport = page.getViewport({ scale: scale });
 
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
@@ -66,12 +70,12 @@ const PdfCanvas: React.FC<PdfCanvasProps> = ({
     };
 
     renderPage();
-  }, [pdfDoc, currentPage, scale]);
+  }, [pdfDoc, currentPage]);
 
   return (
     <div
       ref={containerRef}
-      className="w-full h-full flex justify-center items-start p-4 overflow-auto bg-muted"
+      className="w-full h-full flex justify-center items-start overflow-auto bg-muted"
     />
   );
 };

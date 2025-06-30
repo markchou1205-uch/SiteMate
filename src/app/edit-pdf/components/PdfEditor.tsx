@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useRef, useState } from "react";
@@ -33,7 +34,7 @@ const PdfEditor = () => {
 
   return (
     <div className="flex w-full h-screen">
-      <div className="w-[120px]">
+      <div className="w-[200px]">
         <Sidebar
           pdfFile={pdfFile}
           currentPage={currentPage}

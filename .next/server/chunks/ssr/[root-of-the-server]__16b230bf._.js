@@ -89,7 +89,8 @@ const PdfCanvas = ({ pdfFile, currentPage, onTotalPages, toolMode, color, canvas
         };
         reader.readAsArrayBuffer(pdfFile);
     }, [
-        pdfFile
+        pdfFile,
+        onTotalPages
     ]);
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         if (!pdfDoc || !containerRef.current) return;
@@ -112,14 +113,13 @@ const PdfCanvas = ({ pdfFile, currentPage, onTotalPages, toolMode, color, canvas
             fabricCanvasEl.width = viewport.width;
             fabricCanvasEl.height = viewport.height;
             containerRef.current.appendChild(fabricCanvasEl);
-            const fabricCanvas = new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$fabric$2f$dist$2f$index$2e$min$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["fabric"].Canvas(fabricCanvasEl, {
-                // Changed from fabric.fabric.Canvas
+            const fabricCanvas = new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$fabric$2f$dist$2f$index$2e$min$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Canvas"](fabricCanvasEl, {
                 selection: true,
                 backgroundColor: "#ffffff"
             });
             if (canvasRef) canvasRef.current = fabricCanvas;
             const dataURL = tempCanvas.toDataURL();
-            __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$fabric$2f$dist$2f$index$2e$min$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["fabric"].Image.fromURL(dataURL, (bgInstance)=>{
+            __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$fabric$2f$dist$2f$index$2e$min$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Image"].fromURL(dataURL, (bgInstance)=>{
                 bgInstance.set({
                     selectable: false,
                     evented: false
@@ -128,7 +128,7 @@ const PdfCanvas = ({ pdfFile, currentPage, onTotalPages, toolMode, color, canvas
             });
             let isDragging = false;
             let startX = 0, startY = 0;
-            let drawingObject = null; // Changed from fabric.fabric.Object
+            let drawingObject = null;
             fabricCanvas.on("mouse:down", (e)=>{
                 if (toolMode === "select") return;
                 const pointer = fabricCanvas.getPointer(e.e);
@@ -136,15 +136,14 @@ const PdfCanvas = ({ pdfFile, currentPage, onTotalPages, toolMode, color, canvas
                 startY = pointer.y;
                 if (toolMode === "draw") {
                     fabricCanvas.isDrawingMode = true;
-                    fabricCanvas.freeDrawingBrush = new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$fabric$2f$dist$2f$index$2e$min$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["fabric"].PencilBrush(fabricCanvas); // Changed from fabric.fabric.PencilBrush
+                    fabricCanvas.freeDrawingBrush = new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$fabric$2f$dist$2f$index$2e$min$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["PencilBrush"](fabricCanvas);
                     fabricCanvas.freeDrawingBrush.color = color;
                     fabricCanvas.freeDrawingBrush.width = 2;
                     return;
                 }
                 isDragging = true;
                 if (toolMode === "text") {
-                    drawingObject = new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$fabric$2f$dist$2f$index$2e$min$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["fabric"].Textbox("輸入文字", {
-                        // Changed from fabric.fabric.Textbox
+                    drawingObject = new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$fabric$2f$dist$2f$index$2e$min$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Textbox"]("輸入文字", {
                         left: startX,
                         top: startY,
                         width: 1,
@@ -153,8 +152,7 @@ const PdfCanvas = ({ pdfFile, currentPage, onTotalPages, toolMode, color, canvas
                         fill: color
                     });
                 } else if (toolMode === "rect") {
-                    drawingObject = new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$fabric$2f$dist$2f$index$2e$min$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["fabric"].Rect({
-                        // Changed from fabric.fabric.Rect
+                    drawingObject = new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$fabric$2f$dist$2f$index$2e$min$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Rect"]({
                         left: startX,
                         top: startY,
                         width: 1,
@@ -164,8 +162,7 @@ const PdfCanvas = ({ pdfFile, currentPage, onTotalPages, toolMode, color, canvas
                         fill: "transparent"
                     });
                 } else if (toolMode === "image" && imageToInsert) {
-                    const img = new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$fabric$2f$dist$2f$index$2e$min$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["fabric"].Image(imageToInsert, {
-                        // Changed from fabric.fabric.Image
+                    const img = new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$fabric$2f$dist$2f$index$2e$min$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Image"](imageToInsert, {
                         left: startX,
                         top: startY,
                         scaleX: 0.3,
@@ -204,7 +201,7 @@ const PdfCanvas = ({ pdfFile, currentPage, onTotalPages, toolMode, color, canvas
             });
             fabricCanvas.on("mouse:dblclick", (e)=>{
                 if (e.target && e.target.type === "textbox") {
-                    e.target.enterEditing(); // Changed from fabric.fabric.Textbox
+                    e.target.enterEditing();
                 }
             });
             const saveSnapshot = ()=>{
@@ -237,7 +234,10 @@ const PdfCanvas = ({ pdfFile, currentPage, onTotalPages, toolMode, color, canvas
         rotation,
         toolMode,
         color,
-        imageToInsert
+        imageToInsert,
+        canvasRef,
+        onUpdatePdf,
+        renderedPages
     ]);
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
         className: "relative w-full h-full",
@@ -246,12 +246,12 @@ const PdfCanvas = ({ pdfFile, currentPage, onTotalPages, toolMode, color, canvas
             className: "flex justify-center items-center p-4 bg-gray-200 min-h-[600px] overflow-auto"
         }, void 0, false, {
             fileName: "[project]/src/app/edit-pdf/components/PdfCanvas.tsx",
-            lineNumber: 192,
+            lineNumber: 189,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/src/app/edit-pdf/components/PdfCanvas.tsx",
-        lineNumber: 191,
+        lineNumber: 188,
         columnNumber: 5
     }, this);
 };

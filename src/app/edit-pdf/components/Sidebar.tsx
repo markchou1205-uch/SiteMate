@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -25,7 +26,7 @@ const Sidebar: React.FC<SidebarProps> = ({ pdfFile, currentPage, onPageClick }) 
 
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: 0.3 });
+        const viewport = page.getViewport({ scale: 0.5 });
 
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d")!;

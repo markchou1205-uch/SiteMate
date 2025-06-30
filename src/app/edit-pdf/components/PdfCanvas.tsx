@@ -2,11 +2,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import * as fabric from "fabric"; // Corrected import
-import { GlobalWorkerOptions, getDocument } from "pdfjs-dist/legacy/build/pdf";
-
-import workerSrc from "pdfjs-dist/build/pdf.worker.entry";
-GlobalWorkerOptions.workerSrc = workerSrc;
+import * as fabric from "fabric";
 
 interface PdfCanvasProps {
   pdfFile: File | null;
@@ -45,8 +41,11 @@ const PdfCanvas: React.FC<PdfCanvasProps> = ({
     if (!pdfFile) return;
     const reader = new FileReader();
     reader.onload = async () => {
+      const pdfjsLib = await import("pdfjs-dist/build/pdf");
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+      
       const data = new Uint8Array(reader.result as ArrayBuffer);
-      const doc = await getDocument({ data }).promise;
+      const doc = await pdfjsLib.getDocument({ data }).promise;
       setPdfDoc(doc);
       onTotalPages(doc.numPages);
     };

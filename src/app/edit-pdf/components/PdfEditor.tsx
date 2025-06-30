@@ -1,12 +1,15 @@
 
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { PDFDocument } from 'pdf-lib';
 import PdfCanvas from "./PdfCanvas";
 import Sidebar from "./Sidebar";
 import Toolbar, { type Tool } from "./Toolbar";
 import FloatingToolbar from "./FloatingToolbar";
+import ReorderView from "./ReorderView";
+
+type ViewMode = 'edit' | 'reorder';
 
 const PdfEditor = () => {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -19,6 +22,66 @@ const PdfEditor = () => {
   const [rotations, setRotations] = useState<{ [key: number]: number }>({});
   const [scrollToPage, setScrollToPage] = useState<number | null>(null);
 
+  const [viewMode, setViewMode] = useState<ViewMode>('edit');
+  const [thumbnails, setThumbnails] = useState<string[]>([]);
+  const [isLoadingThumbnails, setIsLoadingThumbnails] = useState(false);
+
+  const generateThumbnails = useCallback(async (file: File) => {
+    if (!file) {
+      setThumbnails([]);
+      return;
+    }
+    setIsLoadingThumbnails(true);
+    
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const data = new Uint8Array(reader.result as ArrayBuffer);
+          const pdfjsLib = await import("pdfjs-dist/build/pdf");
+          pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+
+          const pdf = await pdfjsLib.getDocument({ data }).promise;
+          const thumbs: string[] = [];
+
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const pageRotations = rotations[i] || 0;
+            
+            const originalViewport = page.getViewport({ scale: 1, rotation: pageRotations });
+            const fixedWidth = 150;
+            const viewport = page.getViewport({ scale: fixedWidth / originalViewport.width, rotation: pageRotations });
+
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d")!;
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+
+            await page.render({ canvasContext: ctx, viewport }).promise;
+            thumbs.push(canvas.toDataURL());
+          }
+          setThumbnails(thumbs);
+        } catch (error) {
+           console.error("Error processing PDF for thumbnails:", error);
+           setThumbnails([]);
+        } finally {
+            setIsLoadingThumbnails(false);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } catch (error) {
+      console.error("Failed to read file for thumbnails:", error);
+      setIsLoadingThumbnails(false);
+    }
+  }, [rotations]);
+
+  useEffect(() => {
+    if (pdfFile) {
+      generateThumbnails(pdfFile);
+    }
+  }, [pdfFile, generateThumbnails]);
+
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     setPdfFile(file);
@@ -26,6 +89,7 @@ const PdfEditor = () => {
     setTotalPages(0);
     setZoom(1);
     setRotations({});
+    setViewMode('edit');
   };
   
   const handleDownload = () => {
@@ -58,7 +122,6 @@ const PdfEditor = () => {
       
       const newTotalPages = pdfDoc.getPageCount();
 
-      // Re-map rotations for remaining pages
       const newRotations: { [key: number]: number } = {};
       for (let i = 1; i <= newTotalPages; i++) {
           const oldPageNum = i < deletedPageNum ? i : i + 1;
@@ -73,7 +136,6 @@ const PdfEditor = () => {
       if (currentPage > newTotalPages) {
           setCurrentPage(newTotalPages);
       }
-      // The onTotalPages callback in PdfCanvas will update the totalPages state
   };
   
   const handlePageSelect = (pageNumber: number) => {
@@ -122,7 +184,7 @@ const PdfEditor = () => {
     const existingPdfBytes = await pdfFile.arrayBuffer();
     const pdfDoc = await PDFDocument.load(existingPdfBytes);
 
-    let pageSize: [number, number] = [595.28, 841.89]; // Default A4 size
+    let pageSize: [number, number] = [595.28, 841.89];
     if (index > 0 && index <= pdfDoc.getPageCount()) {
         const prevPage = pdfDoc.getPage(index - 1);
         const { width, height } = prevPage.getSize();
@@ -147,53 +209,63 @@ const PdfEditor = () => {
     setPdfFile(newPdfFile);
   };
 
-  return (
-    <div className="flex w-full h-full bg-muted/40">
-      <div className="w-[15%] flex-shrink-0 bg-card border-r">
-        <Sidebar
-          pdfFile={pdfFile}
-          currentPage={currentPage}
-          onPageClick={handlePageSelect}
-          totalPages={totalPages}
-          rotations={rotations}
-          onInsertPdf={handleInsertPdf}
-          onInsertBlankPage={handleInsertBlankPage}
-        />
-      </div>
+  const handleReorderPages = async (oldIndex: number, newIndex: number) => {
+    if (!pdfFile || oldIndex === newIndex) return;
+  
+    const existingPdfBytes = await pdfFile.arrayBuffer();
+    const pdfDoc = await PDFDocument.load(existingPdfBytes);
+  
+    const [movedPage] = await pdfDoc.copyPages(pdfDoc, [oldIndex]);
+    pdfDoc.removePage(oldIndex);
+    pdfDoc.insertPage(newIndex, movedPage);
+  
+    const finalPdfBytes = await pdfDoc.save();
+    const newPdfFile = new File([finalPdfBytes], pdfFile.name, { type: 'application/pdf' });
+    
+    setPdfFile(newPdfFile);
+  };
 
-      <div className="flex-1 flex flex-col">
-        <div className="bg-card border-b p-2">
-          <Toolbar 
-            currentTool={toolMode}
-            setTool={setToolMode}
-            color={color}
-            setColor={setColor}
-            onDownload={handleDownload}
+  const renderContent = () => {
+    if (!pdfFile) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-10 text-center">
+          <h2 className="text-xl font-semibold mb-2">開始編輯您的 PDF</h2>
+          <p className="mb-4">從您的電腦上傳一個檔案，即可開始。</p>
+          <label className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-4 py-2 cursor-pointer">
+            選擇檔案
+            <input type="file" accept="application/pdf" onChange={handleFileChange} className="hidden" />
+          </label>
+        </div>
+      );
+    }
+
+    if (viewMode === 'reorder') {
+      return <ReorderView thumbnails={thumbnails} onReorder={handleReorderPages} />;
+    }
+
+    return (
+      <div className="flex w-full h-full">
+        <div className="w-[15%] flex-shrink-0 bg-card border-r">
+          <Sidebar
+            currentPage={currentPage}
+            onPageClick={handlePageSelect}
+            onInsertPdf={handleInsertPdf}
+            onInsertBlankPage={handleInsertBlankPage}
+            thumbnails={thumbnails}
+            isLoading={isLoadingThumbnails}
           />
         </div>
-        
-        <div className="flex-grow flex flex-col p-4 overflow-auto relative">
-          <div className="flex-grow bg-background rounded-lg shadow-inner overflow-hidden">
-            {pdfFile ? (
-              <PdfCanvas
-                pdfFile={pdfFile}
-                onTotalPages={setTotalPages}
-                onCurrentPageChange={setCurrentPage}
-                zoom={zoom}
-                rotations={rotations}
-                scrollToPage={scrollToPage}
-                onScrollComplete={handleScrollComplete}
-              />
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-10 text-center">
-                  <h2 className="text-xl font-semibold mb-2">開始編輯您的 PDF</h2>
-                  <p className="mb-4">從您的電腦上傳一個檔案，即可開始。</p>
-                  <label className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-4 py-2 cursor-pointer">
-                    選擇檔案
-                    <input type="file" accept="application/pdf" onChange={handleFileChange} className="hidden" />
-                  </label>
-              </div>
-            )}
+        <div className="flex-grow flex flex-col relative">
+          <div className="flex-grow bg-background shadow-inner overflow-hidden">
+            <PdfCanvas
+              pdfFile={pdfFile}
+              onTotalPages={setTotalPages}
+              onCurrentPageChange={setCurrentPage}
+              zoom={zoom}
+              rotations={rotations}
+              scrollToPage={scrollToPage}
+              onScrollComplete={handleScrollComplete}
+            />
           </div>
           {pdfFile && (
             <FloatingToolbar
@@ -205,7 +277,26 @@ const PdfEditor = () => {
             />
           )}
         </div>
+      </div>
+    );
+  };
 
+
+  return (
+    <div className="w-full h-full flex flex-col bg-muted/40">
+      <div className="bg-card border-b p-2">
+        <Toolbar 
+          currentTool={toolMode}
+          setTool={setToolMode}
+          color={color}
+          setColor={setColor}
+          onDownload={handleDownload}
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+        />
+      </div>
+      <div className="flex-grow overflow-hidden">
+        {renderContent()}
       </div>
     </div>
   );

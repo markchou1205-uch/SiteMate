@@ -1,8 +1,7 @@
 
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
-import { CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import React, { useEffect, useRef } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -15,13 +14,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 interface SidebarProps {
-  pdfFile: File | null;
   currentPage: number;
   onPageClick: (pageNum: number) => void;
-  totalPages: number;
-  rotations: { [key: number]: number };
   onInsertPdf: (file: File, index: number) => void;
   onInsertBlankPage: (index: number) => void;
+  thumbnails: string[];
+  isLoading: boolean;
 }
 
 interface InsertionPointProps {
@@ -77,59 +75,18 @@ const InsertionPoint: React.FC<InsertionPointProps> = ({ index, onInsertPdf, onI
 };
 
 const Sidebar: React.FC<SidebarProps> = ({
-  pdfFile,
   currentPage,
   onPageClick,
-  totalPages,
-  rotations,
   onInsertPdf,
-  onInsertBlankPage
+  onInsertBlankPage,
+  thumbnails,
+  isLoading
 }) => {
-  const [thumbnails, setThumbnails] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const thumbnailRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
-    if (!pdfFile) {
-        setThumbnails([]);
-        return;
-    };
-    
-    setIsLoading(true);
-    thumbnailRefs.current = [];
-
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const data = new Uint8Array(reader.result as ArrayBuffer);
-      const pdfjsLib = await import("pdfjs-dist/build/pdf");
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
-
-      const pdf = await pdfjsLib.getDocument({ data }).promise;
-      const thumbs: string[] = [];
-
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const rotation = rotations[i] || 0;
-        
-        const originalViewport = page.getViewport({ scale: 1, rotation });
-        const fixedWidth = 150;
-        const viewport = page.getViewport({ scale: fixedWidth / originalViewport.width, rotation });
-
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d")!;
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-
-        await page.render({ canvasContext: ctx, viewport }).promise;
-        thumbs.push(canvas.toDataURL());
-      }
-
-      setThumbnails(thumbs);
-      setIsLoading(false);
-    };
-
-    reader.readAsArrayBuffer(pdfFile);
-  }, [pdfFile, rotations]);
+    thumbnailRefs.current = thumbnailRefs.current.slice(0, thumbnails.length);
+  }, [thumbnails]);
 
   useEffect(() => {
     if (thumbnailRefs.current[currentPage - 1]) {
@@ -142,11 +99,8 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <div className="h-full flex flex-col">
-       <CardHeader>
-        <CardTitle>文件預覽</CardTitle>
-      </CardHeader>
       <ScrollArea className="flex-grow">
-        <CardContent className="p-4">
+        <div className="p-4">
           {isLoading ? (
             <div className="space-y-4">
               {[...Array(3)].map((_, i) => (
@@ -160,7 +114,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <div className="space-y-2">
               <InsertionPoint index={0} onInsertPdf={onInsertPdf} onInsertBlankPage={onInsertBlankPage} />
               {thumbnails.map((src, index) => (
-                <React.Fragment key={index}>
+                <React.Fragment key={src + index}>
                   <div
                     ref={(el) => (thumbnailRefs.current[index] = el)}
                     className={`border-2 rounded-lg cursor-pointer transition-all overflow-hidden shadow-sm ${
@@ -180,7 +134,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               請從主面板上傳檔案
             </div>
           )}
-        </CardContent>
+        </div>
       </ScrollArea>
     </div>
   );

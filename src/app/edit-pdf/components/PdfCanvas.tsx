@@ -221,7 +221,7 @@ const PdfCanvas: React.FC<PdfCanvasProps> = ({
       pageRefs.current[scrollToPage - 1]?.scrollIntoView({ behavior: "auto", block: "start" });
       onScrollComplete();
     }
-  }, [scrollToPage, onScrollComplete]);
+  }, [scrollToPage, onScrollComplete, pages]);
 
   // Center canvas on zoom
   useEffect(() => {

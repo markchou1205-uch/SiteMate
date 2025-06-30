@@ -268,7 +268,7 @@ const PdfEditor = () => {
 
     return (
       <div className="flex w-full h-full">
-        <div className="w-[20%] flex-shrink-0 bg-card border-r">
+        <div className="w-[15%] flex-shrink-0 bg-card border-r">
           <Sidebar
             currentPage={currentPage}
             onPageClick={handlePageSelect}
@@ -279,7 +279,7 @@ const PdfEditor = () => {
           />
         </div>
         <div className="flex-grow flex flex-col relative" ref={pdfEditorRef}>
-          <div className="flex-grow bg-background shadow-inner overflow-hidden">
+          <div className="flex-grow bg-background shadow-inner">
             <PdfCanvas
               pdfFile={pdfFile}
               onTotalPages={setTotalPages}

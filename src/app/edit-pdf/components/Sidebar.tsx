@@ -11,9 +11,10 @@ interface SidebarProps {
   currentPage: number;
   onPageClick: (pageNum: number) => void;
   totalPages: number;
+  rotations: { [key: number]: number };
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ pdfFile, currentPage, onPageClick, totalPages }) => {
+const Sidebar: React.FC<SidebarProps> = ({ pdfFile, currentPage, onPageClick, totalPages, rotations }) => {
   const [thumbnails, setThumbnails] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -36,7 +37,8 @@ const Sidebar: React.FC<SidebarProps> = ({ pdfFile, currentPage, onPageClick, to
 
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: 1.0 });
+        const rotation = rotations[i] || 0;
+        const viewport = page.getViewport({ scale: 1.0, rotation });
 
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d")!;
@@ -52,7 +54,7 @@ const Sidebar: React.FC<SidebarProps> = ({ pdfFile, currentPage, onPageClick, to
     };
 
     reader.readAsArrayBuffer(pdfFile);
-  }, [pdfFile]);
+  }, [pdfFile, rotations]);
 
   return (
     <div className="h-full flex flex-col">

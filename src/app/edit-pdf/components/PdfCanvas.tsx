@@ -7,12 +7,16 @@ interface PdfCanvasProps {
   pdfFile: File | null;
   currentPage: number;
   onTotalPages: (total: number) => void;
+  zoom: number;
+  rotation: number;
 }
 
 const PdfCanvas: React.FC<PdfCanvasProps> = ({
   pdfFile,
   currentPage,
   onTotalPages,
+  zoom,
+  rotation,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [pdfDoc, setPdfDoc] = useState<any>(null);
@@ -41,17 +45,19 @@ const PdfCanvas: React.FC<PdfCanvasProps> = ({
   }, [pdfFile, onTotalPages]);
 
   useEffect(() => {
-    if (!pdfDoc || !containerRef.current) return;
+    if (!pdfDoc || !containerRef.current || !pdfFile) return;
 
     const renderPage = async () => {
       try {
         const page = await pdfDoc.getPage(currentPage);
         
         const containerWidth = containerRef.current!.clientWidth;
-        const unscaledViewport = page.getViewport({ scale: 1 });
-        const scale = containerWidth / unscaledViewport.width;
+        // Use an unrotated viewport to calculate the scale to fit width,
+        // so that rotation doesn't alter the zoom.
+        const unrotatedViewport = page.getViewport({ scale: 1, rotation: 0 });
+        const scaleToFit = containerWidth / unrotatedViewport.width;
         
-        const viewport = page.getViewport({ scale: scale });
+        const viewport = page.getViewport({ scale: scaleToFit * zoom, rotation: rotation });
 
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
@@ -70,7 +76,7 @@ const PdfCanvas: React.FC<PdfCanvasProps> = ({
     };
 
     renderPage();
-  }, [pdfDoc, currentPage]);
+  }, [pdfDoc, currentPage, zoom, rotation, pdfFile]);
 
   return (
     <div

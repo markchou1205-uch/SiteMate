@@ -714,6 +714,9 @@ video {
 .top-\[50\%\] {
   top: 50%;
 }
+.bottom-4 {
+  bottom: 1rem;
+}
 .z-10 {
   z-index: 10;
 }
@@ -1036,6 +1039,9 @@ video {
 }
 .w-\[15\%\] {
   width: 15%;
+}
+.w-32 {
+  width: 8rem;
 }
 .min-w-0 {
   min-width: 0px;

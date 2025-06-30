@@ -361,7 +361,6 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist
 const PdfCanvas = ({ pdfFile, currentPage, onTotalPages })=>{
     const containerRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])(null);
     const [pdfDoc, setPdfDoc] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(null);
-    const scale = 1.5;
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         if (!pdfFile) {
             setPdfDoc(null);
@@ -394,8 +393,13 @@ const PdfCanvas = ({ pdfFile, currentPage, onTotalPages })=>{
         const renderPage = async ()=>{
             try {
                 const page = await pdfDoc.getPage(currentPage);
+                const containerWidth = containerRef.current.clientWidth;
+                const unscaledViewport = page.getViewport({
+                    scale: 1
+                });
+                const scale = containerWidth / unscaledViewport.width;
                 const viewport = page.getViewport({
-                    scale
+                    scale: scale
                 });
                 const canvas = document.createElement("canvas");
                 const ctx = canvas.getContext("2d");
@@ -415,15 +419,14 @@ const PdfCanvas = ({ pdfFile, currentPage, onTotalPages })=>{
         renderPage();
     }, [
         pdfDoc,
-        currentPage,
-        scale
+        currentPage
     ]);
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
         ref: containerRef,
-        className: "w-full h-full flex justify-center items-start p-4 overflow-auto bg-muted"
+        className: "w-full h-full flex justify-center items-start overflow-auto bg-muted"
     }, void 0, false, {
         fileName: "[project]/src/app/edit-pdf/components/PdfCanvas.tsx",
-        lineNumber: 72,
+        lineNumber: 76,
         columnNumber: 5
     }, this);
 };
@@ -1167,9 +1170,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$edit$2d$pdf$2f$components$2f$PdfCanvas$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/edit-pdf/components/PdfCanvas.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$edit$2d$pdf$2f$components$2f$Sidebar$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/edit-pdf/components/Sidebar.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$edit$2d$pdf$2f$components$2f$Toolbar$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/edit-pdf/components/Toolbar.tsx [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/button.tsx [app-ssr] (ecmascript)");
 "use client";
-;
 ;
 ;
 ;
@@ -1194,7 +1195,7 @@ const PdfEditor = ()=>{
         className: "flex w-full h-full bg-muted/40",
         children: [
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                className: "w-80 flex-shrink-0 bg-card border-r",
+                className: "w-[15%] flex-shrink-0 bg-card border-r",
                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f$edit$2d$pdf$2f$components$2f$Sidebar$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
                     pdfFile: pdfFile,
                     currentPage: currentPage,
@@ -1297,48 +1298,6 @@ const PdfEditor = ()=>{
                         fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
                         lineNumber: 50,
                         columnNumber: 9
-                    }, this),
-                    pdfFile && totalPages > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "flex justify-center items-center p-2 gap-4 bg-card border-t",
-                        children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
-                                variant: "outline",
-                                onClick: ()=>setCurrentPage((prev)=>Math.max(prev - 1, 1)),
-                                disabled: currentPage <= 1,
-                                children: "上一頁"
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                lineNumber: 73,
-                                columnNumber: 13
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                children: [
-                                    "第 ",
-                                    currentPage,
-                                    " / ",
-                                    totalPages,
-                                    " 頁"
-                                ]
-                            }, void 0, true, {
-                                fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                lineNumber: 80,
-                                columnNumber: 13
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
-                                variant: "outline",
-                                onClick: ()=>setCurrentPage((prev)=>Math.min(prev + 1, totalPages)),
-                                disabled: currentPage >= totalPages,
-                                children: "下一頁"
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                                lineNumber: 81,
-                                columnNumber: 13
-                            }, this)
-                        ]
-                    }, void 0, true, {
-                        fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                        lineNumber: 72,
-                        columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {

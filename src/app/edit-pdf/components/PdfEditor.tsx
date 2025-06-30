@@ -265,6 +265,7 @@ const PdfEditor = () => {
               rotations={rotations}
               scrollToPage={scrollToPage}
               onScrollComplete={handleScrollComplete}
+              toolMode={toolMode}
             />
           </div>
           {pdfFile && (

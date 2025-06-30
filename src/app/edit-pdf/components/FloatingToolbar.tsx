@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from "react";
@@ -38,7 +39,7 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
   canDelete,
 }) => {
   return (
-    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20">
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20">
       <div className="flex items-center gap-4 bg-card p-2 rounded-lg shadow-lg border">
         <div className="flex items-center gap-2">
           <Button

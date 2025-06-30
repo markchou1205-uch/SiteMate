@@ -2,12 +2,12 @@
 "use client";
 
 import React from "react";
-import { MousePointer, Type, Pen, Square, Circle, Triangle, Download, Palette, LayoutGrid, PanelLeft } from "lucide-react";
+import { MousePointer, Type, Pen, Square, Circle, Triangle, Download, Palette, LayoutGrid, PanelLeft, Hand } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
-export type Tool = "select" | "text" | "draw" | "rect" | "circle" | "triangle";
+export type Tool = "select" | "move" | "text" | "draw" | "rect" | "circle" | "triangle";
 type ViewMode = 'edit' | 'reorder';
 
 const colors = ["#000000", "#ef4444", "#22c55e", "#3b82f6", "#f97316", "#a855f7"];
@@ -61,6 +61,9 @@ const Toolbar: React.FC<ToolbarProps> = ({
             >
               <ToggleGroupItem value="select" aria-label="Select tool" title="選取">
                 <MousePointer className="h-4 w-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="move" aria-label="Move tool" title="移動">
+                <Hand className="h-4 w-4" />
               </ToggleGroupItem>
               <ToggleGroupItem value="text" aria-label="Text tool" title="文字">
                 <Type className="h-4 w-4" />

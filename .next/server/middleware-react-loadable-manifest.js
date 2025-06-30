@@ -1,1 +1,1 @@
-self.__REACT_LOADABLE_MANIFEST="{\"app/edit-pdf/components/PdfEditor.tsx -> pdfjs-dist/build/pdf\":{\"id\":\"app/edit-pdf/components/PdfEditor.tsx -> pdfjs-dist/build/pdf\",\"files\":[]}}"
+self.__REACT_LOADABLE_MANIFEST="{}"

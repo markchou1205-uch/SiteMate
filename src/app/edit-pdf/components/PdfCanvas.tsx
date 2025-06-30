@@ -43,8 +43,6 @@ const PdfCanvas: React.FC<PdfCanvasProps> = ({
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
 
-  const isPanning = useRef(false);
-  const panStart = useRef({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
   const textDrawing = useRef<{
     isDrawing: boolean;
     startX: number;
@@ -77,7 +75,21 @@ const PdfCanvas: React.FC<PdfCanvasProps> = ({
   }, [pdfFile, onTotalPages]);
   
   const addFabricEventListeners = useCallback((canvas: fabric.Canvas) => {
+    let isPanning = false;
+    let lastPosX: number;
+    let lastPosY: number;
+    
     canvas.on('mouse:down', (o) => {
+        if (toolMode === 'move') {
+            isPanning = true;
+            canvas.selection = false;
+            lastPosX = o.e.clientX;
+            lastPosY = o.e.clientY;
+            if (containerRef.current) containerRef.current.style.cursor = 'grabbing';
+            o.e.preventDefault();
+            return;
+        }
+
         if (toolMode !== 'text' || !o.pointer) return;
         textDrawing.current.isDrawing = true;
         textDrawing.current.startX = o.pointer.x;
@@ -97,6 +109,17 @@ const PdfCanvas: React.FC<PdfCanvasProps> = ({
     });
 
     canvas.on('mouse:move', (o) => {
+        if (isPanning && toolMode === 'move') {
+            if (containerRef.current) {
+                containerRef.current.scrollLeft -= (o.e.clientX - lastPosX);
+                containerRef.current.scrollTop -= (o.e.clientY - lastPosY);
+            }
+            lastPosX = o.e.clientX;
+            lastPosY = o.e.clientY;
+            o.e.preventDefault();
+            return;
+        }
+        
         if (!textDrawing.current.isDrawing || !o.pointer || !textDrawing.current.rect) return;
         const { startX, startY } = textDrawing.current;
         let left = startX;
@@ -112,6 +135,13 @@ const PdfCanvas: React.FC<PdfCanvasProps> = ({
     });
 
     canvas.on('mouse:up', (o) => {
+        if (isPanning && toolMode === 'move') {
+            isPanning = false;
+            canvas.selection = true;
+            if (containerRef.current) containerRef.current.style.cursor = 'grab';
+            return;
+        }
+
         if (!textDrawing.current.isDrawing || !o.pointer || !textDrawing.current.rect) return;
         const { left, top, width, height } = textDrawing.current.rect;
         
@@ -146,21 +176,6 @@ const PdfCanvas: React.FC<PdfCanvasProps> = ({
             o.target.enterEditing();
         }
     });
-
-    // This bypasses fabric's event system for the wheel event and attaches a native listener.
-    // This prevents fabric from blocking the scroll event that the parent container needs.
-    const wheelHandler = (e: WheelEvent) => {
-        if (containerRef.current) {
-            containerRef.current.scrollTop += e.deltaY;
-            // Prevent the default browser action (like page zoom or navigating back/forward)
-            e.preventDefault();
-        }
-    };
-    
-    if (canvas.upperCanvasEl) {
-        // We use { passive: false } to signal that we might call preventDefault().
-        canvas.upperCanvasEl.addEventListener('wheel', wheelHandler, { passive: false });
-    }
 
   }, [toolMode, color, setActiveObject, setIsTextEditing]);
 
@@ -238,19 +253,23 @@ const PdfCanvas: React.FC<PdfCanvasProps> = ({
 
   // Update canvas properties when tool mode or color changes
   useEffect(() => {
+    if (containerRef.current) {
+        if (toolMode === 'move') {
+            containerRef.current.style.cursor = 'grab';
+        } else if (toolMode === 'text') {
+            containerRef.current.style.cursor = 'crosshair';
+        } else {
+            containerRef.current.style.cursor = 'default';
+        }
+    }
+
     fabricCanvasRefs.current.forEach(canvas => {
       if (!canvas) return;
-      canvas.selection = toolMode === 'select';
       canvas.isDrawingMode = toolMode === 'draw';
       
       if (canvas.freeDrawingBrush) {
         canvas.freeDrawingBrush.color = color;
         canvas.freeDrawingBrush.width = 5;
-      }
-      canvas.setCursor(toolMode === 'text' ? 'crosshair' : 'default');
-      const upperCanvas = canvas.upperCanvasEl;
-      if (upperCanvas) {
-        upperCanvas.style.cursor = ""; // Reset fabric's inline cursor style
       }
     });
   }, [toolMode, color]);
@@ -258,65 +277,10 @@ const PdfCanvas: React.FC<PdfCanvasProps> = ({
   // Scroll to a specific page
   useEffect(() => {
     if (scrollToPage && pageRefs.current[scrollToPage - 1]) {
-      pageRefs.current[scrollToPage - 1]?.scrollIntoView({ behavior: "smooth", block: "start" });
+      pageRefs.current[scrollToPage - 1]?.scrollIntoView({ behavior: "auto", block: "start" });
       onScrollComplete();
     }
   }, [scrollToPage, onScrollComplete]);
-
-  // Panning logic
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    if (toolMode === 'move') {
-      container.style.cursor = 'grab';
-    } else {
-      container.style.cursor = 'default';
-    }
-
-    const handleMouseDown = (e: MouseEvent) => {
-      if (toolMode !== 'move' || !containerRef.current) return;
-      // Pan only when clicking on the container background, not the canvas
-      if ((e.target as HTMLElement).closest('.relative.mb-4')) return;
-      isPanning.current = true;
-      containerRef.current.style.cursor = 'grabbing';
-      panStart.current = {
-        x: e.clientX,
-        y: e.clientY,
-        scrollLeft: containerRef.current.scrollLeft,
-        scrollTop: containerRef.current.scrollTop,
-      };
-      e.preventDefault();
-    };
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isPanning.current || !containerRef.current) return;
-      e.preventDefault();
-      const dx = e.clientX - panStart.current.x;
-      const dy = e.clientY - panStart.current.y;
-      containerRef.current.scrollTop = panStart.current.scrollTop - dy;
-      containerRef.current.scrollLeft = panStart.current.scrollLeft - dx;
-    };
-
-    const handleMouseUp = () => {
-      if (!isPanning.current || !containerRef.current) return;
-      isPanning.current = false;
-      if (toolMode === 'move') containerRef.current.style.cursor = 'grab';
-    };
-    
-    container.addEventListener('mousedown', handleMouseDown);
-    container.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-    container.addEventListener('mouseleave', handleMouseUp);
-
-    return () => {
-      if (container) {
-          container.removeEventListener('mousedown', handleMouseDown);
-          container.removeEventListener('mousemove', handleMouseMove);
-      }
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [toolMode]);
 
   // Center canvas on zoom
   useEffect(() => {

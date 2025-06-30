@@ -7,7 +7,6 @@ import PdfCanvas from "./PdfCanvas";
 import Sidebar from "./Sidebar";
 import Toolbar, { type Tool } from "./Toolbar";
 import FloatingToolbar from "./FloatingToolbar";
-import { Button } from "@/components/ui/button";
 
 const PdfEditor = () => {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -18,6 +17,7 @@ const PdfEditor = () => {
   
   const [zoom, setZoom] = useState(1);
   const [rotations, setRotations] = useState<{ [key: number]: number }>({});
+  const [scrollToPage, setScrollToPage] = useState<number | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
@@ -75,6 +75,15 @@ const PdfEditor = () => {
       }
       // The onTotalPages callback in PdfCanvas will update the totalPages state
   };
+  
+  const handlePageSelect = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+    setScrollToPage(pageNumber);
+  };
+
+  const handleScrollComplete = () => {
+    setScrollToPage(null);
+  };
 
   return (
     <div className="flex w-full h-full bg-muted/40">
@@ -82,7 +91,7 @@ const PdfEditor = () => {
         <Sidebar
           pdfFile={pdfFile}
           currentPage={currentPage}
-          onPageClick={setCurrentPage}
+          onPageClick={handlePageSelect}
           totalPages={totalPages}
           rotations={rotations}
         />
@@ -104,10 +113,12 @@ const PdfEditor = () => {
             {pdfFile ? (
               <PdfCanvas
                 pdfFile={pdfFile}
-                currentPage={currentPage}
                 onTotalPages={setTotalPages}
+                onCurrentPageChange={setCurrentPage}
                 zoom={zoom}
-                rotation={rotations[currentPage] || 0}
+                rotations={rotations}
+                scrollToPage={scrollToPage}
+                onScrollComplete={handleScrollComplete}
               />
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-10 text-center">

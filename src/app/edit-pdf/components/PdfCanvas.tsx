@@ -75,89 +75,8 @@ const PdfCanvas: React.FC<PdfCanvasProps> = ({
     };
     reader.readAsArrayBuffer(pdfFile);
   }, [pdfFile, onTotalPages]);
-
-  // Render all pages and set up observers
-  useEffect(() => {
-    if (!pdfDoc || !containerRef.current) return;
-
-    const intersectionObserver = new IntersectionObserver(
-      (entries) => {
-        const visibleEntries = entries.filter((e) => e.isIntersecting);
-        if (visibleEntries.length > 0) {
-          visibleEntries.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-          const topVisiblePage = visibleEntries[0];
-          const pageNum = Number((topVisiblePage.target as HTMLElement).dataset.pageNumber);
-          if (pageNum) onCurrentPageChange(pageNum);
-        }
-      },
-      { root: containerRef.current, rootMargin: "-50% 0px -50% 0px", threshold: 0 }
-    );
-    
-    // Cleanup old canvases
-    fabricCanvasRefs.current.forEach(canvas => canvas.dispose());
-    fabricCanvasRefs.current = [];
-    pageRefs.current = [];
-
-    const renderAllPages = async () => {
-      if (!containerRef.current) return;
-      containerRef.current.innerHTML = "";
-
-      const availableWidth = containerRef.current.clientWidth - 32;
-
-      for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
-        const page = await pdfDoc.getPage(pageNum);
-        const rotation = rotations[pageNum] || 0;
-        
-        const unrotatedViewport = page.getViewport({ scale: 1 });
-        const scaleToFit = availableWidth / unrotatedViewport.width;
-        const viewport = page.getViewport({ scale: scaleToFit * zoom, rotation });
-        
-        const pageContainer = document.createElement("div");
-        pageContainer.className = "relative mb-4 bg-background shadow-md";
-        pageContainer.dataset.pageNumber = String(pageNum);
-
-        const pdfCanvasEl = document.createElement("canvas");
-        const fabricCanvasEl = document.createElement("canvas");
-        fabricCanvasEl.className = "absolute top-0 left-0";
-        
-        pageContainer.append(pdfCanvasEl, fabricCanvasEl);
-        containerRef.current.appendChild(pageContainer);
-        
-        pdfCanvasEl.width = viewport.width;
-        pdfCanvasEl.height = viewport.height;
-        fabricCanvasEl.width = viewport.width;
-        fabricCanvasEl.height = viewport.height;
-        
-        const pdfCtx = pdfCanvasEl.getContext("2d");
-        if (pdfCtx) {
-            await page.render({ canvasContext: pdfCtx, viewport }).promise;
-        }
-
-        const fabricCanvas = new fabric.Canvas(fabricCanvasEl, {
-            selection: toolMode === 'select',
-            isDrawingMode: toolMode === 'draw',
-        });
-        
-        fabricCanvas.freeDrawingBrush.color = color;
-        fabricCanvas.freeDrawingBrush.width = 5;
-        fabricCanvas.setCursor(toolMode === 'text' ? 'crosshair' : 'default');
-
-        fabricCanvasRefs.current[pageNum-1] = fabricCanvas;
-        pageRefs.current[pageNum-1] = pageContainer;
-
-        addFabricEventListeners(fabricCanvas);
-
-        intersectionObserver.observe(pageContainer);
-      }
-    };
-    renderAllPages();
-
-    return () => {
-      intersectionObserver.disconnect();
-    };
-  }, [pdfDoc, zoom, rotations, toolMode, color]); // Re-render on tool/color change
-
-  const addFabricEventListeners = (canvas: fabric.Canvas) => {
+  
+  const addFabricEventListeners = useCallback((canvas: fabric.Canvas) => {
     canvas.on('mouse:down', (o) => {
         if (toolMode !== 'text' || !o.pointer) return;
         textDrawing.current.isDrawing = true;
@@ -227,7 +146,108 @@ const PdfCanvas: React.FC<PdfCanvasProps> = ({
             o.target.enterEditing();
         }
     });
-  };
+
+    canvas.on('mouse:wheel', (opt) => {
+        const e = opt.e as WheelEvent;
+        if (containerRef.current) {
+            containerRef.current.scrollTop += e.deltaY;
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    });
+
+  }, [toolMode, color, setActiveObject, setIsTextEditing]);
+
+  // Render all pages and set up observers
+  useEffect(() => {
+    if (!pdfDoc || !containerRef.current) return;
+
+    const intersectionObserver = new IntersectionObserver(
+      (entries) => {
+        const visibleEntries = entries.filter((e) => e.isIntersecting);
+        if (visibleEntries.length > 0) {
+          visibleEntries.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+          const topVisiblePage = visibleEntries[0];
+          const pageNum = Number((topVisiblePage.target as HTMLElement).dataset.pageNumber);
+          if (pageNum) onCurrentPageChange(pageNum);
+        }
+      },
+      { root: containerRef.current, rootMargin: "-50% 0px -50% 0px", threshold: 0 }
+    );
+    
+    // Cleanup old canvases
+    fabricCanvasRefs.current.forEach(canvas => canvas.dispose());
+    fabricCanvasRefs.current = [];
+    pageRefs.current = [];
+    if(containerRef.current) containerRef.current.innerHTML = "";
+
+    const renderAllPages = async () => {
+      if (!containerRef.current) return;
+      const availableWidth = containerRef.current.clientWidth - 32;
+
+      for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+        const page = await pdfDoc.getPage(pageNum);
+        const rotation = rotations[pageNum] || 0;
+        
+        const unrotatedViewport = page.getViewport({ scale: 1 });
+        const scaleToFit = availableWidth / unrotatedViewport.width;
+        const viewport = page.getViewport({ scale: scaleToFit * zoom, rotation });
+        
+        const pageContainer = document.createElement("div");
+        pageContainer.className = "relative mb-4 bg-background shadow-md";
+        pageContainer.dataset.pageNumber = String(pageNum);
+
+        const pdfCanvasEl = document.createElement("canvas");
+        const fabricCanvasEl = document.createElement("canvas");
+        fabricCanvasEl.className = "absolute top-0 left-0";
+        
+        pageContainer.append(pdfCanvasEl, fabricCanvasEl);
+        containerRef.current.appendChild(pageContainer);
+        
+        pdfCanvasEl.width = viewport.width;
+        pdfCanvasEl.height = viewport.height;
+        fabricCanvasEl.width = viewport.width;
+        fabricCanvasEl.height = viewport.height;
+        
+        const pdfCtx = pdfCanvasEl.getContext("2d");
+        if (pdfCtx) {
+            await page.render({ canvasContext: pdfCtx, viewport }).promise;
+        }
+
+        const fabricCanvas = new fabric.Canvas(fabricCanvasEl);
+        
+        fabricCanvasRefs.current[pageNum-1] = fabricCanvas;
+        pageRefs.current[pageNum-1] = pageContainer;
+
+        addFabricEventListeners(fabricCanvas);
+        intersectionObserver.observe(pageContainer);
+      }
+    };
+    renderAllPages();
+
+    return () => {
+      intersectionObserver.disconnect();
+    };
+  }, [pdfDoc, zoom, rotations, onCurrentPageChange, addFabricEventListeners]);
+
+  // Update canvas properties when tool mode or color changes
+  useEffect(() => {
+    fabricCanvasRefs.current.forEach(canvas => {
+      if (!canvas) return;
+      canvas.selection = toolMode === 'select';
+      canvas.isDrawingMode = toolMode === 'draw';
+      
+      if (canvas.freeDrawingBrush) {
+        canvas.freeDrawingBrush.color = color;
+        canvas.freeDrawingBrush.width = 5;
+      }
+      canvas.setCursor(toolMode === 'text' ? 'crosshair' : 'default');
+      const upperCanvas = canvas.upperCanvasEl;
+      if (upperCanvas) {
+        upperCanvas.style.cursor = ""; // Reset fabric's inline cursor style
+      }
+    });
+  }, [toolMode, color]);
 
   // Scroll to a specific page
   useEffect(() => {
@@ -250,7 +270,8 @@ const PdfCanvas: React.FC<PdfCanvasProps> = ({
 
     const handleMouseDown = (e: MouseEvent) => {
       if (toolMode !== 'move' || !containerRef.current) return;
-      if ((e.target as HTMLElement).tagName.toLowerCase() === 'canvas') return;
+      // Pan only when clicking on the container background, not the canvas
+      if ((e.target as HTMLElement).closest('.relative.mb-4')) return;
       isPanning.current = true;
       containerRef.current.style.cursor = 'grabbing';
       panStart.current = {

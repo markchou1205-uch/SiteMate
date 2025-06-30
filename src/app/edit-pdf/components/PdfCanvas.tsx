@@ -138,10 +138,8 @@ const PageRenderer = React.forwardRef<HTMLDivElement, PageRendererProps>(({ page
     const fabricCanvasRef = useRef<HTMLCanvasElement>(null);
     const fabricInstanceRef = useRef<fabric.Canvas | null>(null);
 
-    // Refs for text drawing state
     const isDrawingRef = useRef(false);
     const startPosRef = useRef<{x: number, y: number} | null>(null);
-    const rectRef = useRef<fabric.Rect | null>(null);
 
     // Render PDF background and initialize Fabric canvas
     useEffect(() => {
@@ -184,9 +182,13 @@ const PageRenderer = React.forwardRef<HTMLDivElement, PageRendererProps>(({ page
             fCanvas.on('mouse:dblclick', handleDoubleClick);
 
             renderTask = page.render({ canvasContext: ctx, viewport });
-            await renderTask.promise.catch(err => {
-                if (err.name !== 'RenderingCancelled') console.error("Page render error:", err);
-            });
+            try {
+              await renderTask.promise;
+            } catch(err: any) {
+              if (err.name !== 'RenderingCancelled') {
+                  console.error("Page render error:", err);
+              }
+            }
         };
         
         renderAndInit();
@@ -200,40 +202,15 @@ const PageRenderer = React.forwardRef<HTMLDivElement, PageRendererProps>(({ page
         };
     }, [page, zoom, rotation, onObjectSelected]);
 
-
-    // --- STABLE MOUSE HANDLERS for text drawing ---
-    const handleTextMouseDown = useCallback(async (o: fabric.IEvent) => {
+    const handleTextMouseDown = useCallback((o: fabric.IEvent) => {
         const fCanvas = fabricInstanceRef.current;
         if (!fCanvas || !o.pointer) return;
-
         isDrawingRef.current = true;
         startPosRef.current = { x: o.pointer.x, y: o.pointer.y };
-        
-        const { fabric } = await import('fabric');
-        const rect = new fabric.Rect({
-            left: startPosRef.current.x,
-            top: startPosRef.current.y,
-            width: 0,
-            height: 0,
-            stroke: 'blue',
-            strokeDashArray: [5, 5],
-            fill: 'transparent',
-            selectable: false,
-            evented: false,
-        });
-        rectRef.current = rect;
-        fCanvas.add(rect);
     }, []);
 
     const handleTextMouseMove = useCallback((o: fabric.IEvent) => {
-        const fCanvas = fabricInstanceRef.current;
-        if (!isDrawingRef.current || !startPosRef.current || !o.pointer || !rectRef.current || !fCanvas) return;
-        
-        rectRef.current.set({ 
-            width: o.pointer.x - startPosRef.current.x, 
-            height: o.pointer.y - startPosRef.current.y 
-        });
-        fCanvas.renderAll();
+        // This handler is currently empty but kept for potential future use (e.g., drawing a rectangle preview)
     }, []);
 
     const handleTextMouseUp = useCallback(async (o: fabric.IEvent) => {
@@ -242,17 +219,13 @@ const PageRenderer = React.forwardRef<HTMLDivElement, PageRendererProps>(({ page
 
         isDrawingRef.current = false;
         
-        if (rectRef.current) {
-            fCanvas.remove(rectRef.current);
-            rectRef.current = null;
-        }
-        
         const endPos = o.pointer;
         const width = Math.abs(startPosRef.current.x - endPos.x);
+        const height = Math.abs(startPosRef.current.y - endPos.y);
 
-        if (width < 5) {
+        // Only create text box if it's a drag, not a click
+        if (width < 5 && height < 5) {
             startPosRef.current = null;
-            setActiveTool('select');
             return;
         }
         
@@ -267,7 +240,6 @@ const PageRenderer = React.forwardRef<HTMLDivElement, PageRendererProps>(({ page
         
         fCanvas.add(text);
         fCanvas.setActiveObject(text);
-        text.enterEditing();
         
         startPosRef.current = null;
         setActiveTool('select');
@@ -279,11 +251,11 @@ const PageRenderer = React.forwardRef<HTMLDivElement, PageRendererProps>(({ page
         const fCanvas = fabricInstanceRef.current;
         if (!fCanvas) return;
 
-        // Turn off all drawing listeners first to prevent duplicates
-        fCanvas.off('mouse:down', handleTextMouseDown);
-        fCanvas.off('mouse:move', handleTextMouseMove);
-        fCanvas.off('mouse:up', handleTextMouseUp);
-
+        // More robust cleanup: remove all listeners for these events
+        fCanvas.off('mouse:down');
+        fCanvas.off('mouse:move');
+        fCanvas.off('mouse:up');
+        
         if (activeTool === 'text') {
             fCanvas.defaultCursor = 'crosshair';
             fCanvas.selection = false;
@@ -294,14 +266,6 @@ const PageRenderer = React.forwardRef<HTMLDivElement, PageRendererProps>(({ page
             fCanvas.defaultCursor = 'default';
             fCanvas.selection = true;
         }
-        
-        return () => {
-            if (fCanvas) {
-                fCanvas.off('mouse:down', handleTextMouseDown);
-                fCanvas.off('mouse:move', handleTextMouseMove);
-                fCanvas.off('mouse:up', handleTextMouseUp);
-            }
-        };
     }, [activeTool, handleTextMouseDown, handleTextMouseMove, handleTextMouseUp]);
 
 

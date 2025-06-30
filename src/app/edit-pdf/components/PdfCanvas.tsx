@@ -252,6 +252,7 @@ const PageRenderer = React.forwardRef<HTMLDivElement, PageRendererProps>(({ page
                     fCanvas.add(text);
                     fCanvas.setActiveObject(text);
                     text.enterEditing();
+                    fCanvas.defaultCursor = 'default';
                     setActiveTool('select');
                 };
 

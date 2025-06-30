@@ -62,6 +62,7 @@ const PdfCanvas: React.FC<PdfCanvasProps> = ({
       (entries) => {
         const visibleEntries = entries.filter(e => e.isIntersecting);
         if (visibleEntries.length > 0) {
+            // Find the top-most visible entry
             visibleEntries.sort((a,b) => a.boundingClientRect.top - b.boundingClientRect.top);
             const topMostVisible = visibleEntries[0];
             const pageNum = Number((topMostVisible.target as HTMLElement).dataset.pageNumber);
@@ -70,7 +71,7 @@ const PdfCanvas: React.FC<PdfCanvasProps> = ({
             }
         }
       },
-      { root: containerRef.current, rootMargin: "-50% 0px -50% 0px", threshold: 0 }
+      { root: containerRef.current, rootMargin: "-50% 0px -50% 0px", threshold: 0.1 }
     );
 
     const currentRefs = pageRefs.current;
@@ -92,7 +93,7 @@ const PdfCanvas: React.FC<PdfCanvasProps> = ({
       pageRefs.current[scrollToPage - 1]?.scrollIntoView({ behavior: "auto", block: "start" });
       onScrollComplete();
     }
-  }, [scrollToPage, onScrollComplete, pages]);
+  }, [scrollToPage, onScrollComplete]);
 
   return (
     <div
@@ -122,6 +123,8 @@ const PageRenderer = React.forwardRef<HTMLDivElement, PageRendererProps>(({ page
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
+        let renderTask: pdfjsLib.RenderTask | null = null;
+        
         const render = async () => {
             if (!canvasRef.current) return;
             const canvas = canvasRef.current;
@@ -132,9 +135,23 @@ const PageRenderer = React.forwardRef<HTMLDivElement, PageRendererProps>(({ page
             canvas.width = viewport.width;
             canvas.height = viewport.height;
             
-            await page.render({ canvasContext: ctx, viewport }).promise;
+            renderTask = page.render({ canvasContext: ctx, viewport });
+            try {
+                await renderTask.promise;
+            } catch (error: any) {
+                if (error.name !== 'RenderingCancelled') {
+                    console.error("Page render error:", error);
+                }
+            }
         };
+        
         render();
+
+        return () => {
+            if (renderTask) {
+                renderTask.cancel();
+            }
+        };
     }, [page, zoom, rotation]);
 
     return (

@@ -32,44 +32,35 @@ const PdfEditor = () => {
     setIsLoadingThumbnails(true);
     
     try {
-      const reader = new FileReader();
-      reader.onload = async () => {
-        try {
-          const data = new Uint8Array(reader.result as ArrayBuffer);
-          const pdfjsLib = await import("pdfjs-dist/build/pdf");
-          pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+      const data = await file.arrayBuffer();
+      const pdfjsLib = await import("pdfjs-dist/build/pdf");
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
-          const pdf = await pdfjsLib.getDocument({ data }).promise;
-          const thumbs: string[] = [];
+      const pdf = await pdfjsLib.getDocument({ data }).promise;
+      const thumbs: string[] = [];
 
-          for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i);
-            const pageRotations = rotations[i] || 0;
-            
-            const originalViewport = page.getViewport({ scale: 1, rotation: pageRotations });
-            const fixedWidth = 200; // Increased thumbnail resolution
-            const viewport = page.getViewport({ scale: fixedWidth / originalViewport.width, rotation: pageRotations });
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const pageRotations = rotations[i] || 0;
+        
+        const originalViewport = page.getViewport({ scale: 1 });
+        const fixedWidth = 200; 
+        const viewport = page.getViewport({ scale: fixedWidth / originalViewport.width, rotation: pageRotations });
 
-            const canvas = document.createElement("canvas");
-            const ctx = canvas.getContext("2d")!;
-            canvas.width = viewport.width;
-            canvas.height = viewport.height;
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d")!;
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
 
-            await page.render({ canvasContext: ctx, viewport }).promise;
-            thumbs.push(canvas.toDataURL());
-          }
-          setThumbnails(thumbs);
-        } catch (error) {
-           console.error("Error processing PDF for thumbnails:", error);
-           setThumbnails([]);
-        } finally {
-            setIsLoadingThumbnails(false);
-        }
-      };
-      reader.readAsArrayBuffer(file);
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        thumbs.push(canvas.toDataURL());
+      }
+      setThumbnails(thumbs);
     } catch (error) {
-      console.error("Failed to read file for thumbnails:", error);
-      setIsLoadingThumbnails(false);
+        console.error("Error processing PDF for thumbnails:", error);
+        setThumbnails([]);
+    } finally {
+        setIsLoadingThumbnails(false);
     }
   }, [rotations]);
 
@@ -90,8 +81,33 @@ const PdfEditor = () => {
     setViewMode('edit');
   };
   
-  const handleDownload = () => {
-    console.log("Download clicked");
+  const handleDownload = async () => {
+     if (!pdfFile) return;
+    
+    const existingPdfBytes = await pdfFile.arrayBuffer();
+    const pdfDoc = await PDFDocument.load(existingPdfBytes);
+
+    const newPdfDoc = await PDFDocument.create();
+
+    const pageIndices = Array.from({ length: pdfDoc.getPageCount() }, (_, i) => i);
+
+    for (const pageIndex of pageIndices) {
+        const [copiedPage] = await newPdfDoc.copyPages(pdfDoc, [pageIndex]);
+        const rotation = rotations[pageIndex + 1] || 0;
+        copiedPage.setRotation(rotation);
+        newPdfDoc.addPage(copiedPage);
+    }
+
+    const newPdfBytes = await newPdfDoc.save();
+    const blob = new Blob([newPdfBytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `edited_${pdfFile.name}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   const handleRotate = (direction: 'left' | 'right') => {
@@ -99,9 +115,49 @@ const PdfEditor = () => {
     setRotations(prev => {
         const currentRotation = prev[currentPage] || 0;
         const newRotation = (currentRotation + amount + 360) % 360;
-        return { ...prev, [currentPage]: newRotation };
+        const newRotations = { ...prev, [currentPage]: newRotation };
+        
+        // Regenerate the specific thumbnail
+        if (pdfFile) {
+            regenerateSingleThumbnail(pdfFile, currentPage, newRotations);
+        }
+
+        return newRotations;
     });
   };
+
+  const regenerateSingleThumbnail = async (file: File, pageNum: number, currentRotations: { [key: number]: number }) => {
+      try {
+          const data = await file.arrayBuffer();
+          const pdfjsLib = await import("pdfjs-dist/build/pdf");
+          pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+
+          const pdf = await pdfjsLib.getDocument({ data }).promise;
+          const page = await pdf.getPage(pageNum);
+          
+          const pageRotations = currentRotations[pageNum] || 0;
+          const originalViewport = page.getViewport({ scale: 1 });
+          const fixedWidth = 200;
+          const viewport = page.getViewport({ scale: fixedWidth / originalViewport.width, rotation: pageRotations });
+
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d")!;
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          
+          await page.render({ canvasContext: ctx, viewport }).promise;
+          const newThumbDataUrl = canvas.toDataURL();
+          
+          setThumbnails(prev => {
+              const newThumbs = [...prev];
+              newThumbs[pageNum - 1] = newThumbDataUrl;
+              return newThumbs;
+          });
+      } catch (error) {
+          console.error(`Error regenerating thumbnail for page ${pageNum}:`, error);
+      }
+  };
+
 
   const handleDeletePage = async () => {
       if (!pdfFile || totalPages <= 1) return;
@@ -137,6 +193,7 @@ const PdfEditor = () => {
   };
   
   const handlePageSelect = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
     setScrollToPage(pageNumber);
   };
 
@@ -242,7 +299,7 @@ const PdfEditor = () => {
 
     return (
       <div className="flex w-full h-full">
-        <div className="w-[15%] flex-shrink-0 bg-card border-r">
+        <div className="w-[20%] flex-shrink-0 bg-card border-r h-full">
           <Sidebar
             currentPage={currentPage}
             onPageClick={handlePageSelect}
@@ -252,8 +309,8 @@ const PdfEditor = () => {
             isLoading={isLoadingThumbnails}
           />
         </div>
-        <div className="flex-grow flex flex-col relative">
-          <div className="flex-grow bg-background shadow-inner">
+        <div className="flex-grow flex flex-col relative h-full">
+          <div className="flex-grow bg-background shadow-inner h-full overflow-hidden">
             <PdfCanvas
               pdfFile={pdfFile}
               onTotalPages={setTotalPages}
@@ -288,7 +345,7 @@ const PdfEditor = () => {
           setViewMode={setViewMode}
         />
       </div>
-      <div className="flex-grow">
+      <div className="flex-grow overflow-hidden">
         {renderContent()}
       </div>
     </div>

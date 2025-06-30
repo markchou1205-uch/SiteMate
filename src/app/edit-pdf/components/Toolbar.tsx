@@ -2,10 +2,11 @@
 "use client";
 
 import React from "react";
-import { MousePointer, Type, Pen, Square, Circle, Triangle, Download, Palette, LayoutGrid, PanelLeft, Hand } from "lucide-react";
+import { MousePointer, Type, Pen, Square, Circle, Triangle, Download, Palette, LayoutGrid, PanelLeft, Hand, Shapes } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export type Tool = "select" | "move" | "text" | "draw" | "rect" | "circle" | "triangle";
 type ViewMode = 'edit' | 'reorder';
@@ -32,9 +33,11 @@ const Toolbar: React.FC<ToolbarProps> = ({
   setViewMode
 }) => {
   const isEditMode = viewMode === 'edit';
+  const shapeTools: Tool[] = ['draw', 'rect', 'circle', 'triangle'];
+  const isShapeToolActive = shapeTools.includes(currentTool);
 
   return (
-    <div className="flex flex-wrap gap-4 p-1 items-center justify-between w-full">
+    <div className="flex flex-wrap gap-4 p-2 items-center justify-between w-full h-auto">
       <div className="flex items-center gap-4">
         <ToggleGroup 
           type="single" 
@@ -42,47 +45,67 @@ const Toolbar: React.FC<ToolbarProps> = ({
           onValueChange={(value: ViewMode) => { if(value) setViewMode(value); }}
           className="gap-1"
         >
-          <ToggleGroupItem value="edit" aria-label="Edit document" title="編輯文件">
-            <PanelLeft className="h-4 w-4" />
+          <ToggleGroupItem value="edit" aria-label="Edit document" className="flex flex-col h-auto p-2 gap-1">
+            <PanelLeft className="h-5 w-5" />
+            <span className="text-xs whitespace-nowrap">編輯文件</span>
           </ToggleGroupItem>
-          <ToggleGroupItem value="reorder" aria-label="Reorder pages" title="調整順序">
-            <LayoutGrid className="h-4 w-4" />
+          <ToggleGroupItem value="reorder" aria-label="Reorder pages" className="flex flex-col h-auto p-2 gap-1">
+            <LayoutGrid className="h-5 w-5" />
+            <span className="text-xs whitespace-nowrap">調整順序</span>
           </ToggleGroupItem>
         </ToggleGroup>
 
         {isEditMode && (
           <>
-            <Separator orientation="vertical" className="h-8" />
+            <Separator orientation="vertical" className="h-14" />
             <ToggleGroup 
               type="single" 
-              value={currentTool} 
+              value={isShapeToolActive ? undefined : currentTool} 
               onValueChange={(value: Tool) => { if(value) setTool(value); }}
-              className="gap-1"
+              className="gap-2"
             >
-              <ToggleGroupItem value="select" aria-label="Select tool" title="選取">
-                <MousePointer className="h-4 w-4" />
+              <ToggleGroupItem value="select" aria-label="Select tool" className="flex flex-col h-auto p-2 gap-1">
+                <MousePointer className="h-5 w-5" />
+                <span className="text-xs whitespace-nowrap">選取</span>
               </ToggleGroupItem>
-              <ToggleGroupItem value="move" aria-label="Move tool" title="移動">
-                <Hand className="h-4 w-4" />
+              <ToggleGroupItem value="move" aria-label="Move tool" className="flex flex-col h-auto p-2 gap-1">
+                <Hand className="h-5 w-5" />
+                <span className="text-xs whitespace-nowrap">移動</span>
               </ToggleGroupItem>
-              <ToggleGroupItem value="text" aria-label="Text tool" title="文字">
-                <Type className="h-4 w-4" />
-              </ToggleGroupItem>
-              <ToggleGroupItem value="draw" aria-label="Drawing tool" title="手繪">
-                <Pen className="h-4 w-4" />
-              </ToggleGroupItem>
-              <ToggleGroupItem value="rect" aria-label="Rectangle tool" title="矩形">
-                <Square className="h-4 w-4" />
-              </ToggleGroupItem>
-              <ToggleGroupItem value="circle" aria-label="Circle tool" title="圓形">
-                <Circle className="h-4 w-4" />
-              </ToggleGroupItem>
-              <ToggleGroupItem value="triangle" aria-label="Triangle tool" title="三角形">
-                <Triangle className="h-4 w-4" />
+              <ToggleGroupItem value="text" aria-label="Text tool" className="flex flex-col h-auto p-2 gap-1">
+                <Type className="h-5 w-5" />
+                <span className="text-xs whitespace-nowrap">文字</span>
               </ToggleGroupItem>
             </ToggleGroup>
             
-            <Separator orientation="vertical" className="h-8" />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant={isShapeToolActive ? 'secondary' : 'outline'} className="flex flex-col h-auto p-2 gap-1" style={{height: 'auto'}}>
+                   <Shapes className="h-5 w-5" />
+                   <span className="text-xs whitespace-nowrap">插入圖形</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onSelect={() => setTool('draw')}>
+                  <Pen className="mr-2 h-4 w-4" />
+                  <span>手繪</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setTool('rect')}>
+                  <Square className="mr-2 h-4 w-4" />
+                  <span>矩形</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setTool('circle')}>
+                  <Circle className="mr-2 h-4 w-4" />
+                  <span>圓形</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setTool('triangle')}>
+                  <Triangle className="mr-2 h-4 w-4" />
+                  <span>三角形</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            <Separator orientation="vertical" className="h-14" />
             
             <div className="flex items-center gap-2">
               <Palette className="h-5 w-5 text-muted-foreground" />
@@ -108,7 +131,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
       </div>
 
       <div>
-         <Button onClick={onDownload}>
+         <Button onClick={onDownload} variant="destructive">
           <Download className="mr-2 h-4 w-4" />
           下載 PDF
         </Button>

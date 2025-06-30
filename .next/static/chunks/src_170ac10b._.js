@@ -388,11 +388,78 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist
 var _s = __turbopack_context__.k.signature();
 "use client";
 ;
-const PdfCanvas = ({ pdfFile, onTotalPages, onCurrentPageChange, zoom, rotations, scrollToPage, onScrollComplete })=>{
+const PdfCanvas = ({ pdfFile, onTotalPages, onCurrentPageChange, zoom, rotations, scrollToPage, onScrollComplete, toolMode })=>{
     _s();
     const containerRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])(null);
     const pageRefs = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])([]);
     const [pdfDoc, setPdfDoc] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
+    const isPanning = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])(false);
+    const panStart = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])({
+        x: 0,
+        y: 0,
+        scrollLeft: 0,
+        scrollTop: 0
+    });
+    // Panning logic
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
+        "PdfCanvas.useEffect": ()=>{
+            const container = containerRef.current;
+            if (!container) return;
+            if (toolMode === 'move') {
+                container.style.cursor = 'grab';
+            } else {
+                container.style.cursor = 'default';
+            }
+            const handleMouseDown = {
+                "PdfCanvas.useEffect.handleMouseDown": (e)=>{
+                    if (toolMode !== 'move' || !containerRef.current) return;
+                    isPanning.current = true;
+                    containerRef.current.style.cursor = 'grabbing';
+                    panStart.current = {
+                        x: e.clientX,
+                        y: e.clientY,
+                        scrollLeft: containerRef.current.scrollLeft,
+                        scrollTop: containerRef.current.scrollTop
+                    };
+                    e.preventDefault();
+                }
+            }["PdfCanvas.useEffect.handleMouseDown"];
+            const handleMouseMove = {
+                "PdfCanvas.useEffect.handleMouseMove": (e)=>{
+                    if (!isPanning.current || !containerRef.current) return;
+                    e.preventDefault();
+                    const dx = e.clientX - panStart.current.x;
+                    const dy = e.clientY - panStart.current.y;
+                    containerRef.current.scrollTop = panStart.current.scrollTop - dy;
+                    containerRef.current.scrollLeft = panStart.current.scrollLeft - dx;
+                }
+            }["PdfCanvas.useEffect.handleMouseMove"];
+            const handleMouseUp = {
+                "PdfCanvas.useEffect.handleMouseUp": ()=>{
+                    if (!isPanning.current || !containerRef.current) return;
+                    isPanning.current = false;
+                    if (toolMode === 'move') {
+                        containerRef.current.style.cursor = 'grab';
+                    }
+                }
+            }["PdfCanvas.useEffect.handleMouseUp"];
+            container.addEventListener('mousedown', handleMouseDown);
+            container.addEventListener('mousemove', handleMouseMove);
+            window.addEventListener('mouseup', handleMouseUp);
+            container.addEventListener('mouseleave', handleMouseUp);
+            return ({
+                "PdfCanvas.useEffect": ()=>{
+                    if (container) {
+                        container.removeEventListener('mousedown', handleMouseDown);
+                        container.removeEventListener('mousemove', handleMouseMove);
+                    }
+                    window.removeEventListener('mouseup', handleMouseUp);
+                }
+            })["PdfCanvas.useEffect"];
+        }
+    }["PdfCanvas.useEffect"], [
+        toolMode
+    ]);
     // Load PDF document from file
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
         "PdfCanvas.useEffect": ()=>{
@@ -435,7 +502,6 @@ const PdfCanvas = ({ pdfFile, onTotalPages, onCurrentPageChange, zoom, rotations
                         "PdfCanvas.useEffect.visibleEntries": (e)=>e.isIntersecting
                     }["PdfCanvas.useEffect.visibleEntries"]);
                     if (visibleEntries.length > 0) {
-                        // Find the page that is most visible at the top of the container
                         visibleEntries.sort({
                             "PdfCanvas.useEffect": (a, b)=>a.boundingClientRect.top - b.boundingClientRect.top
                         }["PdfCanvas.useEffect"]);
@@ -454,7 +520,7 @@ const PdfCanvas = ({ pdfFile, onTotalPages, onCurrentPageChange, zoom, rotations
             const renderAllPages = {
                 "PdfCanvas.useEffect.renderAllPages": async ()=>{
                     if (!containerRef.current) return;
-                    containerRef.current.innerHTML = ""; // Clear previous renders
+                    containerRef.current.innerHTML = "";
                     const newPageRefs = [];
                     const availableWidth = containerRef.current.clientWidth - 32;
                     for(let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++){
@@ -479,12 +545,23 @@ const PdfCanvas = ({ pdfFile, onTotalPages, onCurrentPageChange, zoom, rotations
                         pageContainer.appendChild(canvas);
                         containerRef.current.appendChild(pageContainer);
                         newPageRefs[pageNum - 1] = pageContainer;
-                        // Observe the new page container
                         observer.observe(pageContainer);
                         await page.render({
                             canvasContext: ctx,
                             viewport
                         }).promise;
+                    }
+                    if (containerRef.current) {
+                        const firstCanvas = containerRef.current.querySelector('canvas');
+                        if (firstCanvas) {
+                            const containerWidth = containerRef.current.clientWidth;
+                            const canvasWidth = firstCanvas.width;
+                            if (canvasWidth > containerWidth) {
+                                containerRef.current.scrollLeft = (canvasWidth - containerWidth) / 2;
+                            } else {
+                                containerRef.current.scrollLeft = 0;
+                            }
+                        }
                     }
                     pageRefs.current = newPageRefs;
                 }
@@ -523,11 +600,11 @@ const PdfCanvas = ({ pdfFile, onTotalPages, onCurrentPageChange, zoom, rotations
         className: "w-full h-full flex flex-col items-center overflow-auto bg-muted p-4"
     }, void 0, false, {
         fileName: "[project]/src/app/edit-pdf/components/PdfCanvas.tsx",
-        lineNumber: 135,
+        lineNumber: 208,
         columnNumber: 5
     }, this);
 };
-_s(PdfCanvas, "C1Kg8ooNwnIK2GAV/OkrNwM0S4E=");
+_s(PdfCanvas, "mg+WijB5s/fWbF/IvuZomEtu0dA=");
 _c = PdfCanvas;
 const __TURBOPACK__default__export__ = PdfCanvas;
 var _c;
@@ -1396,6 +1473,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$re
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$palette$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Palette$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/palette.js [app-client] (ecmascript) <export default as Palette>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$layout$2d$grid$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__LayoutGrid$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/layout-grid.js [app-client] (ecmascript) <export default as LayoutGrid>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$panel$2d$left$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__PanelLeft$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/panel-left.js [app-client] (ecmascript) <export default as PanelLeft>");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$hand$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Hand$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/hand.js [app-client] (ecmascript) <export default as Hand>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$toggle$2d$group$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/toggle-group.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/button.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$separator$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/separator.tsx [app-client] (ecmascript)");
@@ -1502,10 +1580,10 @@ const Toolbar = ({ currentTool, setTool, color, setColor, onDownload, viewMode, 
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$toggle$2d$group$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ToggleGroupItem"], {
-                                        value: "text",
-                                        "aria-label": "Text tool",
-                                        title: "文字",
-                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$type$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Type$3e$__["Type"], {
+                                        value: "move",
+                                        "aria-label": "Move tool",
+                                        title: "移動",
+                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$hand$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Hand$3e$__["Hand"], {
                                             className: "h-4 w-4"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/components/Toolbar.tsx",
@@ -1518,10 +1596,10 @@ const Toolbar = ({ currentTool, setTool, color, setColor, onDownload, viewMode, 
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$toggle$2d$group$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ToggleGroupItem"], {
-                                        value: "draw",
-                                        "aria-label": "Drawing tool",
-                                        title: "手繪",
-                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$pen$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Pen$3e$__["Pen"], {
+                                        value: "text",
+                                        "aria-label": "Text tool",
+                                        title: "文字",
+                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$type$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Type$3e$__["Type"], {
                                             className: "h-4 w-4"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/components/Toolbar.tsx",
@@ -1534,10 +1612,10 @@ const Toolbar = ({ currentTool, setTool, color, setColor, onDownload, viewMode, 
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$toggle$2d$group$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ToggleGroupItem"], {
-                                        value: "rect",
-                                        "aria-label": "Rectangle tool",
-                                        title: "矩形",
-                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$square$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Square$3e$__["Square"], {
+                                        value: "draw",
+                                        "aria-label": "Drawing tool",
+                                        title: "手繪",
+                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$pen$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Pen$3e$__["Pen"], {
                                             className: "h-4 w-4"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/components/Toolbar.tsx",
@@ -1550,10 +1628,10 @@ const Toolbar = ({ currentTool, setTool, color, setColor, onDownload, viewMode, 
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$toggle$2d$group$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ToggleGroupItem"], {
-                                        value: "circle",
-                                        "aria-label": "Circle tool",
-                                        title: "圓形",
-                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$circle$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Circle$3e$__["Circle"], {
+                                        value: "rect",
+                                        "aria-label": "Rectangle tool",
+                                        title: "矩形",
+                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$square$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Square$3e$__["Square"], {
                                             className: "h-4 w-4"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/components/Toolbar.tsx",
@@ -1566,10 +1644,10 @@ const Toolbar = ({ currentTool, setTool, color, setColor, onDownload, viewMode, 
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$toggle$2d$group$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ToggleGroupItem"], {
-                                        value: "triangle",
-                                        "aria-label": "Triangle tool",
-                                        title: "三角形",
-                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$triangle$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Triangle$3e$__["Triangle"], {
+                                        value: "circle",
+                                        "aria-label": "Circle tool",
+                                        title: "圓形",
+                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$circle$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Circle$3e$__["Circle"], {
                                             className: "h-4 w-4"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/components/Toolbar.tsx",
@@ -1579,6 +1657,22 @@ const Toolbar = ({ currentTool, setTool, color, setColor, onDownload, viewMode, 
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/edit-pdf/components/Toolbar.tsx",
                                         lineNumber: 77,
+                                        columnNumber: 15
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$toggle$2d$group$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ToggleGroupItem"], {
+                                        value: "triangle",
+                                        "aria-label": "Triangle tool",
+                                        title: "三角形",
+                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$triangle$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Triangle$3e$__["Triangle"], {
+                                            className: "h-4 w-4"
+                                        }, void 0, false, {
+                                            fileName: "[project]/src/app/edit-pdf/components/Toolbar.tsx",
+                                            lineNumber: 81,
+                                            columnNumber: 17
+                                        }, this)
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/app/edit-pdf/components/Toolbar.tsx",
+                                        lineNumber: 80,
                                         columnNumber: 15
                                     }, this)
                                 ]
@@ -1592,7 +1686,7 @@ const Toolbar = ({ currentTool, setTool, color, setColor, onDownload, viewMode, 
                                 className: "h-8"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/edit-pdf/components/Toolbar.tsx",
-                                lineNumber: 82,
+                                lineNumber: 85,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1602,7 +1696,7 @@ const Toolbar = ({ currentTool, setTool, color, setColor, onDownload, viewMode, 
                                         className: "h-5 w-5 text-muted-foreground"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/edit-pdf/components/Toolbar.tsx",
-                                        lineNumber: 85,
+                                        lineNumber: 88,
                                         columnNumber: 15
                                     }, this),
                                     colors.map((c)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1614,7 +1708,7 @@ const Toolbar = ({ currentTool, setTool, color, setColor, onDownload, viewMode, 
                                             title: c
                                         }, c, false, {
                                             fileName: "[project]/src/app/edit-pdf/components/Toolbar.tsx",
-                                            lineNumber: 87,
+                                            lineNumber: 90,
                                             columnNumber: 17
                                         }, this)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -1627,13 +1721,13 @@ const Toolbar = ({ currentTool, setTool, color, setColor, onDownload, viewMode, 
                                         }
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/edit-pdf/components/Toolbar.tsx",
-                                        lineNumber: 95,
+                                        lineNumber: 98,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/edit-pdf/components/Toolbar.tsx",
-                                lineNumber: 84,
+                                lineNumber: 87,
                                 columnNumber: 13
                             }, this)
                         ]
@@ -1652,19 +1746,19 @@ const Toolbar = ({ currentTool, setTool, color, setColor, onDownload, viewMode, 
                             className: "mr-2 h-4 w-4"
                         }, void 0, false, {
                             fileName: "[project]/src/app/edit-pdf/components/Toolbar.tsx",
-                            lineNumber: 109,
+                            lineNumber: 112,
                             columnNumber: 11
                         }, this),
                         "下載 PDF"
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/edit-pdf/components/Toolbar.tsx",
-                    lineNumber: 108,
+                    lineNumber: 111,
                     columnNumber: 10
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/components/Toolbar.tsx",
-                lineNumber: 107,
+                lineNumber: 110,
                 columnNumber: 7
             }, this)
         ]
@@ -1918,7 +2012,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$a
 ;
 const FloatingToolbar = ({ zoom, onZoomChange, onRotate, onDelete, canDelete })=>{
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-        className: "absolute bottom-4 left-1/2 -translate-x-1/2 z-20",
+        className: "fixed bottom-4 left-1/2 -translate-x-1/2 z-20",
         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
             className: "flex items-center gap-4 bg-card p-2 rounded-lg shadow-lg border",
             children: [
@@ -1934,12 +2028,12 @@ const FloatingToolbar = ({ zoom, onZoomChange, onRotate, onDelete, canDelete })=
                                 className: "h-5 w-5"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/edit-pdf/components/FloatingToolbar.tsx",
-                                lineNumber: 50,
+                                lineNumber: 51,
                                 columnNumber: 13
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/app/edit-pdf/components/FloatingToolbar.tsx",
-                            lineNumber: 44,
+                            lineNumber: 45,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1955,7 +2049,7 @@ const FloatingToolbar = ({ zoom, onZoomChange, onRotate, onDelete, canDelete })=
                                     step: 0.1
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/components/FloatingToolbar.tsx",
-                                    lineNumber: 53,
+                                    lineNumber: 54,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1966,13 +2060,13 @@ const FloatingToolbar = ({ zoom, onZoomChange, onRotate, onDelete, canDelete })=
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/edit-pdf/components/FloatingToolbar.tsx",
-                                    lineNumber: 60,
+                                    lineNumber: 61,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/edit-pdf/components/FloatingToolbar.tsx",
-                            lineNumber: 52,
+                            lineNumber: 53,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -1984,18 +2078,18 @@ const FloatingToolbar = ({ zoom, onZoomChange, onRotate, onDelete, canDelete })=
                                 className: "h-5 w-5"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/edit-pdf/components/FloatingToolbar.tsx",
-                                lineNumber: 70,
+                                lineNumber: 71,
                                 columnNumber: 13
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/app/edit-pdf/components/FloatingToolbar.tsx",
-                            lineNumber: 64,
+                            lineNumber: 65,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/edit-pdf/components/FloatingToolbar.tsx",
-                    lineNumber: 43,
+                    lineNumber: 44,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2010,12 +2104,12 @@ const FloatingToolbar = ({ zoom, onZoomChange, onRotate, onDelete, canDelete })=
                                 className: "h-5 w-5"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/edit-pdf/components/FloatingToolbar.tsx",
-                                lineNumber: 81,
+                                lineNumber: 82,
                                 columnNumber: 13
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/app/edit-pdf/components/FloatingToolbar.tsx",
-                            lineNumber: 75,
+                            lineNumber: 76,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -2027,18 +2121,18 @@ const FloatingToolbar = ({ zoom, onZoomChange, onRotate, onDelete, canDelete })=
                                 className: "h-5 w-5"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/edit-pdf/components/FloatingToolbar.tsx",
-                                lineNumber: 89,
+                                lineNumber: 90,
                                 columnNumber: 13
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/app/edit-pdf/components/FloatingToolbar.tsx",
-                            lineNumber: 83,
+                            lineNumber: 84,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/edit-pdf/components/FloatingToolbar.tsx",
-                    lineNumber: 74,
+                    lineNumber: 75,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialog"], {
@@ -2054,17 +2148,17 @@ const FloatingToolbar = ({ zoom, onZoomChange, onRotate, onDelete, canDelete })=
                                     className: "h-5 w-5"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/edit-pdf/components/FloatingToolbar.tsx",
-                                    lineNumber: 101,
+                                    lineNumber: 102,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/edit-pdf/components/FloatingToolbar.tsx",
-                                lineNumber: 95,
+                                lineNumber: 96,
                                 columnNumber: 13
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/app/edit-pdf/components/FloatingToolbar.tsx",
-                            lineNumber: 94,
+                            lineNumber: 95,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogContent"], {
@@ -2075,20 +2169,20 @@ const FloatingToolbar = ({ zoom, onZoomChange, onRotate, onDelete, canDelete })=
                                             children: "您確定嗎？"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/components/FloatingToolbar.tsx",
-                                            lineNumber: 106,
+                                            lineNumber: 107,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogDescription"], {
                                             children: "這個操作無法復原。這將會永久地從文件中刪除目前的頁面。"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/components/FloatingToolbar.tsx",
-                                            lineNumber: 107,
+                                            lineNumber: 108,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/edit-pdf/components/FloatingToolbar.tsx",
-                                    lineNumber: 105,
+                                    lineNumber: 106,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogFooter"], {
@@ -2097,7 +2191,7 @@ const FloatingToolbar = ({ zoom, onZoomChange, onRotate, onDelete, canDelete })=
                                             children: "取消"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/components/FloatingToolbar.tsx",
-                                            lineNumber: 112,
+                                            lineNumber: 113,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogAction"], {
@@ -2105,36 +2199,36 @@ const FloatingToolbar = ({ zoom, onZoomChange, onRotate, onDelete, canDelete })=
                                             children: "繼續"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/edit-pdf/components/FloatingToolbar.tsx",
-                                            lineNumber: 113,
+                                            lineNumber: 114,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/edit-pdf/components/FloatingToolbar.tsx",
-                                    lineNumber: 111,
+                                    lineNumber: 112,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/edit-pdf/components/FloatingToolbar.tsx",
-                            lineNumber: 104,
+                            lineNumber: 105,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/edit-pdf/components/FloatingToolbar.tsx",
-                    lineNumber: 93,
+                    lineNumber: 94,
                     columnNumber: 9
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/src/app/edit-pdf/components/FloatingToolbar.tsx",
-            lineNumber: 42,
+            lineNumber: 43,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/src/app/edit-pdf/components/FloatingToolbar.tsx",
-        lineNumber: 41,
+        lineNumber: 42,
         columnNumber: 5
     }, this);
 };
@@ -2584,7 +2678,8 @@ const PdfEditor = ()=>{
                                 zoom: zoom,
                                 rotations: rotations,
                                 scrollToPage: scrollToPage,
-                                onScrollComplete: handleScrollComplete
+                                onScrollComplete: handleScrollComplete,
+                                toolMode: toolMode
                             }, void 0, false, {
                                 fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
                                 lineNumber: 260,
@@ -2603,7 +2698,7 @@ const PdfEditor = ()=>{
                             canDelete: totalPages > 1
                         }, void 0, false, {
                             fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                            lineNumber: 271,
+                            lineNumber: 272,
                             columnNumber: 13
                         }, this)
                     ]
@@ -2634,12 +2729,12 @@ const PdfEditor = ()=>{
                     setViewMode: setViewMode
                 }, void 0, false, {
                     fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                    lineNumber: 288,
+                    lineNumber: 289,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                lineNumber: 287,
+                lineNumber: 288,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2647,13 +2742,13 @@ const PdfEditor = ()=>{
                 children: renderContent()
             }, void 0, false, {
                 fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-                lineNumber: 298,
+                lineNumber: 299,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/edit-pdf/components/PdfEditor.tsx",
-        lineNumber: 286,
+        lineNumber: 287,
         columnNumber: 5
     }, this);
 };

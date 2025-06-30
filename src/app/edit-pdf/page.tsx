@@ -104,7 +104,7 @@ export default function EditPdfPage() {
   return (
     <div className="flex flex-col h-screen bg-background">
        <header className="p-0 border-b bg-card sticky top-0 z-40 flex-shrink-0">
-        <div className="container mx-auto flex justify-between items-center h-16">
+        <div className="container flex justify-between items-center h-16 px-6">
             <div className="flex items-center gap-6">
                 <h1 className="text-xl font-bold text-primary flex items-center cursor-pointer" onClick={() => router.push('/')}>
                     <MenuSquare className="mr-2 h-6 w-6"/> {texts.appTitle}

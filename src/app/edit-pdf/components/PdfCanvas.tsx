@@ -2,7 +2,12 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
+import * as pdfjsLib from "pdfjs-dist/build/pdf";
+import { fabric } from "fabric";
+import { v4 as uuidv4 } from 'uuid';
 import type { Tool } from "./Toolbar";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 interface PdfCanvasProps {
   pdfFile: File | null;
@@ -13,6 +18,11 @@ interface PdfCanvasProps {
   scrollToPage: number | null;
   onScrollComplete: () => void;
   toolMode: Tool;
+  color: string;
+  activeObject: fabric.Object | null;
+  setActiveObject: (obj: fabric.Object | null) => void;
+  isTextEditing: boolean;
+  setIsTextEditing: (obj: fabric.Object) => void;
 }
 
 const PdfCanvas: React.FC<PdfCanvasProps> = ({
@@ -24,13 +34,208 @@ const PdfCanvas: React.FC<PdfCanvasProps> = ({
   scrollToPage,
   onScrollComplete,
   toolMode,
+  color,
+  setActiveObject,
+  setIsTextEditing,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const fabricCanvasRefs = useRef<fabric.Canvas[]>([]);
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const [pdfDoc, setPdfDoc] = useState<any>(null);
-  
+  const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
+
   const isPanning = useRef(false);
   const panStart = useRef({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
+  const textDrawing = useRef<{
+    isDrawing: boolean;
+    startX: number;
+    startY: number;
+    rect: fabric.Rect | null;
+  }>({ isDrawing: false, startX: 0, startY: 0, rect: null });
+
+  // Load PDF document
+  useEffect(() => {
+    if (!pdfFile) {
+      fabricCanvasRefs.current.forEach(canvas => canvas.dispose());
+      fabricCanvasRefs.current = [];
+      pageRefs.current = [];
+      if (containerRef.current) containerRef.current.innerHTML = "";
+      setPdfDoc(null);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const data = new Uint8Array(reader.result as ArrayBuffer);
+      try {
+        const doc = await pdfjsLib.getDocument({ data }).promise;
+        setPdfDoc(doc);
+        onTotalPages(doc.numPages);
+      } catch (error) {
+        console.error("Error loading PDF document:", error);
+      }
+    };
+    reader.readAsArrayBuffer(pdfFile);
+  }, [pdfFile, onTotalPages]);
+
+  // Render all pages and set up observers
+  useEffect(() => {
+    if (!pdfDoc || !containerRef.current) return;
+
+    const intersectionObserver = new IntersectionObserver(
+      (entries) => {
+        const visibleEntries = entries.filter((e) => e.isIntersecting);
+        if (visibleEntries.length > 0) {
+          visibleEntries.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+          const topVisiblePage = visibleEntries[0];
+          const pageNum = Number((topVisiblePage.target as HTMLElement).dataset.pageNumber);
+          if (pageNum) onCurrentPageChange(pageNum);
+        }
+      },
+      { root: containerRef.current, rootMargin: "-50% 0px -50% 0px", threshold: 0 }
+    );
+    
+    // Cleanup old canvases
+    fabricCanvasRefs.current.forEach(canvas => canvas.dispose());
+    fabricCanvasRefs.current = [];
+    pageRefs.current = [];
+
+    const renderAllPages = async () => {
+      if (!containerRef.current) return;
+      containerRef.current.innerHTML = "";
+
+      const availableWidth = containerRef.current.clientWidth - 32;
+
+      for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+        const page = await pdfDoc.getPage(pageNum);
+        const rotation = rotations[pageNum] || 0;
+        
+        const unrotatedViewport = page.getViewport({ scale: 1 });
+        const scaleToFit = availableWidth / unrotatedViewport.width;
+        const viewport = page.getViewport({ scale: scaleToFit * zoom, rotation });
+        
+        const pageContainer = document.createElement("div");
+        pageContainer.className = "relative mb-4 bg-background shadow-md";
+        pageContainer.dataset.pageNumber = String(pageNum);
+
+        const pdfCanvasEl = document.createElement("canvas");
+        const fabricCanvasEl = document.createElement("canvas");
+        fabricCanvasEl.className = "absolute top-0 left-0";
+        
+        pageContainer.append(pdfCanvasEl, fabricCanvasEl);
+        containerRef.current.appendChild(pageContainer);
+        
+        pdfCanvasEl.width = viewport.width;
+        pdfCanvasEl.height = viewport.height;
+        fabricCanvasEl.width = viewport.width;
+        fabricCanvasEl.height = viewport.height;
+        
+        const pdfCtx = pdfCanvasEl.getContext("2d");
+        if (pdfCtx) {
+            await page.render({ canvasContext: pdfCtx, viewport }).promise;
+        }
+
+        const fabricCanvas = new fabric.Canvas(fabricCanvasEl, {
+            selection: toolMode === 'select',
+            isDrawingMode: toolMode === 'draw',
+        });
+        
+        fabricCanvas.freeDrawingBrush.color = color;
+        fabricCanvas.freeDrawingBrush.width = 5;
+        fabricCanvas.setCursor(toolMode === 'text' ? 'crosshair' : 'default');
+
+        fabricCanvasRefs.current[pageNum-1] = fabricCanvas;
+        pageRefs.current[pageNum-1] = pageContainer;
+
+        addFabricEventListeners(fabricCanvas);
+
+        intersectionObserver.observe(pageContainer);
+      }
+    };
+    renderAllPages();
+
+    return () => {
+      intersectionObserver.disconnect();
+    };
+  }, [pdfDoc, zoom, rotations, toolMode, color]); // Re-render on tool/color change
+
+  const addFabricEventListeners = (canvas: fabric.Canvas) => {
+    canvas.on('mouse:down', (o) => {
+        if (toolMode !== 'text' || !o.pointer) return;
+        textDrawing.current.isDrawing = true;
+        textDrawing.current.startX = o.pointer.x;
+        textDrawing.current.startY = o.pointer.y;
+
+        textDrawing.current.rect = new fabric.Rect({
+            left: o.pointer.x,
+            top: o.pointer.y,
+            width: 0,
+            height: 0,
+            stroke: 'rgba(100, 200, 200, 0.5)',
+            strokeWidth: 1,
+            fill: 'rgba(100, 200, 200, 0.1)',
+            selectable: false,
+        });
+        canvas.add(textDrawing.current.rect);
+    });
+
+    canvas.on('mouse:move', (o) => {
+        if (!textDrawing.current.isDrawing || !o.pointer || !textDrawing.current.rect) return;
+        const { startX, startY } = textDrawing.current;
+        let left = startX;
+        let top = startY;
+        let width = o.pointer.x - startX;
+        let height = o.pointer.y - startY;
+
+        if (width < 0) { left = o.pointer.x; width = -width; }
+        if (height < 0) { top = o.pointer.y; height = -height; }
+        
+        textDrawing.current.rect.set({ left, top, width, height });
+        canvas.requestRenderAll();
+    });
+
+    canvas.on('mouse:up', (o) => {
+        if (!textDrawing.current.isDrawing || !o.pointer || !textDrawing.current.rect) return;
+        const { left, top, width, height } = textDrawing.current.rect;
+        
+        canvas.remove(textDrawing.current.rect);
+        textDrawing.current.isDrawing = false;
+        textDrawing.current.rect = null;
+
+        if (width > 5 && height > 5) {
+            const newText = new fabric.IText('點擊編輯', {
+                left: left,
+                top: top,
+                width: width,
+                height: height,
+                fill: color,
+                fontSize: 20,
+                fontFamily: 'Arial',
+                name: `text_${uuidv4()}`
+            });
+            canvas.add(newText);
+            canvas.setActiveObject(newText);
+        }
+        canvas.requestRenderAll();
+    });
+
+    canvas.on('selection:created', (e) => setActiveObject(e.selected ? e.selected[0] : null));
+    canvas.on('selection:updated', (e) => setActiveObject(e.selected ? e.selected[0] : null));
+    canvas.on('selection:cleared', () => setActiveObject(null));
+    
+    canvas.on('mouse:dblclick', (o) => {
+        if (o.target && o.target.type === 'i-text') {
+            setIsTextEditing(o.target);
+            o.target.enterEditing();
+        }
+    });
+  };
+
+  // Scroll to a specific page
+  useEffect(() => {
+    if (scrollToPage && pageRefs.current[scrollToPage - 1]) {
+      pageRefs.current[scrollToPage - 1]?.scrollIntoView({ behavior: "smooth", block: "start" });
+      onScrollComplete();
+    }
+  }, [scrollToPage, onScrollComplete]);
 
   // Panning logic
   useEffect(() => {
@@ -45,6 +250,7 @@ const PdfCanvas: React.FC<PdfCanvasProps> = ({
 
     const handleMouseDown = (e: MouseEvent) => {
       if (toolMode !== 'move' || !containerRef.current) return;
+      if ((e.target as HTMLElement).tagName.toLowerCase() === 'canvas') return;
       isPanning.current = true;
       containerRef.current.style.cursor = 'grabbing';
       panStart.current = {
@@ -68,16 +274,13 @@ const PdfCanvas: React.FC<PdfCanvasProps> = ({
     const handleMouseUp = () => {
       if (!isPanning.current || !containerRef.current) return;
       isPanning.current = false;
-      if (toolMode === 'move') {
-        containerRef.current.style.cursor = 'grab';
-      }
+      if (toolMode === 'move') containerRef.current.style.cursor = 'grab';
     };
     
     container.addEventListener('mousedown', handleMouseDown);
     container.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
     container.addEventListener('mouseleave', handleMouseUp);
-
 
     return () => {
       if (container) {
@@ -88,121 +291,18 @@ const PdfCanvas: React.FC<PdfCanvasProps> = ({
     };
   }, [toolMode]);
 
-  // Load PDF document from file
+  // Center canvas on zoom
   useEffect(() => {
-    if (!pdfFile) {
-      setPdfDoc(null);
-      pageRefs.current = [];
-      if (containerRef.current) containerRef.current.innerHTML = "";
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const pdfjsLib = await import("pdfjs-dist/build/pdf");
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
-      
-      const data = new Uint8Array(reader.result as ArrayBuffer);
-      try {
-        const doc = await pdfjsLib.getDocument({ data }).promise;
-        setPdfDoc(doc);
-        onTotalPages(doc.numPages);
-      } catch (error) {
-        console.error("Error loading PDF document:", error);
-      }
-    };
-    reader.readAsArrayBuffer(pdfFile);
-  }, [pdfFile, onTotalPages]);
-
-  // Render all pages and set up IntersectionObserver
-  useEffect(() => {
-    if (!pdfDoc || !containerRef.current || !pdfFile) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visibleEntries = entries.filter((e) => e.isIntersecting);
-        if (visibleEntries.length > 0) {
-          visibleEntries.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-          const topVisiblePage = visibleEntries[0];
-          const pageNum = Number((topVisiblePage.target as HTMLElement).dataset.pageNumber);
-          if (pageNum) {
-            onCurrentPageChange(pageNum);
-          }
-        }
-      },
-      {
-        root: containerRef.current,
-        rootMargin: "-50% 0px -50% 0px",
-        threshold: 0,
-      }
-    );
-
-    const renderAllPages = async () => {
       if (!containerRef.current) return;
-      containerRef.current.innerHTML = "";
-      const newPageRefs: (HTMLDivElement | null)[] = [];
-
-      const availableWidth = containerRef.current.clientWidth - 32;
-
-      for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
-        const page = await pdfDoc.getPage(pageNum);
-        const rotation = rotations[pageNum] || 0;
-        
-        const unrotatedViewport = page.getViewport({ scale: 1 });
-        const scaleToFit = availableWidth / unrotatedViewport.width;
-        const viewport = page.getViewport({ scale: scaleToFit * zoom, rotation });
-
-        const pageContainer = document.createElement("div");
-        pageContainer.className = "mb-4 bg-background shadow-md";
-        pageContainer.dataset.pageNumber = String(pageNum);
-        
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-        if (!ctx) continue;
-        
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        
-        pageContainer.appendChild(canvas);
-        containerRef.current.appendChild(pageContainer);
-        newPageRefs[pageNum - 1] = pageContainer;
-
-        observer.observe(pageContainer);
-        
-        await page.render({ canvasContext: ctx, viewport }).promise;
+      const containerWidth = containerRef.current.clientWidth;
+      const contentWidth = containerRef.current.scrollWidth;
+      if (contentWidth > containerWidth) {
+          containerRef.current.scrollLeft = (contentWidth - containerWidth) / 2;
+      } else {
+          containerRef.current.scrollLeft = 0;
       }
-      
-      if (containerRef.current) {
-          const firstCanvas = containerRef.current.querySelector('canvas');
-          if (firstCanvas) {
-              const containerWidth = containerRef.current.clientWidth;
-              const canvasWidth = firstCanvas.width;
-              if (canvasWidth > containerWidth) {
-                  containerRef.current.scrollLeft = (canvasWidth - containerWidth) / 2;
-              } else {
-                  containerRef.current.scrollLeft = 0;
-              }
-          }
-      }
-      pageRefs.current = newPageRefs;
-    };
+  }, [zoom]);
 
-    renderAllPages();
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [pdfDoc, zoom, rotations, pdfFile, onCurrentPageChange]);
-
-  // Scroll to a specific page when requested
-  useEffect(() => {
-    if (scrollToPage && pageRefs.current[scrollToPage - 1]) {
-      pageRefs.current[scrollToPage - 1]?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-      onScrollComplete();
-    }
-  }, [scrollToPage, onScrollComplete]);
 
   return (
     <div

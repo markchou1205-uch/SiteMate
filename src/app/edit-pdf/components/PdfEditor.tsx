@@ -1,13 +1,15 @@
 
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { PDFDocument } from 'pdf-lib';
+import type { fabric } from 'fabric';
 import PdfCanvas from "./PdfCanvas";
 import Sidebar from "./Sidebar";
 import Toolbar, { type Tool } from "./Toolbar";
 import FloatingToolbar from "./FloatingToolbar";
 import ReorderView from "./ReorderView";
+import TextToolbar from "./TextToolbar";
 
 type ViewMode = 'edit' | 'reorder';
 
@@ -16,7 +18,7 @@ const PdfEditor = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [toolMode, setToolMode] = useState<Tool>("select");
-  const [color, setColor] = useState("#000000");
+  const [color, setColor] = useState("#ef4444");
   
   const [zoom, setZoom] = useState(1);
   const [rotations, setRotations] = useState<{ [key: number]: number }>({});
@@ -25,6 +27,11 @@ const PdfEditor = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('edit');
   const [thumbnails, setThumbnails] = useState<string[]>([]);
   const [isLoadingThumbnails, setIsLoadingThumbnails] = useState(false);
+
+  const [activeObject, setActiveObject] = useState<fabric.Object | null>(null);
+  const [isTextEditing, setIsTextEditing] = useState(false);
+  const pdfEditorRef = useRef<HTMLDivElement>(null);
+
 
   const generateThumbnails = useCallback(async (file: File) => {
     if (!file) {
@@ -49,7 +56,7 @@ const PdfEditor = () => {
             const pageRotations = rotations[i] || 0;
             
             const originalViewport = page.getViewport({ scale: 1, rotation: pageRotations });
-            const fixedWidth = 150;
+            const fixedWidth = 200; // Increased thumbnail resolution
             const viewport = page.getViewport({ scale: fixedWidth / originalViewport.width, rotation: pageRotations });
 
             const canvas = document.createElement("canvas");
@@ -90,6 +97,8 @@ const PdfEditor = () => {
     setZoom(1);
     setRotations({});
     setViewMode('edit');
+    setActiveObject(null);
+    setIsTextEditing(false);
   };
   
   const handleDownload = () => {
@@ -224,6 +233,20 @@ const PdfEditor = () => {
     
     setPdfFile(newPdfFile);
   };
+  
+   const handleActiveObjectUpdate = useCallback((obj: fabric.Object | null) => {
+    setActiveObject(obj);
+    if (!obj) {
+      setIsTextEditing(false);
+    }
+  }, []);
+
+  const handleTextEditEnter = useCallback((obj: fabric.Object) => {
+    if (obj.type === 'i-text') {
+      setActiveObject(obj);
+      setIsTextEditing(true);
+    }
+  }, []);
 
   const renderContent = () => {
     if (!pdfFile) {
@@ -245,7 +268,7 @@ const PdfEditor = () => {
 
     return (
       <div className="flex w-full h-full">
-        <div className="w-[15%] flex-shrink-0 bg-card border-r">
+        <div className="w-[20%] flex-shrink-0 bg-card border-r">
           <Sidebar
             currentPage={currentPage}
             onPageClick={handlePageSelect}
@@ -255,7 +278,7 @@ const PdfEditor = () => {
             isLoading={isLoadingThumbnails}
           />
         </div>
-        <div className="flex-grow flex flex-col relative">
+        <div className="flex-grow flex flex-col relative" ref={pdfEditorRef}>
           <div className="flex-grow bg-background shadow-inner overflow-hidden">
             <PdfCanvas
               pdfFile={pdfFile}
@@ -266,8 +289,19 @@ const PdfEditor = () => {
               scrollToPage={scrollToPage}
               onScrollComplete={handleScrollComplete}
               toolMode={toolMode}
+              color={color}
+              activeObject={activeObject}
+              setActiveObject={handleActiveObjectUpdate}
+              isTextEditing={isTextEditing}
+              setIsTextEditing={handleTextEditEnter}
             />
           </div>
+           {isTextEditing && activeObject && (
+            <TextToolbar
+                activeObject={activeObject}
+                editorRef={pdfEditorRef}
+            />
+           )}
           {pdfFile && (
             <FloatingToolbar
               zoom={zoom}

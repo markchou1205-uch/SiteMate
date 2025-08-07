@@ -8,110 +8,17 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarSub, MenubarSubContent, MenubarSubTrigger, MenubarTrigger } from "@/components/ui/menubar";
-import { Loader2, Upload, Scissors, Download, FilePlus, LogIn, LogOut, UserCircle, MenuSquare, ArrowRightLeft, Edit, FileUp, ListOrdered, Trash2, Combine, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText, Sparkles } from 'lucide-react';
+import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSub, MenubarSubContent, MenubarSubTrigger, MenubarTrigger } from "@/components/ui/menubar";
+import { Upload, Scissors, Download, FilePlus, LogIn, LogOut, UserCircle, ArrowRightLeft, Edit, FileUp, ListOrdered, Trash2, Combine, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText, Sparkles, ShieldCheck } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader as ShadAlertDialogHeader, AlertDialogTitle as ShadAlertDialogTitle } from "@/components/ui/alert-dialog";
+import Logo from '@/components/ui/Logo';
+import { translations } from '@/lib/translations';
+import LoadingState from '@/components/ui/LoadingState';
+import SuccessState from '@/components/ui/SuccessState';
 
-const translations = {
-  en: {
-    pageTitle: 'PDF to PowerPoint',
-    pageDescription: 'Convert your PDF into an editable PowerPoint presentation.',
-    startTitle: 'Upload PDF to Convert to PowerPoint',
-    startDescription: 'Select a PDF file to begin the conversion process.',
-    uploadButton: 'Click or drag a file here to upload',
-    convertButton: 'Convert to PowerPoint',
-    convertingMessage: 'Processing...',
-    conversionSuccess: 'Conversion Complete',
-    conversionSuccessDesc: (filename: string) => `${filename} has been downloaded successfully.`,
-    conversionError: 'Conversion failed',
-    timeoutErrorDesc: 'The request timed out. Please try again.',
-    appTitle: 'Pdf Solution',
-    loggedInAs: 'Logged in as User',
-    login: 'Login',
-    logout: 'Logout',
-    guest: 'Guest',
-    comingSoon: 'Coming Soon!',
-    featureNotImplemented: 'feature is not yet implemented.',
-    pdfEditMenu: 'PDF Edit',
-    pdfConvertMenu: 'PDF Convert',
-    mergePdf: 'Merge PDF',
-    splitPdf: 'Split PDF',
-    deletePdfPages: 'Delete Pages',
-    extractPdfPages: 'Extract Pages',
-    reorderPdfPages: 'Reorder Pages',
-    addWatermark: 'Add Watermark',
-    convertToPdf: 'Convert to PDF',
-    convertFromPdf: 'Convert from PDF',
-    wordToPdf: 'WORD to PDF',
-    excelToPdf: 'EXCEL to PDF',
-    pptToPdf: 'PPT to PDF',
-    htmlToPdf: 'HTML to PDF',
-    jpgToPdf: 'JPG to Image',
-    pdfToWord: 'PDF to WORD',
-    pdfToExcel: 'PDF to EXCEL',
-    pdfToPpt: 'PDF to PPT',
-    pdfToHtml: 'PDF to HTML',
-    pdfToJpg: 'PDF to Image',
-    pdfToOcr: 'PDF with OCR',
-    noFileSelected: 'Please select a file to convert.',
-    invalidFileError: 'Invalid File Detected',
-    invalidFileErrorDesc: 'The selected file was not a valid PDF.',
-    proMode: 'Professional Mode',
-    cancel: 'Cancel',
-    confirm: 'Confirm',
-    convertLimitTitle: 'Conversion Limit Reached',
-    convertLimitDescription: 'Your free conversion for today has been used. Register to get 3 conversions daily.',
-  },
-  zh: {
-    pageTitle: 'PDF 轉 PowerPoint',
-    pageDescription: '將您的 PDF 檔案轉換為可編輯的 PowerPoint 簡報。',
-    startTitle: '上傳 PDF 以轉換為 PowerPoint',
-    startDescription: '選擇一個 PDF 檔案以開始轉換流程。',
-    uploadButton: '點擊或拖曳檔案到此處以上傳',
-    convertButton: '轉換為 PowerPoint',
-    convertingMessage: '處理中...',
-    conversionSuccess: '轉換完成',
-    conversionSuccessDesc: (filename: string) => `${filename} 已成功下載。`,
-    conversionError: '轉換失敗',
-    timeoutErrorDesc: '請求逾時，請再試一次。',
-    appTitle: 'Pdf Solution',
-    loggedInAs: '已登入為使用者',
-    login: '登入',
-    logout: '登出',
-    guest: '訪客',
-    comingSoon: '即將推出！',
-    featureNotImplemented: '功能尚未實現。',
-    pdfEditMenu: 'PDF編輯',
-    pdfConvertMenu: 'PDF轉換',
-    mergePdf: '合併PDF',
-    splitPdf: '拆分PDF',
-    deletePdfPages: '刪除頁面',
-    extractPdfPages: '擷取頁面',
-    reorderPdfPages: '變換順序',
-    addWatermark: '添加浮水印',
-    convertToPdf: '轉換為PDF',
-    convertFromPdf: '從PDF轉換',
-    wordToPdf: 'WORD轉PDF',
-    excelToPdf: 'EXCEL轉PDF',
-    pptToPdf: 'PPT轉PDF',
-    htmlToPdf: 'HTML轉PDF',
-    jpgToPdf: 'JPG轉PDF',
-    pdfToWord: 'PDF轉WORD',
-    pdfToExcel: 'PDF轉EXCEL',
-    pdfToPpt: 'PDF轉PPT',
-    pdfToHtml: 'PDF轉HTML',
-    pdfToJpg: 'PDF轉圖片',
-    pdfToOcr: 'PDF光學掃描(OCR)',
-    noFileSelected: '請選取一個要轉換的檔案。',
-    invalidFileError: '偵測到無效檔案',
-    invalidFileErrorDesc: '選取的檔案不是有效的 PDF。',
-    proMode: '專業模式',
-    cancel: '取消',
-    confirm: '確認',
-    convertLimitTitle: '轉檔次數已用完',
-    convertLimitDescription: '您今日的免費轉檔次數已用完，註冊即可獲得每日 3 次轉換。',
-  },
-};
+
+type ViewState = 'idle' | 'loading' | 'success';
+
 
 export default function PdfToPptPage() {
   const router = useRouter();
@@ -122,12 +29,16 @@ export default function PdfToPptPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [isGuestLimitModalOpen, setIsGuestLimitModalOpen] = useState(false);
   const [guestLimitModalContent, setGuestLimitModalContent] = useState({ title: '', description: '' });
   
   const fileUploadRef = useRef<HTMLInputElement>(null);
-  const format = 'ppt'; // Hardcoded format
+
+  const [viewState, setViewState] = useState<ViewState>('idle');
+  const [progress, setProgress] = useState(0);
+  const [loadingMessage, setLoadingMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setTexts(translations[currentLanguage] || translations.en);
@@ -160,13 +71,6 @@ export default function PdfToPptPage() {
     toast({ title: texts.logout, description: currentLanguage === 'zh' ? "您已成功登出。" : "You have been logged out successfully." });
   };
   
-  const handlePlaceholderClick = (featureName: string) => {
-    toast({
-        title: texts.comingSoon,
-        description: `${featureName} ${texts.featureNotImplemented}`
-    });
-  };
-
   const checkAndDecrementQuota = useCallback((): boolean => {
       if (isLoggedIn || typeof window === 'undefined') {
         return true;
@@ -206,11 +110,52 @@ export default function PdfToPptPage() {
       }
     }
   };
+  
+  const resetPage = () => {
+    setViewState('idle');
+    setProgress(0);
+    setLoadingMessage('');
+    setSuccessMessage('');
+    setSelectedFile(null);
+    if (fileUploadRef.current) fileUploadRef.current.value = '';
+  };
+
+  const handleStartLoading = (message: string) => {
+    setLoadingMessage(message);
+    setViewState('loading');
+    setProgress(0);
+    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+    progressIntervalRef.current = setInterval(() => {
+        setProgress(prev => {
+            if (prev >= 95) {
+                if(progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+                return prev;
+            }
+            return prev + 5;
+        });
+    }, 200);
+  };
+
+  const handleSuccess = (message: string) => {
+    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+    setProgress(100);
+    setTimeout(() => {
+        setSuccessMessage(message);
+        setViewState('success');
+    }, 300);
+  };
+
+  const handleError = (message: string) => {
+    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+    resetPage();
+    toast({ title: texts.conversionError, description: message, variant: "destructive" });
+  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedFile) {
-        toast({ title: texts.conversionError, description: texts.noFileSelected, variant: 'destructive'});
+        toast({ title: texts.noFileSelected, variant: 'destructive'});
         return;
     }
     
@@ -218,15 +163,10 @@ export default function PdfToPptPage() {
       return;
     }
 
-    setIsLoading(true);
+    handleStartLoading(texts.convertingMessage(selectedFile.name));
     const formData = new FormData();
     formData.append("file", selectedFile);
-    formData.append("format", format);
-    formData.append("output_dir", "./");
-
-    for (let pair of formData.entries()) {
-      console.log('🧪 FormData:', pair[0], pair[1]);
-    }
+    formData.append("format", "ppt");
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
@@ -244,7 +184,7 @@ export default function PdfToPptPage() {
         let errorMessage = `Conversion failed with status: ${response.status}`;
         try {
             const error = await clonedResponse.json();
-            errorMessage = String(error.error || "An unknown server error occurred.");
+            errorMessage = String(error.detail || error.error || "An unknown server error occurred.");
         } catch (e) {
              try {
                 const errorText = await clonedResponse.text();
@@ -276,34 +216,69 @@ export default function PdfToPptPage() {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
 
-      toast({ 
-        title: texts.conversionSuccess,
-        description: texts.conversionSuccessDesc(downloadFilename)
-      });
-      setSelectedFile(null);
-      if(fileUploadRef.current) fileUploadRef.current.value = '';
+      handleSuccess(texts.conversionSuccessDesc(downloadFilename));
 
     } catch (err: any) {
       clearTimeout(timeoutId);
       if (err.name === 'AbortError') {
-          toast({ title: texts.conversionError, description: texts.timeoutErrorDesc, variant: "destructive" });
+          handleError(texts.timeoutErrorDesc);
       } else {
-          toast({ title: texts.conversionError, description: err.message, variant: "destructive" });
+          handleError(err.message);
       }
-    } finally {
-      setIsLoading(false);
+    }
+  };
+  
+  const renderContent = () => {
+    switch(viewState) {
+        case 'loading':
+            return <LoadingState message={loadingMessage} progress={progress} />;
+        case 'success':
+            return <SuccessState message={successMessage} onGoHome={() => router.push('/')} onStartNew={resetPage} texts={texts} />;
+        case 'idle':
+        default:
+            return (
+              <Card className="max-w-2xl w-full mx-auto">
+                <CardHeader className="text-center">
+                    <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4">
+                        <LucidePresentation className="h-10 w-10 text-primary" />
+                    </div>
+                    <CardTitle>{texts.pdfToPptTitle}</CardTitle>
+                    <CardDescription>{texts.pdfToPptDescription}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    <div 
+                      className="flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20"
+                      onClick={() => fileUploadRef.current?.click()}
+                    >
+                        <Upload className="h-12 w-12 text-muted-foreground mb-3" />
+                        <p className="text-md text-muted-foreground text-center">
+                          {selectedFile ? selectedFile.name : texts.uploadButton}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">{texts.uploadHint(isLoggedIn)}</p>
+                        <Input
+                            type="file"
+                            ref={fileUploadRef}
+                            onChange={handleFileChange}
+                            accept="application/pdf,.pdf"
+                            required
+                            className="hidden"
+                        />
+                    </div>
+                    <Button type="submit" className="w-full" disabled={!selectedFile}>
+                      <Download className="mr-2 h-4 w-4" />
+                      {texts.convertButton}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            )
     }
   };
 
+
   return (
     <div className="flex flex-col h-screen bg-background">
-      {isLoading && (
-        <div className="fixed inset-0 bg-black/50 z-[100] flex flex-col items-center justify-center">
-          <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
-          <p className="text-white text-lg">{texts.convertingMessage}</p>
-        </div>
-      )}
-      
       <AlertDialog open={isGuestLimitModalOpen} onOpenChange={setIsGuestLimitModalOpen}>
         <AlertDialogContent>
             <ShadAlertDialogHeader>
@@ -320,43 +295,45 @@ export default function PdfToPptPage() {
       </AlertDialog>
 
       <header className="p-0 border-b bg-card sticky top-0 z-40 flex-shrink-0">
-        <div className="container mx-auto flex justify-between items-center h-16">
+        <div className="container mx-auto flex justify-between items-center h-20">
             <div className="flex items-center gap-6">
-                <h1 className="text-xl font-bold text-primary flex items-center cursor-pointer" onClick={() => router.push('/')}>
-                    <MenuSquare className="mr-2 h-6 w-6"/> {texts.appTitle}
-                </h1>
+                <div className="cursor-pointer" onClick={() => router.push('/')}>
+                    <Logo />
+                </div>
                  <Menubar className="border-none shadow-none bg-transparent">
                     <MenubarMenu>
-                        <MenubarTrigger><Edit className="mr-2 h-4 w-4" />{texts.pdfEditMenu}</MenubarTrigger>
+                        <MenubarTrigger><Edit className="mr-2 h-4 w-4" />{texts.pdfEditing}</MenubarTrigger>
                         <MenubarContent>
-                            <MenubarItem onClick={() => router.push('/merge-pdf')}><Combine className="mr-2 h-4 w-4" />{texts.mergePdf}</MenubarItem>
-                            <MenubarItem onClick={() => router.push('/split-pdf')}><Scissors className="mr-2 h-4 w-4" />{texts.splitPdf}</MenubarItem>
+                            <MenubarItem onClick={() => router.push('/merge-pdf')}><Combine className="mr-2 h-4 w-4" />{texts.mergePdfTitle}</MenubarItem>
+                            <MenubarItem onClick={() => router.push('/split-pdf')}><Scissors className="mr-2 h-4 w-4" />{texts.splitPdfTitle}</MenubarItem>
                             <MenubarItem onClick={() => router.push('/edit-pdf')}><ListOrdered className="mr-2 h-4 w-4" />{texts.reorderPdfPages}</MenubarItem>
-                            <MenubarItem onClick={() => router.push('/edit-pdf')}><Droplets className="mr-2 h-4 w-4" />{texts.addWatermark}</MenubarItem>
+                            <MenubarItem onClick={() => router.push('/edit-pdf')}><Droplets className="mr-2 h-4 w-4" />{texts.addWatermarkTitle}</MenubarItem>
+                            <MenubarItem onClick={() => router.push('/protect-pdf')}><ShieldCheck className="mr-2 h-4 w-4" />{texts.protectPdfTitle}</MenubarItem>
                         </MenubarContent>
                     </MenubarMenu>
                     <MenubarMenu>
-                        <MenubarTrigger><ArrowRightLeft className="mr-2 h-4 w-4" />{texts.pdfConvertMenu}</MenubarTrigger>
+                        <MenubarTrigger><ArrowRightLeft className="mr-2 h-4 w-4" />{texts.pdfConversion}</MenubarTrigger>
                         <MenubarContent>
                             <MenubarSub>
                                 <MenubarSubTrigger><FileUp className="mr-2 h-4 w-4" />{texts.convertToPdf}</MenubarSubTrigger>
                                 <MenubarSubContent>
-                                    <MenubarItem onClick={() => router.push('/word-to-pdf')}><FileText className="mr-2 h-4 w-4" />{texts.wordToPdf}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/excel-to-pdf')}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.excelToPdf}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/ppt-to-pdf')}><LucidePresentation className="mr-2 h-4 w-4" />{texts.pptToPdf}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/html-to-pdf')}><Code className="mr-2 h-4 w-4" />{texts.htmlToPdf}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/jpg-to-pdf')}><FileImage className="mr-2 h-4 w-4" />{texts.jpgToPdf}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/word-to-pdf')}><FileText className="mr-2 h-4 w-4" />{texts.wordToPdfTitle}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/excel-to-pdf')}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.excelToPdfTitle}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/ppt-to-pdf')}><LucidePresentation className="mr-2 h-4 w-4" />{texts.pptToPdfTitle}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/html-to-pdf')}><Code className="mr-2 h-4 w-4" />{texts.htmlToPdfTitle}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/image-to-word')}><FileImage className="mr-2 h-4 w-4" />{texts.imageToWordTitle}</MenubarItem>
                                 </MenubarSubContent>
                             </MenubarSub>
                             <MenubarSub>
                                 <MenubarSubTrigger><FileMinus className="mr-2 h-4 w-4" />{texts.convertFromPdf}</MenubarSubTrigger>
                                 <MenubarSubContent>
-                                    <MenubarItem onClick={() => router.push('/pdf-to-word')}><FileText className="mr-2 h-4 w-4" />{texts.pdfToWord}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/pdf-to-excel')}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.pdfToExcel}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/pdf-to-ppt')} disabled><LucidePresentation className="mr-2 h-4 w-4" />{texts.pdfToPpt}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/pdf-to-html')}><Code className="mr-2 h-4 w-4" />{texts.pdfToHtml}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/pdf-to-image')}><FileImage className="mr-2 h-4 w-4" />{texts.pdfToJpg}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/pdf-to-ocr')}><ScanText className="mr-2 h-4 w-4" />{texts.pdfToOcr}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-word')}><FileText className="mr-2 h-4 w-4" />{texts.pdfToWordTitle}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-excel')}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.pdfToExcelTitle}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-ppt')} disabled><LucidePresentation className="mr-2 h-4 w-4" />{texts.pdfToPptTitle}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-html')}><Code className="mr-2 h-4 w-4" />{texts.pdfToHtmlTitle}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-image')}><FileImage className="mr-2 h-4 w-4" />{texts.pdfToJpgTitle}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-ocr')}><ScanText className="mr-2 h-4 w-4" />{texts.pdfToOcrTitle}</MenubarItem>
+                                     <MenubarItem onClick={() => router.push('/pdf-to-pdfa')}><ShieldCheck className="mr-2 h-4 w-4" />{texts.pdfToPdfaTitle}</MenubarItem>
                                 </MenubarSubContent>
                             </MenubarSub>
                         </MenubarContent>
@@ -398,40 +375,7 @@ export default function PdfToPptPage() {
       </header>
 
       <main className="flex-grow p-6 overflow-y-auto flex items-center justify-center">
-          <Card className="max-w-2xl w-full mx-auto">
-            <CardHeader className="text-center">
-                <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4">
-                    <LucidePresentation className="h-10 w-10 text-primary" />
-                </div>
-                <CardTitle>{texts.pageTitle}</CardTitle>
-                <CardDescription>{texts.pageDescription}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div 
-                  className="flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20"
-                  onClick={() => fileUploadRef.current?.click()}
-                >
-                    <Upload className="h-12 w-12 text-muted-foreground mb-3" />
-                    <p className="text-md text-muted-foreground text-center">
-                      {selectedFile ? selectedFile.name : texts.uploadButton}
-                    </p>
-                    <Input
-                        type="file"
-                        ref={fileUploadRef}
-                        onChange={handleFileChange}
-                        accept="application/pdf,.pdf"
-                        required
-                        className="hidden"
-                    />
-                </div>
-                <Button type="submit" className="w-full" disabled={isLoading || !selectedFile}>
-                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                  {texts.convertButton}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+          {renderContent()}
       </main>
     </div>
   )

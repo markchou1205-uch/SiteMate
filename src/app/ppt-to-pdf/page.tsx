@@ -8,15 +8,18 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarSub, MenubarSubContent, MenubarSubTrigger, MenubarTrigger } from "@/components/ui/menubar";
-import { Loader2, Upload, Scissors, Download, FilePlus, LogIn, LogOut, UserCircle, MenuSquare, ArrowRightLeft, Edit, FileUp, ListOrdered, Trash2, Combine, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText, Sparkles, XCircle, Star } from 'lucide-react';
+import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSub, MenubarSubContent, MenubarSubTrigger, MenubarTrigger } from "@/components/ui/menubar";
+import { Upload, Scissors, Download, FilePlus, LogIn, LogOut, UserCircle, ArrowRightLeft, Edit, FileUp, ListOrdered, Trash2, Combine, FileText, FileSpreadsheet, LucidePresentation, Code, FileImage, FileMinus, Droplets, ScanText, Sparkles, XCircle, Star, ShieldCheck } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader as ShadAlertDialogHeader, AlertDialogTitle as ShadAlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from '@/lib/utils';
-
+import Logo from '@/components/ui/Logo';
+import { translations } from '@/lib/translations';
+import LoadingState from '@/components/ui/LoadingState';
+import SuccessState from '@/components/ui/SuccessState';
 
 type UploadStatus = {
     status: 'waiting' | 'uploading' | 'converting' | 'done' | 'error';
@@ -31,143 +34,7 @@ type PlanDetails = {
   name: string;
 };
 
-
-const translations = {
-  en: {
-    pageTitle: 'PowerPoint to PDF',
-    pageDescription: 'Convert your PowerPoint documents into standard PDF files.',
-    startTitle: 'Upload PowerPoint File to Convert to PDF',
-    startDescription: 'Select a PowerPoint file (.ppt, .pptx) to begin.',
-    uploadButton: 'Click or drag file(s) here',
-    uploadHint: (isLoggedIn: boolean) => `Max file size: ${isLoggedIn ? '5MB' : '3MB'}. Single file only.`,
-    convertButton: 'Convert to PDF',
-    convertingMessage: 'Processing...',
-    conversionSuccess: 'Conversion Complete',
-    conversionSuccessDesc: (filename: string) => `${filename} has been downloaded successfully.`,
-    conversionError: 'Conversion failed',
-    timeoutErrorDesc: 'The request timed out. Please try again.',
-    appTitle: 'Pdf Solution',
-    loggedInAs: 'Logged in as User',
-    login: 'Login',
-    logout: 'Logout',
-    guest: 'Guest',
-    noFileSelected: 'Please select a file to convert.',
-    invalidFileError: 'Invalid File Detected',
-    invalidFileErrorDesc: (filename: string) => `File "${filename}" is not a valid PowerPoint document.`,
-    fileTooLargeError: (limit: number) => `File is too large. The maximum size for your account is ${limit}MB.`,
-    proMode: 'Professional Mode',
-    cancel: 'Cancel',
-    confirm: 'Confirm',
-    convertLimitTitle: 'Conversion Limit Reached',
-    convertLimitDescription: 'Your free conversion for today has been used. Register to get 3 conversions daily.',
-    filesSelected: 'file(s) selected',
-    pdfEditMenu: 'PDF Edit',
-    pdfConvertMenu: 'PDF Convert',
-    mergePdf: 'Merge PDF',
-    splitPdf: 'Split PDF',
-    deletePdfPages: 'Delete Pages',
-    extractPdfPages: 'Extract Pages',
-    reorderPdfPages: 'Reorder Pages',
-    addWatermark: 'Add Watermark',
-    convertToPdf: 'Convert to PDF',
-    convertFromPdf: 'Convert from PDF',
-    wordToPdf: 'WORD to PDF',
-    excelToPdf: 'EXCEL to PDF',
-    pptToPdf: 'PPT to PDF',
-    htmlToPdf: 'HTML to PDF',
-    jpgToPdf: 'JPG to Image',
-    pdfToWord: 'PDF to WORD',
-    pdfToExcel: 'PDF to EXCEL',
-    pdfToPpt: 'PDF to PPT',
-    pdfToHtml: 'PDF to HTML',
-    pdfToJpg: 'PDF to Image',
-    pdfToOcr: 'PDF with OCR',
-    upgradePromptTitle: "Tired of one-by-one? Files too large?",
-    upgradePromptDescription: "Try our 'Batch Convert' and 'Extended File Size' services to save your precious time!",
-    enableBatchMode: "還不夠嗎？點我再升級",
-    batchModalTitle: "批次轉檔",
-    batchModalDescription: "Process up to 10 files at once and unlock premium features. Choose a plan to get started.",
-    upgrade: "Upgrade Now",
-    featureNotAvailable: "Feature Not Available",
-    featureNotAvailableForGuests: "This feature is not available for guest users. Please log in to use it.",
-    tooManyFiles: 'You can only select up to 10 files at a time.',
-    totalSizeExceeded: (size: number) => `Total file size cannot exceed ${size}MB.`,
-    status_waiting: 'Waiting',
-    status_uploading: 'Uploading...',
-    status_converting: 'Converting...',
-    status_done: 'Done!',
-    status_error: 'Error',
-    planInfo: (files: number, size: number) => `您加購的方案為：同時上傳 ${files} 份文件，大小總計不超過 ${size}MB。`,
-    usageInfo: (files: number, size: string, remainingFiles: number, remainingSize: string) => `You have selected ${files} file(s), with a total size of ${size}MB. (You can still upload ${remainingFiles} more files or ${remainingSize}MB).`
-  },
-  zh: {
-    pageTitle: 'PPT 轉 PDF',
-    pageDescription: '將您的 PowerPoint 文件轉換為標準的 PDF 檔案。',
-    startTitle: '上傳 PowerPoint 檔案以轉換為 PDF',
-    startDescription: '選擇一個 PowerPoint 檔案（.ppt, .pptx）以開始。',
-    uploadButton: '點擊或拖曳檔案到此處',
-    uploadHint: (isLoggedIn: boolean) => `檔案大小上限：${isLoggedIn ? '5MB' : '3MB'}。僅限單一檔案。`,
-    convertButton: '轉換為 PDF',
-    convertingMessage: '處理中...',
-    conversionSuccess: '轉換完成',
-    conversionSuccessDesc: (filename: string) => `${filename} 已成功下載。`,
-    conversionError: '轉換失敗',
-    timeoutErrorDesc: '請求逾時，請再試一次。',
-    appTitle: 'Pdf Solution',
-    loggedInAs: '已登入為使用者',
-    login: '登入',
-    logout: '登出',
-    guest: '訪客',
-    noFileSelected: '請選擇一個要轉換的檔案。',
-    invalidFileError: '偵測到無效檔案',
-    invalidFileErrorDesc: (filename: string) => `檔案 "${filename}" 不是有效的 PowerPoint 文件。`,
-    fileTooLargeError: (limit: number) => `檔案過大。您的帳戶目前上限為 ${limit}MB。`,
-    proMode: '專業模式',
-    cancel: '取消',
-    confirm: '確認',
-    convertLimitTitle: '轉檔次數已用完',
-    convertLimitDescription: '您今日的免費轉檔次數已用完，註冊即可獲得每日 3 次轉換。',
-    filesSelected: '個檔案已選取',
-    pdfEditMenu: 'PDF編輯',
-    pdfConvertMenu: 'PDF轉換',
-    mergePdf: '合併PDF',
-    splitPdf: '拆分PDF',
-    deletePdfPages: '刪除頁面',
-    extractPdfPages: '擷取頁面',
-    reorderPdfPages: '變換順序',
-    addWatermark: '添加浮水印',
-    convertToPdf: '轉換為PDF',
-    convertFromPdf: '從PDF轉換',
-    wordToPdf: 'WORD轉PDF',
-    excelToPdf: 'EXCEL轉PDF',
-    pptToPdf: 'PPT轉PDF',
-    htmlToPdf: 'HTML轉PDF',
-    jpgToPdf: 'JPG轉PDF',
-    pdfToWord: 'PDF轉WORD',
-    pdfToExcel: 'PDF轉EXCEL',
-    pdfToPpt: 'PDF轉PPT',
-    pdfToHtml: 'PDF轉HTML',
-    pdfToJpg: 'PDF轉圖片',
-    pdfToOcr: 'PDF光學掃描(OCR)',
-    upgradePromptTitle: "一件一件傳很麻煩嗎？文件太大嗎？",
-    upgradePromptDescription: "來試試「批次轉檔」及「擴充檔案」服務來節省您的寶貴時間！",
-    enableBatchMode: "提升檔案大小限制或批次轉檔",
-    batchModalTitle: "批次轉檔",
-    batchModalDescription: "一次處理最多 10 個檔案並解鎖高階功能。選擇一個方案立即開始。",
-    upgrade: "立即升級",
-    featureNotAvailable: "功能無法使用",
-    featureNotAvailableForGuests: "此功能不適用於訪客。請登入後使用。",
-    tooManyFiles: '一次最多只能選擇 10 個檔案。',
-    totalSizeExceeded: (size: number) => `總檔案大小不能超過 ${size}MB。`,
-    status_waiting: '等待中',
-    status_uploading: '上傳中...',
-    status_converting: '轉換中...',
-    status_done: '完成！',
-    status_error: '錯誤',
-    planInfo: (files: number, size: number) => `您加購的方案為：同時上傳 ${files} 份文件，大小總計不超過 ${size}MB。`,
-    usageInfo: (files: number, size: string, remainingFiles: number, remainingSize: string) => `目前您已選擇 ${files} 份文件，大小總計 ${size}MB (尚可上傳 ${remainingFiles} 份文件或 ${remainingSize}MB)`
-  },
-};
+type ViewState = 'idle' | 'loading' | 'success';
 
 export default function PptToPdfPage() {
   const router = useRouter();
@@ -178,7 +45,6 @@ export default function PptToPdfPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [isGuestLimitModalOpen, setIsGuestLimitModalOpen] = useState(false);
   const [guestLimitModalContent, setGuestLimitModalContent] = useState({ title: '', description: '' });
   
@@ -198,7 +64,14 @@ export default function PptToPdfPage() {
 
   const fileUploadRef = useRef<HTMLInputElement>(null);
   const batchFileUploadRef = useRef<HTMLInputElement>(null);
-  const format = 'pdf';
+
+    // New state for loading/success views
+  const [viewState, setViewState] = useState<ViewState>('idle');
+  const [progress, setProgress] = useState(0);
+  const [loadingMessage, setLoadingMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
 
   useEffect(() => {
     setTexts(translations[currentLanguage] || translations.en);
@@ -256,7 +129,7 @@ export default function PptToPdfPage() {
         if (!(fileType === 'application/vnd.ms-powerpoint' || 
             fileType === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' ||
             fileName.endsWith('.ppt') || fileName.endsWith('.pptx'))) {
-            toast({ title: texts.invalidFileError, description: texts.invalidFileErrorDesc(file.name), variant: 'destructive' });
+            toast({ title: texts.invalidFileError, description: texts.invalidFileErrorDesc, variant: 'destructive' });
             return;
         }
 
@@ -270,6 +143,49 @@ export default function PptToPdfPage() {
     }
   };
   
+  const resetPage = () => {
+    setViewState('idle');
+    setProgress(0);
+    setLoadingMessage('');
+    setSuccessMessage('');
+    setSelectedFile(null);
+    if (fileUploadRef.current) fileUploadRef.current.value = '';
+    setBatchFiles([]);
+    setUploadStatuses({});
+    setIsConverting(false);
+  };
+
+  const handleStartLoading = (message: string) => {
+    setLoadingMessage(message);
+    setViewState('loading');
+    setProgress(0);
+    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+    progressIntervalRef.current = setInterval(() => {
+        setProgress(prev => {
+            if (prev >= 95) {
+                if(progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+                return prev;
+            }
+            return prev + 5;
+        });
+    }, 200);
+  };
+
+  const handleSuccess = (message: string) => {
+    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+    setProgress(100);
+    setTimeout(() => {
+        setSuccessMessage(message);
+        setViewState('success');
+    }, 300);
+  };
+
+  const handleError = (message: string) => {
+    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+    resetPage();
+    toast({ title: texts.conversionError, description: message, variant: "destructive" });
+  };
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedFile) {
@@ -281,16 +197,16 @@ export default function PptToPdfPage() {
       return;
     }
 
-    setIsLoading(true);
+    handleStartLoading(texts.convertingMessage(selectedFile.name));
+    
     const formData = new FormData();
     formData.append("file", selectedFile);
-    formData.append("format", format);
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 60000);
 
     try {
-      const response = await fetch("https://pdfsolution.dpdns.org/convert_to_pdf", {
+      const response = await fetch("https://pdfsolution.dpdns.org/convert_single_to_pdf", {
         method: 'POST',
         body: formData,
         signal: controller.signal
@@ -302,8 +218,8 @@ export default function PptToPdfPage() {
         let errorMessage = `Conversion failed with status: ${response.status}`;
         try {
             const error = await clonedResponse.json();
-            errorMessage = String(error.error || "An unknown server error occurred.");
-        } catch (jsonError) {
+            errorMessage = String(error.detail || error.error || "An unknown server error occurred.");
+        } catch (e) {
              const errorText = await response.text();
              errorMessage = `Server error: ${response.status}. Response: ${errorText.substring(0, 100)}`;
         }
@@ -329,23 +245,16 @@ export default function PptToPdfPage() {
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-
-      toast({ 
-        title: texts.conversionSuccess,
-        description: texts.conversionSuccessDesc(downloadFilename)
-      });
-      setSelectedFile(null);
-      if(fileUploadRef.current) fileUploadRef.current.value = '';
+      
+      handleSuccess(texts.conversionSuccessDesc(downloadFilename));
 
     } catch (err: any) {
       clearTimeout(timeoutId);
       if (err.name === 'AbortError') {
-          toast({ title: texts.conversionError, description: texts.timeoutErrorDesc, variant: "destructive" });
+          handleError(texts.timeoutErrorDesc);
       } else {
-          toast({ title: texts.conversionError, description: err.message, variant: "destructive" });
+          handleError(err.message);
       }
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -388,7 +297,7 @@ export default function PptToPdfPage() {
   const handleBatchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (batchFiles.length === 0) {
-        toast({ title: texts.conversionError, description: texts.noFilesSelected, variant: 'destructive'});
+        toast({ title: texts.conversionError, description: texts.noFileSelected, variant: 'destructive'});
         return;
     }
     
@@ -426,18 +335,10 @@ export default function PptToPdfPage() {
     }, 2000);
 
     const formData = new FormData();
-    let endpoint = "";
-
-    if (batchFiles.length === 1) {
-      formData.append("file", batchFiles[0]);
-      endpoint = "https://pdfsolution.dpdns.org/convert_to_pdf";
-    } else {
-      batchFiles.forEach(file => {
-        formData.append("file", file);
-      });
-      endpoint = "https://pdfsolution.dpdns.org/batch-upload";
-    }
-    formData.append("format", format);
+    batchFiles.forEach(file => {
+      formData.append("file", file);
+    });
+    const endpoint = "https://pdfsolution.dpdns.org/convert_to_pdf";
     
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 120000);
@@ -456,7 +357,7 @@ export default function PptToPdfPage() {
         let errorMessage = `Conversion failed with status: ${response.status}`;
         try {
             const error = await clonedResponse.json();
-            errorMessage = String(error.error || "An unknown server error occurred.");
+            errorMessage = String(error.detail || error.error || "An unknown server error occurred.");
         } catch (jsonError) {
              const errorText = await response.text();
              errorMessage = `Server error: ${response.status}. Response: ${errorText.substring(0, 100)}`;
@@ -544,19 +445,91 @@ export default function PptToPdfPage() {
     setIsBatchModalOpen(true);
   };
 
+  const getStatusText = (status: UploadStatus['status']): string => {
+    const key = `status_${status || 'waiting'}` as keyof typeof texts;
+    const textValue = (texts as any)[key];
+    if (typeof textValue === 'string') {
+        return textValue;
+    }
+    return texts.status_waiting;
+  };
+
   const totalBatchSizeMB = (batchTotalSize / (1024 * 1024)).toFixed(2);
   const remainingFiles = finalPlanDetails ? finalPlanDetails.maxFiles - batchFiles.length : 0;
   const remainingMB = finalPlanDetails ? Math.max(0, (finalPlanDetails.maxSizeMb * 1024 * 1024 - batchTotalSize) / (1024 * 1024)) : 0;
+  
+    const renderContent = () => {
+    switch (viewState) {
+        case 'loading':
+            return <LoadingState message={loadingMessage} progress={progress} />;
+        case 'success':
+            return <SuccessState message={successMessage} onGoHome={() => router.push('/')} onStartNew={resetPage} texts={texts} />;
+        case 'idle':
+        default:
+          return (
+             <div className="w-full max-w-4xl space-y-8">
+                <Card className="w-full">
+                  <CardHeader className="text-center">
+                      <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4">
+                          <FileUp className="h-10 w-10 text-primary" />
+                      </div>
+                      <CardTitle>{texts.pptToPdfTitle}</CardTitle>
+                      <CardDescription>{texts.pptToPdfDescription}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                      <div 
+                        className="flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20"
+                        onClick={() => fileUploadRef.current?.click()}
+                      >
+                          <Upload className="h-12 w-12 text-muted-foreground mb-3" />
+                          <p className="text-md text-muted-foreground text-center">
+                            {selectedFile ? selectedFile.name : texts.uploadButton}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-2">{texts.uploadHint(isLoggedIn)}</p>
+                          <Input
+                              type="file"
+                              ref={fileUploadRef}
+                              onChange={handleFileChange}
+                              accept=".ppt,.pptx,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                              multiple={false}
+                              className="hidden"
+                          />
+                      </div>
+                      <Button type="submit" className="w-full" disabled={!selectedFile}>
+                        <Download className="mr-2 h-4 w-4" />
+                        {texts.convertButton}
+                      </Button>
+                    </form>
+                  </CardContent>
+                </Card>
+
+                <Card className="w-full border-destructive/20 bg-destructive/5">
+                    <CardContent className="p-4 flex items-center justify-between gap-4">
+                        <div className="flex flex-col items-start gap-1">
+                            <CardTitle className="text-lg flex items-center gap-2 text-destructive">
+                                <Star className="text-yellow-500" />
+                                {texts.upgradePromptTitle}
+                            </CardTitle>
+                            <CardDescription>
+                                {texts.upgradePromptDescription}
+                            </CardDescription>
+                        </div>
+                        <Button onClick={handleOpenPricing} variant="destructive" size="lg" className="shrink-0">
+                          <span className="text-lg font-bold">提升檔案大小限制</span>
+                          <span className="mx-2">或</span>
+                          <span className="text-lg font-bold">批次轉檔</span>
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+          )
+    }
+  }
+
 
   return (
     <div className="flex flex-col h-screen bg-background">
-      {isLoading && (
-        <div className="fixed inset-0 bg-black/50 z-[100] flex flex-col items-center justify-center">
-          <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
-          <p className="text-white text-lg">{texts.convertingMessage}</p>
-        </div>
-      )}
-      
       <AlertDialog open={isGuestLimitModalOpen} onOpenChange={setIsGuestLimitModalOpen}>
         <AlertDialogContent>
             <ShadAlertDialogHeader>
@@ -668,11 +641,7 @@ export default function PptToPdfPage() {
             </ShadAlertDialogHeader>
             {isConverting ? (
                <div className="flex flex-col items-center justify-center space-y-4 my-8">
-                   <Loader2 className="h-16 w-16 text-primary animate-spin" />
-                   <p className="text-lg font-medium text-foreground">
-                       {currentLanguage === 'zh' ? `正在進行 ${currentConvertingFile} 的轉檔作業...` : `Converting ${currentConvertingFile}...`}
-                   </p>
-                   <Progress value={uploadStatuses[Object.keys(uploadStatuses)[0]]?.progress || 10} className="w-full" />
+                   <LoadingState message={currentLanguage === 'zh' ? `正在進行 ${currentConvertingFile} 的轉檔作業...` : `Converting ${currentConvertingFile}...`} progress={uploadStatuses[Object.keys(uploadStatuses)[0]]?.progress || 10} />
                </div>
             ) : (
                 <form onSubmit={handleBatchSubmit} className="space-y-4">
@@ -707,7 +676,7 @@ export default function PptToPdfPage() {
                                     <div className="flex-grow min-w-0">
                                         <p className="font-medium truncate">{file.name}</p>
                                         <div className="flex items-center gap-1.5 text-muted-foreground">
-                                            <span>{texts[`status_${uploadStatuses[file.name]?.status}` as keyof typeof texts] || texts.status_waiting}</span>
+                                            <span>{getStatusText(uploadStatuses[file.name]?.status)}</span>
                                             {uploadStatuses[file.name]?.status === 'error' && (
                                                 <span className="text-destructive truncate" title={uploadStatuses[file.name]?.error}>- {uploadStatuses[file.name]?.error}</span>
                                             )}
@@ -722,7 +691,7 @@ export default function PptToPdfPage() {
                         </div>
                     )}
                      <Button type="submit" className="w-full" disabled={isConverting || batchFiles.length === 0}>
-                        {isConverting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                        <Download className="mr-2 h-4 w-4" />
                         {texts.convertButton}
                     </Button>
                 </form>
@@ -734,43 +703,45 @@ export default function PptToPdfPage() {
       </AlertDialog>
 
       <header className="p-0 border-b bg-card sticky top-0 z-40 flex-shrink-0">
-        <div className="container mx-auto flex justify-between items-center h-16">
+        <div className="container mx-auto flex justify-between items-center h-20">
             <div className="flex items-center gap-6">
-                <h1 className="text-xl font-bold text-primary flex items-center cursor-pointer" onClick={() => router.push('/')}>
-                    <MenuSquare className="mr-2 h-6 w-6"/> {texts.appTitle}
-                </h1>
+                <div className="cursor-pointer" onClick={() => router.push('/')}>
+                    <Logo />
+                </div>
                  <Menubar className="border-none shadow-none bg-transparent">
                     <MenubarMenu>
-                        <MenubarTrigger><Edit className="mr-2 h-4 w-4" />{texts.pdfEditMenu}</MenubarTrigger>
+                        <MenubarTrigger><Edit className="mr-2 h-4 w-4" />{texts.pdfEditing}</MenubarTrigger>
                         <MenubarContent>
-                            <MenubarItem onClick={() => router.push('/merge-pdf')}><Combine className="mr-2 h-4 w-4" />{texts.mergePdf}</MenubarItem>
-                            <MenubarItem onClick={() => router.push('/split-pdf')}><Scissors className="mr-2 h-4 w-4" />{texts.splitPdf}</MenubarItem>
+                            <MenubarItem onClick={() => router.push('/merge-pdf')}><Combine className="mr-2 h-4 w-4" />{texts.mergePdfTitle}</MenubarItem>
+                            <MenubarItem onClick={() => router.push('/split-pdf')}><Scissors className="mr-2 h-4 w-4" />{texts.splitPdfTitle}</MenubarItem>
                             <MenubarItem onClick={() => router.push('/edit-pdf')}><ListOrdered className="mr-2 h-4 w-4" />{texts.reorderPdfPages}</MenubarItem>
-                            <MenubarItem onClick={() => router.push('/edit-pdf')}><Droplets className="mr-2 h-4 w-4" />{texts.addWatermark}</MenubarItem>
+                            <MenubarItem onClick={() => router.push('/edit-pdf')}><Droplets className="mr-2 h-4 w-4" />{texts.addWatermarkTitle}</MenubarItem>
+                            <MenubarItem onClick={() => router.push('/protect-pdf')}><ShieldCheck className="mr-2 h-4 w-4" />{texts.protectPdfTitle}</MenubarItem>
                         </MenubarContent>
                     </MenubarMenu>
                     <MenubarMenu>
-                        <MenubarTrigger><ArrowRightLeft className="mr-2 h-4 w-4" />{texts.pdfConvertMenu}</MenubarTrigger>
+                        <MenubarTrigger><ArrowRightLeft className="mr-2 h-4 w-4" />{texts.pdfConversion}</MenubarTrigger>
                         <MenubarContent>
                             <MenubarSub>
                                 <MenubarSubTrigger><FileUp className="mr-2 h-4 w-4" />{texts.convertToPdf}</MenubarSubTrigger>
                                 <MenubarSubContent>
-                                    <MenubarItem onClick={() => router.push('/word-to-pdf')}><FileText className="mr-2 h-4 w-4" />{texts.wordToPdf}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/excel-to-pdf')}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.excelToPdf}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/ppt-to-pdf')} disabled><LucidePresentation className="mr-2 h-4 w-4" />{texts.pptToPdf}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/html-to-pdf')}><Code className="mr-2 h-4 w-4" />{texts.htmlToPdf}</MenubarItem>
-                                    <MenubarItem onClick={() => {toast({title: texts.featureNotAvailable, description: texts.featureNotAvailableForGuests})}}><FileImage className="mr-2 h-4 w-4" />{texts.jpgToPdf}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/word-to-pdf')}><FileText className="mr-2 h-4 w-4" />{texts.wordToPdfTitle}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/excel-to-pdf')}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.excelToPdfTitle}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/ppt-to-pdf')} disabled><LucidePresentation className="mr-2 h-4 w-4" />{texts.pptToPdfTitle}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/html-to-pdf')}><Code className="mr-2 h-4 w-4" />{texts.htmlToPdfTitle}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/image-to-word')}><FileImage className="mr-2 h-4 w-4" />{texts.imageToWordTitle}</MenubarItem>
                                 </MenubarSubContent>
                             </MenubarSub>
                             <MenubarSub>
                                 <MenubarSubTrigger><FileMinus className="mr-2 h-4 w-4" />{texts.convertFromPdf}</MenubarSubTrigger>
                                 <MenubarSubContent>
-                                    <MenubarItem onClick={() => router.push('/pdf-to-word')}><FileText className="mr-2 h-4 w-4" />{texts.pdfToWord}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/pdf-to-excel')}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.pdfToExcel}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/pdf-to-ppt')}><LucidePresentation className="mr-2 h-4 w-4" />{texts.pdfToPpt}</MenubarItem>
-                                    <MenubarItem onClick={() => router.push('/pdf-to-html')}><Code className="mr-2 h-4 w-4" />{texts.pdfToHtml}</MenubarItem>
-                                    <MenubarItem onClick={() => toast({title: texts.featureNotAvailable, description: texts.featureNotAvailableForGuests})}><FileImage className="mr-2 h-4 w-4" />{texts.pdfToJpg}</MenubarItem>
-                                    <MenubarItem onClick={() => { if(isLoggedIn) router.push('/pdf-to-ocr'); else toast({title: texts.featureNotAvailable, description: texts.featureNotAvailableForGuests})}}><ScanText className="mr-2 h-4 w-4" />{texts.pdfToOcr}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-word')}><FileText className="mr-2 h-4 w-4" />{texts.pdfToWordTitle}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-excel')}><FileSpreadsheet className="mr-2 h-4 w-4" />{texts.pdfToExcelTitle}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-ppt')}><LucidePresentation className="mr-2 h-4 w-4" />{texts.pdfToPptTitle}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-html')}><Code className="mr-2 h-4 w-4" />{texts.pdfToHtmlTitle}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-image')}><FileImage className="mr-2 h-4 w-4" />{texts.pdfToJpgTitle}</MenubarItem>
+                                    <MenubarItem onClick={() => router.push('/pdf-to-ocr')}><ScanText className="mr-2 h-4 w-4" />{texts.pdfToOcrTitle}</MenubarItem>
+                                     <MenubarItem onClick={() => router.push('/pdf-to-pdfa')}><ShieldCheck className="mr-2 h-4 w-4" />{texts.pdfToPdfaTitle}</MenubarItem>
                                 </MenubarSubContent>
                             </MenubarSub>
                         </MenubarContent>
@@ -812,62 +783,7 @@ export default function PptToPdfPage() {
       </header>
 
       <main className="flex-grow p-6 overflow-y-auto flex items-center justify-center">
-        <div className="w-full max-w-4xl space-y-8">
-            <Card className="w-full">
-              <CardHeader className="text-center">
-                  <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4">
-                      <FileUp className="h-10 w-10 text-primary" />
-                  </div>
-                  <CardTitle>{texts.pageTitle}</CardTitle>
-                  <CardDescription>{texts.startDescription}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div 
-                    className="flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-md hover:border-primary transition-colors cursor-pointer bg-muted/20"
-                    onClick={() => fileUploadRef.current?.click()}
-                  >
-                      <Upload className="h-12 w-12 text-muted-foreground mb-3" />
-                      <p className="text-md text-muted-foreground text-center">
-                        {selectedFile ? selectedFile.name : texts.uploadButton}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-2">{texts.uploadHint(isLoggedIn)}</p>
-                      <Input
-                          type="file"
-                          ref={fileUploadRef}
-                          onChange={handleFileChange}
-                          accept=".ppt,.pptx,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
-                          multiple={false}
-                          className="hidden"
-                      />
-                  </div>
-                  <Button type="submit" className="w-full" disabled={isLoading || !selectedFile}>
-                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                    {texts.convertButton}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-
-            <Card className="w-full border-destructive/20 bg-destructive/5">
-                <CardContent className="p-4 flex items-center justify-between gap-4">
-                    <div className="flex flex-col items-start gap-1">
-                        <CardTitle className="text-lg flex items-center gap-2 text-destructive">
-                            <Star className="text-yellow-500" />
-                            {texts.upgradePromptTitle}
-                        </CardTitle>
-                        <CardDescription>
-                            {texts.upgradePromptDescription}
-                        </CardDescription>
-                    </div>
-                    <Button onClick={handleOpenPricing} variant="destructive" size="lg" className="shrink-0">
-                       <span className="text-lg font-bold">提升檔案大小限制</span>
-                       <span className="mx-2">或</span>
-                       <span className="text-lg font-bold">批次轉檔</span>
-                    </Button>
-                </CardContent>
-            </Card>
-        </div>
+        {renderContent()}
       </main>
     </div>
   )

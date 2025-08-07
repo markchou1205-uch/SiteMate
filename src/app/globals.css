@@ -1,14 +1,11 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: Arial, Helvetica, sans-serif;
-}
-
 @layer base {
   :root {
-    --background: 0 0% 94.1%; /* Light Grey */
+    --background: 0 0% 98%; /* Lighter Off-white */
     --foreground: 240 10% 3.9%; /* Default dark for text on light grey */
     --card: 0 0% 100%; /* White cards */
     --card-foreground: 240 10% 3.9%;
@@ -89,4 +86,17 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+@layer components {
+  .thumbnail-rotatable {
+    transform: rotate(var(--rotation, 0deg));
+    transform-origin: center center;
+    transition: transform 0.2s ease-out;
+  }
+}
+
+/* Decisive fix to override Next.js default image styling */
+img {
+  max-width: none !important;
 }

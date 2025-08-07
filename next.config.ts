@@ -59,11 +59,11 @@ export default async (phase: string, { defaultConfig }: { defaultConfig: NextCon
       ],
       ...(defaultConfig.images || {}),
     },
-    webpack: (config, { isServer, dev, buildId, config:nextWebpackConfig, defaultLoaders, webpack }) => {
+    webpack: (config, context) => {
       // Apply the existing webpack modifications from defaultConfig if any
       let newConfig = config;
       if (defaultConfig.webpack) {
-        newConfig = defaultConfig.webpack(config, { isServer, dev, buildId, config: nextWebpackConfig, defaultLoaders, webpack });
+        newConfig = defaultConfig.webpack(config, context);
       }
 
       // Prevent webpack from trying to resolve 'canvas'

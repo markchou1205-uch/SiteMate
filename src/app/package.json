@@ -10,7 +10,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "postinstall": "npx patch-package && node -e \"const fs = require('fs-extra'); const path = require('path'); const cmapsDir = path.join('node_modules', 'pdfjs-dist', 'cmaps'); const targetDir = path.join('public', 'pdfjs', 'cmaps'); if (fs.existsSync(cmapsDir)) { fs.ensureDirSync(targetDir); fs.copySync(cmapsDir, targetDir, { overwrite: true }); console.log('Successfully copied cmaps to public directory.'); } else { console.error('Error: pdfjs-dist/cmaps directory not found.'); }\""
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.8.0",
@@ -60,6 +61,7 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "fs-extra": "^11.2.0",
     "genkit-cli": "^1.8.0",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",

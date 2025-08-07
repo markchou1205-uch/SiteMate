@@ -1,1 +1,0 @@
-self.__REACT_LOADABLE_MANIFEST="{\"app/edit-pdf/page.tsx -> ./PdfEditor\":{\"id\":\"app/edit-pdf/page.tsx -> ./PdfEditor\",\"files\":[\"static/chunks/_app-pages-browser_src_app_edit-pdf_PdfEditor_tsx.js\"]}}"
